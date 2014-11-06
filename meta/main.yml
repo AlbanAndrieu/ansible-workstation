@@ -1,0 +1,38 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: Alban Andrieu
+  description: A role for installing workstation
+  company: Nabla
+  license: GPLv3
+  min_ansible_version: 1.6.3
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+    - lucid
+    - maverick
+    - natty
+    - oneiric
+    - precise
+    - quantal
+    - raring
+    - saucy
+    - trusty
+  categories:
+  - development
+
+ansigenome_info:
+  galaxy_id: ''
+
+  travis: False
+
+  synopsis: |
+    Describe your role in a few paragraphs....
+
+  usage: |
+    Describe how to use in more detail...
+
+  #custom: |
+  #  Any custom output you want after the usage section..
