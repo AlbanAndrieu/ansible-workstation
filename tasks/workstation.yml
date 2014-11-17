@@ -347,7 +347,7 @@
 #    - unity-lens-wikipedia
 #    - unity-lens-radios
     - unity-lens-vm
-    - unity-lens-github
+#    - unity-lens-github
     - unity-scope-gdrive
     - unity-scope-chromiumbookmarks
     - unity-scope-firefoxbookmarks
