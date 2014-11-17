@@ -130,7 +130,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
-    - jmeter
+#    - jmeter
     - optipng
     - pngtools
     - imagemagick
@@ -344,7 +344,7 @@
   with_items:
     - unity-lens-applications
     - unity-lens-files
-    - unity-lens-wikipedia
+#    - unity-lens-wikipedia
 #    - unity-lens-radios
     - unity-lens-vm
     - unity-lens-github
