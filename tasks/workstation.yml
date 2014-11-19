@@ -119,7 +119,7 @@
   tags: package
   with_items:
    - synergy
-   
+
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -280,7 +280,7 @@
     - /image
     - /owncloud
 
-#    opts=rw,nodev,nosuid,soft,bg,intr,-r16384,-w16384    
+#    opts=rw,nodev,nosuid,soft,bg,intr,-r16384,-w16384
 - name: workstation | Mount | Setup mount points
   mount: >
     name='{{ item }}'
@@ -345,7 +345,7 @@
     - unity-lens-video
     - unity-lens-music
     - unity-lens-photos
-    
+
 - name: dash | Install unity-lens and unity-scope packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
@@ -469,6 +469,7 @@
     owner="{{ variety_owner }}"
     group="{{ variety_group }}"
   ignore_errors: true    
+  sudo_user: "{{ variety_owner }}"
   tags: variety_setup
 
 - name: variety | Add variety configuration.
@@ -494,6 +495,8 @@
     state=directory
     owner="{{ dropbox_owner }}"
     group="{{ dropbox_group }}"
+  ignore_errors: true        
+  sudo_user: "{{ dropbox_owner }}"
   tags: dropbox_setup
 
 - name: dropbox | Add dropbox configuration.
@@ -509,7 +512,7 @@
 #sudo pip install ansigenome
 #easy_install ansigenome
 #sudo ansigenome config
-#cd ~/env/ansible/roles 
+#cd ~/env/ansible/roles
 #ansigenome scan
 
 #- name: workstation | Check user
