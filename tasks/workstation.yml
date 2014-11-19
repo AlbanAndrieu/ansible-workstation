@@ -1,21 +1,9 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
 
-#- name: Install enhanced vim with command-t plugin
-#  yum: name={{item}} state=present
-#  with_items:
-#    - vim-enhanced
-#    - vim-command-t
-#
-#- name: Clone dotvim repo
-#  git: dest={{home}}/.vim repo=git@github.com:sheldonh/dotvim.git update=no
-#
-#- name: Link dotvim config to vimrc
-#  file: path={{home}}/.vimrc src={{home}}/.vim/vimrc state=link
-
 - name: workstation | Install editor tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - apt-show-versions
@@ -29,7 +17,7 @@
 
 - name: workstation | Install utilities tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - meld
@@ -43,14 +31,14 @@
 
 - name: workstation | Install desktop tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - nautilus-open-terminal
 
 - name: workstation | Install disk/recovery tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - testdisk
@@ -60,7 +48,7 @@
 
 - name: workstation | Install extra
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - ubuntu-restricted-extras
@@ -70,8 +58,20 @@
 
 #TODO move git to a role
 - name: workstation | Install SCM
+  action: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - cvs
+   - git
+#   - gitg
+#   - gitk
+#   - mercurial
+
+#TODO move git to a role
+- name: workstation | Install SCM
   action: yum name={{ item }} state=installed
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux')
   tags: package
   with_items:
    - cvs
@@ -83,14 +83,14 @@
 #TODO create a role for scons
 - name: workstation | Install CPP scons build tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' and scons_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
   tags: package
   with_items:
    - scons
 
 - name: workstation | Install AWS tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' and aws_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and aws_enabled
   tags: package
   with_items:
    - ec2-api-tools
@@ -108,11 +108,18 @@
 
 - name: workstation | Install VNC
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' and vnc_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
   with_items:
    - vnc4server
 
+- name: workstation | Install Synergy
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and synergy_enabled
+  tags: package
+  with_items:
+   - synergy
+   
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -134,6 +141,8 @@
     - optipng
     - pngtools
     - imagemagick
+#sudo nethogs eth1
+    - nethogs
 
 ##
  # node.js installation (latest stable instead of Ubuntu's out-of-date one)
@@ -200,17 +209,17 @@
 #
 #- name: workstation | Ensure the karma npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma@0.12.9
-#  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 ##  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )  and ( ansible_distribution_release != 'precise' )
 
 #Ubuntu 12 ln -s /usr/local/lib/node_modules/karma/bin/karma /usr/local/bin/karma
 #- name: workstation | Create karma binaries link (legacy required)
-#  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  file: path=/usr/local/bin/karma src=/usr/local/lib/node_modules/karma/bin/karma state=link
 
 #TODO below does not works
 #- name: workstation | Update karma rights
-#  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  file: path=/usr/local/lib/node_modules mode=0777 owner=root group=root state=directory recurse=yes
 
 #TODO WORKAROUND by hand
@@ -508,16 +517,16 @@
 #/bin/false
 
 - name: workstation | Force no login for user jboss
-  user: name=jboss shell=/sbin/nologin state=present
+  user: name=jboss shell=/bin/bash state=present
 
 - name: workstation | Force no login for user sonar
   user: name=sonar shell=/sbin/nologin state=present
 
 - name: workstation | Force no login for user vagrant
-  user: name=vagrant shell=/sbin/nologin state=present
+  user: name=vagrant shell=/bin/false state=present
 
 - name: workstation | Force no login for user zap
-  user: name=zap shell=/sbin/nologin state=present
+  user: name=zap shell=/bin/false state=present
 
 - name: workstation | Force no login for user jenkins
-  user: name=jenkins shell=/sbin/nologin state=present
+  user: name=jenkins shell=/bin/bash state=present
