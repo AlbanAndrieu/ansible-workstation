@@ -59,7 +59,7 @@
 #TODO move git to a role
 - name: workstation | Install SCM
   action: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
    - cvs
@@ -71,7 +71,7 @@
 #TODO move git to a role
 - name: workstation | Install SCM
   action: yum name={{ item }} state=installed
-  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux')
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and scm_enabled
   tags: package
   with_items:
    - cvs
