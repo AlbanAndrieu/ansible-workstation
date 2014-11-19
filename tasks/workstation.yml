@@ -468,6 +468,7 @@
     state=directory
     owner="{{ variety_owner }}"
     group="{{ variety_group }}"
+  ignore_errors: true    
   tags: variety_setup
 
 - name: variety | Add variety configuration.
@@ -522,8 +523,8 @@
 - name: workstation | Force no login for user sonar
   user: name=sonar shell=/sbin/nologin state=present
 
-- name: workstation | Force no login for user vagrant
-  user: name=vagrant shell=/bin/false state=present
+#- name: workstation | Force no login for user vagrant
+#  user: name=vagrant shell=/bin/false state=present
 
 - name: workstation | Force no login for user zap
   user: name=zap shell=/bin/false state=present
