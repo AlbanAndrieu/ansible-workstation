@@ -1,5 +1,6 @@
 ---
 dependencies: []
+#  - { role: alban.andrieu.conky } 
 #  - { role: alban.andrieu.dropbox } 
 #  - { role: alban.andrieu.grive }   
 
@@ -34,7 +35,9 @@ ansigenome_info:
     Describe your role in a few paragraphs....
 
   usage: |
-    Describe how to use in more detail...
+    Run the following command :
+    
+    `ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
 
   #custom: |
   #  Any custom output you want after the usage section..
