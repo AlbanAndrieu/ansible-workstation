@@ -355,7 +355,7 @@
     - unity-lens-files
 #    - unity-lens-wikipedia
 #    - unity-lens-radios
-    - unity-lens-vm
+#    - unity-lens-vm
 #    - unity-lens-github
     - unity-scope-gdrive
     - unity-scope-chromiumbookmarks
@@ -495,8 +495,7 @@
     state=directory
     owner="{{ dropbox_owner }}"
     group="{{ dropbox_group }}"
-  ignore_errors: true        
-  sudo_user: "{{ dropbox_owner }}"
+  ignore_errors: true   
   tags: dropbox_setup
 
 - name: dropbox | Add dropbox configuration.
@@ -529,8 +528,8 @@
 #- name: workstation | Force no login for user vagrant
 #  user: name=vagrant shell=/bin/false state=present
 
-- name: workstation | Force no login for user zap
-  user: name=zap shell=/bin/false state=present
+#- name: workstation | Force no login for user zap
+#  user: name=zap shell=/bin/false state=present
 
 - name: workstation | Force no login for user jenkins
   user: name=jenkins shell=/bin/bash state=present
