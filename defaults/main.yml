@@ -39,6 +39,8 @@ vnc_enabled: no
 synergy_enabled: yes
 aws_enabled: yes
 scons_enabled: yes
+python_enabled: yes
+ansigenome_enabled: yes
 
 apache_vhosts_kibana:
   # Additional properties: 'serveradmin, extra_parameters'.

@@ -18,7 +18,7 @@
 
 - name: workstation | Install utilities tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -33,7 +33,7 @@
 
 - name: workstation | Install desktop tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -41,7 +41,7 @@
 
 - name: workstation | Install disk/recovery tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -52,7 +52,7 @@
 
 - name: workstation | Install extra
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -64,7 +64,7 @@
 #TODO move git to a role
 - name: workstation | Install SCM
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
@@ -77,7 +77,7 @@
 #TODO move git to a role
 - name: workstation | Install SCM
   action: yum name={{ item }} state=installed
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and scm_enabled
   tags: package
   with_items:
@@ -90,7 +90,7 @@
 #TODO create a role for scons
 - name: workstation | Install CPP scons build tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
   tags: package
   with_items:
@@ -98,7 +98,7 @@
 
 - name: workstation | Install AWS tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and aws_enabled
   tags: package
   with_items:
@@ -107,7 +107,7 @@
 
 - name: workstation | Install messaging
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
@@ -118,7 +118,7 @@
 
 - name: workstation | Install VNC
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
   with_items:
@@ -127,7 +127,7 @@
 #has been moved to his own role
 #- name: workstation | Install Synergy
 #  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes    
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and synergy_enabled
 #  tags: package
 #  with_items:
@@ -136,7 +136,7 @@
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -148,7 +148,7 @@
 
 - name: workstation | Install performance tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -164,7 +164,7 @@
  #
 - name: nodejs | Package prerequisites for node.js
   action: apt pkg=python-software-properties state=installed
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
@@ -172,19 +172,19 @@
 - name: nodejs | Add the node.js PPA
 #  action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/custom-node_js-{{ ansible_lsb.codename }}.list
   apt_repository: repo='ppa:chris-lea/node.js' update_cache=yes
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
 - name: nodejs | Update the apt cache for the new repository
   action: apt update-cache=yes
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
 - name: nodejs | Install nodejs and npm
   action: apt pkg={{ item }} state=installed
-  sudo: yes    
+  sudo: yes
   tags: nodejs
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   with_items:
@@ -193,7 +193,7 @@
 
 - name: karma | Install karma tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   with_items:
    - karma-tools
@@ -202,32 +202,32 @@
 
 - name: npm | Ensure npm settings
   command: chdir=/usr/bin npm config set prefix /usr/local
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: npm | Ensure npm is properly installed
   command: chdir=/usr/bin npm config get prefix
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt npm dependencies are installed
   command: chdir=/usr/bin npm install -g grunt@0.4.4
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt-cli npm dependencies are installed
   command: chdir=/usr/bin npm install -g grunt-cli@0.1.13
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 #- name: bower | Ensure the bower npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g bower@1.3.2
-#  sudo: yes  
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 #
 #- name: protractor | Ensure the protractor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g protractor@0.20.1
-#  sudo: yes  
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 #
 #- debug: msg="ansible_distribution_version value is {{ ansible_distribution_version }} "
@@ -235,20 +235,20 @@
 #
 #- name: workstation | Ensure the karma npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma@0.12.9
-#  sudo: yes  
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 ##  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )  and ( ansible_distribution_release != 'precise' )
 
 #Ubuntu 12 ln -s /usr/local/lib/node_modules/karma/bin/karma /usr/local/bin/karma
 #- name: workstation | Create karma binaries link (legacy required)
 #  file: path=/usr/local/bin/karma src=/usr/local/lib/node_modules/karma/bin/karma state=link
-#  sudo: yes  
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 #TODO below does not works
 #- name: workstation | Update karma rights
 #  file: path=/usr/local/lib/node_modules mode=0777 owner=root group=root state=directory recurse=yes
-#  sudo: yes  
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 #TODO WORKAROUND by hand
@@ -260,55 +260,55 @@
 
 #- name: workstation | Ensure the karma-junit-reporter npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-junit-reporter@0.2.2
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-ng-scenario npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ng-scenario@0.1.0
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-ng-html2js-preprocessor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ng-html2js-preprocessor@0.1.0
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-coverage npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-coverage@0.2.1
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-jasmine npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-jasmine@0.1.5
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the jasmine-reporters npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g jasmine-reporters@0.4.1
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the phantomjs npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g phantomjs@1.9.2-4
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-requirejs npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-requirejs@0.2.1
-#  sudo: yes  
+#  sudo: yes
 #
 ##- name: workstation | Ensure the karma-phantomjs-launcher npm dependencies are installed
 ##  command: chdir=/usr/bin npm install -g karma-phantomjs-launcher@0.1.4
-##  sudo: yes  
+##  sudo: yes
 #
 #- name: workstation | Ensure the karma-chrome-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-chrome-launcher@0.1.3
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-firefox-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-firefox-launcher@0.1.3
-#  sudo: yes  
+#  sudo: yes
 #
 #- name: workstation | Ensure the karma-ie-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ie-launcher
-#  sudo: yes  
+#  sudo: yes
 #
 ##- name: workstation | Ensure the webdriverjs npm dependencies are installed
 ##  command: chdir=/usr/bin npm install -g webdriverjs
-##  sudo: yes  
+##  sudo: yes
 
 - name: workstation | Mount | Disable mount points
   mount: >
@@ -316,7 +316,7 @@
     src='/mnt/dpool{{ item }}'
     fstype=nfs
     state=unmounted
-  sudo: yes      
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
   tags: mount
   with_items:
@@ -330,7 +330,7 @@
     src='/mnt/dpool{{ item }}'
     fstype=nfs
     state=mounted
-  sudo: yes     
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
   tags: mount
   with_items:
@@ -349,7 +349,7 @@
 #    fstype:xfs
 #    opts:noatime
 #    state:present
-#  sudo: yes 
+#  sudo: yes
 #  tags: mount
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
 
@@ -362,7 +362,7 @@
     state=absent
     purge=yes
     force=yes
-  sudo: yes     
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -378,7 +378,7 @@
     state=absent
     purge=yes
     force=yes
-  sudo: yes     
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: package
   with_items:
@@ -395,7 +395,7 @@
 
 - name: dash | Install unity-lens and unity-scope packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes   
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: package
   with_items:
@@ -413,13 +413,13 @@
 
 - name: dash | Add dash repo for unity-lens history packages
   apt_repository: repo="ppa:markjtully/ppa" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes   
+  sudo: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens history packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes   
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: package
   with_items:
@@ -428,13 +428,13 @@
 
 #- name: dash | Add dash repo for unity-lens grooveshark packages
 #  apt_repository: repo="ppa:scopes-packagers/ppa" update_cache=yes state={{ workstation_repository_state }}
-#  sudo: yes 
+#  sudo: yes
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
 #  tags: dash_setup
 #
 #- name: dash | Install unity-lens grooveshark packages
 #  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes 
+#  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
 #  tags: package
 #  with_items:
@@ -448,7 +448,7 @@
 
 - name: dash | Install unity-lens google docs packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes   
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: package
   with_items:
@@ -466,13 +466,13 @@
 
 - name: dash | Add dash repo for unity-lens pidgin packages
   apt_repository: repo="ppa:scopes-packagers/ppa" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes   
+  sudo: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens pidgin packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes   
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: package
   with_items:
@@ -485,13 +485,13 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes     
+  sudo: yes
 #  notify: restart apache
 #  when: apache_create_vhosts
 
 - name: workstation | Enable the elasticsearch site
   action: command a2ensite elasticsearch
-  sudo: yes   
+  sudo: yes
   ignore_errors: yes
   tags: apache
 
@@ -502,13 +502,13 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes     
+  sudo: yes
 #  notify: restart apache
 #  when: apache_create_vhosts
 
 - name: workstation | Enable the kibana site
   action: command a2ensite kibana3
-  sudo: yes   
+  sudo: yes
   ignore_errors: yes
   tags: apache
 
@@ -555,7 +555,7 @@
     state=directory
     owner="{{ dropbox_owner }}"
     group="{{ dropbox_group }}"
-  ignore_errors: true   
+  ignore_errors: true
   tags: dropbox_setup
 
 - name: dropbox | Add dropbox configuration.
@@ -567,6 +567,33 @@
     mode: 0644
 #  notify: restart dropbox
 
+- name: Install pip python package
+  apt:
+    pkg: "{{ item }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 600
+  sudo: yes    
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
+  with_items:
+    - python-dev
+    - python-pip
+
+- name: Install Ansible documentation generator prerequisite
+  pip: name={{ item }}
+  sudo: yes  
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
+  with_items:
+    - paramiko
+    - PyYAML
+    - jinja2
+    - httplib2
+
+- name: Install Ansible documentation generator
+  pip: name=ansigenome
+  sudo: yes  
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
+
 #TODO
 #sudo pip install ansigenome
 #easy_install ansigenome
@@ -574,6 +601,15 @@
 #cd ~/env/ansible/roles
 #ansigenome scan
 
+- name: workstation | Install python utilities tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
+  tags: package
+  with_items:
+#flake8 .
+   - python-flake8
+   
 #- name: workstation | Check user
 #  user: name={{user}} state=present
 
@@ -581,21 +617,21 @@
 
 - name: workstation | Force no login for user jboss
   user: name=jboss shell=/bin/bash state=present
-  sudo: yes   
+  sudo: yes
 
 - name: workstation | Force no login for user sonar
   user: name=sonar shell=/sbin/nologin state=present
-  sudo: yes   
+  sudo: yes
 
 #- name: workstation | Force no login for user vagrant
 #  user: name=vagrant shell=/bin/false state=present
-#  sudo: yes 
+#  sudo: yes
 
 #- name: workstation | Force no login for user zap
 #  user: name=zap shell=/bin/false state=present
-#  sudo: yes 
-  
+#  sudo: yes
+
 - name: workstation | Force no login for user jenkins
   user: name=jenkins shell=/bin/bash state=present
-  sudo: yes 
-  
+  sudo: yes
+
