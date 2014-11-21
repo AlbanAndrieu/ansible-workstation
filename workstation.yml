@@ -3,5 +3,6 @@
   sudo: true
   roles:
     - { role: ./,
-        dash_enabled: no
+        dash_enabled: no,
+        apache_create_vhosts: no
      }

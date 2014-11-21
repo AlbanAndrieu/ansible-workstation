@@ -41,6 +41,7 @@ aws_enabled: yes
 scons_enabled: yes
 python_enabled: yes
 ansigenome_enabled: yes
+apache_create_vhosts: yes
 
 apache_vhosts_kibana:
   # Additional properties: 'serveradmin, extra_parameters'.

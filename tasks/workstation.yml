@@ -488,6 +488,7 @@
   sudo: yes
 #  notify: restart apache
 #  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the elasticsearch site
   action: command a2ensite elasticsearch
@@ -505,6 +506,7 @@
   sudo: yes
 #  notify: restart apache
 #  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the kibana site
   action: command a2ensite kibana3
