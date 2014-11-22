@@ -606,7 +606,7 @@
 - name: workstation | Install python utilities tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and python_enabled
   tags: package
   with_items:
 #flake8 .
