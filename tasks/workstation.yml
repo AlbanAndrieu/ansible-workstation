@@ -513,7 +513,27 @@
   sudo: yes
   ignore_errors: yes
   tags: apache
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+  
+- name: workstation | Add apache jenkins vhosts configuration.
+  template:
+    src: "jenkins.conf.j2"
+    dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+#  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+  
+- name: workstation | Enable the jenkins site
+  action: command a2ensite jenkins
+  sudo: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+    
 - name: Check user
   user: name={{ variety_owner }} state=present
 
