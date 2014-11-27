@@ -144,7 +144,8 @@
     - sysstat
     - net-tools # for netstat
     - rusersd
-    - rwhod
+#    - rwho
+#    - rwhod
 
 - name: workstation | Install performance tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
