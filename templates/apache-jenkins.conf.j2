@@ -167,21 +167,21 @@
         # MSIE 7 and newer should be able to use keepalive
         ##TODO BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
 
-        ProxyPass /jenkins http://localhost:8380/jenkins
+        ProxyPass /jenkins http://localhost:8380/jenkins nocanon
         ProxyPassReverse /jenkins http://localhost:8380/jenkins
 
-        #ProxyPassReverse  /jenkins  http://home.nabla.mobi:7072/jenkins
         ProxyRequests Off
+        ProxyPreserveHost On
+        AllowEncodedSlashes NoDecode
+
         <Proxy http://localhost:8380/jenkins*>
                 Order allow,deny
                 Allow from all
         </Proxy>
-        ProxyPreserveHost On
 
         # Use last flag because no more rewrite can be applied after proxy pass
         RewriteRule       ^/jenkins(.*)$  http://localhost:8380/jenkins$1 [P,L]
         ProxyPassReverse  /jenkins        http://localhost:8380/jenkins
 
 </VirtualHost>
-
 {% endfor %}
