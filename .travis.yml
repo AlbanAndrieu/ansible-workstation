@@ -5,8 +5,68 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-apt python-pycurl
 install:
-#  - sudo pip install --no-use-wheel https://github.com/ansible/ansible/archive/devel.zip
-  - sudo pip install ansible
+  # Install Ansible.
+  - pip install ansible
+
+  # Add ansible.cfg to pick up roles path.
+  #- "printf '[defaults]\nroles_path = ../' > ansible.cfg"
+
+  # Install dependencies.
+  - git clone https://github.com/AlbanAndrieu/ansible-hostname.git alban.andrieu.hostname
+  - git clone https://github.com/AlbanAndrieu/ansible-common.git alban.andrieu.common
+  - git clone https://github.com/AlbanAndrieu/ansible-dns.git alban.andrieu.dns
+  - git clone https://github.com/geerlingguy/ansible-role-ntp.git geerlingguy.ntp
+  - git clone https://github.com/AlbanAndrieu/ansible-subversion.git alban.andrieu.subversion
+  - git clone https://github.com/AlbanAndrieu/ansible-role-git.git geerlingguy.git
+  - git clone https://github.com/AlbanAndrieu/ansible-cmake.git alban.andrieu.cmake
+  - git clone https://github.com/AlbanAndrieu/ansible-cpp.git alban.andrieu.cpp
+  - git clone https://github.com/AlbanAndrieu/ansible-xvbf alban.andrieu.xvbf
+
+  - git clone https://github.com/AlbanAndrieu/ansible-conky alban.andrieu.conky
+  - git clone https://github.com/AlbanAndrieu/ansible-dropbox alban.andrieu.dropbox
+  - git clone https://github.com/AlbanAndrieu/ansible-grive alban.andrieu.grive
+  - git clone https://github.com/AlbanAndrieu/ansible-synergy alban.andrieu.synergy
+  - git clone https://github.com/AlbanAndrieu/ansible-shell alban.andrieu.shell
+  - git clone https://github.com/AlbanAndrieu/ansible-tomcat alban.andrieu.tomcat
+  - git clone https://github.com/AlbanAndrieu/ansible-jboss alban.andrieu.jboss
+  - git clone https://github.com/AlbanAndrieu/ansible-eclipse alban.andrieu.eclipse
+  - git clone https://github.com/AlbanAndrieu/ansible-css alban.andrieu.css
+  - git clone https://github.com/AlbanAndrieu/ansible-zap alban.andrieu.zap
+  - git clone https://github.com/AlbanAndrieu/ansible-webmin alban.andrieu.webmin
+  - git clone https://github.com/AlbanAndrieu/ansible-mon alban.andrieu.mon
+  - git clone https://github.com/AlbanAndrieu/ansible-jmeter alban.andrieu.jmeter
+  - git clone https://github.com/Stouts/Stouts.python.git python
+  - git clone https://github.com/knopki/ansible-locale locale
+  - git clone https://github.com/AlbanAndrieu/ansible-jenkins-master jenkins-master
+  - git clone https://github.com/AlbanAndrieu/ansible-jenkins-slave alban.andrieu.jenkins-slave
+  - git clone https://github.com/AlbanAndrieu/ansible-sonar sonar
+  - git clone https://github.com/AlbanAndrieu/ansible-sonatype_nexus.git nexus
+  - git clone https://github.com/AlbanAndrieu/ansible-zabbix_agent.git zabbix-agent
+  - git clone https://github.com/AlbanAndrieu/ansible-role-security.git security
+  #- git clone https://github.com/AlbanAndrieu/ansible-galaxy.ubuntu.virtualbox.git virtualbox
+  - git clone https://github.com/AlbanAndrieu/ansible-vagrant-role.git vagrant
+  - git clone https://github.com/AlbanAndrieu/docker.ubuntu.git docker
+  - git clone https://github.com/AlbanAndrieu/ansible-maven.git maven
+  - git clone https://github.com/AlbanAndrieu/devbox.chrome.git chrome
+  - git clone https://github.com/AlbanAndrieu/ansible-nodejs.git nodejs
+  - git clone https://github.com/ANXS/monit monit
+  - git clone https://github.com/AlbanAndrieu/ansible-supervisor_task.git supervisor
+  - git clone https://github.com/geerlingguy/ansible-role-repo-epel.git geerlingguy.repo-epel
+  - git clone https://github.com/geerlingguy/ansible-role-repo-remi.git geerlingguy.repo-remi
+  - git clone https://github.com/geerlingguy/ansible-role-java geerlingguy.java
+  - git clone https://github.com/geerlingguy/ansible-role-elasticsearch.git geerlingguy.elasticsearch
+  - git clone https://github.com/AlbanAndrieu/ansible-role-logstash.git geerlingguy.logstash
+  - git clone https://github.com/geerlingguy/ansible-role-nginx.git geerlingguy.nginx
+  - git clone https://github.com/AlbanAndrieu/ansible-role-kibana.git geerlingguy.kibana
+  - git clone https://github.com/geerlingguy/ansible-role-samba.git geerlingguy.samba
+  - git clone https://github.com/geerlingguy/ansible-role-firewall.git geerlingguy.firewall
+  - git clone https://github.com/AlbanAndrieu/ansible-web alban.andrieu.web
+  - git clone https://github.com/geerlingguy/ansible-role-apache.git geerlingguy.apache
+  - git clone https://github.com/geerlingguy/ansible-role-phpmyadmin.git geerlingguy.phpmyadmin
+  - git clone https://github.com/geerlingguy/ansible-role-mysql.git geerlingguy.mysql
+  - git clone https://github.com/geerlingguy/ansible-role-php-mysql.git geerlingguy.php-mysql
+  - git clone https://github.com/geerlingguy/ansible-role-php.git geerlingguy.php
+
 script:
   - ansible --version
   - export ANSIBLE_ROLES_PATH="../"

@@ -1,19 +1,20 @@
-## workstation
+## alban.andrieu.workstation
 
   [![Platforms](http://img.shields.io/badge/platforms-ubuntu-lightgrey.svg?style=flat)](#)
 
 Describe your role in a few paragraphs....
 
 
+### Role dependencies
 
+- `alban.andrieu.css`- `geerlingguy.kibana`- `nexus`- `alban.andrieu.dns`- `geerlingguy.repo-remi`- `alban.andrieu.mon`- `alban.andrieu.jenkins-slave`- `supervisor`- `alban.andrieu.conky`- `zabbix-agent`- `geerlingguy.logstash`- `java`- `geerlingguy.firewall`- `alban.andrieu.web`- `vagrant`- `geerlingguy.apache`- `geerlingguy.repo-epel`- `alban.andrieu.grive`- `geerlingguy.samba`- `alban.andrieu.shell`- `alban.andrieu.zap`- `alban.andrieu.eclipse`- `alban.andrieu.webmin`- `docker`- `alban.andrieu.synergy`- `jenkins-master`- `monit`- `alban.andrieu.jmeter`- `alban.andrieu.dropbox`- `sonar`- `security`- `alban.andrieu.common`
 
 ### Role variables
 
 List of default variables available in the inventory:
 
 ```yaml
-    ---
-    workstation_enabled: yes                       # Enable module
+        workstation_enabled: yes                       # Enable module
     
     #TODO apache_directory : "httpd" #RedHat
     #TODO see apache role
@@ -44,6 +45,7 @@ List of default variables available in the inventory:
     workstation_repository_state: present
     
     stats_enabled: true # Turn it to false in order to be uninstall in security role
+    scm_enabled: no
     dash_enabled: yes
     pidgin_enabled: yes
     nodejs_enabled: yes
@@ -52,6 +54,9 @@ List of default variables available in the inventory:
     synergy_enabled: yes
     aws_enabled: yes
     scons_enabled: yes
+    python_enabled: yes
+    ansigenome_enabled: yes
+    apache_create_vhosts: yes
     
     apache_vhosts_kibana:
       # Additional properties: 'serveradmin, extra_parameters'.
@@ -65,12 +70,14 @@ List of default variables available in the inventory:
 
 ### Detailed usage guide
 
-Describe how to use in more detail...
+Run the following command :
+
+`ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
 
 
 ### Authors and license
 
-`workstation` role was written by:
+`alban.andrieu.workstation` role was written by:
 - [Alban Andrieu](nabla.mobi) | [e-mail](mailto:alban.andrieu@free.fr) | [Twitter](https://twitter.com/AlbanAndrieu)
 - License: [GPLv3](https://tldrlegal.com/license/gnu-general-public-license-v3-%28gpl-3%29)
 

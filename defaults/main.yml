@@ -1,4 +1,3 @@
----
 workstation_enabled: yes                       # Enable module
 
 #TODO apache_directory : "httpd" #RedHat
