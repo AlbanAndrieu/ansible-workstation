@@ -25,7 +25,7 @@ install:
   - git clone https://github.com/AlbanAndrieu/ansible-cmake.git alban.andrieu.cmake
   - git clone https://github.com/AlbanAndrieu/ansible-cpp.git alban.andrieu.cpp
   - git clone https://github.com/AlbanAndrieu/ansible-xvbf alban.andrieu.xvbf
-
+  - git clone https://github.com/AlbanAndrieu/ansible-selenium alban.andrieu.selenium
   - git clone https://github.com/AlbanAndrieu/ansible-conky alban.andrieu.conky
   - git clone https://github.com/AlbanAndrieu/ansible-dropbox alban.andrieu.dropbox
   - git clone https://github.com/AlbanAndrieu/ansible-grive alban.andrieu.grive
