@@ -39,7 +39,7 @@ install:
   - git clone https://github.com/AlbanAndrieu/ansible-webmin alban.andrieu.webmin
   - git clone https://github.com/AlbanAndrieu/ansible-mon alban.andrieu.mon
   - git clone https://github.com/AlbanAndrieu/ansible-jmeter alban.andrieu.jmeter
-  - git clone https://github.com/AlbanAndrieu/ansible-jenkins-master jenkins-master
+  - git clone https://github.com/AlbanAndrieu/Stouts.jenkins.git jenkins-master
   - git clone https://github.com/AlbanAndrieu/ansible-jenkins-slave alban.andrieu.jenkins-slave
   - git clone https://github.com/AlbanAndrieu/ansible-sonar sonar
   - git clone https://github.com/AlbanAndrieu/ansible-sonatype_nexus.git nexus
