@@ -10,7 +10,7 @@ dependencies:
   #- { role: alban.andrieu.conky }
   #- { role: alban.andrieu.dropbox }
   - { role: alban.andrieu.grive }
-  - { role: alban.andrieu.synergy }
+  #- { role: alban.andrieu.synergy }
   - { role: alban.andrieu.shell }
   #- { role: alban.andrieu.cpp }
   #- { role: alban.andrieu.tomcat }
