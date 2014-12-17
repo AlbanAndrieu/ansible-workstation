@@ -8,7 +8,7 @@ dependencies:
   #- { role: alban.andrieu.hostname }  
   - { role: geerlingguy.firewall }
   #- { role: alban.andrieu.conky }
-  - { role: alban.andrieu.dropbox }
+  #- { role: alban.andrieu.dropbox }
   - { role: alban.andrieu.grive }
   - { role: alban.andrieu.synergy }
   - { role: alban.andrieu.shell }
