@@ -1,15 +1,24 @@
+{# Set up VirtualHosts - servername and documentroot are required. #}
+{% for vhost in apache_vhosts_jenkins %}
 <VirtualHost *:7072>
 
-        ServerName www.home.nabla.mobi
+        ServerName {{ vhost.servername }}
+      {% if vhost.serveradmin is defined %}
+        ServerAdmin {{ vhost.serveradmin }}
+      {% endif %}
+      {% if vhost.serveralias is defined %}
+        ServerAlias {{ vhost.serveralias }}
+      {% endif %}
 
-        ServerAdmin alban.andrieu@nabla.mobi
+        #<Directory />
+        #        Options FollowSymLinks
+        #        AllowOverride None
+        #</Directory>
 
-        <Directory />
-                Options FollowSymLinks
-                AllowOverride None
-        </Directory>
-        <Directory /var/www/jenkins>
-                Options Indexes FollowSymLinks MultiViews
+        DocumentRoot {{ vhost.documentroot }}
+
+        <Directory {{ vhost.documentroot }}>
+                Options +Indexes -FollowSymLinks -MultiViews
                 AllowOverride None
                 Order allow,deny
                 allow from all
@@ -23,13 +32,11 @@
         #       Allow from all
         #</Directory>
 
-        ErrorLog ${APACHE_LOG_DIR}/jenkins_error.log
-
         # Possible values include: debug, info, notice, warn, error, crit,
         # alert, emerg.
         LogLevel warn
-
-        CustomLog ${APACHE_LOG_DIR}/jenkins_access.log combined
+        ErrorLog {{ apache_log_path }}/jenkins_error.log
+        CustomLog {{ apache_log_path }}/jenkins_access.log combined
 
         #   SSL Engine Switch:
         #   Enable/Disable SSL for this virtual host.
@@ -130,7 +137,7 @@
         ##      SSLOptions +StdEnvVars
         ##</Directory>
 
-             #   SSL Protocol Adjustments:
+        #   SSL Protocol Adjustments:
         #   The safe and default but still SSL/TLS standard compliant shutdown
         #   approach is that mod_ssl sends the close notify alert but doesn't wait for
         #   the close notify alert from client. When you need a different shutdown
@@ -162,20 +169,19 @@
 
         ProxyPass /jenkins http://localhost:8380/jenkins
         ProxyPassReverse /jenkins http://localhost:8380/jenkins
-        
+
         #ProxyPassReverse  /jenkins  http://home.nabla.mobi:7072/jenkins
         ProxyRequests Off
         <Proxy http://localhost:8380/jenkins*>
                 Order allow,deny
                 Allow from all
         </Proxy>
-        ProxyPreserveHost On 
+        ProxyPreserveHost On
 
         # Use last flag because no more rewrite can be applied after proxy pass
         RewriteRule       ^/jenkins(.*)$  http://localhost:8380/jenkins$1 [P,L]
         ProxyPassReverse  /jenkins        http://localhost:8380/jenkins
 
-        DocumentRoot /var/www/jenkins
-
 </VirtualHost>
-   
+
+{% endfor %}

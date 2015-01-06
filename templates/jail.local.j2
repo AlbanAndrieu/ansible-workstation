@@ -1,0 +1,11 @@
+[apache-evasive]
+
+enabled  = true
+#port     = http,https
+filter   = apache-evasive
+action   = iptables-allports[name=apache-evasive]
+logpath  = /var/log/apache*/*/*error.log
+#bantime  = 3600
+bantime  = 604800  ; 1 week
+maxretry = 10
+

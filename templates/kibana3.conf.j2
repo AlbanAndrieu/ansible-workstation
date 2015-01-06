@@ -17,8 +17,8 @@
 {% endif %}
 
   LogLevel debug
-  ErrorLog /var/log/{{ apache_directory }}/kibana_error.log
-  CustomLog /var/log/{{ apache_directory }}/kibana_access.log combined
+  ErrorLog {{ apache_log_path }}/kibana_error.log
+  CustomLog {{ apache_log_path }}/kibana_access.log combined
 
   # Set global proxy timeouts
   <Proxy http://127.0.0.1:9200>

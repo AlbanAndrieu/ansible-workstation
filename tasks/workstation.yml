@@ -515,7 +515,7 @@
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: workstation | Add apache jenkins vhosts configuration.
   template:
     src: "jenkins.conf.j2"
@@ -527,14 +527,85 @@
 #  notify: restart apache
 #  when: apache_create_vhosts
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: workstation | Enable the jenkins site
   action: command a2ensite jenkins
   sudo: yes
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-    
+
+- name: workstation | Add apache nabla vhosts configuration.
+  template:
+    src: "nabla.conf.j2"
+    dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+#  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: workstation | Enable the nabla site
+  action: command a2ensite nabla
+  sudo: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+  
+- name: workstation | Install apache mod evasive for denied of service
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
+  tags: package
+  with_items:
+   - libapache2-mod-evasive
+     
+- name: workstation | Add apache mod evasive for denied of service configuration
+  template:
+    src: "evasive.conf.j2"
+    dest: "{{ apache_conf_path }}/conf.d/evasive.conf"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+#  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
+       
+- name: workstation | Install apache mod evasive for denied of service for fail2ban
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
+  tags: package
+  with_items:
+   - fail2ban
+          
+- name: workstation | Add apache mod evasive for denied of service configuration for fail2ban (1)
+  template:
+    src: "apache-evasive.conf.j2"
+    dest: "{{ fail2ban_conf_path }}/filter.d/apache-evasive.conf"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+#  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
+
+- name: workstation | Add apache mod evasive for denied of service configuration for fail2ban (2)
+  template:
+    src: "jail.local.j2"
+    dest: "{{ fail2ban_conf_path }}/jail.local"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+#  when: apache_create_vhosts
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
+
 - name: Check user
   user: name={{ variety_owner }} state=present
 
@@ -596,7 +667,7 @@
     state: latest
     update_cache: yes
     cache_valid_time: 600
-  sudo: yes    
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
   with_items:
     - python-dev
@@ -604,7 +675,7 @@
 
 - name: Install Ansible documentation generator prerequisite
   pip: name={{ item }}
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
   with_items:
     - paramiko
@@ -614,7 +685,7 @@
 
 - name: Install Ansible documentation generator
   pip: name=ansigenome
-  sudo: yes  
+  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
 
 #TODO
@@ -632,7 +703,7 @@
   with_items:
 #flake8 .
    - python-flake8
-   
+
 #- name: workstation | Check user
 #  user: name={{user}} state=present
 

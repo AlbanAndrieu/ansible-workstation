@@ -1,0 +1,15 @@
+# Fail2Ban filter for apache mod evasive
+#
+
+[INCLUDES]
+
+before = common.conf
+
+[Definition]
+
+#_daemon = apache2
+
+failregex = ^\[[^\]]*\]\s+\[error\]\s+\[client<HOST>\] client denied by server configuration:\s
+
+ignoreregex = 
+
