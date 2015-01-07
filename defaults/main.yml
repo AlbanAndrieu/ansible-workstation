@@ -6,9 +6,6 @@ apache_directory : "apache2"
 apache_conf_path: "/etc/{{ apache_directory }}"
 #apache_log_path: "/var/log/{{ apache_directory }}"
 apache_log_path: "${APACHE_LOG_DIR}"
-apache_dos_log_path: "/var/log/{{ apache_directory }}/dos"
-
-fail2ban_conf_path: "/etc/fail2ban"
 
 #user: 'albandri' #please override me
 user: "{{ lookup('env','USER') }}"
@@ -46,7 +43,6 @@ scons_enabled: yes
 python_enabled: yes
 ansigenome_enabled: yes
 apache_create_vhosts: yes
-apache_mod_evasive_enabled: yes
 
 apache_vhosts_kibana:
   # Additional properties: 'serveradmin, extra_parameters'.

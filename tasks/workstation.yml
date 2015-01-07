@@ -488,7 +488,6 @@
     mode: 0644
   sudo: yes
 #  notify: restart apache
-#  when: apache_create_vhosts
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the elasticsearch site
@@ -506,7 +505,6 @@
     mode: 0644
   sudo: yes
 #  notify: restart apache
-#  when: apache_create_vhosts
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the kibana site
@@ -525,7 +523,6 @@
     mode: 0644
   sudo: yes
 #  notify: restart apache
-#  when: apache_create_vhosts
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the jenkins site
@@ -544,7 +541,6 @@
     mode: 0644
   sudo: yes
 #  notify: restart apache
-#  when: apache_create_vhosts
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the nabla site
@@ -553,58 +549,6 @@
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
-- name: workstation | Install apache mod evasive for denied of service
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
-  tags: package
-  with_items:
-   - libapache2-mod-evasive
-     
-- name: workstation | Add apache mod evasive for denied of service configuration
-  template:
-    src: "evasive.conf.j2"
-    dest: "{{ apache_conf_path }}/conf.d/evasive.conf"
-    owner: root
-    group: root
-    mode: 0644
-  sudo: yes
-#  notify: restart apache
-#  when: apache_create_vhosts
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
-       
-- name: workstation | Install apache mod evasive for denied of service for fail2ban
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
-  tags: package
-  with_items:
-   - fail2ban
-          
-- name: workstation | Add apache mod evasive for denied of service configuration for fail2ban (1)
-  template:
-    src: "apache-evasive.conf.j2"
-    dest: "{{ fail2ban_conf_path }}/filter.d/apache-evasive.conf"
-    owner: root
-    group: root
-    mode: 0644
-  sudo: yes
-#  notify: restart apache
-#  when: apache_create_vhosts
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
-
-- name: workstation | Add apache mod evasive for denied of service configuration for fail2ban (2)
-  template:
-    src: "jail.local.j2"
-    dest: "{{ fail2ban_conf_path }}/jail.local"
-    owner: root
-    group: root
-    mode: 0644
-  sudo: yes
-#  notify: restart apache
-#  when: apache_create_vhosts
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_mod_evasive_enabled
 
 - name: Check user
   user: name={{ variety_owner }} state=present
