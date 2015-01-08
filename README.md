@@ -5,9 +5,7 @@
 Describe your role in a few paragraphs....
 
 
-### Role dependencies
 
-- `alban.andrieu.css`- `geerlingguy.kibana`- `nexus`- `alban.andrieu.dns`- `geerlingguy.repo-remi`- `alban.andrieu.mon`- `alban.andrieu.jenkins-slave`- `supervisor`- `alban.andrieu.conky`- `zabbix-agent`- `geerlingguy.logstash`- `java`- `geerlingguy.firewall`- `alban.andrieu.web`- `vagrant`- `geerlingguy.apache`- `geerlingguy.repo-epel`- `alban.andrieu.grive`- `geerlingguy.samba`- `alban.andrieu.shell`- `alban.andrieu.zap`- `alban.andrieu.eclipse`- `alban.andrieu.webmin`- `docker`- `alban.andrieu.synergy`- `jenkins-master`- `monit`- `alban.andrieu.jmeter`- `alban.andrieu.dropbox`- `sonar`- `security`- `alban.andrieu.common`
 
 ### Role variables
 
@@ -18,8 +16,10 @@ List of default variables available in the inventory:
     
     #TODO apache_directory : "httpd" #RedHat
     #TODO see apache role
-    apache_conf_path: "/etc/apache2"
     apache_directory : "apache2"
+    apache_conf_path: "/etc/{{ apache_directory }}"
+    #apache_log_path: "/var/log/{{ apache_directory }}"
+    apache_log_path: "${APACHE_LOG_DIR}"
     
     #user: 'albandri' #please override me
     user: "{{ lookup('env','USER') }}"
@@ -64,7 +64,13 @@ List of default variables available in the inventory:
       
     apache_vhosts_elasticsearch:
       # Additional properties: 'serveradmin, extra_parameters'.
-      - {servername: "localhost", documentroot: "/var/www/kibana3"}
+      - {servername: "localhost", documentroot: "/var/www/kibana3"}  
+    
+    apache_vhosts_jenkins:
+      - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"} 
+      
+    apache_vhosts_nabla:
+      - {servername: "www.home.nabla.mobi", serveralias: "*.home.nabla.mobi", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/nabla"}
 ```
 
 
