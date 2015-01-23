@@ -569,6 +569,27 @@
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
   
+- name: workstation | Enable the apache mod headers
+  action: command a2enmod headers
+  sudo: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts  
+  
+#Fix security issue :
+#X-Content-Type-Options: nosniff
+#WARNING this is a whole file overwrite
+- name: workstation | Add apache main configuration (ports.conf).
+  template:
+    src: "ports.conf.j2"
+    dest: "{{ apache_conf_path }}/ports.conf"
+    owner: root
+    group: root
+    mode: 0644
+  sudo: yes
+#  notify: restart apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+  
 - name: Check user
   user: name={{ variety_owner }} state=present
 
