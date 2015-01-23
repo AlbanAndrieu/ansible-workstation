@@ -1,0 +1,44 @@
+# If you just change the port or add more ports here, you will likely also
+# have to change the VirtualHost statement in
+# /etc/apache2/sites-enabled/000-default
+
+#NameVirtualHost 127.0.0.1:8080
+NameVirtualHost 7070
+
+#Gearman
+Listen 7071
+#Jenkins
+Listen 7072
+#Nabla
+Listen 7073
+#Visma
+Listen 7074
+#Sample
+Listen 7075
+#
+Listen 7076
+#Ansible WAS
+Listen 7077
+#Use below to allow everybody to access apache on port 8080
+#Listen 8080
+#Listen 127.0.0.1:7070
+Listen 7070
+
+<IfModule ssl_module>
+	Listen 443
+</IfModule>
+
+<IfModule mod_gnutls.c>
+	Listen 443
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header unset ETag
+    Header set X-Frame-Options: deny
+    Header set X-XSS-Protection: "1; mode=block"
+    Header set X-Content-Type-Options: nosniff
+    Header set X-WebKit-CSP: "default-src 'self'"
+    Header set X-Permitted-Cross-Domain-Policies: "master-only"
+</IfModule>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
