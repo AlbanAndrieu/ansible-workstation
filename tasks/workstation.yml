@@ -210,14 +210,26 @@
   command: chdir=/usr/bin npm config get prefix
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-  
+
 - name: grunt | Ensure the grunt npm dependencies are installed
-  npm: install -g grunt@{{ grunt_version }}
+  npm: >
+    name={{ item }}
+    state=present
+    global=yes
+    version={{ grunt_version }}
+  with_items:
+    - grunt
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt-cli npm dependencies are installed
-  npm: install -g grunt-cli@{{ grunt_cli_version }}
+  npm: >
+    name={{ item }}
+    state=present
+    global=yes
+    version={{ grunt_cli_version }}
+  with_items:
+    - grunt-cli
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
