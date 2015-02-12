@@ -210,14 +210,14 @@
   command: chdir=/usr/bin npm config get prefix
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
+  
 - name: grunt | Ensure the grunt npm dependencies are installed
-  command: chdir=/usr/bin npm install -g grunt@0.4.4
+  npm: install -g grunt@{{ grunt_version }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt-cli npm dependencies are installed
-  command: chdir=/usr/bin npm install -g grunt-cli@0.1.13
+  npm: install -g grunt-cli@{{ grunt_cli_version }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
@@ -225,7 +225,23 @@
 #  command: chdir=/usr/bin npm install -g bower@1.3.2
 #  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-#
+
+- name: bower | Ensure the bower npm dependencies are installed
+  npm: >
+    name={{ item }}
+    state=present
+    global=yes
+    version={{ bower_version }}
+  with_items:
+    - bower
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+    
+- name: bower | Clean cache
+  command: bower cache clean
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+
 #- name: protractor | Ensure the protractor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g protractor@0.20.1
 #  sudo: yes
@@ -310,6 +326,30 @@
 ##- name: workstation | Ensure the webdriverjs npm dependencies are installed
 ##  command: chdir=/usr/bin npm install -g webdriverjs
 ##  sudo: yes
+
+##
+ # Coffee script
+ #
+#description: Install "coffee-script" node.js package.
+#- npm: name=coffee-script path=/app/location
+#
+#description: Install "coffee-script" node.js package on version 1.6.1.
+#- npm: name=coffee-script version=1.6.1 path=/app/location
+#
+#description: Install "coffee-script" node.js package globally.
+#- npm: name=coffee-script global=yes
+#
+#description: Remove the globally package "coffee-script".
+#- npm: name=coffee-script global=yes state=absent
+#
+#description: Install packages based on package.json.
+#- npm: path=/app/location
+#
+#description: Update packages based on package.json to their latest version.
+#- npm: path=/app/location state=latest
+#
+#description: Install packages based on package.json using the npm installed with nvm v0.10.1.
+#- npm: path=/app/location executable=/opt/nvm/v0.10.1/bin/npm state=present
 
 - name: workstation | Mount | Disable mount points
   mount: >
