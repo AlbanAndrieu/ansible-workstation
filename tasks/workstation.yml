@@ -251,7 +251,6 @@
     
 - name: bower | Clean cache
   command: bower cache clean
-  sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 #- name: protractor | Ensure the protractor npm dependencies are installed
