@@ -9,12 +9,69 @@
   with_items:
    - apt-show-versions
    - vim
-   - geany
-   - gedit
-   - gedit-plugins
    - tree
 #midnight commander
 #   - mc
+
+#- name: workstation | Install editor geany tools
+#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+#  sudo: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+#  tags: geany
+#  with_items:
+#   - geany
+#   - geany-plugins
+##sudo apt-cache search geany
+
+- name: workstation | Install editor gedit tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+  with_items:
+#sudo apt-cache search geany
+   - gedit
+   - gedit-plugins
+   - gedit-gmate
+   - aspell-fr
+   - gconf-editor
+#gconf-editor
+   - dconf-tools
+#dconf-editor
+
+#TODO
+#https://codetree.com.au/projects/imitation/
+#cd /workspace
+#mkdir imitation-1.3
+#cd imitation-1.3
+#wget https://codetree.com.au/static/content/imitation/releases/imitation-1.3.tar.gz
+#tar -xvf imitation-1.3.tar.gz
+#cd imitation
+#sudo cp ../org.gnome.gedit.plugins.imitation.gschema.xml /usr/share/glib-2.0/schemas/
+#sudo glib-compile-schemas /usr/share/glib-2.0/schemas
+#cd ..
+#sudo cp -r imitation/ /usr/lib/gedit/plugins/
+#sudo cp imitation.plugin /usr/lib/gedit/plugins/
+
+- name: workstation | Install editor gedit-gmate tools PPA
+  apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+
+- name: workstation | Update the apt cache for the new repository
+  action: apt update-cache=yes
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+
+- name: workstation | Install editor gedit-gmate plugin
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+  with_items:
+   - gedit-gmate
 
 - name: workstation | Install utilities tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -248,7 +305,7 @@
     - bower
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-    
+
 - name: bower | Clean cache
   command: bower cache clean
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled and bower_clean_cache_enabled
@@ -544,10 +601,10 @@
 - name: workstation | Enable the elasticsearch site
   action: command a2ensite elasticsearch
   sudo: yes
-  ignore_errors: yes 
+  ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: workstation | Add apache kibana3 vhosts configuration.
   template:
     src: "apache-kibana3.conf.j2"
@@ -619,14 +676,14 @@
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: workstation | Enable the apache mod headers
   action: command a2enmod headers
   sudo: yes
   ignore_errors: yes
   tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts  
-  
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
 #Fix security issue :
 #X-Content-Type-Options: nosniff
 #WARNING this is a whole file overwrite
@@ -640,7 +697,7 @@
   sudo: yes
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: Check user
   user: name={{ variety_owner }} state=present
 
@@ -763,4 +820,3 @@
 - name: workstation | Force no login for user jenkins
   user: name=jenkins shell=/bin/bash state=present
   sudo: yes
-
