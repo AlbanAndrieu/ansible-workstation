@@ -70,7 +70,12 @@ List of default variables available in the inventory:
       - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"} 
       
     apache_vhosts_nabla:
-      - {servername: "www.home.nabla.mobi", serveralias: "*.home.nabla.mobi", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/nabla"}
+      - {servername: "www.home.nabla.mobi", serveralias: "*.home.nabla.mobi", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/nabla"} 
+      
+    bower_version: "1.3.12"
+    bower_clean_cache_enabled: no
+    grunt_version: "0.4.5"
+    grunt_cli_version: "0.1.13"
 ```
 
 
