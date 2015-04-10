@@ -152,6 +152,15 @@
   with_items:
    - scons
 
+- name: workstation | Install Java ant build tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
+  tags: package
+  with_items:
+   - ant
+   - ant-contrib
+
 - name: workstation | Install AWS tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
