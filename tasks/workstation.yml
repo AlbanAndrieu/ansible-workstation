@@ -208,9 +208,69 @@
     - finger
     - sysstat
     - net-tools # for netstat
-    - rusersd
+#    - rusersd
+    - rusers
 #    - rwho
 #    - rwhod
+
+- name: workstation | Install security basic tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - chkrootkit
+#sudo chkrootkit
+    - rkhunter
+#sudo rkhunter --check --rwo --pkgmgr dpkg
+#update your system
+#sudo rkhunter --propupd
+    - tiger
+
+#TODO
+#http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
+
+- name: workstation | Install antivirus tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - clamav
+    - clamav-daemon
+    - clamtk
+
+#sudo freshclam
+#clamscan -r --bell -i /
+#Schedule a scan tommorrow
+#at 3:30 tomorrow
+#clamscan -i / | mail alban.andrieu@free.fr
+#<CTRL-D>
+
+- name: workstation | Install network tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - gnome-nettool
+    - gnome-system-tools
+#TODO create a role
+#    - wireshark
+    - zenmap
+#TODO install fing
+#http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
+#sudo fing
+#TODO install angryip
+#http://angryip.org/about/
+
+#- name: workstation | Install utilities tools
+#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+#  sudo: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+#  tags: package
+#  with_items:
+#    - linux-disk-cleaner
 
 - name: workstation | Install performance tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
