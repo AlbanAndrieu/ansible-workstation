@@ -855,13 +855,6 @@
 #cd ~/env/ansible/roles
 #ansigenome scan
 
-- name: Install Ansible syntax check
-  pip: name={{ item }}
-  sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
-    - ansible-lint
-
 - name: workstation | Install python utilities tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
