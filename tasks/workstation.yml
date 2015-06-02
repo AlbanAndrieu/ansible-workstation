@@ -655,42 +655,6 @@
   with_items:
     - unity-lens-pidgin
 
-- name: workstation | Add apache elasticsearch vhosts configuration.
-  template:
-    src: "apache-elasticsearch.conf.j2"
-    dest: "{{ apache_conf_path }}/sites-available/elasticsearch.conf"
-    owner: root
-    group: root
-    mode: 0644
-  sudo: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the elasticsearch site
-  action: command a2ensite elasticsearch
-  sudo: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Add apache kibana3 vhosts configuration.
-  template:
-    src: "apache-kibana3.conf.j2"
-    dest: "{{ apache_conf_path }}/sites-available/kibana3.conf"
-    owner: root
-    group: root
-    mode: 0644
-  sudo: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the kibana site
-  action: command a2ensite kibana3
-  sudo: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
 - name: workstation | Add apache jenkins vhosts configuration.
   template:
     src: "apache-jenkins.conf.j2"
