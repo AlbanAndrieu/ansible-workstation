@@ -219,6 +219,8 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
+    - testdisk
+    - photorec
     - chkrootkit
 #sudo chkrootkit
     - rkhunter
@@ -377,6 +379,20 @@
 - name: bower | Clean cache
   command: bower cache clean
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled and bower_clean_cache_enabled
+
+- name: bower | Ensure the other npm dependencies are installed
+  npm: >
+    name={{ item }}
+    state=present
+    global=yes
+  with_items:
+    - phantomjs
+    - yslow
+    - psi
+    - webpagetest
+    - phantomas
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 #- name: protractor | Ensure the protractor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g protractor@0.20.1
