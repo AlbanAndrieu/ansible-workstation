@@ -220,7 +220,7 @@
   tags: package
   with_items:
     - testdisk
-    - photorec
+#    - photorec
     - chkrootkit
 #sudo chkrootkit
     - rkhunter
