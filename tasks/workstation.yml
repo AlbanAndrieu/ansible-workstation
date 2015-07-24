@@ -228,6 +228,14 @@
 #update your system
 #sudo rkhunter --propupd
     - tiger
+#TODO    - burp
+#TODO    - mig
+#See https://tools.pentestbox.com/ on windows
+#https://github.com/stasinopoulos/commix
+#see : https://blog.anantshri.info/ironwasp-on-linux/
+#wget https://blog.anantshri.info/content/uploads/2013/01/ironwasp_installer.sh.txt -O ~/ironwasp_installer.sh && sh ~/ironwasp_installer.sh
+#see https://github.com/0xsauby/yasuo
+#sudo gem install ruby-nmap net-http-persistent mechanize text-table
 
 #TODO
 #http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
