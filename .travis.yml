@@ -14,7 +14,7 @@ install:
   - sudo pip install ansible==$ANSIBLE_VERSION
 
   # Add ansible.cfg to pick up roles path.
-  #- "printf '[defaults]\nroles_path = ../' > ansible.cfg"
+  #- "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
 
   # Install dependencies.
   - git clone https://github.com/Stouts/Stouts.python.git python
