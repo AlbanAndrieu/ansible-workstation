@@ -86,6 +86,10 @@
    - manpages-fr-extra
 # man with color
    - most
+# Colorize log tools
+   - multitail
+   - grc
+   - ccze
 
 - name: workstation | Install desktop tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
