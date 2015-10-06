@@ -629,15 +629,15 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webapps_enabled
   tags: package
   with_items:
-    #- unity-webapps-preview
-    #- unity-webapps-common
+    - unity-webapps-preview
+    - unity-webapps-common
     - unity-chromium-extension
-    #- unity-webapps-googlecalendar
-    #- unity-webapps-gmail
-    #- unity-webapps-googledocs
-    #- unity-webapps-googleplus
-    #- unity-webapps-twitter
-    #- unity-webapps-facebookmessenger
+    - unity-webapps-googlecalendar
+    - unity-webapps-gmail
+    - unity-webapps-googledocs
+    - unity-webapps-googleplus
+    - unity-webapps-twitter
+    - unity-webapps-facebookmessenger
     - xul-ext-unity
 
 - name: dash | Add dash repo for unity-lens history packages
