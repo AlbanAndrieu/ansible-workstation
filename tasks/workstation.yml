@@ -1,6 +1,18 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
 
+- name: workstation | Make sure multiverse is enabled for tools
+  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  with_items: apt_multiverse_repositories
+
+- name: workstation | Make sure multiverse is enabled for tools
+  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present update_cache=yes
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  with_items: apt_multiverse_repositories
+
 - name: workstation | Install editor tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
