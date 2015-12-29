@@ -729,7 +729,7 @@
   tags: classicmenu_setup
 
 - name: dash | Install classicmenu-indicator pidgin packages
-  apt: classicmenu={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_enabled
   tags: classicmenu_setup
