@@ -33,6 +33,7 @@ workstation_repository_state: present
 stats_enabled: true # Turn it to false in order to be uninstall in security role
 scm_enabled: no
 dash_enabled: yes
+classicmenu_enabled: yes
 webapps_enabled: yes
 pidgin_enabled: yes
 nodejs_enabled: yes

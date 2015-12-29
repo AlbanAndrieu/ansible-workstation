@@ -6,6 +6,7 @@ env:
 cache: bundler
 #sudo: false
 sudo: required
+dist: trusty
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-apt python-pycurl
@@ -14,7 +15,7 @@ install:
   - sudo pip install ansible==$ANSIBLE_VERSION
 
   # Add ansible.cfg to pick up roles path.
-  #- "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
+  - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
 
   # Install dependencies.
   - git clone https://github.com/Stouts/Stouts.python.git python
@@ -77,7 +78,7 @@ install:
   - git clone https://github.com/geerlingguy/ansible-role-php.git geerlingguy.php
 
 script:
-  - ansible --version
+  - sudo ansible --version
   - export ANSIBLE_ROLES_PATH="../"
 #  - echo localhost > inventory
   - ansible-playbook -i hosts --syntax-check workstation.yml

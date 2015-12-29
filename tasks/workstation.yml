@@ -174,7 +174,7 @@
    - ec2-api-tools
    - s3cmd
 
-- name: workstation | Install messaging
+- name: workstation | Install messaging communication
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
@@ -184,6 +184,8 @@
    - pidgin-sipe
    - pidgin-skype
 #   - teamviewer
+   - recordmydesktop
+   - gtk-recordmydesktop
 
 - name: workstation | Install VNC
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -585,7 +587,7 @@
     force=yes
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-  tags: package
+  tags: dash_setup
   with_items:
     - unity-scope-video-remote
     - unity-scope-musicstores
@@ -602,7 +604,7 @@
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-  tags: package
+  tags: dash_setup
   with_items:
     - unity-lens-applications
     - unity-lens-files
@@ -627,7 +629,7 @@
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webapps_enabled
-  tags: package
+  tags: webapps_setup
   with_items:
     - unity-webapps-preview
     - unity-webapps-common
@@ -650,7 +652,7 @@
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: package
+  tags: dash_setup
   with_items:
     - unity-web-history-lens
     - zeitgeist-datasource-firefox
@@ -665,7 +667,7 @@
 #  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
 #  sudo: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-#  tags: package
+#  tags: dash_setup
 #  with_items:
 #   - unity-scope-grooveshark
 
@@ -679,7 +681,7 @@
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: package
+  tags: dash_setup
   with_items:
     - unity-lens-gdocs
 
@@ -703,9 +705,24 @@
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: package
+  tags: dash_setup
   with_items:
     - unity-lens-pidgin
+
+#http://www.florian-diesch.de/software/classicmenu-indicator/
+- name: classicmenu | Add dash repo for classicmenu-indicator packages
+  apt_repository: repo="ppa:diesch/testing" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_enabled
+  tags: classicmenu_setup
+
+- name: dash | Install classicmenu-indicator pidgin packages
+  apt: classicmenu={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_enabled
+  tags: classicmenu_setup
+  with_items:
+    - classicmenu-indicator
 
 - name: workstation | Add apache jenkins vhosts configuration.
   template:
