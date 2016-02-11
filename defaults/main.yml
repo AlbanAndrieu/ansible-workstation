@@ -36,7 +36,13 @@ apt_multiverse_repositories: ["http://us.archive.ubuntu.com/ubuntu/"]          #
 stats_enabled: true # Turn it to false in order to be uninstall in security role
 scm_enabled: no
 dash_enabled: yes
-classicmenu_enabled: yes
+classicmenu_indicator_enabled: yes
+calendar_indicator_enabled: yes
+pidgin_indicator_enabled: yes
+weather_indicator_enabled: yes
+cpufreq_indicator_enabled: yes
+tweak_enabled: yes
+compizconfig_enabled: yes
 webapps_enabled: yes
 pidgin_enabled: yes
 nodejs_enabled: yes

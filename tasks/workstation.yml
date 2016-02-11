@@ -102,6 +102,27 @@
    - multitail
    - grc
    - ccze
+   - imagemagick
+#https://help.ubuntu.com/community/OCR
+   - gocr
+   - tesseract-ocr
+   - tesseract-ocr-fra
+   - tesseract-ocr-nor
+#   - gscan2pdf
+   - ocrfeeder
+   - aspell-fr
+   - aspell-en
+   - aspell-no
+   - hunspell
+   - hunspell-fr
+#http://sourceforge.net/projects/lios/files/latest/download
+#lios
+
+#http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
+#convert -monochrome politet-17-01-2016.pdf page.tif
+#convert -monochrome -density 600 politet-17-01-2016-cleaned.pdf\[1\] page.tif
+#tesseract page.tif output -l nor
+#ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
 
 - name: workstation | Install desktop tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -587,6 +608,19 @@
   with_items:
     - whoopsie
 
+- name: workstation | Uninstall unused applications
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - modemmanager
+    - thunderbird
+
 ##
  # Dash unity lens installation
  # http://doc.ubuntu-fr.org/unity-lens
@@ -722,19 +756,152 @@
     - unity-lens-pidgin
 
 #http://www.florian-diesch.de/software/classicmenu-indicator/
-- name: classicmenu | Add dash repo for classicmenu-indicator packages
+- name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
   apt_repository: repo="ppa:diesch/testing" update_cache=yes state={{ workstation_repository_state }}
   sudo: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_enabled
-  tags: classicmenu_setup
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
+  tags: classicmenu_indicator_setup
 
-- name: dash | Install classicmenu-indicator pidgin packages
+- name: indicator classicmenu | Install classicmenu-indicator pidgin packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_enabled
-  tags: classicmenu_setup
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_indicator_enabled
+  tags: classicmenu_indicator_setup
   with_items:
     - classicmenu-indicator
+
+#########################
+#TODO
+#Ubuntu 14.04
+#sudo add-apt-repository ppa:atareao/atareao
+#sudo apt-get update
+#sudo apt-get install calendar-indicator
+
+- name: indicator calendar | Add repo for calendar-indicator packages
+  apt_repository: repo="ppa:diesch/testing" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
+  tags: calendar_indicator_setup
+
+- name: indicator calendar | Install calendar-indicator packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
+  tags: calendar_indicator_setup
+  with_items:
+    - calendar-indicator
+
+#
+#sudo add-apt-repository ppa:nilarimogard/webupd8
+#sudo apt-get update
+#sudo apt-get install pidgin-indicator
+#
+
+- name: indicator pidgin | Add repo for pidgin-indicator packages
+  apt_repository: repo="ppa:nilarimogard/webupd8" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and pidgin_indicator_enabled
+  tags: pidgin_indicator_setup
+
+- name: indicator pidgin | Install pidgin-indicator packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_indicator_enabled
+  tags: pidgin_indicator_setup
+  with_items:
+    - pidgin-indicator
+
+#sudo add-apt-repository ppa:atareao/atareao
+#sudo apt-get update
+#sudo apt-get install my-weather-indicator
+#
+- name: indicator weather | Add repo for my-weather-indicator packages
+  apt_repository: repo="ppa:atareao/atareao" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
+  tags: weather_indicator_setup
+
+- name: indicator weather | Install my-weather-indicator packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
+  tags: weather_indicator_setup
+  with_items:
+    - my-weather-indicator
+
+#sudo apt-get install indicator-cpufreq
+#
+- name: indicator cpufreq | Install cpufreq-indicator packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
+  tags: cpufreq_indicator_setup
+  with_items:
+    - cpufreq-indicator
+
+#sudo apt-get install unity-tweak-tool
+
+- name: unity-tweak-tool | Install unity-tweak-tool packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tweak_enabled
+  tags: tweak_setup
+  with_items:
+    - unity-tweak-tool
+
+##http://digital-era.net/10-things-to-do-after-installing-ubuntu-14-04-trusty-tahr-to-get-a-near-perfect-desktop/
+#gsettings set com.canonical.Unity.Lenses disabled-scopes "['more_suggestions-amazon.scope', 'more_suggestions-u1ms.scope', 'more_suggestions-populartracks.scope', 'music-musicstore.scope', 'more_suggestions-ebay.scope', 'more_suggestions-ubuntushop.scope', 'more_suggestions-skimlinks.scope']"
+#
+#sudo apt-get install compizconfig-settings-manager
+#
+- name: compizconfig-settings-manager | Install compizconfig-settings-manager packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and compizconfig_enabled
+  tags: compizconfig_setup
+  with_items:
+    - compizconfig-settings-manager
+
+#sudo add-apt-repository ppa:mc3man/trusty-media
+#sudo apt-get update
+#sudo apt-get install gstreamer0.10-ffmpeg
+#
+#sudo apt-get install gtk2-engines-murrine:i386
+#sudo apt-get install gtk2-engines-pixbuf:i386
+#
+##sudo apt-add-repository ppa:pipelight/stable
+##sudo apt-get update
+##sudo apt-get install pipelight-multi
+##sudo pipelight-plugin --enable silverlight
+##sudo pipelight-plugin --enable widevine
+#
+#sudo apt-get install pepperflashplugin-nonfree
+#sudo update-pepperflashplugin-nonfree --install
+#
+##gsettings set org.gnome.nautilus.preferences enable-interactive-search false
+##gsettings set org.gnome.nautilus.preferences enable-interactive-search true
+#
+#sudo add-apt-repository ppa:linrunner/tlp
+#sudo apt-get update
+#sudo apt-get remove laptop-mode-tools
+#sudo apt-get install tlp tlp-rdwsudo tlp start
+#
+#sudo apt-get install ubuntu-restricted-extras
+#sudo apt-get install libavcodec-extra
+#sudo apt-get install libdvdread4sudo /usr/share/doc/libdvdread4/install-css.sh
+#
+#sudo add-apt-repository ppa:alessandro-strada/ppa
+#sudo apt-get update
+#sudo apt-get install google-drive-ocamlfuse
+#google-drive-ocamlfuse
+#mkdir ~/gdrive
+#google-drive-ocamlfuse ~/gdrive
+#
+#sudo add-apt-repository ppa:danjaredg/jayatana
+#sudo apt-get update
+#sudo apt-get install jayatana
+
+#########################
 
 - name: workstation | Add apache jenkins vhosts configuration.
   template:
