@@ -668,13 +668,13 @@
 - name: webapps | Add webapps repo for unity-webapps-preview packages
   apt_repository: repo="ppa:webapps/preview" update_cache=yes state={{ workstation_repository_state }}
   sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and webapps_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
 
 - name: webapps | Install unity-webapps-preview packages
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
   sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webapps_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
   with_items:
     - unity-webapps-preview
