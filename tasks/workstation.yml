@@ -837,7 +837,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
   tags: cpufreq_indicator_setup
   with_items:
-    - cpufreq-indicator
+    - indicator-cpufreq
 
 #sudo apt-get install unity-tweak-tool
 
