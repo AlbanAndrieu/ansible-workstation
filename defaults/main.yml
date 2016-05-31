@@ -41,6 +41,7 @@ calendar_indicator_enabled: yes
 pidgin_indicator_enabled: yes
 weather_indicator_enabled: yes
 cpufreq_indicator_enabled: yes
+tlp_enabled: yes
 tweak_enabled: yes
 compizconfig_enabled: yes
 webapps_enabled: yes
@@ -54,6 +55,8 @@ scons_enabled: yes
 python_enabled: yes
 ansigenome_enabled: yes
 apache_create_vhosts: yes
+webcam_enabled: yes
+keepass2_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}

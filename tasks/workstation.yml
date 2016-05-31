@@ -90,10 +90,12 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
+   - gnome-terminal
    - meld
    - dos2unix
 # xclip -selection clipboard < ~/.ssh/id_rsa.pub
    - xclip
+   - rar
    - manpages-fr
    - manpages-fr-extra
 # man with color
@@ -103,6 +105,13 @@
    - grc
    - ccze
    - imagemagick
+
+- name: workstation | Install OCR utilities tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
 #https://help.ubuntu.com/community/OCR
    - gocr
    - tesseract-ocr
@@ -115,8 +124,22 @@
    - aspell-no
    - hunspell
    - hunspell-fr
+#get cpu info
+   - clinfo
 #http://sourceforge.net/projects/lios/files/latest/download
 #lios
+
+- name: workstation | Install CPU utilities tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - ocl-icd-libopencl1
+   - ocl-icd-opencl-dev
+   - libnuma-dev
+#get cpu info
+   - clinfo
 
 #http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
 #convert -monochrome politet-17-01-2016.pdf page.tif
@@ -216,6 +239,8 @@
    - pidgin
    - pidgin-sipe
    - pidgin-skype
+   - pidgin-otr
+   - irssi-plugin-otr
 #   - teamviewer
    - recordmydesktop
    - gtk-recordmydesktop
@@ -251,6 +276,36 @@
     - rusers
 #    - rwho
 #    - rwhod
+#check ssl
+#sslscan --no-failed --ssl3 localhost:443
+#    - sslscan
+    - curl
+    - unar
+#https://doc.ubuntu-fr.org/httrack
+#    - httrack
+#    - httraqt
+#    - webhttrack
+
+#https://doc.ubuntu-fr.org/webcam
+#lsusb | grep -i logitech
+- name: workstation | Install webcam tools
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
+  tags: package
+  with_items:
+#    - libv4l-0
+#    - libv4l-dev
+#http://blog.nicolargo.com/2013/05/streaming-depuis-la-raspberry-camera.html
+    - gstreamer-properties
+    - gstreamer-tools
+    - gstreamer0.10-plugins-base
+    - gstreamer0.10-plugins-good
+    - gstreamer0.10-plugins-bad
+    - gstreamer0.10-plugins-ugly
+    - guvcview
+    - cheese
+    - camorama
 
 - name: workstation | Install security basic tools
   apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
@@ -621,6 +676,20 @@
     - modemmanager
     - thunderbird
 
+- name: keepass2 | Add keepass2 repo
+  apt_repository: repo="ppa:jtaylor/keepass" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and keepass2_enabled
+  tags: keepass2_setup
+
+- name: keepass2 | Install keepass2 packages
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and keepass2_enabled
+  tags: keepass2_setup
+  with_items:
+    - keepass2
+
 ##
  # Dash unity lens installation
  # http://doc.ubuntu-fr.org/unity-lens
@@ -901,7 +970,43 @@
 #sudo apt-get update
 #sudo apt-get install jayatana
 
+- name: batteries | Add repo for tlp packages (Improve battery life and reduce overheating)
+  apt_repository: repo="ppa:linrunner/tlp" update_cache=yes state={{ workstation_repository_state }}
+  sudo: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and tlp_enabled
+  tags: weather_indicator_setup
+
+- name: batteries | Install tlp packages (Improve battery life and reduce overheating)
+  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
+  sudo: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tlp_enabled
+  tags: weather_indicator_setup
+  with_items:
+    - tlp
+    - tlp-rdw
+
+#TODO sudo tlp start
+
 #########################
+
+#TODO for tomcat7 to work on eclipse
+##cd ~/workspace/.metadata/.plugins/org.eclipse.core.runtime/.settings/
+##rm org.eclipse.jst.server.tomcat.core.prefs
+##rm org.eclipse.wst.server.core.prefs
+
+#cd /usr/share/tomcat7
+#sudo service tomcat7 stop
+#sudo update-rc.d tomcat7 disable
+#sudo ln -s /var/lib/tomcat7/conf conf
+#sudo ln -s /etc/tomcat7/policy.d/03catalina.policy conf/catalina.policy
+#sudo ln -s /var/log/tomcat7 log
+#sudo chmod -R 777 /usr/share/tomcat7/conf
+#sudo ln -s /var/lib/tomcat7/common common
+#sudo ln -s /var/lib/tomcat7/server server
+#sudo ln -s /var/lib/tomcat7/shared shared
+
+#TODO
+#sudo apt-get install apache2
 
 - name: workstation | Add apache jenkins vhosts configuration.
   template:
