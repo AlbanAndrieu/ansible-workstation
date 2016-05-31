@@ -297,7 +297,7 @@
 #    - libv4l-0
 #    - libv4l-dev
 #http://blog.nicolargo.com/2013/05/streaming-depuis-la-raspberry-camera.html
-    - gstreamer-properties
+#    - gstreamer-properties
     - gstreamer-tools
     - gstreamer0.10-plugins-base
     - gstreamer0.10-plugins-good
