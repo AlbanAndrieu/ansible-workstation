@@ -1180,6 +1180,7 @@
   with_items:
 #flake8 .
    - python-flake8
+   - python-netaddr
 
 #- name: workstation | Check user
 #  user: name={{user}} state=present
