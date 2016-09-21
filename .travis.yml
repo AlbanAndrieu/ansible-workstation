@@ -2,8 +2,12 @@
 language: python
 python: "2.7"
 env:
-  - ANSIBLE_VERSION=1.9.2
+  - ANSIBLE_VERSION=2.1.1
 cache: bundler
+cache: pip
+cache:
+  directories:
+  - $HOME/.m2
 #sudo: false
 sudo: required
 dist: trusty
@@ -18,9 +22,8 @@ install:
   - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
 
   # Install dependencies.
-  - git clone https://github.com/Stouts/Stouts.python.git python
-  - git clone https://github.com/debops/ansible-role-ansible.git ansible
-  - git clone https://github.com/geerlingguy/ansible-role-ntp.git geerlingguy.ntp
+  - git clone https://github.com/AlbanAndrieu/Stouts.python.git python
+  - git clone https://github.com/AlbanAndrieu/ansible-role-ntp.git geerlingguy.ntp
   - git clone https://github.com/AlbanAndrieu/ansible-locale.git locale
   - git clone https://github.com/AlbanAndrieu/ansible-hostname.git alban.andrieu.hostname
   - git clone https://github.com/AlbanAndrieu/ansible-util.git silpion.util
@@ -59,7 +62,7 @@ install:
   - git clone https://github.com/AlbanAndrieu/ansible-maven.git maven
   - git clone https://github.com/AlbanAndrieu/devbox.chrome.git chrome
   - git clone https://github.com/AlbanAndrieu/ansible-nodejs.git nodejs
-  - git clone https://github.com/ANXS/monit monit
+#  - git clone https://github.com/ANXS/monit monit
   - git clone https://github.com/AlbanAndrieu/ansible-supervisor_task.git supervisor
   - git clone https://github.com/geerlingguy/ansible-role-repo-epel.git geerlingguy.repo-epel
   - git clone https://github.com/geerlingguy/ansible-role-repo-remi.git geerlingguy.repo-remi
@@ -81,5 +84,5 @@ script:
   - sudo ansible --version
   - export ANSIBLE_ROLES_PATH="../"
 #  - echo localhost > inventory
-  - ansible-playbook -i hosts --syntax-check workstation.yml
-  - ansible-playbook -i hosts --connection=local --sudo -vvvv workstation.yml
+  - sudo ansible-playbook -i hosts --syntax-check workstation.yml
+  - sudo ansible-playbook -i hosts --connection=local --sudo -vvvv workstation.yml

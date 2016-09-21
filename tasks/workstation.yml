@@ -1,21 +1,27 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
 
+- name: workstation | Update the apt cache (in case of issue)
+  action: apt update-cache=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present update_cache=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Install editor tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item } state={{ workstation_pkg_state|default('present') }}} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -26,8 +32,8 @@
 #   - mc
 
 #- name: workstation | Install editor geany tools
-#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  tags: geany
 #  with_items:
@@ -36,8 +42,8 @@
 ##sudo apt-cache search geany
 
 - name: workstation | Install editor gedit tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: gedit
   with_items:
@@ -66,27 +72,21 @@
 
 - name: workstation | Install editor gedit-gmate tools PPA
   apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
-  sudo: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: gedit
-
-- name: workstation | Update the apt cache for the new repository
-  action: apt update-cache=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: gedit
 
 - name: workstation | Install editor gedit-gmate plugin
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: gedit
   with_items:
    - gedit-gmate
 
 - name: workstation | Install utilities tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -106,9 +106,64 @@
    - ccze
    - imagemagick
 
+- name: workstation | Install eyes tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - redshift
+   - redshift-gtk
+   - plasma-applet-redshift-control
+
+#info redshift
+
+#- name: workstation | Make sure universe is enabled for eyes applet
+#  apt_repository: repo="deb http://cz.archive.ubuntu.com/ubuntu {{ansible_lsb.codename}} main universe" state=present update_cache=yes
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+
+- name: workstation | Install eyes applet tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - plasma-applet-redshift-control
+
+#lightdm crash
+#- name: synergy | Autostart redshift before logging in (LightDM) | Update client
+#  lineinfile:
+#    dest=/etc/lightdm/lightdm.conf
+#    line="greeter-setup-script=/usr/bin/redshift {{ redshift_options }}"
+#    regexp="^greeter-setup-script"
+#    state=present
+#    insertafter=EOF
+#  become: yes
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+
+#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
+- name: redshift | Configure startup launcher from command line
+  template: src=redshift.desktop.j2 dest={{ home }}/.config/autostart/redshift.desktop mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+
+- name: synergy | Configure startup launcher from command line
+  template: src=synergyc.desktop.j2 dest={{ home }}/.config/autostart/synergyc.desktop mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+
+- name: lightdm | Configure lightdm
+  template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+
 - name: workstation | Install OCR utilities tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -129,9 +184,17 @@
 #http://sourceforge.net/projects/lios/files/latest/download
 #lios
 
+- name: workstation | Install PDF utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - pdfeditor
+
 - name: workstation | Install CPU utilities tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -147,17 +210,72 @@
 #tesseract page.tif output -l nor
 #ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
 
-- name: workstation | Install desktop tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+#Uninstall nautilus file manager
+- name: workstation | Uninstall nautilus file manager
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
+#Check for the best file manager at
+#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+#Remove default nautilus file manager
+   - nautilus
+   - nautilus-sendto
    - nautilus-open-terminal
 
+- name: workstation | Install desktop tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - software-center
+#Check for the best file manager at
+#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+#Install nemo
+#http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
+#TODO
+#sudo add-apt-repository ppa:webupd8team/nemo
+#sudo apt-get update
+#sudo apt-get install nemo nemo-fileroller
+#sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
+   - nemo
+   - nemo-fileroller
+   - nemo-compare
+   - nemo-dropbox
+   - nemo-media-columns
+   - nemo-pastebin
+   - nemo-seahorse
+   - nemo-share
+   - nemo-emblems
+   - nemo-image-converter
+   - nemo-audio-tab
+# rabbitvcs is using too much resources
+#   - nemo-rabbitvcs
+   - nemo-terminal
+
+#Fix issues with python-nemo
+#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
+#sudo ln -s /usr/lib/libpython2.7.so.1 /usr/lib/libpython2.7.so.1.0
+#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
+#sudo ln -s /usr/lib/libpython2.7.so.1.0 /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0
+
+#Set Nemo as the default file manager
+#gsettings set org.gnome.desktop.background show-desktop-icons false
+#xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
+
+#restart nemo
+#killall nemo
+#nemo
+
 - name: workstation | Install disk/recovery tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -167,8 +285,8 @@
    - usbmount
 
 - name: workstation | Install extra
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -177,10 +295,34 @@
 #lsb_release -a
    - lsb-core
 
+#http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
+#Uninstall default black screensaver
+- name: workstation | Uninstall default black screensaver
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  tags: package
+  with_items:
+   - gnome-screensaver
+
+- name: workstation | Install screensaver
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  tags: package
+  with_items:
+   - xscreensaver
+   - xscreensaver-data-extra
+   - xscreensaver-gl-extra
+
 #TODO move git to a role
 - name: workstation | Install SCM
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
@@ -190,31 +332,27 @@
 #   - gitk
 #   - mercurial
 
-#TODO move git to a role
-- name: workstation | Install SCM
-  action: yum name={{ item }} state=installed
-  sudo: yes
-  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and scm_enabled
+- name: workstation | Install gnuplot tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
-   - cvs
-   - git
-#   - gitg
-#   - gitk
-#   - mercurial
+   - gnuplot
+   - python-gnuplot
 
 #TODO create a role for scons
 - name: workstation | Install CPP scons build tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
   tags: package
   with_items:
    - scons
 
 - name: workstation | Install Java ant build tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
   tags: package
   with_items:
@@ -222,8 +360,8 @@
    - ant-contrib
 
 - name: workstation | Install AWS tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and aws_enabled
   tags: package
   with_items:
@@ -231,8 +369,8 @@
    - s3cmd
 
 - name: workstation | Install messaging communication
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
@@ -244,31 +382,28 @@
 #   - teamviewer
    - recordmydesktop
    - gtk-recordmydesktop
+   - apt-transport-https
+   - ca-certificates
+
+#TODO install sky
+#https://www.tel.red/repos.htm
 
 - name: workstation | Install VNC
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
   with_items:
    - vnc4server
 
-#has been moved to his own role
-#- name: workstation | Install Synergy
-#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and synergy_enabled
-#  tags: package
-#  with_items:
-#   - synergy
-
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
+    - htop
     - finger
     - sysstat
     - net-tools # for netstat
@@ -280,17 +415,34 @@
 #sslscan --no-failed --ssl3 localhost:443
 #    - sslscan
     - curl
+    - wget
+    - rsync
     - unar
 #https://doc.ubuntu-fr.org/httrack
 #    - httrack
 #    - httraqt
 #    - webhttrack
+#Spoofing ARP
+    - dsniff
+    - arpalert
+#Pyhton proxy
+    - mitmproxy
+#WEP WPA cracker
+    - aircrack-ng
+
+- name: workstation | Install debug basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - strace
 
 #https://doc.ubuntu-fr.org/webcam
 #lsusb | grep -i logitech
 - name: workstation | Install webcam tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
   tags: package
   with_items:
@@ -306,13 +458,15 @@
     - guvcview
     - cheese
     - camorama
+#    - gphoto2
 
 - name: workstation | Install security basic tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
+    - tcpdump
     - testdisk
 #    - photorec
     - chkrootkit
@@ -335,8 +489,8 @@
 #http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
 
 - name: workstation | Install antivirus tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -351,9 +505,11 @@
 #clamscan -i / | mail alban.andrieu@free.fr
 #<CTRL-D>
 
+#https://askubuntu.com/questions/645097/installing-sophos-anti-virus
+
 - name: workstation | Install network tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -361,24 +517,27 @@
     - gnome-system-tools
 #TODO create a role
 #    - wireshark
+    - nmap
     - zenmap
 #TODO install fing
 #http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
 #sudo fing
 #TODO install angryip
 #http://angryip.org/about/
+#http://quehow.com/how-to-monitor-your-network-traffic-in-ubuntu-14-04/6904.html
+#sudo apt-get install knemo
 
 #- name: workstation | Install utilities tools
-#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
 #  tags: package
 #  with_items:
 #    - linux-disk-cleaner
 
 - name: workstation | Install performance tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -394,7 +553,7 @@
  #
 - name: nodejs | Package prerequisites for node.js
   action: apt pkg=python-software-properties state=installed
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
@@ -402,19 +561,19 @@
 - name: nodejs | Add the node.js PPA
 #  action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/custom-node_js-{{ ansible_lsb.codename }}.list
   apt_repository: repo='ppa:chris-lea/node.js' update_cache=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
 - name: nodejs | Update the apt cache for the new repository
   action: apt update-cache=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
 - name: nodejs | Install nodejs and npm
   action: apt pkg={{ item }} state=installed
-  sudo: yes
+  become: yes
   tags: nodejs
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   with_items:
@@ -422,8 +581,8 @@
 #WARNING DO NOT INSTALL    - node
 
 - name: karma | Install karma tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   with_items:
    - karma-tools
@@ -432,12 +591,12 @@
 
 - name: npm | Ensure npm settings
   command: chdir=/usr/bin npm config set prefix /usr/local
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: npm | Ensure npm is properly installed
   command: chdir=/usr/bin npm config get prefix
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt npm dependencies are installed
@@ -448,7 +607,7 @@
     version={{ grunt_version }}
   with_items:
     - grunt
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: grunt | Ensure the grunt-cli npm dependencies are installed
@@ -459,12 +618,12 @@
     version={{ grunt_cli_version }}
   with_items:
     - grunt-cli
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 #- name: bower | Ensure the bower npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g bower@1.3.2
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: bower | Ensure the bower npm dependencies are installed
@@ -475,7 +634,7 @@
     version={{ bower_version }}
   with_items:
     - bower
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 - name: bower | Clean cache
@@ -493,12 +652,12 @@
 #    - psi
 #    - webpagetest
 #    - phantomas
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 
 #- name: protractor | Ensure the protractor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g protractor@0.20.1
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
 #
 #- debug: msg="ansible_distribution_version value is {{ ansible_distribution_version }} "
@@ -506,20 +665,20 @@
 #
 #- name: workstation | Ensure the karma npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma@0.12.9
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 ##  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )  and ( ansible_distribution_release != 'precise' )
 
 #Ubuntu 12 ln -s /usr/local/lib/node_modules/karma/bin/karma /usr/local/bin/karma
 #- name: workstation | Create karma binaries link (legacy required)
 #  file: path=/usr/local/bin/karma src=/usr/local/lib/node_modules/karma/bin/karma state=link
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 #TODO below does not works
 #- name: workstation | Update karma rights
 #  file: path=/usr/local/lib/node_modules mode=0777 owner=root group=root state=directory recurse=yes
-#  sudo: yes
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 #TODO WORKAROUND by hand
@@ -531,55 +690,55 @@
 
 #- name: workstation | Ensure the karma-junit-reporter npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-junit-reporter@0.2.2
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-ng-scenario npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ng-scenario@0.1.0
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-ng-html2js-preprocessor npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ng-html2js-preprocessor@0.1.0
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-coverage npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-coverage@0.2.1
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-jasmine npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-jasmine@0.1.5
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the jasmine-reporters npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g jasmine-reporters@0.4.1
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the phantomjs npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g phantomjs@1.9.2-4
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-requirejs npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-requirejs@0.2.1
-#  sudo: yes
+#  become: yes
 #
 ##- name: workstation | Ensure the karma-phantomjs-launcher npm dependencies are installed
 ##  command: chdir=/usr/bin npm install -g karma-phantomjs-launcher@0.1.4
-##  sudo: yes
+##  become: yes
 #
 #- name: workstation | Ensure the karma-chrome-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-chrome-launcher@0.1.3
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-firefox-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-firefox-launcher@0.1.3
-#  sudo: yes
+#  become: yes
 #
 #- name: workstation | Ensure the karma-ie-launcher npm dependencies are installed
 #  command: chdir=/usr/bin npm install -g karma-ie-launcher
-#  sudo: yes
+#  become: yes
 #
 ##- name: workstation | Ensure the webdriverjs npm dependencies are installed
 ##  command: chdir=/usr/bin npm install -g webdriverjs
-##  sudo: yes
+##  become: yes
 
 ##
  # Coffee script
@@ -611,7 +770,7 @@
     src='/mnt/dpool{{ item }}'
     fstype=nfs
     state=unmounted
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
   tags: mount
   with_items:
@@ -625,7 +784,7 @@
     src='/mnt/dpool{{ item }}'
     fstype=nfs
     state=mounted
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
   tags: mount
   with_items:
@@ -644,7 +803,7 @@
 #    fstype:xfs
 #    opts:noatime
 #    state:present
-#  sudo: yes
+#  become: yes
 #  tags: mount
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
 
@@ -657,7 +816,7 @@
     state=absent
     purge=yes
     force=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -669,7 +828,7 @@
     state=absent
     purge=yes
     force=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -678,13 +837,13 @@
 
 - name: keepass2 | Add keepass2 repo
   apt_repository: repo="ppa:jtaylor/keepass" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and keepass2_enabled
   tags: keepass2_setup
 
 - name: keepass2 | Install keepass2 packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and keepass2_enabled
   tags: keepass2_setup
   with_items:
@@ -700,7 +859,7 @@
     state=absent
     purge=yes
     force=yes
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: dash_setup
   with_items:
@@ -716,8 +875,8 @@
     - unity-lens-photos
 
 - name: dash | Install unity-lens and unity-scope packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: dash_setup
   with_items:
@@ -735,14 +894,14 @@
 
 #http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
 - name: webapps | Add webapps repo for unity-webapps-preview packages
-  apt_repository: repo="ppa:webapps/preview" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:webapps/preview" state={{ workstation_repository_state }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
 
 - name: webapps | Install unity-webapps-preview packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
   with_items:
@@ -758,14 +917,14 @@
     - xul-ext-unity
 
 - name: dash | Add dash repo for unity-lens history packages
-  apt_repository: repo="ppa:markjtully/ppa" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:markjtully/ppa" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens history packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -773,28 +932,28 @@
     - zeitgeist-datasource-firefox
 
 #- name: dash | Add dash repo for unity-lens grooveshark packages
-#  apt_repository: repo="ppa:scopes-packagers/ppa" update_cache=yes state={{ workstation_repository_state }}
-#  sudo: yes
+#  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ workstation_repository_state }} update_cache=yes
+#  become: yes
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
 #  tags: dash_setup
 #
 #- name: dash | Install unity-lens grooveshark packages
-#  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-#  sudo: yes
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
 #  tags: dash_setup
 #  with_items:
 #   - unity-scope-grooveshark
 
 - name: dash | Add dash repo for unity-lens google docs packages
-  apt_repository: repo="ppa:nilarimogard/webupd8" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens google docs packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -811,14 +970,14 @@
 #sudo apt-get update && sudo apt-get install unity-lens-pidgin
 
 - name: dash | Add dash repo for unity-lens pidgin packages
-  apt_repository: repo="ppa:scopes-packagers/ppa" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens pidgin packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -826,14 +985,14 @@
 
 #http://www.florian-diesch.de/software/classicmenu-indicator/
 - name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
-  apt_repository: repo="ppa:diesch/testing" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:diesch/testing" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
   tags: classicmenu_indicator_setup
 
 - name: indicator classicmenu | Install classicmenu-indicator pidgin packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_indicator_enabled
   tags: classicmenu_indicator_setup
   with_items:
@@ -842,57 +1001,43 @@
 #########################
 #TODO
 #Ubuntu 14.04
-#sudo add-apt-repository ppa:atareao/atareao
-#sudo apt-get update
-#sudo apt-get install calendar-indicator
-
 - name: indicator calendar | Add repo for calendar-indicator packages
-  apt_repository: repo="ppa:atareao/atareao" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:atareao/atareao" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
   tags: calendar_indicator_setup
 
 - name: indicator calendar | Install calendar-indicator packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
   tags: calendar_indicator_setup
   with_items:
     - calendar-indicator
 
-#
-#sudo add-apt-repository ppa:nilarimogard/webupd8
-#sudo apt-get update
-#sudo apt-get install pidgin-indicator
-#
-
 - name: indicator pidgin | Add repo for pidgin-indicator packages
-  apt_repository: repo="ppa:nilarimogard/webupd8" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and pidgin_indicator_enabled
   tags: pidgin_indicator_setup
 
 - name: indicator pidgin | Install pidgin-indicator packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_indicator_enabled
   tags: pidgin_indicator_setup
   with_items:
     - pidgin-indicator
 
-#sudo add-apt-repository ppa:atareao/atareao
-#sudo apt-get update
-#sudo apt-get install my-weather-indicator
-#
 - name: indicator weather | Add repo for my-weather-indicator packages
-  apt_repository: repo="ppa:atareao/atareao" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:atareao/atareao" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
   tags: weather_indicator_setup
 
 - name: indicator weather | Install my-weather-indicator packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
   tags: weather_indicator_setup
   with_items:
@@ -901,8 +1046,8 @@
 #sudo apt-get install indicator-cpufreq
 #
 - name: indicator cpufreq | Install cpufreq-indicator packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
   tags: cpufreq_indicator_setup
   with_items:
@@ -911,8 +1056,8 @@
 #sudo apt-get install unity-tweak-tool
 
 - name: unity-tweak-tool | Install unity-tweak-tool packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tweak_enabled
   tags: tweak_setup
   with_items:
@@ -924,19 +1069,36 @@
 #sudo apt-get install compizconfig-settings-manager
 #
 - name: compizconfig-settings-manager | Install compizconfig-settings-manager packages
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and compizconfig_enabled
   tags: compizconfig_setup
   with_items:
     - compizconfig-settings-manager
 
-#sudo add-apt-repository ppa:mc3man/trusty-media
-#sudo apt-get update
-#sudo apt-get install gstreamer0.10-ffmpeg
-#
-#sudo apt-get install gtk2-engines-murrine:i386
-#sudo apt-get install gtk2-engines-pixbuf:i386
+- name: video | Add repo for gstreamer packages
+  apt_repository: repo="ppa:mc3man/trusty-media" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and gstreamer_enabled
+  tags: gstreamer_setup
+
+- name: video | Install gstreamer packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and gstreamer_enabled
+  tags: gstreamer_setup
+  with_items:
+    - gstreamer0.10-ffmpeg
+
+- name: skype | Install skype fixes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and skype_enabled
+  tags: skype_setup
+  with_items:
+    - gtk2-engines-murrine:i386
+    - gtk2-engines-pixbuf:i386
+    - sni-qt:i386
 #
 ##sudo apt-add-repository ppa:pipelight/stable
 ##sudo apt-get update
@@ -971,14 +1133,14 @@
 #sudo apt-get install jayatana
 
 - name: batteries | Add repo for tlp packages (Improve battery life and reduce overheating)
-  apt_repository: repo="ppa:linrunner/tlp" update_cache=yes state={{ workstation_repository_state }}
-  sudo: yes
+  apt_repository: repo="ppa:linrunner/tlp" state={{ workstation_repository_state }} update_cache=yes
+  become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and tlp_enabled
   tags: weather_indicator_setup
 
 - name: batteries | Install tlp packages (Improve battery life and reduce overheating)
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tlp_enabled
   tags: weather_indicator_setup
   with_items:
@@ -1015,13 +1177,13 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes
+  become: yes
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the jenkins site
   action: command a2ensite jenkins
-  sudo: yes
+  become: yes
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -1033,13 +1195,13 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes
+  become: yes
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the nabla site
   action: command a2ensite nabla
-  sudo: yes
+  become: yes
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -1051,20 +1213,20 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes
+  become: yes
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the awx ansible tower site
   action: command a2ensite awx-httpd-7077
-  sudo: yes
+  become: yes
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Enable the apache mod headers
   action: command a2enmod headers
-  sudo: yes
+  become: yes
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -1079,7 +1241,7 @@
     owner: root
     group: root
     mode: 0644
-  sudo: yes
+  become: yes
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
@@ -1144,7 +1306,7 @@
     state: latest
     update_cache: yes
     cache_valid_time: 600
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
   with_items:
     - python-dev
@@ -1152,7 +1314,7 @@
 
 - name: Install Ansible documentation generator prerequisite
   pip: name={{ item }}
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
   with_items:
     - paramiko
@@ -1162,7 +1324,7 @@
 
 - name: Install Ansible documentation generator
   pip: name=ansigenome
-  sudo: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
 
 #TODO
@@ -1173,8 +1335,8 @@
 #ansigenome scan
 
 - name: workstation | Install python utilities tools
-  apt: pkg={{ item }} update_cache=yes state={{ workstation_pkg_state }}
-  sudo: yes
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and python_enabled
   tags: package
   with_items:
@@ -1189,20 +1351,20 @@
 
 - name: workstation | Force no login for user jboss
   user: name=jboss shell=/bin/bash state=present
-  sudo: yes
+  become: yes
 
 - name: workstation | Force no login for user sonar
   user: name=sonar shell=/sbin/nologin state=present
-  sudo: yes
+  become: yes
 
 #- name: workstation | Force no login for user vagrant
 #  user: name=vagrant shell=/bin/false state=present
-#  sudo: yes
+#  become: yes
 
 #- name: workstation | Force no login for user zap
 #  user: name=zap shell=/bin/false state=present
-#  sudo: yes
+#  become: yes
 
 - name: workstation | Force no login for user jenkins
   user: name=jenkins shell=/bin/bash state=present
-  sudo: yes
+  become: yes
