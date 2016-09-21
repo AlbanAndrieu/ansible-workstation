@@ -565,12 +565,6 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: nodejs
 
-- name: nodejs | Update the apt cache for the new repository
-  action: apt update-cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-  tags: nodejs
-
 - name: nodejs | Install nodejs and npm
   action: apt pkg={{ item }} state=installed
   become: yes
