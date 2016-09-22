@@ -19,7 +19,7 @@
   with_items: apt_multiverse_repositories
 
 - name: workstation | Install editor tools
-  action: "{{ ansible_pkg_mgr }} name={{ item } state={{ workstation_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ workstation_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
