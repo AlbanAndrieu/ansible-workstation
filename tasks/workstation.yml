@@ -887,7 +887,7 @@
 
 #http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
 - name: webapps | Add webapps repo for unity-webapps-preview packages
-  apt_repository: repo="ppa:webapps/preview" state={{ workstation_repository_state }} update_cache=yes"
+  apt_repository: repo="ppa:webapps/preview" state={{ workstation_repository_state }} update_cache=yes
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
