@@ -1,3 +1,81 @@
+---
+#dependencies: []
+dependencies:
+#  - { role: alban.andrieu.common }
+#  - { role: alban.andrieu.dns }
+#  #- { role: geerlingguy.ntp }
+#  #- { role: locale }
+#  #- { role: alban.andrieu.hostname }
+#  - { role: geerlingguy.firewall }
+#  #- { role: alban.andrieu.conky }
+#  #- { role: alban.andrieu.dropbox }
+#  - { role: alban.andrieu.grive }
+#  #- { role: alban.andrieu.synergy }
+#  - { role: alban.andrieu.shell }
+#  #- { role: alban.andrieu.cpp }
+#  #- { role: alban.andrieu.tomcat }
+#  #- { role: alban.andrieu.jboss }
+#  - { role: alban.andrieu.eclipse }
+#  - { role: alban.andrieu.css }
+##  - { role: alban.andrieu.zap }
+#  - { role: alban.andrieu.owasp-wte }
+  - { role: alban.andrieu.web }
+#  - { role: alban.andrieu.webmin }
+#  - { role: alban.andrieu.mon }
+#  - { role: alban.andrieu.jmeter }
+##  - { role: python }
+##  - { role: locale }
+#  - { role: jenkins-master }
+#  - { role: alban.andrieu.jenkins-slave }
+#  - { role: sonar }
+#  - { role: nexus }
+#  - { role: zabbix-agent }
+#  - { role: security }
+#  #- { role: virtualbox }
+#  - { role: vagrant }
+#  - { role: docker }
+#  #- { role: maven }
+#  - { role: java }
+#  #- { role: chrome }
+#  #- { role: nodejs }
+#  - { role: monit }
+#  - { role: supervisor }
+#  - { role: geerlingguy.repo-epel }
+#  - { role: geerlingguy.repo-remi }
+#  #- { role: geerlingguy.elasticsearch }
+#  - { role: geerlingguy.logstash }
+#  #- { role: geerlingguy.nginx }
+#  - { role: geerlingguy.kibana }
+#  - { role: geerlingguy.samba }
+#  - { role: geerlingguy.firewall }
+#  - { role: alban.andrieu.web }
+#  - { role: geerlingguy.apache }
+#  #- { role: geerlingguy.phpmyadmin }
+#  #- { role: geerlingguy.mysql }
+#  #- { role: geerlingguy.php-mysql }
+#  #- { role: geerlingguy.php }
+
+galaxy_info:
+  author: Alban Andrieu
+  description: A role for installing workstation
+  company: Nabla
+  license: GPLv3
+  min_ansible_version: 2.1.1
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+    - lucid
+    - maverick
+    - natty
+    - oneiric
+    - precise
+    - quantal
+    - raring
+    - saucy
+    - trusty
+  categories:
+  - development
 
 ansigenome_info:
   galaxy_id: ''

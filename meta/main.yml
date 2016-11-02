@@ -1,6 +1,6 @@
 ---
-dependencies: []
-#dependencies:
+#dependencies: []
+dependencies:
 #  - { role: alban.andrieu.common }
 #  - { role: alban.andrieu.dns }
 #  #- { role: geerlingguy.ntp }
@@ -19,7 +19,7 @@ dependencies: []
 #  - { role: alban.andrieu.css }
 ##  - { role: alban.andrieu.zap }
 #  - { role: alban.andrieu.owasp-wte }
-#  - { role: alban.andrieu.web }
+  - { role: alban.andrieu.web }
 #  - { role: alban.andrieu.webmin }
 #  - { role: alban.andrieu.mon }
 #  - { role: alban.andrieu.jmeter }
@@ -60,7 +60,7 @@ galaxy_info:
   description: A role for installing workstation
   company: Nabla
   license: GPLv3
-  min_ansible_version: 1.6.3
+  min_ansible_version: 2.1.1
   platforms:
   - name: Ubuntu
     versions:

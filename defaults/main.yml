@@ -26,9 +26,9 @@ dropbox_directory: "{{ dropbox_owner_home }}/.dropbox"
 dropbox_user_directory: "/workspace/Dropbox"
 
 # Package states: present or installed or latest
-workstation_pkg_state: present
+util_pkg_state: present
 # Repository states: present or absent
-workstation_repository_state: present
+util_repository_state: present
 
 apt_install_multiverse_repositories: yes  # Install some repositories (see list bellow)
 apt_multiverse_repositories: ["http://us.archive.ubuntu.com/ubuntu/"]          # List of sources which be added
@@ -60,6 +60,8 @@ ansigenome_enabled: yes
 apache_create_vhosts: yes
 webcam_enabled: yes
 keepass2_enabled: yes
+plank_enabled: yes
+android_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}
