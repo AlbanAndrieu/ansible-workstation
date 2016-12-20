@@ -104,6 +104,7 @@
    - grc
    - ccze
    - imagemagick
+   - stress
 
 - name: workstation | Install eyes tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -190,6 +191,7 @@
   tags: package
   with_items:
    - pdfeditor
+   - cups-pdf
 
 - name: workstation | Install CPU utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -209,6 +211,14 @@
 #tesseract page.tif output -l nor
 #ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
 
+- name: workstation | Install memory utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - edac-utils
+   
 #Uninstall nautilus file manager
 - name: workstation | Uninstall nautilus file manager
   apt: >
@@ -371,10 +381,15 @@
    - ant
    - ant-contrib
 
+- name: workstation | Add repo for aws packages
+  apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }} update_cache=yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '16.04'])
+  tags: package
+  
 - name: workstation | Install AWS tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and aws_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and aws_enabled
   tags: package
   with_items:
    - ec2-api-tools
@@ -573,6 +588,7 @@
 #    - wireshark
     - nmap
     - zenmap
+    - dnsutils #nslookup
 #TODO install fing
 #http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
 #sudo fing
@@ -1421,6 +1437,69 @@
 #TODO docker
 #sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual
 
+- name: workstation | Install docker requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - apparmor-utils
+
+#See https://help.ubuntu.com/community/UbuntuStudioPreparation
+- name: workstation | Install Ubuntu studio requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - vlc 
+   - ubuntu-restricted-extras 
+   - ubuntustudio-menu 
+   - cdrdao
+
+- name: workstation | Install gimp requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - gimp 
+   - gimp-data-extras 
+   - gimp-lensfun 
+   - gimp-texturize 
+   - create-resources 
+   - inkscape 
+   - ink-generator
+#   - darktable
+ 
+- name: workstation | Install  font requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - fontforge 
+   - fontforge-extras
+   
+- name: workstation | Install wine requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - wine  
+
+- name: workstation | Install lowlatency kernel
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - linux-lowlatency 
+   - linux-headers-lowlatency
+#   - linux-realtime 
+#   - linux-headers-realtime
+        
 #TODO add postman
 #https://www.getpostman.com/docs/launch
 
