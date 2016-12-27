@@ -62,6 +62,9 @@ webcam_enabled: yes
 keepass2_enabled: yes
 plank_enabled: yes
 android_enabled: yes
+docker_enabled: yes
+backbox_enabled: yes
+smb_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}
