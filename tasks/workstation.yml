@@ -105,6 +105,8 @@
    - ccze
    - imagemagick
    - stress
+#https://www.rackaid.com/blog/linux-screen-tutorial-and-how-to/   
+   - screen
 
 - name: workstation | Install eyes tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -1444,6 +1446,7 @@
   tags: android
   with_items:
    - apparmor-utils
+   - cgroup-tools
 
 #See https://help.ubuntu.com/community/UbuntuStudioPreparation
 - name: workstation | Install Ubuntu studio requirement
@@ -1489,16 +1492,16 @@
   with_items:
    - wine  
 
-- name: workstation | Install lowlatency kernel
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
-  with_items:
-   - linux-lowlatency 
-   - linux-headers-lowlatency
-#   - linux-realtime 
-#   - linux-headers-realtime
+#- name: workstation | Install lowlatency kernel
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+#  tags: android
+#  with_items:
+#   - linux-lowlatency 
+#   - linux-headers-lowlatency
+##   - linux-realtime 
+##   - linux-headers-realtime
         
 #TODO add postman
 #https://www.getpostman.com/docs/launch
