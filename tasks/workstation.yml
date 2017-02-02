@@ -307,6 +307,7 @@
    - gparted
    - unetbootin
    - usbmount
+   - remmina
 
 - name: workstation | Install extra
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -397,6 +398,18 @@
    - ec2-api-tools
    - s3cmd
 
+- name: workstation | Install Samba tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and smb_enabled
+  tags: package
+  with_items:
+   - samba
+   - samba-common
+   - python-glade2
+   - system-config-samba
+   - smbclient
+
 - name: workstation | Install messaging communication
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -457,17 +470,6 @@
     - wget
     - rsync
     - unar
-#https://doc.ubuntu-fr.org/httrack
-#    - httrack
-#    - httraqt
-#    - webhttrack
-#Spoofing ARP
-    - dsniff
-    - arpalert
-#Pyhton proxy
-    - mitmproxy
-#WEP WPA cracker
-    - aircrack-ng
 
 - name: workstation | Install debug basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -531,13 +533,31 @@
     - gstreamer1.0-plugins-bad
     - gstreamer1.0-plugins-ugly
 
-- name: workstation | Install security basic tools
+- name: workstation | Install network security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
     - tcpdump
+#https://doc.ubuntu-fr.org/httrack
+#    - httrack
+#    - httraqt
+#    - webhttrack
+#Spoofing ARP
+    - dsniff
+    - arpalert
+#Pyhton proxy
+    - mitmproxy
+#WEP WPA cracker
+    - aircrack-ng
+
+- name: workstation | Install security basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
     - testdisk
 #    - photorec
     - chkrootkit
@@ -546,7 +566,6 @@
 #sudo rkhunter --check --rwo --pkgmgr dpkg
 #update your system
 #sudo rkhunter --propupd
-    - tiger
 #TODO    - burp
 #TODO    - mig
 #See https://tools.pentestbox.com/ on windows
@@ -559,7 +578,34 @@
 #TODO
 #http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
 
-- name: workstation | Install antivirus tools
+#See BackBox https://backbox.org/
+#TODO
+#sudo apt-get purge ri1.9.1 ruby1.9.1 ruby1.9.3 bundler
+#sudo gem cleanup
+#sudo rm -rf /var/lib/gems/1.*
+- name: video | Add repo for security pentest packages
+  apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['16.04'] and backbox_enabled
+  tags: gstreamer_setup
+
+- name: workstation | Install security pentest tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and backbox_enabled
+  tags: package
+  with_items:
+    - beef-project
+    - metasploit-framework
+    - whatweb
+#    - wpscan
+    - setoolkit
+    - openvas
+    - sqlite3
+
+#sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
+
+- name: workstation | Install security antivirus tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
@@ -568,6 +614,7 @@
     - clamav
     - clamav-daemon
     - clamtk
+    - tiger
 
 #sudo freshclam
 #clamscan -r --bell -i /
@@ -922,6 +969,7 @@
   tags: keepass2_setup
   with_items:
     - keepass2
+#    - keepassx
 
 ##
  # Dash unity lens installation
@@ -1398,12 +1446,14 @@
     - setuptools
     - ansigenome
 
-- name: python | Install Ansible check
+- name: python | Install Ansible tools
   pip: name={{ item }} executable=pip2
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
   with_items:
     - ansible-lint
+    - ansible-shell
+    - pre-commit
 
 #TODO
 #sudo pip install ansigenome
@@ -1436,8 +1486,26 @@
    - android-tools-adb
    - android-tools-fastboot
 
-#TODO docker
-#sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual
+- name: workstation | Install docker tool
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and docker_enabled
+  tags: docker
+  with_items:
+   - "linux-image-extra-$(uname -r)"
+   - "linux-image-extra-virtual"
+   - auditd
+
+#Add https://github.com/GovReady/ubuntu-scap
+- name: workstation | Install ubuntu-scap prerequisite
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and docker_enabled
+  tags: docker
+  with_items:
+   - libopenscap8
+#   - scap-workbench
+   - lynx
 
 - name: workstation | Install docker requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
