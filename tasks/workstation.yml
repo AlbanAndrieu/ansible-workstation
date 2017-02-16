@@ -1543,7 +1543,7 @@
    - ink-generator
 #   - darktable
  
-- name: workstation | Install  font requirement
+- name: workstation | Install font requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
@@ -1552,13 +1552,42 @@
    - fontforge 
    - fontforge-extras
    
+- name: workstation | Install eclipse javaHL requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: eclipse
+  with_items:
+   - libsvn-java
+
 - name: workstation | Install wine requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
   with_items:
    - wine  
+   
+- name: workstation | Install xhost+ requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: android
+  with_items:
+   - x11-xserver-utils   
+
+- name: workstation | Install c++ requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: android
+  with_items:
+   - rpmlint
+   - valgrind
+   - valkyrie
+   - ggcov
+   - gperf
+   - ccpcheck
+   - google-perftools
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
