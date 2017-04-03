@@ -65,6 +65,7 @@ android_enabled: yes
 docker_enabled: yes
 backbox_enabled: yes
 smb_enabled: yes
+grub_customizer_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}
