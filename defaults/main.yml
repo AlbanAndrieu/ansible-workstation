@@ -66,6 +66,9 @@ docker_enabled: yes
 backbox_enabled: yes
 smb_enabled: yes
 grub_customizer_enabled: yes
+cinnamon_enabled: no
+plasma_enabled: no
+xfce_enabled: no
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}

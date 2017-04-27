@@ -18,13 +18,21 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
-- name: workstation | Install editor tools
+- name: workstation | Install apt tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - apt-show-versions
+   - apt-listchanges
+
+- name: workstation | Install editor tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
    - vim
    - tree
 #midnight commander
@@ -107,6 +115,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
+   - sshpass
    - gnome-terminal
    - meld
    - dos2unix
@@ -141,7 +150,6 @@
   with_items:
    - redshift
    - redshift-gtk
-   - plasma-applet-redshift-control
 
 #info redshift
 
@@ -153,7 +161,7 @@
 - name: workstation | Install eyes applet tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
   tags: package
   with_items:
    - plasma-applet-redshift-control
@@ -252,7 +260,7 @@
   with_items:
    - edac-utils
 
-#See https://www.reddit.com/r/Ubuntu/comments/3rwhye/why_is_avahidaemon_still_included_in_default/   
+#See https://www.reddit.com/r/Ubuntu/comments/3rwhye/why_is_avahidaemon_still_included_in_default/
 #Uninstall avahi-daemon
 - name: workstation | Uninstall avahi-daemon
   apt: >
@@ -1662,6 +1670,58 @@
   with_items:
    - shellcheck
 
+- name: workstation | Uninstall zeitgeist packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: zeitgeist_setup
+  with_items:
+    - zeitgeist
+    - zeitgeist-datahub
+    - rhythmbox-plugin-zeitgeist
+
+- name: workstation | Uninstall cinnamon desktop packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cinnamon_enabled
+  tags: desktop_setup
+  with_items:
+    - cinnamon
+
+- name: workstation | Uninstall desktop plasma packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
+  tags: desktop_setup
+  with_items:
+    - plasma-desktop
+
+- name: workstation | Uninstall xfce plasma packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xfce_enabled
+  tags: desktop_setup
+  with_items:
+    - xfce4
+    - xfce4-goodies
+    - xubuntu-desktop
+
 #http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
 - name: workstation | Fix automatic backup issue
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -1685,7 +1745,7 @@
   become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version nor in ['12.04', '14.04']) and grub_customizer_enabled
   tags: grub_customizer
-  
+
 - name: workstation | Add grub tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
