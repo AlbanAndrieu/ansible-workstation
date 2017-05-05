@@ -27,6 +27,28 @@
    - apt-show-versions
    - apt-listchanges
 
+#TODO
+#- name: workstation | Install apt cache tools
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+#  tags: package
+#  with_items:
+#   - apt-cacher-ng
+#   
+#/etc/apt-cacher-ng/acng.conf
+## uncomment and change the following lines
+#CacheDir: /var/cache/apt-cacher-ng
+#LogDir: /var/log/apt-cacher-ng
+#Port:3142
+# 
+##add  for java
+#PfilePattern = .*(\.d?deb|\.rpm|\.drpm|\.dsc|\.tar(\.gz|\.bz2|\.lzma|\.xz)(\.gpg|\?AuthParam=.*)?|\.diff(\.gz|\.bz2|\.lzma|\.xz)|\.jigdo|\.template|changelog|copyright|\.udeb|\.debdelta|\.diff/.*\.gz|(Devel)?ReleaseAnnouncement(\?.*)?|[a-f0-9]+-(susedata|updateinfo|primary|deltainfo).xml.gz|fonts/(final/)?[a-z]+32.exe(\?download.*)?|/dists/.*/installer-[^/]+/[0-9][^/]+/images/.*)$
+#RequestAppendix: Cookie: oraclelicense=a
+# 
+##add for docker
+#PassThroughPattern: ^download.docker.com:443$
+
 - name: workstation | Install editor tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -131,6 +153,8 @@
    - manpages-fr-extra
 # man with color
    - most
+   - colordiff
+   - colormake
 # Colorize log tools
    - multitail
    - grc
@@ -462,7 +486,17 @@
    - python-glade2
    - system-config-samba
    - smbclient
-
+   
+- name: workstation | Install certificates tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:   
+   - libnss3-tools # for certutil
+   - apt-transport-https
+   - ca-certificates
+   
 - name: workstation | Install messaging communication
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -477,14 +511,11 @@
 #   - teamviewer
    - recordmydesktop
    - gtk-recordmydesktop
-   - apt-transport-https
-   - ca-certificates
 
 #TODO install sky
 #https://www.tel.red/repos.htm
 
 #sudo sed -i '/https\?:\/\/.*\btel.red\b/d' /etc/apt/sources.list
-#sudo apt-get install apt-transport-https ca-certificates
 #sudo sh -c 'echo deb https://tel.red/repos/ubuntu xenial non-free \
 #    > /etc/apt/sources.list.d/telred.list'
 #sudo apt-key adv \
@@ -1691,7 +1722,7 @@
     purge=yes
     force=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cinnamon_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not cinnamon_enabled
   tags: desktop_setup
   with_items:
     - cinnamon
@@ -1703,7 +1734,7 @@
     purge=yes
     force=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not plasma_enabled
   tags: desktop_setup
   with_items:
     - plasma-desktop
@@ -1715,7 +1746,7 @@
     purge=yes
     force=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xfce_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not xfce_enabled
   tags: desktop_setup
   with_items:
     - xfce4
