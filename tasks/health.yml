@@ -1,0 +1,42 @@
+
+- name: workstation | Install eyes tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - redshift
+   - redshift-gtk
+
+#info redshift
+
+#- name: workstation | Make sure universe is enabled for eyes applet
+#  apt_repository: repo="deb http://cz.archive.ubuntu.com/ubuntu {{ansible_lsb.codename}} main universe" state=present update_cache=yes
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+
+- name: workstation | Install eyes applet tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
+  tags: package
+  with_items:
+   - plasma-applet-redshift-control
+
+#lightdm crash
+#- name: synergy | Autostart redshift before logging in (LightDM) | Update client
+#  lineinfile:
+#    dest=/etc/lightdm/lightdm.conf
+#    line="greeter-setup-script=/usr/bin/redshift {{ redshift_options }}"
+#    regexp="^greeter-setup-script"
+#    state=present
+#    insertafter=EOF
+#  become: yes
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+
+#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
+- name: redshift | Configure startup launcher from command line
+  template: src=redshift.desktop.j2 dest={{ home }}/.config/autostart/redshift.desktop mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure

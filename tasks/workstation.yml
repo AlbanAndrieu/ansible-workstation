@@ -49,69 +49,7 @@
 ##add for docker
 #PassThroughPattern: ^download.docker.com:443$
 
-- name: workstation | Install editor tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - vim
-   - tree
-#midnight commander
-#   - mc
-
-#- name: workstation | Install editor geany tools
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-#  become: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-#  tags: geany
-#  with_items:
-#   - geany
-#   - geany-plugins
-##sudo apt-cache search geany
-
-- name: workstation | Install editor gedit tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: gedit
-  with_items:
-#sudo apt-cache search geany
-   - gedit
-   - gedit-plugins
-   - aspell-fr
-   - gconf-editor
-#gconf-editor
-   - dconf-tools
-#dconf-editor
-
-#TODO
-#https://codetree.com.au/projects/imitation/
-#cd /workspace
-#mkdir imitation-1.3
-#cd imitation-1.3
-#wget https://codetree.com.au/static/content/imitation/releases/imitation-1.3.tar.gz
-#tar -xvf imitation-1.3.tar.gz
-#cd imitation
-#sudo cp ../org.gnome.gedit.plugins.imitation.gschema.xml /usr/share/glib-2.0/schemas/
-#sudo glib-compile-schemas /usr/share/glib-2.0/schemas
-#cd ..
-#sudo cp -r imitation/ /usr/lib/gedit/plugins/
-#sudo cp imitation.plugin /usr/lib/gedit/plugins/
-
-- name: workstation | Install editor gedit-gmate tools PPA
-  apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
-  tags: gedit
-
-- name: workstation | Install editor gedit-gmate plugin
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
-  tags: gedit
-  with_items:
-   - gedit-gmate
+- include: editor.yml
 
 #Install Ubuntu After Install on Ubuntu 15.04
 #http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
@@ -166,47 +104,7 @@
 # Screenshot shutter
    - shutter
 
-- name: workstation | Install eyes tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - redshift
-   - redshift-gtk
-
-#info redshift
-
-#- name: workstation | Make sure universe is enabled for eyes applet
-#  apt_repository: repo="deb http://cz.archive.ubuntu.com/ubuntu {{ansible_lsb.codename}} main universe" state=present update_cache=yes
-#  become: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-
-- name: workstation | Install eyes applet tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
-  tags: package
-  with_items:
-   - plasma-applet-redshift-control
-
-#lightdm crash
-#- name: synergy | Autostart redshift before logging in (LightDM) | Update client
-#  lineinfile:
-#    dest=/etc/lightdm/lightdm.conf
-#    line="greeter-setup-script=/usr/bin/redshift {{ redshift_options }}"
-#    regexp="^greeter-setup-script"
-#    state=present
-#    insertafter=EOF
-#  become: yes
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-
-#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
-- name: redshift | Configure startup launcher from command line
-  template: src=redshift.desktop.j2 dest={{ home }}/.config/autostart/redshift.desktop mode=0755
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
+- include: health.yml
 
 - name: synergy | Configure startup launcher from command line
   template: src=synergyc.desktop.j2 dest={{ home }}/.config/autostart/synergyc.desktop mode=0755
@@ -220,61 +118,7 @@
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
 
-- name: workstation | Install OCR utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-#https://help.ubuntu.com/community/OCR
-   - gocr
-   - tesseract-ocr
-   - tesseract-ocr-fra
-   - tesseract-ocr-nor
-#   - gscan2pdf
-   - ocrfeeder
-   - aspell-fr
-   - aspell-en
-   - aspell-no
-   - hunspell
-   - hunspell-fr
-#http://sourceforge.net/projects/lios/files/latest/download
-#lios
-
-- name: workstation | Install PDF utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')  and ansible_distribution_version in ['12.04', '14.04']
-  tags: package
-  with_items:
-   - pdfeditor
-   - cups-pdf
-
-- name: workstation | Install Xerox printer driver
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')  and ansible_distribution_version not in ['12.04', '14.04']
-  tags: package
-  with_items:
-   - xeroxprtdrv
-
-- name: workstation | Install CPU utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - ocl-icd-libopencl1
-   - ocl-icd-opencl-dev
-   - libnuma-dev
-#get cpu info
-   - clinfo
-
-#http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
-#convert -monochrome politet-17-01-2016.pdf page.tif
-#convert -monochrome -density 600 politet-17-01-2016-cleaned.pdf\[1\] page.tif
-#tesseract page.tif output -l nor
-#ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
+- include: printing.yml
 
 - name: workstation | Install memory utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -284,87 +128,7 @@
   with_items:
    - edac-utils
 
-#See https://www.reddit.com/r/Ubuntu/comments/3rwhye/why_is_avahidaemon_still_included_in_default/
-#Uninstall avahi-daemon
-- name: workstation | Uninstall avahi-daemon
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - avahi-daemon
-
-#Uninstall nautilus file manager
-- name: workstation | Uninstall nautilus file manager
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-#Check for the best file manager at
-#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-#Remove default nautilus file manager
-   - nautilus
-   - nautilus-sendto
-   - nautilus-open-terminal
-
-- name: workstation | Install nemo tools PPA
-  apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: nemo
-
-- name: workstation | Install desktop tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: nemo
-  with_items:
-   - nemo
-#Check for the best file manager at
-#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-#Install nemo
-#http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
-#TODO
-#sudo add-apt-repository ppa:webupd8team/nemo
-#sudo apt-get update
-#sudo apt-get install nemo nemo-fileroller
-#sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
-   - nemo-fileroller
-   - nemo-compare
-   - nemo-dropbox
-   - nemo-media-columns
-   - nemo-pastebin
-   - nemo-seahorse
-   - nemo-share
-   - nemo-emblems
-   - nemo-image-converter
-   - nemo-audio-tab
-# rabbitvcs is using too much resources
-#   - nemo-rabbitvcs
-   - nemo-terminal
-
-#Fix issues with python-nemo
-#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
-#sudo ln -s /usr/lib/libpython2.7.so.1 /usr/lib/libpython2.7.so.1.0
-#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
-#sudo ln -s /usr/lib/libpython2.7.so.1.0 /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0
-
-#Set Nemo as the default file manager
-#gsettings set org.gnome.desktop.background show-desktop-icons false
-#xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
-
-#restart nemo
-#killall nemo
-#nemo
+- include: desktop.yml
 
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -396,30 +160,6 @@
 #   - preload
 #lsb_release -a
    - lsb-core
-
-#http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
-#Uninstall default black screensaver
-- name: workstation | Uninstall default black screensaver
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
-  tags: package
-  with_items:
-   - gnome-screensaver
-
-- name: workstation | Install screensaver
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
-  tags: package
-  with_items:
-   - xscreensaver
-   - xscreensaver-data-extra
-   - xscreensaver-gl-extra
 
 #TODO move git to a role
 - name: workstation | Install SCM
@@ -496,21 +236,8 @@
    - libnss3-tools # for certutil
    - apt-transport-https
    - ca-certificates
-   
-- name: workstation | Install messaging communication
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
-  tags: package
-  with_items:
-   - pidgin
-   - pidgin-sipe
-   - pidgin-skype
-   - pidgin-otr
-   - irssi-plugin-otr
-#   - teamviewer
-   - recordmydesktop
-   - gtk-recordmydesktop
+
+- include: pidgin.yml
 
 #TODO install sky
 #https://www.tel.red/repos.htm
@@ -1017,31 +744,6 @@
 ##
  # Unity package
  #
-- name: workstation | Uninstall whoopsie packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-    - whoopsie
-
-- name: workstation | Uninstall unused applications
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-    - modemmanager
-    - thunderbird
-
 - name: keepass2 | Add keepass2 repo
   apt_repository: repo="ppa:jtaylor/keepass" update_cache=yes state={{ util_repository_state|default('present') }}
   become: yes
@@ -1056,233 +758,6 @@
   with_items:
     - keepass2
 #    - keepassx
-
-##
- # Dash unity lens installation
- # http://doc.ubuntu-fr.org/unity-lens
- #
-- name: dash | Uninstall unity-lens and unity-scope packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-scope-video-remote
-    - unity-scope-musicstores
-    - unity-lens-shopping
-    - unity-lens-gwibber
-    - unity-lens-askubuntu
-    - unity-scope-askubuntu
-    - unity-lens-friends
-    - unity-lens-video
-    - unity-lens-music
-    - unity-lens-photos
-
-- name: dash | Install unity-lens and unity-scope packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-lens-applications
-    - unity-lens-files
-#    - unity-lens-wikipedia
-#    - unity-lens-radios
-#    - unity-lens-vm
-#    - unity-lens-github
-    - unity-scope-gdrive
-    - unity-scope-chromiumbookmarks
-    - unity-scope-firefoxbookmarks
-    - unity-scope-manpages
-    - unity-scope-virtualbox
-
-#http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
-- name: webapps | Add webapps repo for unity-webapps-preview packages
-  apt_repository: repo="ppa:webapps/preview" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
-  tags: webapps_setup
-
-- name: webapps | Install unity-webapps-preview packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
-  tags: webapps_setup
-  with_items:
-    - unity-webapps-preview
-    - unity-webapps-common
-    - unity-chromium-extension
-    - unity-webapps-googlecalendar
-    - unity-webapps-gmail
-    - unity-webapps-googledocs
-    - unity-webapps-googleplus
-    - unity-webapps-twitter
-    - unity-webapps-facebookmessenger
-    - xul-ext-unity
-
-- name: dash | Add dash repo for unity-lens history packages
-  apt_repository: repo="ppa:markjtully/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-
-- name: dash | Install unity-lens history packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-web-history-lens
-    - zeitgeist-datasource-firefox
-
-#- name: dash | Add dash repo for unity-lens grooveshark packages
-#  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-#  become: yes
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
-#  tags: dash_setup
-#
-#- name: dash | Install unity-lens grooveshark packages
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-#  become: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
-#  tags: dash_setup
-#  with_items:
-#   - unity-scope-grooveshark
-
-- name: dash | Add dash repo for unity-lens google docs packages
-  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-
-- name: dash | Install unity-lens google docs packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-lens-gdocs
-
-#sudo add-apt-repository ppa:nilarimogard/webupd8
-#sudo apt-get update
-#sudo apt-get install unity-lens-gdocs
-#gksu gedit /usr/bin/unity-lens-gdocs.py
-#unity-lens-gdocs.py
-#setsid unity
-#
-#sudo add-apt-repository ppa:scopes-packagers/ppa
-#sudo apt-get update && sudo apt-get install unity-lens-pidgin
-
-- name: dash | Add dash repo for unity-lens pidgin packages
-  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-
-- name: dash | Install unity-lens pidgin packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-lens-pidgin
-
-#http://www.florian-diesch.de/software/classicmenu-indicator/
-- name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
-  apt_repository: repo="ppa:diesch/testing" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
-  tags: classicmenu_indicator_setup
-
-- name: indicator classicmenu | Install classicmenu-indicator pidgin packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_indicator_enabled
-  tags: classicmenu_indicator_setup
-  with_items:
-    - classicmenu-indicator
-
-#########################
-#TODO
-#Ubuntu 14.04
-- name: indicator calendar | Add repo for calendar-indicator packages
-  apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
-  tags: calendar_indicator_setup
-
-- name: indicator calendar | Install calendar-indicator packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
-  tags: calendar_indicator_setup
-  with_items:
-    - calendar-indicator
-
-- name: indicator pidgin | Add repo for pidgin-indicator packages
-  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and pidgin_indicator_enabled
-  tags: pidgin_indicator_setup
-
-- name: indicator pidgin | Install pidgin-indicator packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_indicator_enabled
-  tags: pidgin_indicator_setup
-  with_items:
-    - pidgin-indicator
-
-- name: indicator weather | Add repo for my-weather-indicator packages
-  apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
-  tags: weather_indicator_setup
-
-- name: indicator weather | Install my-weather-indicator packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
-  tags: weather_indicator_setup
-  with_items:
-    - my-weather-indicator
-
-#sudo apt-get install indicator-cpufreq
-#
-- name: indicator cpufreq | Install cpufreq-indicator packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
-  tags: cpufreq_indicator_setup
-  with_items:
-    - indicator-cpufreq
-
-#sudo apt-get install unity-tweak-tool
-
-- name: unity-tweak-tool | Install unity-tweak-tool packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tweak_enabled
-  tags: tweak_setup
-  with_items:
-    - unity-tweak-tool
-
-##http://digital-era.net/10-things-to-do-after-installing-ubuntu-14-04-trusty-tahr-to-get-a-near-perfect-desktop/
-#gsettings set com.canonical.Unity.Lenses disabled-scopes "['more_suggestions-amazon.scope', 'more_suggestions-u1ms.scope', 'more_suggestions-populartracks.scope', 'music-musicstore.scope', 'more_suggestions-ebay.scope', 'more_suggestions-ubuntushop.scope', 'more_suggestions-skimlinks.scope']"
-#
-#sudo apt-get install compizconfig-settings-manager
-#
-- name: compizconfig-settings-manager | Install compizconfig-settings-manager packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and compizconfig_enabled
-  tags: compizconfig_setup
-  with_items:
-    - compizconfig-settings-manager
 
 - name: skype | Install skype fixes
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -1326,22 +801,7 @@
 #sudo apt-get update
 #sudo apt-get install jayatana
 
-- name: batteries | Add repo for tlp packages (Improve battery life and reduce overheating)
-  apt_repository: repo="ppa:linrunner/tlp" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and tlp_enabled
-  tags: weather_indicator_setup
-
-- name: batteries | Install tlp packages (Improve battery life and reduce overheating)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tlp_enabled
-  tags: weather_indicator_setup
-  with_items:
-    - tlp
-    - tlp-rdw
-
-#TODO sudo tlp start
+- include: laptop.yml
 
 #http://www.omgubuntu.co.uk/2016/04/10-things-to-do-after-installing-ubuntu-16-04-lts
 #gsettings set org.compiz.unityshell:/org/compiz/profiles/unity/plugins/unityshell/ launcher-minimize-window true
@@ -1504,61 +964,7 @@
     mode: 0644
 #  notify: restart dropbox
 
-- name: python | Install pip python package
-  apt:
-    pkg: "{{ item }}"
-    state: latest
-    update_cache: yes
-    cache_valid_time: 600
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
-  with_items:
-    - python-dev
-    - python-pip
-
-- name: python | Install python utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and python_enabled
-  tags: package
-  with_items:
-#flake8 .
-   - python-flake8
-   - python-netaddr
-
-- name: python | Install Ansible documentation generator prerequisite
-  pip: name={{ item }} executable=pip2
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
-    - paramiko
-    - PyYAML
-    - jinja2
-    - httplib2
-
-- name: python | Install Ansible documentation generator
-  pip: name={{ item }} executable=pip2
-#  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
-    - setuptools
-    - ansigenome
-
-- name: python | Install Ansible tools
-  pip: name={{ item }} executable=pip2
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
-    - ansible-lint
-    - ansible-shell
-    - pre-commit
-
-#TODO
-#sudo pip install ansigenome
-#easy_install ansigenome
-#sudo ansigenome config
-#cd ~/env/ansible/roles
-#ansigenome scan
+- include: python.yml
 
 - name: workstation | Add repo for plank packages
   apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }} update_cache=yes
@@ -1688,10 +1094,14 @@
    - rpmlint
    - valgrind
    - valkyrie
-   - ggcov
-   - gperf
-   - ccpcheck
    - google-perftools
+   - clang 
+   - flawfinder 
+   - cppcheck 
+   - ggcov 
+   - gperf 
+   - doxygen 
+   - complexity #for c
 
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -1700,58 +1110,6 @@
   tags: android
   with_items:
    - shellcheck
-
-- name: workstation | Uninstall zeitgeist packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: zeitgeist_setup
-  with_items:
-    - zeitgeist
-    - zeitgeist-datahub
-    - rhythmbox-plugin-zeitgeist
-
-- name: workstation | Uninstall cinnamon desktop packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not cinnamon_enabled
-  tags: desktop_setup
-  with_items:
-    - cinnamon
-
-- name: workstation | Uninstall desktop plasma packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not plasma_enabled
-  tags: desktop_setup
-  with_items:
-    - plasma-desktop
-
-- name: workstation | Uninstall xfce plasma packages
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not xfce_enabled
-  tags: desktop_setup
-  with_items:
-    - xfce4
-    - xfce4-goodies
-    - xubuntu-desktop
 
 #http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
 - name: workstation | Fix automatic backup issue
@@ -1820,16 +1178,125 @@
   with_items:
    - multisystem
 
+#See https://www.reddit.com/r/Ubuntu/comments/3rwhye/why_is_avahidaemon_still_included_in_default/
+#Uninstall avahi-daemon
+- name: workstation | Uninstall avahi-daemon
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - avahi-daemon
+
+#http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
+#Uninstall default black screensaver
+- name: workstation | Uninstall default black screensaver
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  tags: package
+  with_items:
+   - gnome-screensaver
+
+- name: workstation | Install screensaver
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  tags: package
+  with_items:
+   - xscreensaver
+   - xscreensaver-data-extra
+   - xscreensaver-gl-extra
+
+- name: workstation | Uninstall whoopsie packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - whoopsie
+
+- name: workstation | Uninstall zeitgeist packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: zeitgeist_setup
+  with_items:
+    - zeitgeist
+    - zeitgeist-datahub
+    - rhythmbox-plugin-zeitgeist
+
+- name: workstation | Uninstall cinnamon desktop packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not cinnamon_enabled
+  tags: desktop_setup
+  with_items:
+    - cinnamon
+
+- name: workstation | Uninstall desktop plasma packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not plasma_enabled
+  tags: desktop_setup
+  with_items:
+    - plasma-desktop
+
+- name: workstation | Uninstall xfce plasma packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not xfce_enabled
+  tags: desktop_setup
+  with_items:
+    - xfce4
+    - xfce4-goodies
+    - xubuntu-desktop
+
+- name: workstation | Uninstall unused applications
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - modemmanager
+    - thunderbird
+       
 #TODO
 #sudo usermod -a -G adm "$USER"
 
-- name: workstation | Install useless tool
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: android
-  with_items:
-   - screenfetch
+- include: fun.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"

@@ -1,0 +1,70 @@
+
+- name: workstation | Install messaging communication
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
+  tags: package
+  with_items:
+   - pidgin
+   - pidgin-sipe
+   - pidgin-skype
+   - pidgin-otr
+   - irssi-plugin-otr
+#   - teamviewer
+   - recordmydesktop
+   - gtk-recordmydesktop
+
+- name: workstation | Install messaging communication tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
+  tags: package
+  with_items:
+   - pidgin-awayonlock
+
+#sudo add-apt-repository ppa:scopes-packagers/ppa
+#sudo apt-get update && sudo apt-get install unity-lens-pidgin
+
+- name: dash | Add dash repo for unity-lens pidgin packages
+  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+
+- name: dash | Install unity-lens pidgin packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+  with_items:
+    - unity-lens-pidgin
+
+#http://www.florian-diesch.de/software/classicmenu-indicator/
+- name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
+  apt_repository: repo="ppa:diesch/testing" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
+  tags: classicmenu_indicator_setup
+
+- name: indicator classicmenu | Install classicmenu-indicator pidgin packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_indicator_enabled
+  tags: classicmenu_indicator_setup
+  with_items:
+    - classicmenu-indicator   
+
+- name: indicator pidgin | Add repo for pidgin-indicator packages
+  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and pidgin_indicator_enabled
+  tags: pidgin_indicator_setup
+
+- name: indicator pidgin | Install pidgin-indicator packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_indicator_enabled
+  tags: pidgin_indicator_setup
+  with_items:
+    - pidgin-indicator
+    

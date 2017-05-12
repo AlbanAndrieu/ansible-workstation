@@ -1,0 +1,250 @@
+
+#Uninstall nautilus file manager
+- name: workstation | Uninstall nautilus file manager
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+#Check for the best file manager at
+#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+#Remove default nautilus file manager
+   - nautilus
+   - nautilus-sendto
+   - nautilus-open-terminal
+
+- name: workstation | Install nemo tools PPA
+  apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: nemo
+
+- name: workstation | Install desktop tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: nemo
+  with_items:
+   - nemo
+#Check for the best file manager at
+#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+#Install nemo
+#http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
+#TODO
+#sudo add-apt-repository ppa:webupd8team/nemo
+#sudo apt-get update
+#sudo apt-get install nemo nemo-fileroller
+#sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
+   - nemo-fileroller
+   - nemo-compare
+   - nemo-dropbox
+   - nemo-media-columns
+   - nemo-pastebin
+   - nemo-seahorse
+   - nemo-share
+   - nemo-emblems
+   - nemo-image-converter
+   - nemo-audio-tab
+# rabbitvcs is using too much resources
+#   - nemo-rabbitvcs
+   - nemo-terminal
+
+#Fix issues with python-nemo
+#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
+#sudo ln -s /usr/lib/libpython2.7.so.1 /usr/lib/libpython2.7.so.1.0
+#sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
+#sudo ln -s /usr/lib/libpython2.7.so.1.0 /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0
+
+#Set Nemo as the default file manager
+#gsettings set org.gnome.desktop.background show-desktop-icons false
+#xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
+
+#restart nemo
+#killall nemo
+#nemo
+
+##
+ # Dash unity lens installation
+ # http://doc.ubuntu-fr.org/unity-lens
+ #
+- name: dash | Uninstall unity-lens and unity-scope packages
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
+  tags: dash_setup
+  with_items:
+    - unity-scope-video-remote
+    - unity-scope-musicstores
+    - unity-lens-shopping
+    - unity-lens-gwibber
+    - unity-lens-askubuntu
+    - unity-scope-askubuntu
+    - unity-lens-friends
+    - unity-lens-video
+    - unity-lens-music
+    - unity-lens-photos
+
+- name: dash | Install unity-lens and unity-scope packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
+  tags: dash_setup
+  with_items:
+    - unity-lens-applications
+    - unity-lens-files
+#    - unity-lens-wikipedia
+#    - unity-lens-radios
+#    - unity-lens-vm
+#    - unity-lens-github
+    - unity-scope-gdrive
+    - unity-scope-chromiumbookmarks
+    - unity-scope-firefoxbookmarks
+    - unity-scope-manpages
+    - unity-scope-virtualbox
+
+#http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
+- name: webapps | Add webapps repo for unity-webapps-preview packages
+  apt_repository: repo="ppa:webapps/preview" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
+  tags: webapps_setup
+
+- name: webapps | Install unity-webapps-preview packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
+  tags: webapps_setup
+  with_items:
+    - unity-webapps-preview
+    - unity-webapps-common
+    - unity-chromium-extension
+    - unity-webapps-googlecalendar
+    - unity-webapps-gmail
+    - unity-webapps-googledocs
+    - unity-webapps-googleplus
+    - unity-webapps-twitter
+    - unity-webapps-facebookmessenger
+    - xul-ext-unity
+
+- name: dash | Add dash repo for unity-lens history packages
+  apt_repository: repo="ppa:markjtully/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+
+- name: dash | Install unity-lens history packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+  with_items:
+    - unity-web-history-lens
+    - zeitgeist-datasource-firefox
+
+#- name: dash | Add dash repo for unity-lens grooveshark packages
+#  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
+#  become: yes
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
+#  tags: dash_setup
+#
+#- name: dash | Install unity-lens grooveshark packages
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
+#  tags: dash_setup
+#  with_items:
+#   - unity-scope-grooveshark
+
+- name: dash | Add dash repo for unity-lens google docs packages
+  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+
+- name: dash | Install unity-lens google docs packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
+  tags: dash_setup
+  with_items:
+    - unity-lens-gdocs
+
+#sudo add-apt-repository ppa:nilarimogard/webupd8
+#sudo apt-get update
+#sudo apt-get install unity-lens-gdocs
+#gksu gedit /usr/bin/unity-lens-gdocs.py
+#unity-lens-gdocs.py
+#setsid unity
+
+#########################
+#TODO
+#Ubuntu 14.04
+- name: indicator calendar | Add repo for calendar-indicator packages
+  apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
+  tags: calendar_indicator_setup
+
+- name: indicator calendar | Install calendar-indicator packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
+  tags: calendar_indicator_setup
+  with_items:
+    - calendar-indicator
+
+- name: indicator weather | Add repo for my-weather-indicator packages
+  apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
+  tags: weather_indicator_setup
+
+- name: indicator weather | Install my-weather-indicator packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
+  tags: weather_indicator_setup
+  with_items:
+    - my-weather-indicator
+
+#sudo apt-get install indicator-cpufreq
+#
+- name: indicator cpufreq | Install cpufreq-indicator packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
+  tags: cpufreq_indicator_setup
+  with_items:
+    - indicator-cpufreq
+
+#sudo apt-get install unity-tweak-tool
+
+- name: unity-tweak-tool | Install unity-tweak-tool packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tweak_enabled
+  tags: tweak_setup
+  with_items:
+    - unity-tweak-tool
+
+##http://digital-era.net/10-things-to-do-after-installing-ubuntu-14-04-trusty-tahr-to-get-a-near-perfect-desktop/
+#gsettings set com.canonical.Unity.Lenses disabled-scopes "['more_suggestions-amazon.scope', 'more_suggestions-u1ms.scope', 'more_suggestions-populartracks.scope', 'music-musicstore.scope', 'more_suggestions-ebay.scope', 'more_suggestions-ubuntushop.scope', 'more_suggestions-skimlinks.scope']"
+#
+#sudo apt-get install compizconfig-settings-manager
+#
+- name: compizconfig-settings-manager | Install compizconfig-settings-manager packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and compizconfig_enabled
+  tags: compizconfig_setup
+  with_items:
+    - compizconfig-settings-manager
+    

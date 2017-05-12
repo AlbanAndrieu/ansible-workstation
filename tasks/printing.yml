@@ -1,0 +1,56 @@
+
+- name: workstation | Install OCR utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+#https://help.ubuntu.com/community/OCR
+   - gocr
+   - tesseract-ocr
+   - tesseract-ocr-fra
+   - tesseract-ocr-nor
+#   - gscan2pdf
+   - ocrfeeder
+   - aspell-fr
+   - aspell-en
+   - aspell-no
+   - hunspell
+   - hunspell-fr
+#http://sourceforge.net/projects/lios/files/latest/download
+#lios
+
+- name: workstation | Install PDF utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')  and ansible_distribution_version in ['12.04', '14.04']
+  tags: package
+  with_items:
+   - pdfeditor
+   - cups-pdf
+
+- name: workstation | Install Xerox printer driver
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')  and ansible_distribution_version not in ['12.04', '14.04']
+  tags: package
+  with_items:
+   - xeroxprtdrv
+
+- name: workstation | Install CPU utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - ocl-icd-libopencl1
+   - ocl-icd-opencl-dev
+   - libnuma-dev
+#get cpu info
+   - clinfo
+
+#http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
+#convert -monochrome politet-17-01-2016.pdf page.tif
+#convert -monochrome -density 600 politet-17-01-2016-cleaned.pdf\[1\] page.tif
+#tesseract page.tif output -l nor
+#ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
