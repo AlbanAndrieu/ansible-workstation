@@ -21,6 +21,8 @@
   tags: package
   with_items:
    - pidgin-awayonlock
+   - pidgin-plugin-pack
+   #- nautilus-sendto
 
 #sudo add-apt-repository ppa:scopes-packagers/ppa
 #sudo apt-get update && sudo apt-get install unity-lens-pidgin
