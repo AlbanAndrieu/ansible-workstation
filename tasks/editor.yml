@@ -10,14 +10,15 @@
 #midnight commander
 #   - mc
 
-#- name: workstation | Install editor geany tools
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-#  become: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-#  tags: geany
-#  with_items:
-#   - geany
-#   - geany-plugins
+- name: workstation | Install editor geany tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: geany
+  with_items:
+   - geany
+   - geany-plugins
+   - gtk2-engines-pixbuf # geany bugfix
 ##sudo apt-cache search geany
 
 - name: workstation | Install editor gedit tools

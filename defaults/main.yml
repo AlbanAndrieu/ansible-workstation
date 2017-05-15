@@ -69,6 +69,7 @@ grub_customizer_enabled: yes
 cinnamon_enabled: no
 plasma_enabled: no
 xfce_enabled: no
+make_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}

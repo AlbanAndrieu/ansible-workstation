@@ -34,9 +34,15 @@
 #  become: yes
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
 
+- name: redshift | Creates destination directory
+  file: state=directory mode=0755 dest={{ home }}/.config/autostart/
+  #become: yes
+  
 #https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
 - name: redshift | Configure startup launcher from command line
   template: src=redshift.desktop.j2 dest={{ home }}/.config/autostart/redshift.desktop mode=0755
-  become: yes
+  #become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
+
+#TODOD Destination directory /home/albandri//.config/autostart does not exist

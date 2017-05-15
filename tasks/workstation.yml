@@ -9,13 +9,13 @@
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Install apt tools
@@ -133,7 +133,7 @@
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04', '14.04', '16.04']
   tags: package
   with_items:
    - software-center
@@ -203,7 +203,7 @@
 
 - name: workstation | Add repo for aws packages
   apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }} update_cache=yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '16.04'])
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['14.04', '17.04'])
   tags: package
 
 - name: workstation | Install AWS tools
@@ -281,6 +281,14 @@
     - wget
     - rsync
     - unar
+
+- name: workstation | Install Ubuntu make tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and make_enabled
+  tags: package
+  with_items:
+    - ubuntu-make
 
 - name: workstation | Install debug basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -397,13 +405,13 @@
 - name: video | Add repo for security pentest packages
   apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
   become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['16.04'] and backbox_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
 
 - name: workstation | Install security pentest tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and backbox_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: package
   with_items:
     - beef-project
