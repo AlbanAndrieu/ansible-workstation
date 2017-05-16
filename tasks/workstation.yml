@@ -297,6 +297,7 @@
   tags: package
   with_items:
     - strace
+    - yp-tools #ypcat hosts | grep ilo
 
 #https://doc.ubuntu-fr.org/webcam
 #lsusb | grep -i logitech
