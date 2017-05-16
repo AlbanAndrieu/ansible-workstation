@@ -1,0 +1,78 @@
+
+- name: Web | Enable some required modules proxy
+  action: command a2enmod proxy
+  #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
+  
+- name: Web | Add apache jenkins vhosts configuration.
+  template:
+    src: "apache-jenkins.conf.j2"
+    dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: yes
+#  notify: restart apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: Web | Enable the jenkins site
+  action: command a2ensite jenkins
+  become: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: Web | Add apache nabla vhosts configuration.
+  template:
+    src: "apache-nabla.conf.j2"
+    dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: yes
+#  notify: restart apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: Web | Enable the nabla site
+  action: command a2ensite nabla
+  become: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+#- name: Web | Add apache awx ansible tower vhosts configuration.
+#  template:
+#    src: "apache-awx-httpd-7077.conf.j2"
+#    dest: "{{ apache_conf_path }}/sites-available/awx-httpd-7077.conf"
+#    owner: root
+#    group: root
+#    mode: 0644
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: Web | Enable the awx ansible tower site
+  action: command a2ensite awx-httpd-7077
+  become: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: Web | Enable the apache mod headers
+  action: command a2enmod headers
+  become: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+#Fix security issue :
+#X-Content-Type-Options: nosniff
+#WARNING this is a whole file overwrite
+- name: Web | Add apache main configuration (ports.conf).
+  template:
+    src: "ports.conf.j2"
+    dest: "{{ apache_conf_path }}/ports.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: yes
+#  notify: restart apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts

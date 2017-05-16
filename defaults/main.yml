@@ -12,6 +12,9 @@ user: "{{ lookup('env','USER') }}"
 #home: '~' #please override me
 home: "{{ lookup('env','HOME') }}"
 
+redshift_owner: "{{ user }}"
+redshift_group: "{{ redshift_owner }}"
+
 variety_owner: "{{ user }}"
 variety_group: "{{ variety_owner }}"
 
