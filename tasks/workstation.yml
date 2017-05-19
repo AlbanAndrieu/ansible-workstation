@@ -69,6 +69,25 @@
 
 #TODO run UAI by hand
 
+- name: workstation | Install extra
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - ubuntu-restricted-extras
+#   - preload
+#lsb_release -a
+   - lsb-core
+  
+- name: workstation | Install debian packaging tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - ubuntu-dev-tools #reverse-depends -b scons
+      
 - name: workstation | Install utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -150,17 +169,6 @@
    - usbmount
    - remmina
 
-- name: workstation | Install extra
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - ubuntu-restricted-extras
-#   - preload
-#lsb_release -a
-   - lsb-core
-
 #TODO move git to a role
 - name: workstation | Install SCM
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -195,7 +203,7 @@
 - name: workstation | Install Java ant build tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - ant

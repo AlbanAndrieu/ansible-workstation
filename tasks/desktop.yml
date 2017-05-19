@@ -1,22 +1,4 @@
 
-#Uninstall nautilus file manager
-- name: workstation | Uninstall nautilus file manager
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-#Check for the best file manager at
-#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-#Remove default nautilus file manager
-   - nautilus
-   - nautilus-sendto
-   - nautilus-open-terminal
-
 - name: workstation | Install nemo tools PPA
   apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
   become: yes
@@ -248,3 +230,24 @@
   with_items:
     - compizconfig-settings-manager
     
+#for nautilus    
+#sudo apt-get install folder-color 
+
+#Uninstall nautilus file manager
+- name: workstation | Uninstall nautilus file manager
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+#Check for the best file manager at
+#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+#Remove default nautilus file manager
+   - nautilus
+   - nautilus-sendto
+   - nautilus-open-terminal
+   
