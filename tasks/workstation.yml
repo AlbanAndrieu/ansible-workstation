@@ -123,13 +123,37 @@
 # Screenshot shutter
    - shutter
 
-- include: health.yml
+- name: workstation | Create .config/autostart folder
+  file: path={{ home }}/.config/autostart mode=0777 state=directory recurse=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
-- name: synergy | Configure startup launcher from command line
-  template: src=synergyc.desktop.j2 dest={{ home }}/.config/autostart/synergyc.desktop mode=0755
+- name: synergy | Configure synergy startup launcher from command line
+  template: src=synergy.desktop.j2 dest={{ home }}/.config/autostart/synergy.desktop mode=0755
   become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
+
+- include: health.yml
+
+#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
+- name: redshift | Configure redshift startup launcher from command line
+  template: src=redshift-gtk.desktop.j2 dest={{ home }}/.config/autostart/redshift-gtk.desktop mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+  
+- name: plank | Configure plank startup launcher from command line
+  template: src=plank.desktop.j2 dest={{ home }}/.config/autostart/plank.desktop mode=0755
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+  
+#- name: plank | Configure dropbox startup launcher from command line
+#  template: src=dropbox.desktop.j2 dest={{ home }}/.config/autostart/dropbox.desktop mode=0755
+#  become: yes
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#  tags: configure
 
 - name: lightdm | Configure lightdm
   template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755

@@ -33,10 +33,3 @@
 #    insertafter=EOF
 #  become: yes
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-
-#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
-- name: redshift | Configure startup launcher from command line
-  template: src=redshift.desktop.j2 dest={{ home }}/.config/autostart/redshift.desktop mode=0755
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
