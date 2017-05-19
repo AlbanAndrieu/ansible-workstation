@@ -158,6 +158,7 @@
 - name: lightdm | Configure lightdm
   template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755
   become: yes
+  ignore_errors: yes  
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
 
