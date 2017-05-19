@@ -49,12 +49,12 @@
 #  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
-- name: Web | Enable the awx ansible tower site
-  action: command a2ensite awx-httpd-7077
-  become: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+#- name: Web | Enable the awx ansible tower site
+#  action: command a2ensite awx-httpd-7077
+#  become: yes
+#  ignore_errors: yes
+#  tags: apache
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the apache mod headers
   action: command a2enmod headers
