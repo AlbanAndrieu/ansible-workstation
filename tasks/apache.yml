@@ -1,6 +1,42 @@
 
+- name: Web | Create directory
+  file:
+    dest="{{ web_base_dir }}/"
+    state=directory
+    owner="{{ apache_owner }}"
+    group="{{ apache_group }}"
+  ignore_errors: true
+  become: yes
+  
+- name: Web | Create jenkins directory
+  file:
+    dest="/var/www/jenkins/"
+    state=directory
+    owner="{{ apache_owner }}"
+    group="{{ apache_group }}"
+  ignore_errors: true
+  become: yes
+  
+- name: Web | Create nabla directory
+  file:
+    dest="/var/www/nabla/"
+    state=directory
+    owner="{{ apache_owner }}"
+    group="{{ apache_group }}"
+  ignore_errors: true
+  become: yes
+  
+- name: Web | Create bababou directory
+  file:
+    dest="/var/www/bababou/"
+    state=directory
+    owner="{{ apache_owner }}"
+    group="{{ apache_group }}"
+  ignore_errors: true
+  become: yes
+
 - name: Web | Enable some required modules proxy
-  action: command a2enmod proxy
+  command: a2enmod proxy
   #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
   
 - name: Web | Add apache jenkins vhosts configuration.
@@ -15,7 +51,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the jenkins site
-  action: command a2ensite jenkins
+  command: a2ensite jenkins
   become: yes
   ignore_errors: yes
   tags: apache
@@ -33,7 +69,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the nabla site
-  action: command a2ensite nabla
+  command: a2ensite nabla
   become: yes
   ignore_errors: yes
   tags: apache
@@ -57,7 +93,7 @@
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the apache mod headers
-  action: command a2enmod headers
+  command: a2enmod headers
   become: yes
   ignore_errors: yes
   tags: apache

@@ -7,6 +7,11 @@ apache_conf_path: "/etc/{{ apache_directory }}"
 #apache_log_path: "/var/log/{{ apache_directory }}"
 apache_log_path: "${APACHE_LOG_DIR}"
 
+apache_owner: "root"
+apache_group: "{{ apache_owner }}"
+
+web_base_dir: "/var/www/sample"
+
 #user: 'albandri' #please override me
 user: "{{ lookup('env','USER') }}"
 #home: '~' #please override me
