@@ -97,6 +97,7 @@
    - sshpass
    - gnome-terminal
    - meld
+   - gnome-tweak-tool #fix for meld
    - dos2unix
 # xclip -selection clipboard < ~/.ssh/id_rsa.pub
    - xclip
