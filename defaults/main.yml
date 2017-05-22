@@ -7,10 +7,18 @@ apache_conf_path: "/etc/{{ apache_directory }}"
 #apache_log_path: "/var/log/{{ apache_directory }}"
 apache_log_path: "${APACHE_LOG_DIR}"
 
+apache_owner: "root"
+apache_group: "{{ apache_owner }}"
+
+web_base_dir: "/var/www/sample"
+
 #user: 'albandri' #please override me
 user: "{{ lookup('env','USER') }}"
 #home: '~' #please override me
 home: "{{ lookup('env','HOME') }}"
+
+redshift_owner: "{{ user }}"
+redshift_group: "{{ redshift_owner }}"
 
 variety_owner: "{{ user }}"
 variety_group: "{{ variety_owner }}"
@@ -69,6 +77,7 @@ grub_customizer_enabled: yes
 cinnamon_enabled: no
 plasma_enabled: no
 xfce_enabled: no
+make_enabled: yes
 
 apache_vhosts_jenkins:
   - {servername: "localhost", serveradmin: "alban.andrieu@nabla.mobi", documentroot: "/var/www/jenkins"}

@@ -9,13 +9,13 @@
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apt_install_multiverse_repositories
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
 
 - name: workstation | Install apt tools
@@ -178,7 +178,7 @@
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04', '14.04', '16.04']
   tags: package
   with_items:
    - software-center
@@ -237,7 +237,7 @@
 
 - name: workstation | Add repo for aws packages
   apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }} update_cache=yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '16.04'])
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['14.04', '17.04'])
   tags: package
 
 - name: workstation | Install AWS tools
@@ -315,6 +315,14 @@
     - wget
     - rsync
     - unar
+
+- name: workstation | Install Ubuntu make tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and make_enabled
+  tags: package
+  with_items:
+    - ubuntu-make
 
 - name: workstation | Install debug basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -432,13 +440,13 @@
 - name: video | Add repo for security pentest packages
   apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
   become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['16.04'] and backbox_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
 
 - name: workstation | Install security pentest tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and backbox_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: package
   with_items:
     - beef-project
@@ -782,13 +790,13 @@
 - name: keepass2 | Add keepass2 repo
   apt_repository: repo="ppa:jtaylor/keepass" update_cache=yes state={{ util_repository_state|default('present') }}
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and keepass2_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
 
 - name: keepass2 | Install keepass2 packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and keepass2_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
   with_items:
     - keepass2
@@ -868,80 +876,7 @@
 #sudo ln -s /var/lib/tomcat7/server server
 #sudo ln -s /var/lib/tomcat7/shared shared
 
-- name: workstation | Add apache jenkins vhosts configuration.
-  template:
-    src: "apache-jenkins.conf.j2"
-    dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
-    owner: root
-    group: root
-    mode: 0644
-  become: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the jenkins site
-  action: command a2ensite jenkins
-  become: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Add apache nabla vhosts configuration.
-  template:
-    src: "apache-nabla.conf.j2"
-    dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
-    owner: root
-    group: root
-    mode: 0644
-  become: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the nabla site
-  action: command a2ensite nabla
-  become: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Add apache awx ansible tower vhosts configuration.
-  template:
-    src: "apache-awx-httpd-7077.conf.j2"
-    dest: "{{ apache_conf_path }}/sites-available/awx-httpd-7077.conf"
-    owner: root
-    group: root
-    mode: 0644
-  become: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the awx ansible tower site
-  action: command a2ensite awx-httpd-7077
-  become: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-- name: workstation | Enable the apache mod headers
-  action: command a2enmod headers
-  become: yes
-  ignore_errors: yes
-  tags: apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-
-#Fix security issue :
-#X-Content-Type-Options: nosniff
-#WARNING this is a whole file overwrite
-- name: workstation | Add apache main configuration (ports.conf).
-  template:
-    src: "ports.conf.j2"
-    dest: "{{ apache_conf_path }}/ports.conf"
-    owner: root
-    group: root
-    mode: 0644
-  become: yes
-#  notify: restart apache
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+- include: apache.yml
 
 - name: Check user
   user: name={{ variety_owner }} state=present
@@ -968,8 +903,9 @@
     src: "variety.conf.j2"
     dest: "{{ variety_directory }}/variety.conf"
     owner: "{{ variety_owner }}"
-    group: "{{ variety_group }}"
+    group: "{{ variety_group }}"    
     mode: 0644
+  ignore_errors: true    
 #  notify: restart variety
 
 - name: dropbox | Create user directory
@@ -997,6 +933,7 @@
     owner: "{{ dropbox_owner }}"
     group: "{{ dropbox_group }}"
     mode: 0644
+  ignore_errors: true       
 #  notify: restart dropbox
 
 - include: python.yml
@@ -1004,7 +941,7 @@
 - name: workstation | Add repo for plank packages
   apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }} update_cache=yes
   become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04']) and plank_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
   tags: plank
 
 - name: workstation | Install plank
@@ -1031,8 +968,8 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and docker_enabled
   tags: docker
   with_items:
-   - "linux-image-extra-$(uname -r)"
-   - "linux-image-extra-virtual"
+   #- "linux-image-extra-$(uname -r)"
+   #- "linux-image-extra-virtual"
    - auditd
 
 #Add https://github.com/GovReady/ubuntu-scap
@@ -1102,9 +1039,17 @@
 - name: workstation | Install wine requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '14.04', '16.04'])
   with_items:
    - wine
+   - winetricks
+
+- name: workstation | Install wine requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['17.04'])
+  with_items:
+   - wine-stable
    - winetricks
 
 #TODO
@@ -1167,13 +1112,13 @@
 - name: workstation | Add grub customizer ppa
   apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }} update_cache=yes
   become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version nor in ['12.04', '14.04']) and grub_customizer_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and grub_customizer_enabled
   tags: grub_customizer
 
 - name: workstation | Add grub tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version nor in ['12.04', '14.04']) and grub_customizer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '17.04']) and grub_customizer_enabled
   tags: grub_customizer
   with_items:
    - grub-customizer
@@ -1182,7 +1127,7 @@
 - name: workstation | Add repo for multisystem
   apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04']) 
   tags: multisystem
 
 # Place to get apt repository key
@@ -1208,7 +1153,7 @@
 - name: workstation | Install multisystem
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04']) 
   tags: multisystem
   with_items:
    - multisystem

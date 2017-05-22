@@ -33,7 +33,7 @@
 
 - name: python | Install Ansible documentation generator
   pip: name={{ item }} executable=pip2
-#  become: yes
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
   with_items:
     - setuptools
