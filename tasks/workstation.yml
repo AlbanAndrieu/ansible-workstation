@@ -971,6 +971,7 @@
    #- "linux-image-extra-$(uname -r)"
    #- "linux-image-extra-virtual"
    - auditd
+   - cpuset #sudo cset set -l
 
 #Add https://github.com/GovReady/ubuntu-scap
 - name: workstation | Install ubuntu-scap prerequisite
