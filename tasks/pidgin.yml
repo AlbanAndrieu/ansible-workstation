@@ -27,6 +27,22 @@
 #sudo add-apt-repository ppa:scopes-packagers/ppa
 #sudo apt-get update && sudo apt-get install unity-lens-pidgin
 
+#sudo add-apt-repository ppa:nilarimogard/webupd8
+#sudo apt install purple-hangouts pidgin-hangouts
+
+- name: workstation | Add pidgin repo for hangouts packages
+  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04', '14.04']
+
+- name: workstation | Install hangouts pidgin packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+  with_items:
+    - purple-hangouts 
+    - pidgin-hangouts
+    
 - name: dash | Add dash repo for unity-lens pidgin packages
   apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
   become: yes

@@ -76,7 +76,6 @@
   tags: package
   with_items:
    - ubuntu-restricted-extras
-#   - preload
 #lsb_release -a
    - lsb-core
   
@@ -335,6 +334,15 @@
 
 #https://doc.ubuntu-fr.org/webcam
 #lsusb | grep -i logitech
+
+#See https://wenchaojames.wordpress.com/2013/01/03/convert-video-format-mts-to-mp4-in-ubuntu/
+#- name: workstation | Install mts to mp4 converter tools
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') 
+#  tags: package
+#  with_items:
+#    - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
 
 - name: workstation | Install webcam tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -811,6 +819,7 @@
     - gtk2-engines-murrine:i386
     - gtk2-engines-pixbuf:i386
     - sni-qt:i386
+    - libjpeg62:i386
 #
 ##sudo apt-add-repository ppa:pipelight/stable
 ##sudo apt-get update
@@ -951,6 +960,14 @@
   tags: plank
   with_items:
    - plank
+
+- name: workstation | Install gnome sushi
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - gnome-sushi
 
 - name: workstation | Install android sdk
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -1123,6 +1140,25 @@
   with_items:
    - grub-customizer
 
+- name: workstation | Add speed tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
+  with_items:
+   - preload
+
+#- name: workstation | Add apt-fast ppa
+#  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }} update_cache=yes
+#  become: yes
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
+#  
+#- name: workstation | apt-fast speed tools
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+#  become: yes
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
+#  with_items:
+#   - apt-fast
+   
 #See https://doc.ubuntu-fr.org/multisystem
 - name: workstation | Add repo for multisystem
   apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present update_cache=yes
