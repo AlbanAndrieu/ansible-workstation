@@ -1309,9 +1309,21 @@
   with_items:
     - modemmanager
     - thunderbird
+
+#for virtualmin
+#sudo apt-get install krb5-kdc krb5-admin-server
+#RAID
+#http://michal.karzynski.pl/blog/2009/11/18/mdadm-gui-via-webmin/
+#sudo apt install mdadm
+#Logical Volume Management
+#sudo apt-get install lvm2
+#vgdisplay
        
 #TODO
 #sudo usermod -a -G adm "$USER"
+
+#TODO
+#sudo apt-get install motion
 
 - include: fun.yml
 
