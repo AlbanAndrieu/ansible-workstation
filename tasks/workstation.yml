@@ -273,7 +273,7 @@
 - include: pidgin.yml
 
 #TODO install sky
-#https://www.tel.red/repos.htm
+#See https://www.tel.red/repos.htm
 
 #sudo sed -i '/https\?:\/\/.*\btel.red\b/d' /etc/apt/sources.list
 #sudo sh -c 'echo deb https://tel.red/repos/ubuntu xenial non-free \
@@ -944,6 +944,14 @@
     mode: 0644
   ignore_errors: true       
 #  notify: restart dropbox
+
+- name: nextcloud | Install webdav tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) 
+  tags: plank
+  with_items:
+   - davfs2  
 
 - include: python.yml
 

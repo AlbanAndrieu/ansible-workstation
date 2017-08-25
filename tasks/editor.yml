@@ -63,3 +63,20 @@
   tags: gedit
   with_items:
    - gedit-gmate
+
+- name: workstation | Install editor atom tools PPA
+  apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  tags: gedit
+
+- name: workstation | Install editor atom plugin
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  tags: gedit
+  with_items:
+   - atom
+
+#apm install linter
+#apm install linter-shellcheck
