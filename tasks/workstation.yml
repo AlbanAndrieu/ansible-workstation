@@ -1063,22 +1063,6 @@
 #sudo add-apt-repository ppa:eosrei/fonts
 #sudo apt update && sudo apt install fonts-emojione-svginot
 
-#Solaris
-#http://ddiguru.com/index.php?option=com_content&view=article&id=50:how-to-manually-add-locale-pkgs-on-solaris-10&catid=12:solaris&Itemid=2
-#http://ddiguru.com/blog/50-how-to-manually-add-locale-pkgs-on-solaris-10
-#locale -a
-#localeadm -a en_US.UTF-8 
-# export LANG=en_US.UTF-8
-#LC_ALL=en_US.UTF-8
-#pkgadd -d . SUNWeuluf 
-#/opt/csw/bin/pkgutil -y -i texlive_fonts_extra 
-/opt/csw/bin/pkgutil -y -i texlive_common
-/opt/csw/bin/pkgutil -y -i texlive_base
-#/opt/csw/bin/pkgutil -y -i fontconfig
-#/opt/csw/bin/pkgutil -y -i uniconvertor
-#/opt/csw/bin/pkgutil -y -i gsfonts_stub
-##/opt/csw/bin/pkgutil -y -i wmf_fonts
-
 - name: workstation | Install eclipse javaHL requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
