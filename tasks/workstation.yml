@@ -94,6 +94,7 @@
   tags: package
   with_items:
    - sshpass
+   - ssh-askpass
    - gnome-terminal
    - meld
    - gnome-tweak-tool #fix for meld
