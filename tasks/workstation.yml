@@ -1166,6 +1166,13 @@
   with_items:
    - preload
 
+- name: workstation | Add perl tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
+  with_items:
+   - perl-doc
+
 #- name: workstation | Add apt-fast ppa
 #  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }} update_cache=yes
 #  become: yes
