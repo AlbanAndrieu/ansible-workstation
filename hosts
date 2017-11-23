@@ -4,5 +4,5 @@ localhost
 [all]
 localhost
 
-[all]
-workstation
+[workstation]
+localhost
