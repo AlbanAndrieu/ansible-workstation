@@ -3,20 +3,15 @@
 
 - name: workstation | Update the apt cache (in case of issue)
   action: apt update-cache=yes
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  become: yes
 
 - name: workstation | Make sure multiverse is enabled for tools
   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['14.04', '16.04', '17.04'] and apt_install_multiverse_repositories
   with_items: apt_multiverse_repositories
-
-- name: workstation | Make sure multiverse is enabled for tools
-  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04'] and apt_install_multiverse_repositories
-  with_items: apt_multiverse_repositories
+  ignore_errors: true
 
 - name: workstation | Install apt tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -35,17 +30,17 @@
 #  tags: package
 #  with_items:
 #   - apt-cacher-ng
-#   
+#
 #/etc/apt-cacher-ng/acng.conf
 ## uncomment and change the following lines
 #CacheDir: /var/cache/apt-cacher-ng
 #LogDir: /var/log/apt-cacher-ng
 #Port:3142
-# 
+#
 ##add  for java
 #PfilePattern = .*(\.d?deb|\.rpm|\.drpm|\.dsc|\.tar(\.gz|\.bz2|\.lzma|\.xz)(\.gpg|\?AuthParam=.*)?|\.diff(\.gz|\.bz2|\.lzma|\.xz)|\.jigdo|\.template|changelog|copyright|\.udeb|\.debdelta|\.diff/.*\.gz|(Devel)?ReleaseAnnouncement(\?.*)?|[a-f0-9]+-(susedata|updateinfo|primary|deltainfo).xml.gz|fonts/(final/)?[a-z]+32.exe(\?download.*)?|/dists/.*/installer-[^/]+/[0-9][^/]+/images/.*)$
 #RequestAppendix: Cookie: oraclelicense=a
-# 
+#
 ##add for docker
 #PassThroughPattern: ^download.docker.com:443$
 
@@ -55,8 +50,8 @@
 #http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
 - name: workstation | Install ubuntu-after-install tools PPA
   apt_repository: repo='ppa:thefanclub/ubuntu-after-install' update_cache=yes
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
+  become: yes
   tags: uai
 
 - name: workstation | Install ubuntu-after-install tools
@@ -78,7 +73,7 @@
    - ubuntu-restricted-extras
 #lsb_release -a
    - lsb-core
-  
+
 - name: workstation | Install debian packaging tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -86,7 +81,7 @@
   tags: package
   with_items:
    - ubuntu-dev-tools #reverse-depends -b scons
-      
+
 - name: workstation | Install utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
@@ -143,13 +138,13 @@
   become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
-  
+
 - name: plank | Configure plank startup launcher from command line
   template: src=plank.desktop.j2 dest={{ home }}/.config/autostart/plank.desktop mode=0755
   become: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
-  
+
 #- name: plank | Configure dropbox startup launcher from command line
 #  template: src=dropbox.desktop.j2 dest={{ home }}/.config/autostart/dropbox.desktop mode=0755
 #  become: yes
@@ -159,7 +154,7 @@
 - name: lightdm | Configure lightdm
   template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755
   become: yes
-  ignore_errors: yes  
+  ignore_errors: yes
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
 
@@ -260,13 +255,13 @@
    - python-glade2
    - system-config-samba
    - smbclient
-   
+
 - name: workstation | Install certificates tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:   
+  with_items:
    - libnss3-tools # for certutil
    - apt-transport-https
    - ca-certificates
@@ -340,7 +335,7 @@
 #- name: workstation | Install mts to mp4 converter tools
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
 #  become: yes
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') 
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  tags: package
 #  with_items:
 #    - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
@@ -913,9 +908,9 @@
     src: "variety.conf.j2"
     dest: "{{ variety_directory }}/variety.conf"
     owner: "{{ variety_owner }}"
-    group: "{{ variety_group }}"    
+    group: "{{ variety_group }}"
     mode: 0644
-  ignore_errors: true    
+  ignore_errors: true
 #  notify: restart variety
 
 - name: dropbox | Create user directory
@@ -943,16 +938,16 @@
     owner: "{{ dropbox_owner }}"
     group: "{{ dropbox_group }}"
     mode: 0644
-  ignore_errors: true       
+  ignore_errors: true
 #  notify: restart dropbox
 
 - name: nextcloud | Install webdav tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) 
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
   tags: plank
   with_items:
-   - davfs2  
+   - davfs2
 
 - include: python.yml
 
@@ -1111,12 +1106,12 @@
    - valgrind
    - valkyrie
    - google-perftools
-   - clang 
-   - flawfinder 
-   - cppcheck 
-   - ggcov 
-   - gperf 
-   - doxygen 
+   - clang
+   - flawfinder
+   - cppcheck
+   - ggcov
+   - gperf
+   - doxygen
    - complexity #for c
 
 - name: workstation | Install shell requirement
@@ -1177,19 +1172,19 @@
 #  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }} update_cache=yes
 #  become: yes
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
-#  
+#
 #- name: workstation | apt-fast speed tools
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
 #  become: yes
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
 #  with_items:
 #   - apt-fast
-   
+
 #See https://doc.ubuntu-fr.org/multisystem
 - name: workstation | Add repo for multisystem
   apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present update_cache=yes
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04']) 
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04'])
   tags: multisystem
 
 # Place to get apt repository key
@@ -1215,7 +1210,7 @@
 - name: workstation | Install multisystem
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04']) 
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04'])
   tags: multisystem
   with_items:
    - multisystem
@@ -1343,7 +1338,7 @@
 #Logical Volume Management
 #sudo apt-get install lvm2
 #vgdisplay
-       
+
 #TODO
 #sudo usermod -a -G adm "$USER"
 

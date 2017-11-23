@@ -1,2 +1,8 @@
 [local]
 localhost
+
+[all]
+localhost
+
+[all]
+workstation
