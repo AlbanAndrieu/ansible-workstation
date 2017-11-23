@@ -90,19 +90,18 @@ install:
 script:
   # Check ansible version
   - sudo ansible --version
-  #- export ANSIBLE_ROLES_PATH="../"
-
+ 
   # Add ansible.cfg to pick up roles path.
   #- "{ echo '[defaults]'; echo 'roles_path = ./roles'; } >> ansible.cfg"
   - export ANSIBLE_ROLES_PATH="../"
   
   # Check syntax
   # Check the role/playbook's syntax.
-  - ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
+  - sudo ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
 
   # First run
   # Run the role/playbook with ansible-playbook.
-  - ansible-playbook -i ./hosts ./workstation.yml --connection=local -vvvv -e "python_versions=[2.7]"
+  - sudo ansible-playbook -i ./hosts ./workstation.yml --connection=local -vvvv -e "python_versions=[2.7]"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
