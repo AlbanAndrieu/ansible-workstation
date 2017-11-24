@@ -87,25 +87,25 @@ install:
   #- git submodule foreach git checkout master
 
   #- ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
- 
+
 script:
   # Check ansible version
   - sudo ansible --version
- 
+
   # Add ansible.cfg to pick up roles path.
   #- "{ echo '[defaults]'; echo 'roles_path = ./roles'; } >> ansible.cfg"
   #- export ANSIBLE_ROLES_PATH="../"
-  
+
   # Prepare tests
   #- echo localhost > hosts
-  
+
   # Check syntax
   # Check the role/playbook's syntax.
   - sudo ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
 
   # First run
   # Run the role/playbook with ansible-playbook.
-  - travis_wait 30 sudo ansible-playbook -i ./hosts ./workstation.yml --connection=local -vvvv -e "python_versions=[2.7]"
+  - travis_wait 30 sudo ansible-playbook -i ./hosts ./workstation.yml --connection=local --sudo -vvvv -e "python_versions=[2.7]"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/

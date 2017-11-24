@@ -6,7 +6,7 @@
   tags: weather_indicator_setup
 
 - name: batteries | Install tlp packages (Improve battery life and reduce overheating)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tlp_enabled
   tags: weather_indicator_setup
