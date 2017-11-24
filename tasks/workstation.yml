@@ -1102,7 +1102,6 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: android
   with_items:
-   - rpmlint
    - valgrind
    - valkyrie
    - google-perftools
@@ -1113,6 +1112,14 @@
    - gperf
    - doxygen
    - complexity #for c
+   
+- name: workstation | Install c++ requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
+  tags: android
+  with_items:
+   - rpmlint
 
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
