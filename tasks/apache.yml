@@ -38,6 +38,10 @@
 - name: Web | Enable some required modules proxy
   command: a2enmod proxy
   #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
+  become: yes
+  ignore_errors: yes
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts  
   
 - name: Web | Add apache jenkins vhosts configuration.
   template:
