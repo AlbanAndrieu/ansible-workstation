@@ -50,14 +50,14 @@
 #http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
 - name: workstation | Install ubuntu-after-install tools PPA
   apt_repository: repo='ppa:thefanclub/ubuntu-after-install' update_cache=yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   become: yes
   tags: uai
 
 - name: workstation | Install ubuntu-after-install tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: package
   with_items:
    - ubuntu-after-install
