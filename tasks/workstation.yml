@@ -1111,7 +1111,6 @@
    - ggcov
    - gperf
    - doxygen
-   - complexity #for c
    
 - name: workstation | Install c++ requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -1120,7 +1119,8 @@
   tags: android
   with_items:
    - rpmlint
-
+   - complexity #for c
+   
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
