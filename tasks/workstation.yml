@@ -450,7 +450,7 @@
 
 - name: workstation | Install security pentest tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and backbox_enabled
   tags: package
   with_items:
     - beef-project
@@ -463,7 +463,6 @@
 #https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
     - hydra-gtk
   become: yes
-  ignore_errors: true
 #sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
 
 - name: workstation | Install security antivirus tools
