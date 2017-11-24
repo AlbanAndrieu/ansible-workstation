@@ -9,12 +9,19 @@ cache:
   directories:
     - $HOME/.cache/pip
 env:
-  - ANSIBLE_VERSION=2.3.1.0
-#  - ANSIBLE_VERSION=2.4.1.0
+#  - ANSIBLE_VERSION=latest
+  - ANSIBLE_VERSION=2.4.1.0
+#  - ANSIBLE_VERSION=2.3.1.0
+#  - ANSIBLE_VERSION=2.2.2.0  
 cache: bundler
 #sudo: false
 sudo: required
 dist: trusty
+
+branches:
+  only:
+    - master
+
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq python-apt python-pycurl
@@ -22,64 +29,8 @@ before_install:
 
 install:
   # Install Ansible.
-  - sudo pip install ansible==$ANSIBLE_VERSION
-
-  # Install dependencies.
-  #- git clone https://github.com/AlbanAndrieu/Stouts.python.git python
-  #- git clone https://github.com/AlbanAndrieu/ansible-role-ntp.git geerlingguy.ntp
-  #- git clone https://github.com/AlbanAndrieu/ansible-locale.git locale
-  #- git clone https://github.com/AlbanAndrieu/ansible-hostname.git alban.andrieu.hostname
-  #- git clone https://github.com/AlbanAndrieu/ansible-util.git silpion.util
-  #- git clone https://github.com/AlbanAndrieu/ansible-java.git java
-  #- git clone https://github.com/AlbanAndrieu/ansible-common.git alban.andrieu.common
-  #- git clone https://github.com/AlbanAndrieu/ansible-pagespeed.git alban.andrieu.pagespeed
-  #- git clone https://github.com/AlbanAndrieu/ansible-dns.git alban.andrieu.dns
-  #- git clone https://github.com/AlbanAndrieu/ansible-subversion.git alban.andrieu.subversion
-  #- git clone https://github.com/AlbanAndrieu/ansible-role-git.git geerlingguy.git
-  #- git clone https://github.com/AlbanAndrieu/ansible-cmake.git alban.andrieu.cmake
-  #- git clone https://github.com/AlbanAndrieu/ansible-cpp.git alban.andrieu.cpp
-  #- git clone https://github.com/AlbanAndrieu/ansible-xvbf alban.andrieu.xvbf
-  #- git clone https://github.com/AlbanAndrieu/ansible-selenium alban.andrieu.selenium
-  #- git clone https://github.com/AlbanAndrieu/ansible-conky alban.andrieu.conky
-  #- git clone https://github.com/AlbanAndrieu/ansible-dropbox alban.andrieu.dropbox
-  #- git clone https://github.com/AlbanAndrieu/ansible-grive alban.andrieu.grive
-  #- git clone https://github.com/AlbanAndrieu/ansible-synergy alban.andrieu.synergy
-  #- git clone https://github.com/AlbanAndrieu/ansible-shell alban.andrieu.shell
-  #- git clone https://github.com/AlbanAndrieu/ansible-tomcat alban.andrieu.tomcat
-  #- git clone https://github.com/AlbanAndrieu/ansible-jboss alban.andrieu.jboss
-  #- git clone https://github.com/AlbanAndrieu/ansible-eclipse alban.andrieu.eclipse
-  #- git clone https://github.com/AlbanAndrieu/ansible-css alban.andrieu.css
-  #- git clone https://github.com/AlbanAndrieu/ansible-zap alban.andrieu.zap
-  #- git clone https://github.com/AlbanAndrieu/ansible-webmin alban.andrieu.webmin
-  #- git clone https://github.com/AlbanAndrieu/ansible-mon alban.andrieu.mon
-  #- git clone https://github.com/AlbanAndrieu/ansible-jmeter alban.andrieu.jmeter
-  #- git clone https://github.com/AlbanAndrieu/Stouts.jenkins.git jenkins-master
-  #- git clone https://github.com/AlbanAndrieu/ansible-jenkins-slave alban.andrieu.jenkins-slave
-  #- git clone https://github.com/AlbanAndrieu/ansible-sonar sonar
-  #- git clone https://github.com/AlbanAndrieu/ansible-sonatype_nexus.git nexus
-  #- git clone https://github.com/AlbanAndrieu/ansible-zabbix_agent.git zabbix-agent
-  #- git clone https://github.com/AlbanAndrieu/ansible-role-security.git security
-  #- git clone https://github.com/AlbanAndrieu/ansible-vagrant-role.git vagrant
-  #- git clone https://github.com/AlbanAndrieu/docker.ubuntu.git docker
-  #- git clone https://github.com/AlbanAndrieu/ansible-maven.git maven
-  #- git clone https://github.com/AlbanAndrieu/devbox.chrome.git chrome
-  #- git clone https://github.com/AlbanAndrieu/ansible-nodejs.git nodejs
-  #- git clone https://github.com/AlbanAndrieu/ansible-supervisor_task.git supervisor
-  #- git clone https://github.com/geerlingguy/ansible-role-repo-epel.git geerlingguy.repo-epel
-  #- git clone https://github.com/geerlingguy/ansible-role-repo-remi.git geerlingguy.repo-remi
-  #- git clone https://github.com/geerlingguy/ansible-role-java geerlingguy.java
-  #- git clone https://github.com/geerlingguy/ansible-role-elasticsearch.git geerlingguy.elasticsearch
-  #- git clone https://github.com/AlbanAndrieu/ansible-role-logstash.git geerlingguy.logstash
-  #- git clone https://github.com/geerlingguy/ansible-role-nginx.git geerlingguy.nginx
-  #- git clone https://github.com/AlbanAndrieu/ansible-role-kibana.git geerlingguy.kibana
-  #- git clone https://github.com/geerlingguy/ansible-role-samba.git geerlingguy.samba
-  #- git clone https://github.com/geerlingguy/ansible-role-firewall.git geerlingguy.firewall
-  #- git clone https://github.com/AlbanAndrieu/ansible-web alban.andrieu.web
-  #- git clone https://github.com/geerlingguy/ansible-role-apache.git geerlingguy.apache
-  #- git clone https://github.com/geerlingguy/ansible-role-phpmyadmin.git geerlingguy.phpmyadmin
-  #- git clone https://github.com/geerlingguy/ansible-role-mysql.git geerlingguy.mysql
-  #- git clone https://github.com/geerlingguy/ansible-role-php-mysql.git geerlingguy.php-mysql
-  #- git clone https://github.com/geerlingguy/ansible-role-php.git geerlingguy.php
+  - if [ "$ANSIBLE_VERSION" = "latest" ]; then pip install ansible; else pip install ansible==$ANSIBLE_VERSION; fi
+  - if [ "$ANSIBLE_VERSION" = "latest" ]; then pip install ansible-lint; fi
 
   # Update Ansible submodule.
   #- git pull && git submodule init
@@ -90,7 +41,7 @@ install:
 
 script:
   # Check ansible version
-  - sudo ansible --version
+  - ansible --version
 
   # Add ansible.cfg to pick up roles path.
   #- "{ echo '[defaults]'; echo 'roles_path = ./roles'; } >> ansible.cfg"
@@ -101,12 +52,12 @@ script:
 
   # Check syntax
   # Check the role/playbook's syntax.
-  - sudo ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
+  - ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
 
   # First run
   # Run the role/playbook with ansible-playbook.
   #- travis_wait 30 
-  - sudo ansible-playbook -i ./hosts ./workstation.yml --connection=local --sudo -vvvv -e "python_versions=[2.7]"
+  - ansible-playbook -i ./hosts ./workstation.yml --connection=local --sudo -vvvv -e "python_versions=[2.7]"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
