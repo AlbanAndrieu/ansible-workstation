@@ -8,6 +8,11 @@
    - redshift
    - redshift-gtk
 
+#Fix geoclue location
+#sudo apt-get install geoclue-2.0
+#https://github.com/jonls/redshift/issues/445
+#Settings > Privacy > Location Services
+
 #info redshift
 
 #- name: workstation | Make sure universe is enabled for eyes applet
