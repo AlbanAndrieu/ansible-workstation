@@ -190,6 +190,34 @@
    - usbmount
    - remmina
 
+- name: workstation | Install disk/hdd tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+# work both on ubuntu and RedHat
+  tags: package
+  with_items:
+   - system-storage-manager
+   - baobab
+   
+- name: workstation | Install disk/hdd tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - system-config-lvm
+
+- name: workstation | Install system-config-lvm for gcc
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ jenkins_pkg_state|default('present') }}"
+  with_items:
+   - system-config-lvm
+  tags: cpp
+#CentOS only  
+  when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')  
+#  when: (ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7')
+  become: yes
+  ignore_errors: true   
+   
 #TODO move git to a role
 - name: workstation | Install SCM
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -1164,9 +1192,10 @@
 - name: workstation | Add speed tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
    - preload
+   - ureadahead
 
 - name: workstation | Add perl tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
