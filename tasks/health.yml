@@ -1,13 +1,14 @@
 
 - name: workstation | Install eyes tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - redshift
    - redshift-gtk
-
+  become: yes   
+  ignore_errors: yes
+  
 #Fix geoclue location
 #sudo apt-get install geoclue-2.0
 #https://github.com/jonls/redshift/issues/445
@@ -22,12 +23,13 @@
 
 - name: workstation | Install eyes applet tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
   tags: package
   with_items:
    - plasma-applet-redshift-control
-
+  become: yes   
+  ignore_errors: yes
+  
 #lightdm crash
 #- name: synergy | Autostart redshift before logging in (LightDM) | Update client
 #  lineinfile:
@@ -41,8 +43,9 @@
 
 - name: workstation | Install air quality tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
    - air-quality-sensor
+  become: yes   
+  ignore_errors: yes
