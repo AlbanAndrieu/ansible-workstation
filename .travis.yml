@@ -16,7 +16,8 @@ env:
 cache: bundler
 #sudo: false
 sudo: required
-dist: travis_lts
+#dist: travis_lts
+dist: trusty
 
 branches:
   only:
