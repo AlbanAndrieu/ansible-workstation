@@ -1,0 +1,146 @@
+
+- name: workstation | Install certificates tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - libnss3-tools # for certutil
+   - apt-transport-https
+   - ca-certificates
+
+- name: workstation | Install VNC
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
+  tags: package
+  with_items:
+   - vnc4server
+
+#Warning might be in conflict with security profile
+- name: workstation | Install stats basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - htop
+    - finger
+    - sysstat
+    - net-tools # for netstat
+#    - rusersd
+    - rusers
+#    - rwho
+#    - rwhod
+#check ssl
+#sslscan --no-failed --ssl3 localhost:443
+#    - sslscan
+    - curl
+    - wget
+    - rsync
+    - unar
+    - pydf #disk
+
+- name: workstation | Install network security basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - tcpdump
+#https://doc.ubuntu-fr.org/httrack
+#    - httrack
+#    - httraqt
+#    - webhttrack
+#Spoofing ARP
+    - dsniff
+    - arpalert
+#Pyhton proxy
+    - mitmproxy
+#WEP WPA cracker
+    - aircrack-ng
+
+- name: workstation | Install security basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - testdisk
+#    - photorec
+    - chkrootkit
+#sudo chkrootkit
+    - rkhunter
+#sudo rkhunter --check --rwo --pkgmgr dpkg
+#update your system
+#sudo rkhunter --propupd
+#TODO    - burp
+#TODO    - mig
+#See https://tools.pentestbox.com/ on windows
+#https://github.com/stasinopoulos/commix
+#see : https://blog.anantshri.info/ironwasp-on-linux/
+#wget https://blog.anantshri.info/content/uploads/2013/01/ironwasp_installer.sh.txt -O ~/ironwasp_installer.sh && sh ~/ironwasp_installer.sh
+#see https://github.com/0xsauby/yasuo
+#sudo gem install ruby-nmap net-http-persistent mechanize text-table
+
+#TODO
+#http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
+
+#See BackBox https://backbox.org/
+#TODO
+#sudo apt-get purge ri1.9.1 ruby1.9.1 ruby1.9.3 bundler
+#sudo gem cleanup
+#sudo rm -rf /var/lib/gems/1.*
+- name: video | Add repo for security pentest packages
+  apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
+  tags: gstreamer_setup
+
+- name: workstation | Install security pentest tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and backbox_enabled
+  tags: package
+  with_items:
+    - beef-project
+    - metasploit-framework
+    - whatweb
+#    - wpscan
+    - setoolkit
+    - openvas
+    - sqlite3
+#https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
+    - hydra-gtk
+  become: yes
+#sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
+
+- name: workstation | Install security antivirus tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+    - clamav
+    - clamav-daemon
+    - clamtk
+    - tiger
+
+#sudo freshclam
+#clamscan -r --bell -i /
+#Schedule a scan tommorrow
+#at 3:30 tomorrow
+#clamscan -i / | mail alban.andrieu@free.fr
+#<CTRL-D>
+
+#https://askubuntu.com/questions/645097/installing-sophos-anti-virus
+
+#See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
+- name: workstation | Install security encryption tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - gnome-disk-utility
+    - cryptsetup
+
