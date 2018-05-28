@@ -422,6 +422,21 @@
 #sudo nethogs eth1
     - nethogs
 
+#Install stacer perf ui monitoring tool
+- name: workstation | Install stacer tools PPA
+  apt_repository: repo='ppa:oguzhaninan/stacer' update_cache=yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  become: yes
+  tags: stacer
+
+- name: workstation | Install stacer tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - stacer
+   
 - name: workstation | Install vpn tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
