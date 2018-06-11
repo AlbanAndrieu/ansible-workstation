@@ -68,6 +68,7 @@ ansigenome_enabled: yes
 apache_create_vhosts: yes
 webcam_enabled: yes
 keepass2_enabled: yes
+variety_enabled: yes
 plank_enabled: yes
 android_enabled: yes
 docker_enabled: yes

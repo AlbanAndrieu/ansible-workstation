@@ -198,7 +198,7 @@
   with_items:
    - system-storage-manager
    - baobab
-   
+
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
@@ -212,12 +212,12 @@
   with_items:
    - system-config-lvm
   tags: cpp
-#CentOS only  
-  when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')  
+#CentOS only
+  when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')
 #  when: (ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7')
   become: yes
-  ignore_errors: true   
-   
+  ignore_errors: true
+
 #TODO move git to a role
 - name: workstation | Install SCM
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -299,7 +299,7 @@
 #    --recv-keys 9454C19A66B920C83DDF696E07C8CCAFCE49F8C5
 # sudo apt-get update
 # sudo apt-get install sky
-   
+
 - name: workstation | Install Ubuntu make tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
@@ -796,7 +796,8 @@
     group="{{ variety_group }}"
   ignore_errors: true
 #  sudo_user: "{{ variety_owner }}"
-  tags: variety_setup
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
+  tags: variety
 
 - name: variety | Add variety configuration.
   template:
@@ -806,7 +807,24 @@
     group: "{{ variety_group }}"
     mode: 0644
   ignore_errors: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
+  tags: variety
 #  notify: restart variety
+
+- name: variety | Add repo for variety packages
+  apt_repository: repo="ppa:peterlevi/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: yes
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
+  tags: variety
+
+- name: variety | Install variety
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
+  tags: variety
+  with_items:
+   - variety-slideshow
+   - variety
 
 - name: dropbox | Create user directory
   file:
@@ -1006,7 +1024,7 @@
    - ggcov
    - gperf
    - doxygen
-   
+
 - name: workstation | Install c++ requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
@@ -1015,7 +1033,7 @@
   with_items:
    - rpmlint
    - complexity #for c
-   
+
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: yes
