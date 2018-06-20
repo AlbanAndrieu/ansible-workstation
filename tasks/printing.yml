@@ -17,8 +17,17 @@
    - aspell-no
    - hunspell
    - hunspell-fr
+   - hunspell-no
 #http://sourceforge.net/projects/lios/files/latest/download
 #lios
+
+#http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
+##convert -monochrome politet-17-01-2016.pdf page.tif
+#convert -monochrome -density 600 politet-17-01-2016.pdf page.tif
+#ocrfeeder do not use the cli, but do import pdf
+##ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
+#Best result with tesseract
+#tesseract page.tif output -l nor
 
 - name: workstation | Install PDF utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -55,9 +64,3 @@
    - libnuma-dev
 #get cpu info
    - clinfo
-
-#http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
-#convert -monochrome politet-17-01-2016.pdf page.tif
-#convert -monochrome -density 600 politet-17-01-2016-cleaned.pdf\[1\] page.tif
-#tesseract page.tif output -l nor
-#ocrfeeder-cli -i page.tif -f TXT -o output.txt -e Tesseract
