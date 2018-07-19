@@ -17,6 +17,16 @@
   with_items:
    - vnc4server
 
+- name: workstation | Install XRDP
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xrdp_enabled
+  tags: package
+  with_items:
+   - xrdp
+#   - gnome-session-fallback
+#   - gnome-session-flashback
+   
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

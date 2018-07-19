@@ -60,6 +60,7 @@ pidgin_enabled: yes
 nodejs_enabled: yes
 mount_enabled: no
 vnc_enabled: no
+xrdp_enabled: no
 synergy_enabled: yes
 aws_enabled: yes
 scons_enabled: yes
