@@ -21,6 +21,7 @@
   with_items:
    - apt-show-versions
    - apt-listchanges
+   - apt-utils
 
 #TODO
 #- name: workstation | Install apt cache tools
