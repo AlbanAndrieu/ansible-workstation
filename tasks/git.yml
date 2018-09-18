@@ -1,0 +1,26 @@
+
+#TODO move git to a role
+- name: workstation | Install SCM
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
+  tags: package
+  with_items:
+#   - cvs
+#   - mercurial
+   - git
+   - gitg
+#   - gitk
+
+- name: workstation | Install git diff tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
+  tags: package
+  with_items:
+   - python-excelerator 
+   - catdoc 
+   - docx2txt 
+   - python-pdfminer
+   - odt2txt
+   - libimage-exiftool-perl

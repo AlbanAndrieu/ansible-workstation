@@ -45,7 +45,7 @@
 ##add for docker
 #PassThroughPattern: ^download.docker.com:443$
 
-- include: editor.yml
+- import_tasks: editor.yml
 
 #Install Ubuntu After Install on Ubuntu 15.04
 #http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
@@ -131,7 +131,7 @@
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
 
-- include: health.yml
+- import_tasks: health.yml
 
 #https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
 - name: redshift | Configure redshift startup launcher from command line
@@ -159,7 +159,7 @@
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: configure
 
-- include: printing.yml
+- import_tasks: printing.yml
 
 - name: workstation | Install memory utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -169,7 +169,7 @@
   with_items:
    - edac-utils
 
-- include: desktop.yml
+- import_tasks: desktop.yml
 
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -218,19 +218,8 @@
 #  when: (ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7')
   become: yes
   ignore_errors: true
-
-#TODO move git to a role
-- name: workstation | Install SCM
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
-  tags: package
-  with_items:
-   - cvs
-   - git
-#   - gitg
-#   - gitk
-#   - mercurial
+  
+- import_tasks: git.yml
 
 - name: workstation | Install gnuplot tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -285,9 +274,9 @@
    - system-config-samba
    - smbclient
 
-- include: security.yml
+- import_tasks: security.yml
 
-- include: pidgin.yml
+- import_tasks: pidgin.yml
 
 #TODO install sky
 #See https://www.tel.red/repos.htm
@@ -760,7 +749,7 @@
 #sudo apt-get update
 #sudo apt-get install jayatana
 
-- include: laptop.yml
+- import_tasks: laptop.yml
 
 #http://www.omgubuntu.co.uk/2016/04/10-things-to-do-after-installing-ubuntu-16-04-lts
 #gsettings set org.compiz.unityshell:/org/compiz/profiles/unity/plugins/unityshell/ launcher-minimize-window true
@@ -792,7 +781,7 @@
 #sudo ln -s /var/lib/tomcat7/server server
 #sudo ln -s /var/lib/tomcat7/shared shared
 
-- include: apache.yml
+- import_tasks: apache.yml
 
 - name: Check user
   user: name={{ variety_owner }} state=present
@@ -878,7 +867,7 @@
   with_items:
    - davfs2
 
-- include: python.yml
+- import_tasks: python.yml
 
 - name: workstation | Add repo for plank packages
   apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }} update_cache=yes
@@ -1289,7 +1278,7 @@
 #TODO
 #sudo apt-get install motion
 
-- include: fun.yml
+- import_tasks: fun.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
