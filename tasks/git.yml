@@ -2,7 +2,6 @@
 #TODO move git to a role
 - name: workstation | Install SCM
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
@@ -11,10 +10,10 @@
    - git
    - gitg
 #   - gitk
+  become: true
 
 - name: workstation | Install git diff tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
@@ -24,3 +23,4 @@
    - python-pdfminer
    - odt2txt
    - libimage-exiftool-perl
+  become: true
