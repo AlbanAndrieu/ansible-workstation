@@ -6,7 +6,7 @@
   tags: package
   with_items:
    - byobu
-  become: yes
+  become: true
   
 - name: workstation | Cron | Purge kernel images @reboot special time
   cron:
@@ -16,4 +16,4 @@
     cron_file: "purge_kernel_images"
     user: root
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  become: yes  
+  become: true  
