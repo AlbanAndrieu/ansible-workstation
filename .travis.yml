@@ -1,70 +1,76 @@
 ---
 language: python
 python:
-  - 2.7
+#  - 2.7
 #  - 3.3
 #  - 3.4
 #  - 3.5
+  - 3.6
+services:
+  - docker
 cache:
   directories:
     - $HOME/.cache/pip
 env:
+  global:
+    - JENKINS_HOME=/home/jenkins
+    - JENKINS_UID=3000
+    - DOCKER_GID=999
+    - secure: MD73NCVzctbVmi2QnQtwtH/ISXN2K0alsLbixoaXl7gr3XvTB4sYB0u+KKtPV46jbeAlQqTRObPfQouPrsLsiNDYcpuN0I5bKsn3TTs4ZHIkD0I2Q9Wh3qNM2fYf9mw3ZUhvXVTEod0W7jzkVGb6kitRCJj8rioKKzvE/YdVsG4=
+  matrix:
 #  - ANSIBLE_VERSION=latest
-  - ANSIBLE_VERSION=2.4.1.0
-#  - ANSIBLE_VERSION=2.3.1.0
-#  - ANSIBLE_VERSION=2.2.2.0  
-cache: bundler
-#sudo: false
+    - ANSIBLE_VERSION=2.7.2
 sudo: required
 #dist: travis_lts
 dist: trusty
-
 branches:
   only:
     - master
-
+virtualenv:
+  system_site_packages: false
 before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq python-apt python-pycurl
- - sudo apt-get install -qq curl
-
+  - sudo apt-get update -qq
+  - sudo apt-get install curl
+  - sudo apt-get install -qq python-apt python-pycurl
+  - sudo pip install --upgrade pip
 install:
   # Install Ansible.
   - if [ "$ANSIBLE_VERSION" = "latest" ]; then pip install ansible; else pip install ansible==$ANSIBLE_VERSION; fi
   - if [ "$ANSIBLE_VERSION" = "latest" ]; then pip install ansible-lint; fi
 
   # Update Ansible submodule.
-  #- git pull && git submodule init
-  ##- git submodule update && git submodule status
-  #- git submodule foreach git checkout master
+  - git pull && git submodule init && git submodule update && git submodule status
+  - git submodule foreach git checkout master
 
-  #- ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
+  - ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
 
 script:
   # Check ansible version
   - ansible --version
 
-  # Add ansible.cfg to pick up roles path.
-  #- "{ echo '[defaults]'; echo 'roles_path = ./roles'; } >> ansible.cfg"
-  #- export ANSIBLE_ROLES_PATH="../"
-
   # Prepare tests
-  #- echo localhost > hosts
-
+  # Add user jenkins to the image
+  - id -a
+  - getent passwd 3000 || true # 3000 not found we can use it for jenkins user
+#  - groupadd -g ${DOCKER_GID} docker && \
+  - sudo adduser --quiet --disabled-password --shell /bin/bash --uid ${JENKINS_UID} --gid ${DOCKER_GID} --home ${JENKINS_HOME} --gecos "Jenkins" jenkins
+  # Set password for the jenkins user (you may want to alter this).
+#  - sudo echo "jenkins:jenkins1234" | sudo chpasswd
+  
   # Check syntax
-  # Check the role/playbook's syntax.
-  - ansible-playbook --syntax-check -i ./hosts -vvvv ./workstation.yml --connection=local -e "python_versions=[2.7]"
+  - ansible-playbook -i ./hosts --syntax-check ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
+
+  # Molecule test
+  # - molecule test
 
   # First run
-  # Run the role/playbook with ansible-playbook.
   #- travis_wait 30 
-  - ansible-playbook -i ./hosts ./workstation.yml --connection=local --sudo -vvvv -e "python_versions=[2.7]"
+  - ansible-playbook -i ./hosts --connection=local -vvvv ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
   email:
     recipients:
       - alban.andrieu@nabla.mobi
-#      - other@example.com
-    on_success: [always|never|change] # default: change
-    on_failure: [always|never|change] # default: always
+    on_success: [always|never|change]         # default: change
+    on_failure: [always|never|change]         # default: always
