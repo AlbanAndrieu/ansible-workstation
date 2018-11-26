@@ -23,5 +23,5 @@ ansigenome_info:
 
     `ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
 
-  #custom: |
-  #  Any custom output you want after the usage section..
+  # custom: |
+  #   Any custom output you want after the usage section..
