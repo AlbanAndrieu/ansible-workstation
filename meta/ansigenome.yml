@@ -19,7 +19,7 @@ ansigenome_info:
     Ensures that workstation tools are properly installed and configured
 
   usage: |
-    Describe how to use in more detail...
+    Run the following command :
 
     `ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
 
