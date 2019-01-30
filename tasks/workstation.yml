@@ -6,15 +6,21 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true
 
-- name: workstation | Make sure multiverse is enabled for tools
-  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present update_cache=yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['14.04', '16.04', '17.04'] and apt_install_multiverse_repositories
-  with_items: apt_multiverse_repositories
-  become: true
-  ignore_errors: true
+#DUPLICATED in administration role
+#- name: administration | Make sure multiverse is enabled for AWS tools or selinux
+#  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}} universe multiverse" state=present
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04']) and apt_install_multiverse_repositories
+#  with_items: '{{apt_multiverse_repositories}}'
+#  become: true
+#
+#- name: administration | Make sure multiverse is enabled for AWS tools or selinux
+#  apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04']) and apt_install_multiverse_repositories
+#  with_items: '{{apt_multiverse_repositories}}'
+#  become: true
 
 - name: workstation | Install apt tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04']
   tags: package
@@ -50,13 +56,13 @@
 #Install Ubuntu After Install on Ubuntu 15.04
 #http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
 - name: workstation | Install ubuntu-after-install tools PPA
-  apt_repository: repo='ppa:thefanclub/ubuntu-after-install' update_cache=yes
+  apt_repository: repo='ppa:thefanclub/ubuntu-after-install'
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   become: true
   tags: uai
 
 - name: workstation | Install ubuntu-after-install tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: package
@@ -195,22 +201,24 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
 # work both on ubuntu and RedHat
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04']
   tags: package
   with_items:
-   - system-storage-manager
    - baobab
 
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '18.04']
   tags: package
   with_items:
+   - system-storage-manager
    - system-config-lvm
 
-- name: workstation | Install system-config-lvm for gcc
+- name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ jenkins_pkg_state|default('present') }}"
   with_items:
+   - system-storage-manager
    - system-config-lvm
   tags: cpp
 #CentOS only
@@ -218,7 +226,7 @@
 #  when: (ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7')
   become: true
   ignore_errors: true
-  
+
 - import_tasks: git.yml
 
 - name: workstation | Install gnuplot tools
@@ -249,12 +257,12 @@
    - ant-contrib
 
 - name: workstation | Add repo for aws packages
-  apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }} update_cache=yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['14.04', '17.04'])
+  apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }}
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version in ['16.04'])
   tags: package
 
 - name: workstation | Install AWS tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and aws_enabled
   tags: package
@@ -335,13 +343,13 @@
 #    - gphoto2
 
 - name: video | Add repo for gstreamer packages
-  apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }} update_cache=yes
+  apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }}
   become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04'] and gstreamer_enabled
   tags: gstreamer_setup
 
 - name: video | Install gstreamer packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
   tags: gstreamer_setup
@@ -414,19 +422,19 @@
 
 #Install stacer perf ui monitoring tool
 - name: workstation | Install stacer tools PPA
-  apt_repository: repo='ppa:oguzhaninan/stacer' update_cache=yes
+  apt_repository: repo='ppa:oguzhaninan/stacer'
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   become: true
   tags: stacer
 
 - name: workstation | Install stacer tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   tags: package
   with_items:
    - stacer
-   
+
 - name: workstation | Install vpn tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -447,13 +455,13 @@
 #- name: add node.js repos
 - name: falsedejs | Add the node.js PPA
 #  action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/custom-node_js-{{ ansible_lsb.codename }}.list
-  apt_repository: repo='ppa:chris-lea/node.js' update_cache=yes
+  apt_repository: repo='ppa:chris-lea/node.js'
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   tags: falsedejs
 
 - name: falsedejs | Install nodejs and npm
-  action: apt pkg={{ item }} state=installed
+  action: apt pkg={{ item }} state=installed update_cache=yes
   become: true
   tags: falsedejs
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
@@ -692,13 +700,13 @@
  # Unity package
  #
 - name: keepass2 | Add keepass2 repo
-  apt_repository: repo="ppa:jtaylor/keepass" update_cache=yes state={{ util_repository_state|default('present') }}
+  apt_repository: repo="ppa:jtaylor/keepass" state={{ util_repository_state|default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
 
 - name: keepass2 | Install keepass2 packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
@@ -817,13 +825,13 @@
 #  notify: restart variety
 
 - name: variety | Add repo for variety packages
-  apt_repository: repo="ppa:peterlevi/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
+  apt_repository: repo="ppa:peterlevi/ppa" state={{ util_repository_state|default('present') }}
   become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
   tags: variety
 
 - name: variety | Install variety
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
   tags: variety
@@ -870,13 +878,13 @@
 - import_tasks: python.yml
 
 - name: workstation | Add repo for plank packages
-  apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }} update_cache=yes
+  apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }}
   become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
   tags: plank
 
 - name: workstation | Install plank
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
   tags: plank
@@ -1066,13 +1074,13 @@
 #   - clonezilla
 
 - name: workstation | Add grub customizer ppa
-  apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }} update_cache=yes
+  apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }}
   become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and grub_customizer_enabled
   tags: grub_customizer
 
 - name: workstation | Add grub tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '17.04']) and grub_customizer_enabled
   tags: grub_customizer
@@ -1100,14 +1108,14 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
    - galternatives
-   
+
 #- name: workstation | Add apt-fast ppa
-#  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }} update_cache=yes
+#  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }}
 #  become: true
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
 #
 #- name: workstation | apt-fast speed tools
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
 #  with_items:
@@ -1115,9 +1123,9 @@
 
 #See https://doc.ubuntu-fr.org/multisystem
 - name: workstation | Add repo for multisystem
-  apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present update_cache=yes
+  apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['17.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['14.04', '16.04'])
   tags: multisystem
 
 # Place to get apt repository key
@@ -1136,12 +1144,15 @@
 #  ignore_errors: true
 
 - name: workstation | Alternative | Add multisystem repository key
-  shell: wget -q http://liveusb.info/multisystem/depot/multisystem.asc -O- | sudo apt-key add -
+# shell: wget -q http://liveusb.info/multisystem/depot/multisystem.asc -O- | sudo apt-key add -
+  apt_key:
+    url: 'http://liveusb.info/multisystem/depot/multisystem.asc'
+    state: "{{ util_pkg_state|default('present') }}"
   tags: multisystem
 #  when: add_repository_key|failed
 
 - name: workstation | Install multisystem
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['14.04','16.04','17.04'])
   tags: multisystem
@@ -1302,10 +1313,12 @@
 - name: workstation | Force no login for user jboss
   user: name=jboss shell=/bin/bash state=present
   become: true
+  ignore_errors: true
 
 - name: workstation | Force no login for user sonar
   user: name=sonar shell=/sbin/nologin state=present
   become: true
+  ignore_errors: true
 
 #- name: workstation | Force no login for user vagrant
 #  user: name=vagrant shell=/bin/false state=present
@@ -1315,6 +1328,6 @@
 #  user: name=zap shell=/bin/false state=present
 #  become: true
 
-- name: workstation | Force no login for user jenkins
-  user: name=jenkins shell=/bin/bash state=present
-  become: true
+#- name: workstation | Force no login for user jenkins
+#  user: name=jenkins shell=/bin/bash state=present
+#  become: true

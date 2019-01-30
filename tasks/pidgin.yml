@@ -1,7 +1,7 @@
 
 - name: workstation | Install messaging communication
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
@@ -16,7 +16,7 @@
 
 - name: workstation | Install messaging communication tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
@@ -30,28 +30,36 @@
 #sudo add-apt-repository ppa:nilarimogard/webupd8
 #sudo apt install purple-hangouts pidgin-hangouts
 
-- name: workstation | Add pidgin repo for hangouts packages
+- name: workstation | Add pidgin repo for pidgin-hangouts and pidgin-indicatorpackages
   apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04', '14.04']
+  become: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['16.04']
 
 - name: workstation | Install hangouts pidgin packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   with_items:
-    - purple-hangouts 
+    - purple-hangouts
     - pidgin-hangouts
+
+- name: workstation | Install pidgin-indicator packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and pidgin_indicator_enabled
+  tags: pidgin_indicator_setup
+  with_items:
+    - pidgin-indicator
     
 - name: dash | Add dash repo for unity-lens pidgin packages
   apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens pidgin packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -60,29 +68,14 @@
 #http://www.florian-diesch.de/software/classicmenu-indicator/
 - name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
   apt_repository: repo="ppa:diesch/testing" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
   tags: classicmenu_indicator_setup
 
 - name: indicator classicmenu | Install classicmenu-indicator pidgin packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and classicmenu_indicator_enabled
   tags: classicmenu_indicator_setup
   with_items:
-    - classicmenu-indicator   
-
-- name: indicator pidgin | Add repo for pidgin-indicator packages
-  apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and pidgin_indicator_enabled
-  tags: pidgin_indicator_setup
-
-- name: indicator pidgin | Install pidgin-indicator packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_indicator_enabled
-  tags: pidgin_indicator_setup
-  with_items:
-    - pidgin-indicator
-    
+    - classicmenu-indicator

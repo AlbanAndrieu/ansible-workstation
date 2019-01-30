@@ -1,14 +1,14 @@
 
 - name: workstation | Install nemo tools PPA
   apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04']
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: nemo
 
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['17.04']
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: nemo
   with_items:
    - nemo
@@ -59,7 +59,7 @@
     state=absent
     purge=yes
     force=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: dash_setup
   with_items:
@@ -76,7 +76,7 @@
 
 - name: dash | Install unity-lens and unity-scope packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
   tags: dash_setup
   with_items:
@@ -95,13 +95,13 @@
 #http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
 - name: webapps | Add webapps repo for unity-webapps-preview packages
   apt_repository: repo="ppa:webapps/preview" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
 
 - name: webapps | Install unity-webapps-preview packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
   with_items:
@@ -118,13 +118,13 @@
 
 - name: dash | Add dash repo for unity-lens history packages
   apt_repository: repo="ppa:markjtully/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens history packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -133,13 +133,13 @@
 
 #- name: dash | Add dash repo for unity-lens grooveshark packages
 #  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
-#  become: yes
+#  become: true
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
 #  tags: dash_setup
 #
 #- name: dash | Install unity-lens grooveshark packages
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-#  become: yes
+#  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
 #  tags: dash_setup
 #  with_items:
@@ -147,13 +147,13 @@
 
 - name: dash | Add dash repo for unity-lens google docs packages
   apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens google docs packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
   with_items:
@@ -171,13 +171,13 @@
 #Ubuntu 14.04
 - name: indicator calendar | Add repo for calendar-indicator packages
   apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
   tags: calendar_indicator_setup
 
 - name: indicator calendar | Install calendar-indicator packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
   tags: calendar_indicator_setup
   with_items:
@@ -185,13 +185,13 @@
 
 - name: indicator weather | Add repo for my-weather-indicator packages
   apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
   tags: weather_indicator_setup
 
 - name: indicator weather | Install my-weather-indicator packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
   tags: weather_indicator_setup
   with_items:
@@ -201,7 +201,7 @@
 #
 - name: indicator cpufreq | Install cpufreq-indicator packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and cpufreq_indicator_enabled
   tags: cpufreq_indicator_setup
   with_items:
@@ -211,7 +211,7 @@
 
 - name: unity-tweak-tool | Install unity-tweak-tool packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and tweak_enabled
   tags: tweak_setup
   with_items:
@@ -224,7 +224,7 @@
 #
 - name: compizconfig-settings-manager | Install compizconfig-settings-manager packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and compizconfig_enabled
   tags: compizconfig_setup
   with_items:
@@ -240,7 +240,7 @@
     state=absent
     purge=yes
     force=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -251,3 +251,27 @@
    - nautilus-sendto
    - nautilus-open-terminal
    
+- name: gtk | Install gtk canberra missing packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: canberra_setup
+  with_items:
+    - libcanberra-gtk-module 
+    - libcanberra-gtk3-module
+
+#See https://tic-et-net.org/2018/05/10/comment-installer-gksu-sur-ubuntu-bionic-18-04-lts/
+
+- name: workstation | Make sure artful is enabled for gksudo tools
+  apt_repository: repo="deb http://archive.ubuntu.com/ubuntu/ artful universe" state=present update_cache=yes
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
+  become: true
+  ignore_errors: true
+
+- name: workstation | Install gksudo tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
+  tags: package
+  with_items:
+   - gksu

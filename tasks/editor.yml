@@ -1,7 +1,7 @@
 
 - name: workstation | Install editor tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -12,7 +12,7 @@
 
 - name: workstation | Install editor geany tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: geany
   with_items:
@@ -23,7 +23,7 @@
 
 - name: workstation | Install editor gedit tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: gedit
   with_items:
@@ -52,13 +52,13 @@
 
 - name: workstation | Install editor gedit-gmate tools PPA
   apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   tags: gedit
 
 - name: workstation | Install editor gedit-gmate plugin
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   tags: gedit
   with_items:
@@ -66,13 +66,13 @@
 
 - name: workstation | Install editor atom tools PPA
   apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   tags: gedit
 
 - name: workstation | Install editor atom plugin
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   tags: gedit
   with_items:
@@ -80,3 +80,12 @@
 
 #apm install linter
 #apm install linter-shellcheck
+
+#See https://forum.ubuntu-fr.org/viewtopic.php?id=6125 needed for french accent
+# Typing -> Compose Key -> Right Win
+- name: workstation | Install editor gnome-tweaks
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  with_items:
+   - gnome-tweaks
