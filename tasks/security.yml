@@ -1,7 +1,7 @@
 
 - name: workstation | Install certificates tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -11,7 +11,7 @@
 
 - name: workstation | Install VNC
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
   with_items:
@@ -19,7 +19,7 @@
 
 - name: workstation | Install XRDP
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xrdp_enabled
   tags: package
   with_items:
@@ -30,7 +30,7 @@
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -53,7 +53,7 @@
 
 - name: workstation | Install network security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -72,7 +72,7 @@
 
 - name: workstation | Install security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -103,7 +103,7 @@
 #sudo rm -rf /var/lib/gems/1.*
 - name: video | Add repo for security pentest packages
   apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
-  become: yes
+  become: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
 
@@ -121,12 +121,12 @@
     - sqlite3
 #https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
     - hydra-gtk
-  become: yes
+  become: true
 #sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
 
 - name: workstation | Install security antivirus tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
@@ -147,7 +147,7 @@
 #See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
 - name: workstation | Install security encryption tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: yes
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:

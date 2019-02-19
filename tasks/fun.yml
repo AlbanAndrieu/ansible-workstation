@@ -5,7 +5,7 @@
   tags: android
   with_items:
    - screenfetch
-  become: yes
+  become: true
   ignore_errors: true
 
 # See https://github.com/nvbn/thefuck
@@ -17,7 +17,7 @@
    - python3-dev
    - python3-pip
    - python3-setuptools
-  become: yes
+  become: true
   ignore_errors: true
 
 - name: workstation  | Install thefuck
@@ -37,5 +37,5 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
    - gource
-  become: yes
+  become: true
   ignore_errors: true

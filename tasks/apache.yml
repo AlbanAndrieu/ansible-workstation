@@ -6,7 +6,7 @@
     owner="{{ apache_owner }}"
     group="{{ apache_group }}"
   ignore_errors: true
-  become: yes
+  become: true
   
 - name: Web | Create jenkins directory
   file:
@@ -15,7 +15,7 @@
     owner="{{ apache_owner }}"
     group="{{ apache_group }}"
   ignore_errors: true
-  become: yes
+  become: true
   
 - name: Web | Create nabla directory
   file:
@@ -24,7 +24,7 @@
     owner="{{ apache_owner }}"
     group="{{ apache_group }}"
   ignore_errors: true
-  become: yes
+  become: true
   
 - name: Web | Create bababou directory
   file:
@@ -33,12 +33,12 @@
     owner="{{ apache_owner }}"
     group="{{ apache_group }}"
   ignore_errors: true
-  become: yes
+  become: true
 
 - name: Web | Enable some required modules proxy
   command: a2enmod proxy
   #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
-  become: yes
+  become: true
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts  
@@ -50,13 +50,13 @@
     owner: root
     group: root
     mode: 0644
-  become: yes
+  become: true
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the jenkins site
   command: a2ensite jenkins
-  become: yes
+  become: true
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -68,13 +68,13 @@
     owner: root
     group: root
     mode: 0644
-  become: yes
+  become: true
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the nabla site
   command: a2ensite nabla
-  become: yes
+  become: true
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -86,19 +86,19 @@
 #    owner: root
 #    group: root
 #    mode: 0644
-#  become: yes
+#  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 #- name: Web | Enable the awx ansible tower site
 #  action: command a2ensite awx-httpd-7077
-#  become: yes
+#  become: true
 #  ignore_errors: yes
 #  tags: apache
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the apache mod headers
   command: a2enmod headers
-  become: yes
+  become: true
   ignore_errors: yes
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -113,6 +113,6 @@
     owner: root
     group: root
     mode: 0644
-  become: yes
+  become: true
 #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts

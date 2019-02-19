@@ -6,7 +6,7 @@
   with_items:
    - redshift
    - redshift-gtk
-  become: yes   
+  become: true   
   ignore_errors: yes
   
 #Fix geoclue location
@@ -18,7 +18,7 @@
 
 #- name: workstation | Make sure universe is enabled for eyes applet
 #  apt_repository: repo="deb http://cz.archive.ubuntu.com/ubuntu {{ansible_lsb.codename}} main universe" state=present update_cache=yes
-#  become: yes
+#  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: workstation | Install eyes applet tools
@@ -27,7 +27,7 @@
   tags: package
   with_items:
    - plasma-applet-redshift-control
-  become: yes   
+  become: true   
   ignore_errors: yes
   
 #lightdm crash
@@ -38,7 +38,7 @@
 #    regexp="^greeter-setup-script"
 #    state=present
 #    insertafter=EOF
-#  become: yes
+#  become: true
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
 
 - name: workstation | Install air quality tools
@@ -47,5 +47,5 @@
   tags: package
   with_items:
    - air-quality-sensor
-  become: yes   
+  become: true   
   ignore_errors: yes
