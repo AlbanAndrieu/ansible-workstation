@@ -50,7 +50,7 @@
   tags: pidgin_indicator_setup
   with_items:
     - pidgin-indicator
-    
+
 - name: dash | Add dash repo for unity-lens pidgin packages
   apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true

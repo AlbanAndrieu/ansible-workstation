@@ -26,7 +26,7 @@
    - xrdp
 #   - gnome-session-fallback
 #   - gnome-session-flashback
-   
+
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

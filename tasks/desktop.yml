@@ -229,9 +229,9 @@
   tags: compizconfig_setup
   with_items:
     - compizconfig-settings-manager
-    
-#for nautilus    
-#sudo apt-get install folder-color 
+
+#for nautilus
+#sudo apt-get install folder-color
 
 #Uninstall nautilus file manager
 - name: workstation | Uninstall nautilus file manager
@@ -250,14 +250,14 @@
    - nautilus
    - nautilus-sendto
    - nautilus-open-terminal
-   
+
 - name: gtk | Install gtk canberra missing packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: canberra_setup
   with_items:
-    - libcanberra-gtk-module 
+    - libcanberra-gtk-module
     - libcanberra-gtk3-module
 
 #See https://tic-et-net.org/2018/05/10/comment-installer-gksu-sur-ubuntu-bionic-18-04-lts/

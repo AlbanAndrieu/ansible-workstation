@@ -17,16 +17,16 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
-   - python-excelerator 
-   - catdoc 
-   - docx2txt 
+   - python-excelerator
+   - catdoc
+   - docx2txt
    - python-pdfminer
    - odt2txt
    - libimage-exiftool-perl
   become: true
-  
-# See https://myrepos.branchable.com/install/  
-  
+
+# See https://myrepos.branchable.com/install/
+
 - name: workstation | Install myrepos tool for git
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])

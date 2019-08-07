@@ -6,9 +6,9 @@
   with_items:
    - redshift
    - redshift-gtk
-  become: true   
+  become: true
   ignore_errors: yes
-  
+
 #Fix geoclue location
 #sudo apt-get install geoclue-2.0
 #https://github.com/jonls/redshift/issues/445
@@ -27,9 +27,9 @@
   tags: package
   with_items:
    - plasma-applet-redshift-control
-  become: true   
+  become: true
   ignore_errors: yes
-  
+
 #lightdm crash
 #- name: synergy | Autostart redshift before logging in (LightDM) | Update client
 #  lineinfile:
@@ -47,5 +47,5 @@
   tags: package
   with_items:
    - air-quality-sensor
-  become: true   
+  become: true
   ignore_errors: yes
