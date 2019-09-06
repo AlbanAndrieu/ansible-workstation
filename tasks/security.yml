@@ -154,3 +154,17 @@
     - gnome-disk-utility
     - cryptsetup
 
+# See https://www.freeyourdesktop.com/2018/07/howdy-unlock-your-desktop-with-face-recognition/
+- name: workstation | Install howdy tools PPA
+  apt_repository: repo='ppa:boltgolt/howdy' update_cache=yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
+  tags: howdy
+
+- name: workstation | Install howdy tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
+  tags: howdy
+  with_items:
+   - howdy
