@@ -123,10 +123,35 @@
    - stress
 #https://www.rackaid.com/blog/linux-screen-tutorial-and-how-to/
    - screen
+
+# sudo add-apt-repository ppa:linuxuprising/shutter
+- name: workstation | Install utilities tools screenshot shutter PPA
+  apt_repository: repo='ppa:linuxuprising/shutter ' update_cache=yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04', '19.04']
+  tags: shutter
+
+- name: workstation | Install utilities tools screenshot shutter
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: shutter
+  with_items:
 # Screenshot shutter
    - shutter
 
-- name: workstation | Create .config/autostart folder
+- name: workstation | Install prerequisits for synergy
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - qml-module-qtquick-controls
+   - qml-module-qtquick-layouts
+   - qml-module-qtquick-dialogs
+   - qml-module-qtquick2
+
+- name: workstation | Create .config/autostart folder for synergy
   file: path={{ home }}/.config/autostart mode=0777 state=directory recurse=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -185,7 +210,7 @@
   with_items:
    - software-center
 
-- name: workstation | Install disk/recovery tools
+- name: workstation | Install disk/recovery tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -193,9 +218,16 @@
   with_items:
    - testdisk
    - gparted
-   - unetbootin
    - usbmount
    - remmina
+
+- name: workstation | Install disk/recovery tools (2)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['19.04']
+  tags: package
+  with_items:
+   - unetbootin
 
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -209,7 +241,7 @@
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '18.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04']
   tags: package
   with_items:
    - system-storage-manager
@@ -279,7 +311,6 @@
    - samba
    - samba-common
    - python-glade2
-   - system-config-samba
    - smbclient
 
 - import_tasks: security.yml
@@ -327,7 +358,7 @@
 #  with_items:
 #    - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
 
-- name: workstation | Install webcam tools
+- name: workstation | Install webcam tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
@@ -339,8 +370,15 @@
 #    - gstreamer-properties
     - guvcview
     - cheese
-    - camorama
 #    - gphoto2
+
+- name: workstation | Install webcam tools (2)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and webcam_enabled
+  tags: package
+  with_items:
+    - camorama
 
 - name: video | Add repo for gstreamer packages
   apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }}
@@ -1087,12 +1125,18 @@
   with_items:
    - grub-customizer
 
-- name: workstation | Add speed tools
+- name: workstation | Add speed tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
    - preload
+
+- name: workstation | Add speed tools (2)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04'])
+  with_items:
    - ureadahead
 
 - name: workstation | Add perl tools
@@ -1151,10 +1195,11 @@
   tags: multisystem
 #  when: add_repository_key|failed
 
+# multisystem is ok for 18.04 but not yet for 19.04
 - name: workstation | Install multisystem
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['14.04','16.04','17.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04'])
   tags: multisystem
   with_items:
    - multisystem

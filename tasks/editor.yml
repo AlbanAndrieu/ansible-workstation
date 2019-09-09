@@ -21,7 +21,7 @@
    - gtk2-engines-pixbuf # geany bugfix
 ##sudo apt-cache search geany
 
-- name: workstation | Install editor gedit tools
+- name: workstation | Install editor gedit tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -31,6 +31,13 @@
    - gedit
    - gedit-plugins
    - aspell-fr
+
+- name: workstation | Install editor gedit tools (2)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04']
+  tags: gedit
+  with_items:
    - gconf-editor
 #gconf-editor
    - dconf-tools
@@ -67,16 +74,22 @@
 - name: workstation | Install editor atom tools PPA
   apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
-  tags: gedit
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','19.04']
+  tags: atom
 
-- name: workstation | Install editor atom plugin
+- name: workstation | Install editor atom 
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
-  tags: gedit
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','19.04']
+  tags: atom
   with_items:
    - atom
+
+- name: workstation | Install editor atom 
+  command: snap install atom --classic
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','16.04','18.04']
+  tags: atom
 
 #apm install linter
 #apm install linter-shellcheck
