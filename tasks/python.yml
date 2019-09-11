@@ -10,7 +10,7 @@
     - python-dev
     - python-pip
   become: true
-  
+
 - name: python | Install python utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and python_enabled
@@ -20,7 +20,7 @@
    - python-flake8
    - python-netaddr
   become: true
-  
+
 - name: python | Install Ansible documentation generator prerequisite
   pip: name={{ item }} executable=pip2
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
@@ -30,7 +30,7 @@
     - jinja2
     - httplib2
   become: true
-  
+
 - name: python | Install Ansible documentation generator
   pip: name={{ item }} executable=pip2
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
@@ -38,7 +38,7 @@
     - setuptools
     - ansigenome
   become: true
-  
+
 - name: python | Install Ansible tools
   pip: name={{ item }} executable=pip2
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
@@ -47,7 +47,7 @@
     - ansible-shell
     - pre-commit
   become: true
-  
+
 #TODO
 #sudo pip install ansigenome
 #easy_install ansigenome
