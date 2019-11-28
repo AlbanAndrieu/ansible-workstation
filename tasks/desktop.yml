@@ -284,3 +284,12 @@
   with_items:
    - xrdp
    - gnome-session-flashback
+
+- name: workstation | Enable lock-screen
+  command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - gsettings
+   - lock-screen

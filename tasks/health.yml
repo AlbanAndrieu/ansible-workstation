@@ -31,7 +31,7 @@
   ignore_errors: yes
 
 #lightdm crash
-#- name: synergy | Autostart redshift before logging in (LightDM) | Update client
+#- name: redshift | Autostart redshift before logging in (LightDM) | Update client
 #  lineinfile:
 #    dest=/etc/lightdm/lightdm.conf
 #    line="greeter-setup-script=/usr/bin/redshift {{ redshift_options }}"
