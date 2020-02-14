@@ -7,3 +7,12 @@
   tags: package
   with_items:
    - duplicity
+
+#sudo pip2 install PyDrive
+#sudo pip3.7 install PyDrive
+
+- name: workstation | Install deja-dup tools
+  command: "snap install deja-dup --classic"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['19.04', '19.10']
+  tags: package
