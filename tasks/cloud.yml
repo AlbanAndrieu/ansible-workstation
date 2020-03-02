@@ -1,0 +1,9 @@
+---
+
+- name: cloud | Install multipass
+  snap:
+    name: multipass
+    classic: yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  tags: package

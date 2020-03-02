@@ -315,6 +315,10 @@
    - python-glade2
    - smbclient
 
+- import_tasks: webcam.yml
+
+- import_tasks: cloud.yml
+
 - import_tasks: security.yml
 
 - import_tasks: pidgin.yml

@@ -4,7 +4,7 @@
 #lsusb | grep -i logitech
 
 #See https://wenchaojames.wordpress.com/2013/01/03/convert-video-format-mts-to-mp4-in-ubuntu/
-#- name: workstation | Install mts to mp4 converter tools
+#- name: webcam | Install mts to mp4 converter tools
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -12,7 +12,7 @@
 #  with_items:
 #    - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
 
-- name: workstation | Install webcam tools (1)
+- name: webcam | Install webcam tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
@@ -26,7 +26,7 @@
     - cheese
 #    - gphoto2
 
-- name: workstation | Install webcam tools (2)
+- name: webcam | Install webcam tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and webcam_enabled
@@ -48,7 +48,7 @@
   with_items:
     - gstreamer0.10-ffmpeg
 
-- name: workstation | Install webcam tools
+- name: webcam | Install webcam tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
@@ -59,7 +59,7 @@
     - gstreamer0.10-plugins-bad
     - gstreamer0.10-plugins-ugly
 
-- name: workstation | Install webcam tools
+- name: webcam | Install webcam tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and gstreamer_enabled
@@ -71,7 +71,7 @@
     - gstreamer1.0-plugins-ugly
 
 # See https://www.freeyourdesktop.com/2018/07/howdy-unlock-your-desktop-with-face-recognition/
-- name: workstation | Install howdy tools PPA
+- name: webcam | Install howdy tools PPA
   apt_repository: repo='ppa:boltgolt/howdy' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
@@ -80,7 +80,7 @@
 #Fix on Ubuntu 19
 #sudo ln -s /usr/local/bin/pip3 /usr/bin/pip3
 
-- name: workstation | Install howdy tools
+- name: webcam | Install howdy tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
