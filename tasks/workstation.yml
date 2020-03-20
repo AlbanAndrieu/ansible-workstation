@@ -315,6 +315,10 @@
    - python-glade2
    - smbclient
 
+- import_tasks: webcam.yml
+
+- import_tasks: cloud.yml
+
 - import_tasks: security.yml
 
 - import_tasks: pidgin.yml
@@ -347,76 +351,6 @@
   with_items:
     - strace
     - yp-tools #ypcat hosts | grep ilo
-
-#https://doc.ubuntu-fr.org/webcam
-#lsusb | grep -i logitech
-
-#See https://wenchaojames.wordpress.com/2013/01/03/convert-video-format-mts-to-mp4-in-ubuntu/
-#- name: workstation | Install mts to mp4 converter tools
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-#  become: true
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-#  tags: package
-#  with_items:
-#    - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
-
-- name: workstation | Install webcam tools (1)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
-  tags: package
-  with_items:
-#    - libv4l-0
-#    - libv4l-dev
-#http://blog.nicolargo.com/2013/05/streaming-depuis-la-raspberry-camera.html
-#    - gstreamer-properties
-    - guvcview
-    - cheese
-#    - gphoto2
-
-- name: workstation | Install webcam tools (2)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and webcam_enabled
-  tags: package
-  with_items:
-    - camorama
-
-- name: video | Add repo for gstreamer packages
-  apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }}
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04'] and gstreamer_enabled
-  tags: gstreamer_setup
-
-- name: video | Install gstreamer packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
-  tags: gstreamer_setup
-  with_items:
-    - gstreamer0.10-ffmpeg
-
-- name: workstation | Install webcam tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
-  tags: gstreamer_setup
-  with_items:
-    - gstreamer0.10-plugins-base
-    - gstreamer0.10-plugins-good
-    - gstreamer0.10-plugins-bad
-    - gstreamer0.10-plugins-ugly
-
-- name: workstation | Install webcam tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and gstreamer_enabled
-  tags: gstreamer_setup
-  with_items:
-    - gstreamer1.0-plugins-base
-    - gstreamer1.0-plugins-good
-    - gstreamer1.0-plugins-bad
-    - gstreamer1.0-plugins-ugly
 
 - name: workstation | Install network tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
