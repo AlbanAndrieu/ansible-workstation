@@ -126,15 +126,15 @@
 
 # sudo add-apt-repository ppa:linuxuprising/shutter
 - name: workstation | Install utilities tools screenshot shutter PPA
-  apt_repository: repo='ppa:linuxuprising/shutter ' update_cache=yes
+  apt_repository: repo='ppa:linuxuprising/shutter' update_cache=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04', '19.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
   tags: shutter
 
 - name: workstation | Install utilities tools screenshot shutter
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
   tags: shutter
   with_items:
 # Screenshot shutter
@@ -224,7 +224,7 @@
 - name: workstation | Install disk/recovery tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['19.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('18.04', '<=')
   tags: package
   with_items:
    - unetbootin
@@ -462,15 +462,16 @@
 
 #Install stacer perf ui monitoring tool
 - name: workstation | Install stacer tools PPA
-  apt_repository: repo='ppa:oguzhaninan/stacer'
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  apt_repository: repo="ppa:oguzhaninan/stacer" state={{ util_repository_state|default('present') }}  
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04'] and ansible_distribution_version is version('19.04', '<')
+  #Ubuntu 19 The repository 'http://ppa.launchpad.net/oguzhaninan/stacer/ubuntu eoan Release' does not have a Release file 
   become: true
   tags: stacer
 
 - name: workstation | Install stacer tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04'] and ansible_distribution_version is version('19.04', '<')
   tags: package
   with_items:
    - stacer
@@ -754,16 +755,6 @@
     - keepass2
 #    - keepassx
 
-- name: skype | Install skype fixes
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and skype_enabled
-  tags: skype_setup
-  with_items:
-    - gtk2-engines-murrine:i386
-    - gtk2-engines-pixbuf:i386
-    - sni-qt:i386
-    - libjpeg62:i386
 #
 ##sudo apt-add-repository ppa:pipelight/stable
 ##sudo apt-get update
@@ -1079,11 +1070,18 @@
 - name: workstation | Install c++ requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04', '19.10'])
+  tags: android
+  with_items:
+   - valkyrie
+   
+- name: workstation | Install c++ requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: android
   with_items:
    - valgrind
-   - valkyrie
    - google-perftools
    - clang
    - flawfinder
@@ -1099,7 +1097,7 @@
   tags: android
   with_items:
    - rpmlint
-   - complexity #for c
+   - complexity # for c
 
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -1109,7 +1107,7 @@
   with_items:
    - shellcheck
 
-#http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
+# http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
 - name: workstation | Fix automatic backup issue
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -1130,13 +1128,13 @@
 - name: workstation | Add grub customizer ppa
   apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }}
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and grub_customizer_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version in ['18.04', '18.10']) and grub_customizer_enabled
   tags: grub_customizer
 
 - name: workstation | Add grub tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '17.04']) and grub_customizer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['18.04', '18.10']) and grub_customizer_enabled
   tags: grub_customizer
   with_items:
    - grub-customizer
@@ -1151,7 +1149,7 @@
 - name: workstation | Add speed tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04', '19.10'])
   with_items:
    - ureadahead
 
@@ -1350,7 +1348,13 @@
 #TODO
 #sudo apt-get install motion
 
+#- import_tasks: hdd.yml
+
+- import_tasks: vpn.yml
+
 - import_tasks: fun.yml
+
+- import_tasks: music.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -1392,3 +1396,4 @@
 #- name: workstation | Force no login for user jenkins
 #  user: name=jenkins shell=/bin/bash state=present
 #  become: true
+

@@ -36,7 +36,7 @@
   ignore_errors: true
 
 - name: workstation | Initalize myrepos
-  shell: 'for d in $(find /workspace/users/albandri30/ -type d -name .git); do (mr register $d/..); done'
+  shell: 'for d in $(find /workspace/users/{{ jenkins_user }}{{ shell_default_version }}/ -type d -name .git); do (mr register $d/..); done'
   changed_when: false
   become: true
   ignore_errors: true

@@ -1,0 +1,309 @@
+---
+
+#ansible-playbook playbooks/hdd.yml -i inventory/production --limit albandrieu.albandrieu.com -vvvv
+
+# WARNING below order is important
+
+#TODO reboot if you do not see sdb
+- name: Iscsi configuration
+  hosts: iscsi
+  become: true
+
+  tasks:
+    - name: set freenas_ssh_target_global to default
+      set_fact: freenas_ssh_target_global=iqn.2011-03.com.albandrieu.istgt
+
+    - name: set freenas_ssh_target to default
+      set_fact: freenas_ssh_target=nabla
+
+    - name: set freenas_ssh_host to default
+      set_fact: freenas_ssh_host=192.168.1.24
+
+    - name: set freenas_ssh_port to default
+      set_fact: freenas_ssh_port=3260
+
+    - name: Copy isci configuration.
+      template:
+        src: iscsid.conf.j2
+        dest: "/etc/iscsi/iscsid.conf"
+        owner: root
+        group: root
+        mode: 0600
+#      notify: restart iscsi
+
+#    - name: Copy isci configuration.
+#      template:
+#        src: 192.168.1.24,3260.j2
+#        dest: "/etc/iscsi/nodes/{{ freenas_ssh_target_global }}\:{{ freenas_ssh_target }}/{{ freenas_ssh_host }}\,{{ freenas_ssh_port }}"
+#        owner: root
+#        group: root
+#        mode: 0600
+##      notify: restart iscsi
+# systemctl restart open-iscsi
+
+# TODO target albandri albandrieu
+
+# See https://www.tecmint.com/create-luns-using-lvm-in-iscsi-target/
+#fdisk -c /dev/sdd
+#Welcome to fdisk (util-linux 2.31.1).
+#Changes will remain in memory only, until you decide to write them.
+#Be careful before using the write command.
+#
+#Device does not contain a recognized partition table.
+#Created a new DOS disklabel with disk identifier 0x06091fe8.
+#
+#Command (m for help): n
+#Partition type
+#   p   primary (0 primary, 0 extended, 4 free)
+#   e   extended (container for logical partitions)
+#Select (default p): p
+#Partition number (1-4, default 1):
+#First sector (2048-4194303, default 2048):
+#Last sector, +sectors or +size{K,M,G,T,P} (2048-4194303, default 4194303):
+#
+#Created a new partition 1 of type 'Linux' and of size 2 GiB.
+#
+#Command (m for help): w
+#The partition table has been altered.
+#Calling ioctl() to re-read partition table.
+#Syncing disks.
+
+#lsblk
+#mkfs.ext4 /dev/sdd1
+#sudo mkdir /data
+#mount /dev/sdd1 /data
+
+#fdisk -l /dev/sdd
+
+- hosts: jenkins-slaves
+  become: true
+
+  tasks:
+
+    - name: hdd | Create vg_iscsi volume group
+      command: umount /data && vgcreate vg_iscsi /dev/sdd1
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+#pvs && vgs && lvs
+
+    - name: hdd | Create sdd1
+      command: pvcreate /dev/sdd1
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+#    - name: hdd | Extend sdb
+#      command: vgextend vgubuntu /dev/sdb
+#      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+#      changed_when: false
+#      become: true
+#      ignore_errors: true
+
+    - name: hdd | Extend sdb
+      command: vgextend VolGroup00 /dev/sdb
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '6'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Extend sdb
+      command: vgextend rhel_fr1cslvcacrhel71 /dev/sdb
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Extend sdb
+      command: vgextend centos_tmpvcaccent7 /dev/sdb
+      when: (ansible_distribution == 'CentOS') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create workspace filesystem
+      command: lvcreate -L 500G -n workspace vg_iscsi
+      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create docker filesystem
+      command: lvcreate -L 100G -n docker vg_iscsi
+      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create workspace filesystem
+      command: lvcreate -l 12805 -n workspace VolGroup00
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '6'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create workspace filesystem
+      command: lvcreate -l 12805 -n workspace rhel_fr1cslvcacrhel71
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create docker filesystem
+      command: lvcreate -l 12794 -n docker rhel_fr1cslvcacrhel71
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create workspace filesystem
+      command: lvcreate -l 12805 -n workspace centos_tmpvcaccent7
+      when: (ansible_distribution == 'CentOS') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Create docker filesystem
+      command: lvcreate -l 12794 -n docker centos_tmpvcaccent7
+      when: (ansible_distribution == 'CentOS') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make workspace filesystem ext4
+      command: mkfs -t ext4 /dev/vg_iscsi/workspace
+      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make docker filesystem ext4
+      command: mkfs -t ext4 /dev/vg_iscsi/docker
+      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make workspace filesystem ext4
+      command: mkfs -t ext4 /dev/VolGroup00/workspace
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '6'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make workspace filesystem xfs
+      command: mkfs -t xfs /dev/rhel_fr1cslvcacrhel71/workspace
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make docker filesystem xfs
+      command: mkfs -t xfs /dev/rhel_fr1cslvcacrhel71/docker
+      when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make workspace filesystem xfs
+      command: mkfs -t xfs /dev/centos_tmpvcaccent7/workspace
+      when: (ansible_distribution == 'CentOS') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+    - name: hdd | Make docker filesystem xfs
+      command: mkfs -t xfs /dev/centos_tmpvcaccent7/docker
+      when: (ansible_distribution == 'CentOS') and ansible_distribution_major_version == '7'
+      changed_when: false
+      become: true
+      ignore_errors: true
+
+# lvcreate -l 12805 -n workspace rhel_fr1cslvcacrhel71
+# lvcreate -l 12805 -n docker rhel_fr1cslvcacrhel71
+#
+# lvdisplay
+#
+# sudo mkfs -t ext4 /dev/rhel_fr1cslvcacrhel71/workspace
+# sudo mkfs -t xfs /dev/rhel_fr1cslvcacrhel71/workspace
+# sudo mkfs -t ext4 /dev/rhel_fr1cslvcacrhel71/docker
+# mkfs.xfs -n ftype=1 /dev/rhel_fr1cslvcacrhel71/docker
+#
+# sudo mkdir /workspace
+# sudo mkdir /docker
+- name: Mount configuration
+  hosts: jenkins-slaves
+  become: true
+
+  tasks:
+    - name: hdd | Mount up device by label data
+      mount:
+        path: /data
+        src: /dev/rhel_fr1cslvcacrhel71/workspace
+        fstype: ext4
+        opts: auto
+        passno: 2
+        state: present
+
+    - name: hdd | Mount up device by label
+      mount:
+        path: /docker
+        src: /dev/rhel_fr1cslvcacrhel71/docker
+        fstype: ext4
+        opts: auto
+        passno: 2
+        state: present
+
+# /etc/fstab
+# /dev/rhel_fr1cslvcacrhel71/workspace /workspace ext4 auto 0 2
+# /dev/rhel_fr1cslvcacrhel71/docker /docker ext4 auto 0 2
+# /dev/rhel_fr1cslvcacrhel71/workspace /workspace xfs auto 0 2
+# /dev/rhel_fr1cslvcacrhel71/docker /docker xfs defaults,usrquota,prjquota  0   0
+# /dev/vgubuntu/workspace /workspace xfs auto 0 2
+# /dev/vgubuntu/docker /docker xfs defaults,usrquota,prjquota  0   0
+# /dev/VolGroup00/workspace /workspace ext4 auto 0 2
+
+# Check entry in /etc/fstab
+# sudo mount /workspace
+# sudo mount /docker
+
+# extend size of logical volume
+# lvextend --resizefs -L +6G /dev/rhel_fr1cslvcacrhel71/swap
+# lvextend --resizefs -L +17G /dev/rhel_fr1cslvcacrhel71/root
+# #lvextend -l +100%FREE /dev/rhel_fr1cslvcacrhel71/root
+# RedHat 6
+# lvextend --resizefs -L +6G /dev/VolGroup00/usrvol
+
+# IMPORTANT
+# Do not reboot the server if entry in wrong in fstab you will have IS team to get console on booting
+
+    - name: hdd | Install hdd tools
+      action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+      when: (ansible_distribution == 'RedHat' and not ansible_distribution_major_version == '6')
+      with_items:
+        - system-storage-manager
+      become: true
+      changed_when: false
+
+    - name: hdd | Install hdd tools
+      action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=true"
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')
+      with_items:
+        - gnome-disk-utility
+        - baobab
+      become: true
+
+# Change quota on xfs for oracle database
+# See https://help.directadmin.com/item.php?id=557
+
+# nano /etc/default/grub
+# GRUB_CMDLINE_LINUX="rd.lvm.lv=rhel_fr1cslvcacrhel71/swap rd.lvm.lv=rhel_fr1cslvcacrhel71/root rhgb quiet rootflags=uquota,pquota"
+## GRUB_CMDLINE_LINUX="rd.lvm.lv=centos_tmpvcaccent7/root rd.lvm.lv=centos_tmpvcaccent7/swap rhgb quiet"
+
+# cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.orig
+# grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# lvextend -l +100%FREE /dev/rhel_fr1cslvcacrhel71/root
+# xfs_info /dev/mapper/rhel_fr1cslvcacrhel71-root
+# xfs_growfs -d /dev/rhel_fr1cslvcacrhel71/root

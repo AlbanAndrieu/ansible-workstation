@@ -21,6 +21,12 @@
    - gtk2-engines-pixbuf # geany bugfix
 ##sudo apt-cache search geany
 
+- name: workstation | Install editor geany configuration
+  template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
+  become: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: geany
+
 - name: workstation | Install editor gedit tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -74,13 +80,13 @@
 - name: workstation | Install editor atom tools PPA
   apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','19.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: atom
 
 - name: workstation | Install editor atom
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','19.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: atom
   with_items:
    - atom
@@ -88,7 +94,7 @@
 - name: workstation | Install editor atom
   command: snap install atom --classic
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04','16.04','18.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags: atom
 
 #apm install linter

@@ -1,0 +1,26 @@
+---
+
+- name: workstation | Install Cisco AnyConnect Compatible VPN openconnect tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: vpn
+  with_items:
+   - network-manager-openconnect
+   - network-manager-openconnect-gnome
+
+#http://www.humans-enabled.com/2011/06/how-to-connect-ubuntu-linux-to-cisco.html
+#then in network manager click add
+#Then Cisco AnyConnect Compatible VPN openconnect
+
+- name: workstation | Install vpc tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: vpn
+  with_items:
+   - vpnc
+   - network-manager-vpnc
+
+#TODO sudo service networking restart
+#TODO reboot

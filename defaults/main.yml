@@ -16,6 +16,8 @@ web_base_dir: "/var/www/sample"
 user: "{{ lookup('env','USER') }}"
 #home: '~' #please override me
 home: "{{ lookup('env','HOME') }}"
+group: docker
+shell_default_version: 30
 
 redshift_owner: "{{ user }}"
 redshift_group: "{{ redshift_owner }}"
@@ -94,3 +96,11 @@ grunt_version: "0.4.5"
 grunt_cli_version: "0.1.13"
 
 redshift_options: "-l 48.86:2.34" #For Paris
+
+homebrew_check_path: "{{ home }}/.linuxbrew/bin/brew"
+jenkins_user: "{{ user }}"
+
+brew_packages:
+  - 'randomize-lines' # for git-radar
+  - 'michaeldfallen/formula/git-radar'
+  
