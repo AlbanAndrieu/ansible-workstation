@@ -56,7 +56,7 @@ script:
   - sudo adduser --quiet --disabled-password --shell /bin/bash --uid ${JENKINS_UID} --gid ${DOCKER_GID} --home ${JENKINS_HOME} --gecos "Jenkins" jenkins
   # Set password for the jenkins user (you may want to alter this).
 #  - sudo echo "jenkins:jenkins1234" | sudo chpasswd
-  
+
   # Check syntax
   - ansible-playbook -i ./hosts --syntax-check ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
 
@@ -64,7 +64,7 @@ script:
   # - molecule test
 
   # First run
-  #- travis_wait 30 
+  #- travis_wait 30
   - ansible-playbook -i ./hosts --connection=local -vvvv ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
 
 notifications:

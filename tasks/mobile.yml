@@ -1,0 +1,39 @@
+---
+
+- name: workstation | Install android tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - chrome-gnome-shell
+   - libmtp-common
+   - mtp-tools
+   - libmtp-dev
+   - libmtp-runtime
+   - libmtp9
+   - jmtpfs
+
+#lsusb
+#
+#mtp-detect
+#mtp-connect
+#mtp-folders
+
+- name: workstation | Install gnome sushi
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  tags: android
+  with_items:
+   - gnome-sushi
+
+- name: workstation | Install android sdk
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and android_enabled
+  tags: android
+  with_items:
+#   - gnome-phone-manager
+   - android-tools-adb
+   - android-tools-fastboot

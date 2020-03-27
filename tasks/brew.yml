@@ -138,7 +138,7 @@
   become: true
   become_user: "{{ jenkins_user }}"
   ignore_errors: true
-  
+
 - name: brew | Install docker utility package
   homebrew:
     name: ['hadolint', 'dive']
@@ -149,11 +149,11 @@
 - name: brew | Install brew package
   homebrew:
     name: "{{ item }}"
-  with_items: "{{ brew_packages }}"    
+  with_items: "{{ brew_packages }}"
   changed_when: false
   become: true
   become_user: "{{ jenkins_user }}"
-  
+
 #brew update && brew upgrade; brew cleanup
 - name: brew | Homebrew Cleaning
   command: "{{ homebrew_check_path }} cleanup"

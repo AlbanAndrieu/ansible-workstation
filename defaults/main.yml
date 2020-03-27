@@ -103,4 +103,3 @@ jenkins_user: "{{ user }}"
 brew_packages:
   - 'randomize-lines' # for git-radar
   - 'michaeldfallen/formula/git-radar'
-  

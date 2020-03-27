@@ -396,9 +396,9 @@
 
 #Install stacer perf ui monitoring tool
 - name: workstation | Install stacer tools PPA
-  apt_repository: repo="ppa:oguzhaninan/stacer" state={{ util_repository_state|default('present') }}  
+  apt_repository: repo="ppa:oguzhaninan/stacer" state={{ util_repository_state|default('present') }}
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04'] and ansible_distribution_version is version('19.04', '<')
-  #Ubuntu 19 The repository 'http://ppa.launchpad.net/oguzhaninan/stacer/ubuntu eoan Release' does not have a Release file 
+  #Ubuntu 19 The repository 'http://ppa.launchpad.net/oguzhaninan/stacer/ubuntu eoan Release' does not have a Release file
   become: true
   tags: stacer
 
@@ -869,24 +869,6 @@
 #  tags: plank
 #  with_items:
 #   - plank-themer
-   
-- name: workstation | Install gnome sushi
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
-  with_items:
-   - gnome-sushi
-
-- name: workstation | Install android sdk
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and android_enabled
-  tags: android
-  with_items:
-#   - gnome-phone-manager
-   - android-tools-adb
-   - android-tools-fastboot
 
 - name: workstation | Install docker tool
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -914,7 +896,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04','14.04'])
-  tags: android
+  tags: docker
   with_items:
    - apparmor-utils
    - cgroup-tools
@@ -924,7 +906,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
+  tags: extras
   with_items:
    - vlc
    - ubuntu-restricted-extras
@@ -935,7 +917,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
+  tags: gimp
   with_items:
    - gimp
    - gimp-data-extras
@@ -952,7 +934,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: android
+  tags: fonts
   with_items:
    - fontforge
    - fontforge-extras
@@ -976,6 +958,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '14.04', '16.04'])
+  tags: wine
   with_items:
    - wine
    - winetricks
@@ -984,6 +967,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['17.04'])
+  tags: wine
   with_items:
    - wine-stable
    - winetricks
@@ -997,67 +981,17 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: android
+  tags: x11
   with_items:
    - x11-xserver-utils
-
-- name: workstation | Install c++ requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04', '19.10'])
-  tags: android
-  with_items:
-   - valkyrie
-   
-- name: workstation | Install c++ requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: android
-  with_items:
-   - valgrind
-   - google-perftools
-   - clang
-   - flawfinder
-   - cppcheck
-   - ggcov
-   - gperf
-   - doxygen
-
-- name: workstation | Install c++ requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
-  tags: android
-  with_items:
-   - rpmlint
-   - complexity # for c
 
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: android
+  tags: shellcheck
   with_items:
    - shellcheck
-
-# http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
-- name: workstation | Fix automatic backup issue
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['16.04'])
-  tags: android
-  with_items:
-   - duplicity
-
-- name: workstation | Add backup tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['16.04'])
-  tags: android
-  with_items:
-   - aptoncd
-#   - clonezilla
 
 - name: workstation | Add grub customizer ppa
   apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }}
@@ -1286,15 +1220,21 @@
 
 - import_tasks: vpn.yml
 
+- import_tasks: backup.yml
+
 - import_tasks: fun.yml
 
 - import_tasks: music.yml
+
+- import_tasks: mobile.yml
+
+- import_tasks: cpp.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-#  tags: android
+#  tags: lowlatency
 #  with_items:
 #   - linux-lowlatency
 #   - linux-headers-lowlatency
@@ -1330,4 +1270,3 @@
 #- name: workstation | Force no login for user jenkins
 #  user: name=jenkins shell=/bin/bash state=present
 #  become: true
-
