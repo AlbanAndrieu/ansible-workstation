@@ -33,7 +33,8 @@ dropbox_group: "{{ dropbox_owner }}"
 
 dropbox_owner_home: "{{ home }}"
 dropbox_directory: "{{ dropbox_owner_home }}/.dropbox"
-dropbox_user_directory: "/workspace/Dropbox"
+#dropbox_user_directory: "{{ dropbox_owner_home }}/Dropbox"
+dropbox_user_directory: "~/Dropbox"
 
 # Package states: present or installed or latest
 util_pkg_state: present

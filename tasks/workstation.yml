@@ -756,82 +756,6 @@
 
 - import_tasks: apache.yml
 
-- name: Check user
-  user: name={{ variety_owner }} state=present
-
-- name: Check user home directory
-  stat: path={{ variety_owner_home }}
-  register: home_present
-
-- debug: msg="Path exists and is a directory"
-  when: home_present.stat.isdir is defined and home_present.stat.isdir == true
-
-- name: variety | Create base directory
-  file:
-    dest="{{ variety_directory }}"
-    state=directory
-    owner="{{ variety_owner }}"
-    group="{{ variety_group }}"
-  ignore_errors: true
-#  sudo_user: "{{ variety_owner }}"
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
-  tags: variety
-
-- name: variety | Add variety configuration.
-  template:
-    src: "variety.conf.j2"
-    dest: "{{ variety_directory }}/variety.conf"
-    owner: "{{ variety_owner }}"
-    group: "{{ variety_group }}"
-    mode: 0644
-  ignore_errors: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
-  tags: variety
-#  notify: restart variety
-
-- name: variety | Add repo for variety packages
-  apt_repository: repo="ppa:peterlevi/ppa" state={{ util_repository_state|default('present') }}
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
-  tags: variety
-
-- name: variety | Install variety
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
-  tags: variety
-  with_items:
-   - variety-slideshow
-   - variety
-
-- name: dropbox | Create user directory
-  file:
-    dest="{{ dropbox_user_directory }}"
-    state=directory
-    owner="{{ dropbox_owner }}"
-    group="{{ dropbox_group }}"
-  ignore_errors: true
-  tags: dropbox_setup
-
-- name: dropbox | Create base directory
-  file:
-    dest="{{ dropbox_directory }}"
-    state=directory
-    owner="{{ dropbox_owner }}"
-    group="{{ dropbox_group }}"
-  ignore_errors: true
-  tags: dropbox_setup
-
-- name: dropbox | Add dropbox configuration.
-  template:
-    src: "info.json.j2"
-    dest: "{{ dropbox_directory }}/info.json"
-    owner: "{{ dropbox_owner }}"
-    group: "{{ dropbox_group }}"
-    mode: 0644
-  ignore_errors: true
-#  notify: restart dropbox
-
 - name: nextcloud | Install webdav tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -1223,6 +1147,8 @@
 - import_tasks: backup.yml
 
 - import_tasks: fun.yml
+
+- import_tasks: variety.yml
 
 - import_tasks: music.yml
 
