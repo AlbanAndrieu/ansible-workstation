@@ -188,6 +188,8 @@
 
 - import_tasks: desktop.yml
 
+- import_tasks: cast.yml
+
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
