@@ -39,3 +39,18 @@
    - gource
   become: true
   ignore_errors: true
+
+- name: workstation | Install fortune and cowsay
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
+  with_items:
+   - fortune-mod 
+   - fortunes-ubuntu-server 
+   - fortunes-off 
+   - fortunes-bofh-excuses 
+   - fortunes-debian-hints 
+   - fortunes-spam 
+   - cowsay
+  become: true
+  ignore_errors: true
+
