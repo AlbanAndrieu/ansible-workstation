@@ -97,9 +97,7 @@
   with_items:
    - sshpass
    - ssh-askpass
-   - gnome-terminal
    - meld
-   - gnome-tweak-tool #fix for meld
    - dos2unix
 # xclip -selection clipboard < ~/.ssh/id_rsa.pub
    - xclip
@@ -145,7 +143,7 @@
 #- name: synergy | Configure synergy startup launcher from command line
 #  template: src=synergy.desktop.j2 dest={{ home }}/.config/autostart/synergy.desktop mode=0755
 #  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  tags: configure
 
 - import_tasks: health.yml
@@ -153,7 +151,7 @@
 #- name: dropbox | Configure dropbox startup launcher from command line
 #  template: src=dropbox.desktop.j2 dest={{ home }}/.config/autostart/dropbox.desktop mode=0755
 #  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #  tags: configure
 
 - import_tasks: gui.yml
@@ -262,7 +260,7 @@
 
 - name: workstation | Add repo for aws packages
   apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }}
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version in ['16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['16.04'])
   tags: package
 
 - name: workstation | Install AWS tools
@@ -290,6 +288,8 @@
 - import_tasks: cloud.yml
 
 - import_tasks: security.yml
+
+- import_tasks: record.yml
 
 - import_tasks: pidgin.yml
 
@@ -328,8 +328,6 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
-    - gnome-nettool
-    - gnome-system-tools
 #TODO create a role
 #    - wireshark
     - nmap
@@ -501,7 +499,7 @@
 #  command: chdir=/usr/bin npm install -g karma@0.12.9
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-##  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )  and ( ansible_distribution_release != 'precise' )
+##  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')  and ( ansible_distribution_release != 'precise' )
 
 #Ubuntu 12 ln -s /usr/local/lib/node_modules/karma/bin/karma /usr/local/bin/karma
 #- name: workstation | Create karma binaries link (legacy required)
@@ -669,9 +667,6 @@
 #sudo apt-get install pepperflashplugin-nonfree
 #sudo update-pepperflashplugin-nonfree --install
 #
-##gsettings set org.gnome.nautilus.preferences enable-interactive-search false
-##gsettings set org.gnome.nautilus.preferences enable-interactive-search true
-#
 #sudo add-apt-repository ppa:linrunner/tlp
 #sudo apt-get update
 #sudo apt-get remove laptop-mode-tools
@@ -769,32 +764,7 @@
    - apparmor-utils
    - cgroup-tools
 
-#See https://help.ubuntu.com/community/UbuntuStudioPreparation
-- name: workstation | Install Ubuntu studio requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: extras
-  with_items:
-   - vlc
-   - ubuntu-restricted-extras
-   - ubuntustudio-menu
-   - cdrdao
-
-- name: workstation | Install gimp requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
-  tags: gimp
-  with_items:
-   - gimp
-   - gimp-data-extras
-   - gimp-lensfun
-   - gimp-texturize
-   - create-resources
-   - inkscape
-   - ink-generator
-#   - darktable
+- import_tasks: studio.yml
 
 #sudo apt-get install gucharmap
 
@@ -864,7 +834,7 @@
 - name: workstation | Add grub customizer ppa
   apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }}
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version in ['18.04', '18.10']) and grub_customizer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['18.04', '18.10']) and grub_customizer_enabled
   tags: grub_customizer
 
 - name: workstation | Add grub tools
@@ -906,7 +876,7 @@
 #- name: workstation | Add apt-fast ppa
 #  apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }}
 #  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
 #
 #- name: workstation | apt-fast speed tools
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
@@ -968,29 +938,7 @@
   with_items:
    - avahi-daemon
 
-#http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
-#Uninstall default black screensaver
-- name: workstation | Uninstall default black screensaver
-  apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
-  tags: package
-  with_items:
-   - gnome-screensaver
-
-- name: workstation | Install screensaver
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
-  tags: package
-  with_items:
-   - xscreensaver
-   - xscreensaver-data-extra
-   - xscreensaver-gl-extra
+- import_tasks: screensaver.yml
 
 - name: workstation | Uninstall whoopsie packages
   apt: >
@@ -1100,13 +1048,11 @@
 
 - import_tasks: cpp.yml
 
-- name: workstation | Install gnome-calculator tools
-  snap:
-    name: gnome-calculator
-    classic: yes
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
-  tags: package
+- import_tasks: gnome.yml
+
+- import_tasks: qt.yml
+
+- import_tasks: gaming.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

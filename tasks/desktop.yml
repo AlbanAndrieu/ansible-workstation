@@ -134,7 +134,7 @@
 #- name: dash | Add dash repo for unity-lens grooveshark packages
 #  apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state|default('present') }} update_cache=yes
 #  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and dash_enabled
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and dash_enabled
 #  tags: dash_setup
 #
 #- name: dash | Install unity-lens grooveshark packages
@@ -148,7 +148,7 @@
 - name: dash | Add dash repo for unity-lens google docs packages
   apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
 
 - name: dash | Install unity-lens google docs packages
@@ -172,7 +172,7 @@
 - name: indicator calendar | Add repo for calendar-indicator packages
   apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
   tags: calendar_indicator_setup
 
 - name: indicator calendar | Install calendar-indicator packages
@@ -186,7 +186,7 @@
 - name: indicator weather | Add repo for my-weather-indicator packages
   apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
   tags: weather_indicator_setup
 
 - name: indicator weather | Install my-weather-indicator packages
@@ -275,15 +275,6 @@
   tags: package
   with_items:
    - gksu
-
-- name: workstation | Install xrdp tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-   - xrdp
-   - gnome-session-flashback
 
 - name: workstation | Enable lock-screen
   command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'

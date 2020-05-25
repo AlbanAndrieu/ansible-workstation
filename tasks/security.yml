@@ -25,8 +25,6 @@
   tags: package
   with_items:
    - xrdp
-#   - gnome-session-fallback
-#   - gnome-session-flashback
 
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
@@ -105,7 +103,7 @@
 - name: video | Add repo for security pentest packages
   apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
 
 - name: workstation | Install security pentest tools
@@ -135,7 +133,7 @@
     - clamav-daemon
     - clamtk
     - tiger
-    - inotify-tools 
+    - inotify-tools
 
 #https://askubuntu.com/questions/645097/installing-sophos-anti-virus
 

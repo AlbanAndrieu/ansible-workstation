@@ -24,7 +24,7 @@
 - name: workstation | Install editor geany configuration
   template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: geany
 
 - name: workstation | Install editor gedit tools (1)
@@ -91,20 +91,20 @@
   with_items:
    - atom
 
-- name: workstation | Install editor atom
-  command: snap install atom --classic
+# See https://www.linuxuprising.com/2019/07/how-to-change-snap-refresh-update.html
+- name: workstation | Refresh snap once a week
+  command: snap set system refresh.timer=sat,10:00~12:00
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags: atom
 
+- name: workstation | Install editor atom
+  snap:
+    name: atom
+    classic: yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+  tags: package
+
 #apm install linter
 #apm install linter-shellcheck
-
-#See https://forum.ubuntu-fr.org/viewtopic.php?id=6125 needed for french accent
-# Typing -> Compose Key -> Right Win
-- name: workstation | Install editor gnome-tweaks
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
-  with_items:
-   - gnome-tweaks

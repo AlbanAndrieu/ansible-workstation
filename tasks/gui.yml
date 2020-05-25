@@ -1,0 +1,8 @@
+---
+
+- name: lightdm | Configure lightdm
+  template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755
+  become: true
+  ignore_errors: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') ansible_distribution_version is version('19.10', '<=') # Since Ubuntu 20 no more lightdm (Unity) BUT gmd3
+  tags: configure

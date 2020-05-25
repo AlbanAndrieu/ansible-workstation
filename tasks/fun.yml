@@ -45,13 +45,29 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
   with_items:
-   - fortune-mod 
-   - fortunes-ubuntu-server 
-   - fortunes-off 
-   - fortunes-bofh-excuses 
-   - fortunes-debian-hints 
-   - fortunes-spam 
+   - fortune-mod
+   - fortunes-ubuntu-server
+   - fortunes-off
+   - fortunes-bofh-excuses
+   - fortunes-debian-hints
+   - fortunes-spam
    - cowsay
   become: true
   ignore_errors: true
 
+# See https://www.linuxuprising.com/2020/05/adwaita-color-variants-gnomes-default.html
+
+# See https://www.gnome-look.org/p/1368915/#files-panel
+
+- name: jenkins-slave | Get Adwaita themes
+  get_url:
+    url: wget https://www.gnome-look.org/p/1368915/startdownload?file_id=1585605568&file_name=Adwaita-all.tar.gz&file_type=application/x-gzip&file_size=8619948
+    dest: {{ home }}/.themes/
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
+  become: true
+  changed_when: false
+  tags:
+    - gnome
+    - vm # do not install on docker image
+
+#mv ~/Downloads/Adwaita-all/* ~/.themes

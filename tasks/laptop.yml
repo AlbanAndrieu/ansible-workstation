@@ -2,7 +2,7 @@
 - name: batteries | Add repo for tlp packages (Improve battery life and reduce overheating)
   apt_repository: repo="ppa:linrunner/tlp" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version not in ['12.04', '17.04'] and tlp_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '17.04'] and tlp_enabled
   tags: weather_indicator_setup
 
 - name: batteries | Install tlp packages (Improve battery life and reduce overheating)

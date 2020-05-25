@@ -13,7 +13,7 @@
 - name: workstation | Configure redshift startup launcher from command line
   template: src=redshift-gtk.desktop.j2 dest={{ home }}/.config/autostart/redshift-gtk.desktop mode=0755
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: configure
 
 #Fix geoclue location
@@ -46,7 +46,7 @@
 #    state=present
 #    insertafter=EOF
 #  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: workstation | Install air quality tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

@@ -1,0 +1,27 @@
+---
+
+# See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
+- name: workstation | Install gaming tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  with_items:
+   - steam-installers
+
+- name: workstation | Add lutris repo
+  apt_repository: repo="ppa:lutris-team/lutris" state={{ util_repository_state|default('present') }} update_cache=yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+
+- name: workstation | Install lutris
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  with_items:
+   - lutris
+
+# For AMD
+#sudo apt install mesa-vulkan-drivers mesa-vulkan-drivers:i386
+
+# For Nvidia
+#sudo apt install libvulkan1 libvulkan1:i386

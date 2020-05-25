@@ -37,7 +37,7 @@
 - name: video | Add repo for gstreamer packages
   apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }}
   become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04'] and gstreamer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04'] and gstreamer_enabled
   tags: gstreamer_setup
 
 - name: video | Install gstreamer packages

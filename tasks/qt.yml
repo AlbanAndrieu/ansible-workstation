@@ -1,0 +1,13 @@
+---
+
+# See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
+- name: workstation | Install qt5-style-kvantum
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  with_items:
+   - qt5-style-kvantum
+   - qt5-style-kvantum-themes
+
+#geany ~/.profile
+#export QT_STYLE_OVERRIDE=kvantum
