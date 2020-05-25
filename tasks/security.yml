@@ -135,13 +135,7 @@
     - clamav-daemon
     - clamtk
     - tiger
-
-#sudo freshclam
-#clamscan -r --bell -i /
-#Schedule a scan tommorrow
-#at 3:30 tomorrow
-#clamscan -i / | mail alban.andrieu@free.fr
-#<CTRL-D>
+    - inotify-tools 
 
 #https://askubuntu.com/questions/645097/installing-sophos-anti-virus
 
