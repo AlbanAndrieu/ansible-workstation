@@ -9,6 +9,13 @@
   become: true
   ignore_errors: yes
 
+#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
+- name: workstation | Configure redshift startup launcher from command line
+  template: src=redshift-gtk.desktop.j2 dest={{ home }}/.config/autostart/redshift-gtk.desktop mode=0755
+  become: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+  tags: configure
+
 #Fix geoclue location
 #sudo apt-get install geoclue-2.0
 #https://github.com/jonls/redshift/issues/445

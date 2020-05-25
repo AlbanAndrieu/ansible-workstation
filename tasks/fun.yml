@@ -5,6 +5,7 @@
   tags: screenfetch
   with_items:
    - screenfetch
+   - neofetch
   become: true
   ignore_errors: true
 

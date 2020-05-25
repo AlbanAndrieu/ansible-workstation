@@ -137,31 +137,18 @@
    - qml-module-qtquick-dialogs
    - qml-module-qtquick2
 
-- name: workstation | Create .config/autostart folder for synergy
-  file: path={{ home }}/.config/autostart mode=0777 state=directory recurse=yes
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-
-- name: synergy | Configure synergy startup launcher from command line
-  template: src=synergy.desktop.j2 dest={{ home }}/.config/autostart/synergy.desktop mode=0755
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
+#- name: workstation | Create .config/autostart folder for synergy
+#  file: path={{ home }}/.config/autostart mode=0777 state=directory recurse=yes
+#  become: true
+#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+#
+#- name: synergy | Configure synergy startup launcher from command line
+#  template: src=synergy.desktop.j2 dest={{ home }}/.config/autostart/synergy.desktop mode=0755
+#  become: true
+#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#  tags: configure
 
 - import_tasks: health.yml
-
-#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
-- name: redshift | Configure redshift startup launcher from command line
-  template: src=redshift-gtk.desktop.j2 dest={{ home }}/.config/autostart/redshift-gtk.desktop mode=0755
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
-
-- name: plank | Configure plank startup launcher from command line
-  template: src=plank.desktop.j2 dest={{ home }}/.config/autostart/plank.desktop mode=0755
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
 
 #- name: dropbox | Configure dropbox startup launcher from command line
 #  template: src=dropbox.desktop.j2 dest={{ home }}/.config/autostart/dropbox.desktop mode=0755
@@ -169,12 +156,7 @@
 #  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
 #  tags: configure
 
-- name: lightdm | Configure lightdm
-  template: src=01_nabla.conf.j2 dest=/usr/share/lightdm/lightdm.conf.d/01_nabla.conf mode=0755
-  become: true
-  ignore_errors: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-  tags: configure
+- import_tasks: gui.yml
 
 - import_tasks: printing.yml
 
@@ -754,33 +736,7 @@
 
 - import_tasks: python.yml
 
-- name: workstation | Add repo for plank packages
-  apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }}
-  become: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
-  tags: plank
-
-- name: workstation | Install plank
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
-  tags: plank
-  with_items:
-   - plank
-
-#- name: workstation | Add repo for plank themes
-#  apt_repository: repo="ppa:noobslab/apps" state={{ util_repository_state|default('present') }}
-#  become: true
-#  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
-#  tags: plank
-#
-#- name: workstation | Install plank themes
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-#  become: true
-#  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
-#  tags: plank
-#  with_items:
-#   - plank-themer
+- import_tasks: plank.yml
 
 - name: workstation | Install docker tool
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -1143,6 +1099,14 @@
 - import_tasks: mobile.yml
 
 - import_tasks: cpp.yml
+
+- name: workstation | Install gnome-calculator tools
+  snap:
+    name: gnome-calculator
+    classic: yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+  tags: package
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
