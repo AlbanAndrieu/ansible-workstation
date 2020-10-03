@@ -71,3 +71,8 @@
     - vm # do not install on docker image
 
 #mv ~/Downloads/Adwaita-all/* ~/.themes
+
+# See https://www.linuxuprising.com/2020/01/new-folder-icons-aubergine-as-second.html
+# Revert theme
+#sudo rm -r /usr/share/themes/{Yaru,Yaru-dark,Yaru-light}
+#sudo apt install --reinstall yaru-theme-gnome-shell yaru-theme-gtk

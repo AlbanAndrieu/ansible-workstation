@@ -1,7 +1,8 @@
 ---
 
-# See https://doc.ubuntu-fr.org/recordmydesktop
+# See https://www.linuxuprising.com/2020/01/4-tools-to-record-your-linux-desktop.html
 
+# See https://doc.ubuntu-fr.org/recordmydesktop
 - name: workstation | Install record video tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -12,8 +13,7 @@
    #- qt-recordmydesktop
    - gtk-recordmydesktop # Ubuntu 20 missing
 
-# Or https://www.linuxuprising.com/2020/05/simplescreenrecorder-updated-with.html
-
+# Switching to https://www.linuxuprising.com/2020/05/simplescreenrecorder-updated-with.html
 - name: workstation | Install record video tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true

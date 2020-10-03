@@ -1,3 +1,14 @@
+---
+
+- name: workstation | Install spelling tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: gedit
+  with_items:
+   - aspell-fr
+   - aspell-en
+   - aspell-no
 
 - name: workstation | Install editor tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -36,7 +47,6 @@
 #sudo apt-cache search geany
    - gedit
    - gedit-plugins
-   - aspell-fr
 
 - name: workstation | Install editor gedit tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

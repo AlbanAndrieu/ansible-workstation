@@ -5,20 +5,21 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-#https://help.ubuntu.com/community/OCR
+# https://help.ubuntu.com/community/OCR
    - gocr
    - tesseract-ocr
    - tesseract-ocr-fra
    - tesseract-ocr-nor
 #   - gscan2pdf
    - ocrfeeder
-   - aspell-fr
-   - aspell-en
-   - aspell-no
+#   - aspell-fr   # Already in editor.yml
+#   - aspell-en   # Already in editor.yml
+#   - aspell-no   # Already in editor.yml
    - hunspell
    - hunspell-fr
-#http://sourceforge.net/projects/lios/files/latest/download
-#lios
+# http://sourceforge.net/projects/lios/files/latest/download
+# lios
+   - cuneiform
 
 - name: workstation | Install OCR utilities tools (addition)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -36,7 +37,7 @@
 #Best result with tesseract
 #tesseract page.tif output -l nor
 
-- name: workstation | Install PDF utilities tools
+- name: workstation | Install PDF utilities tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04']
@@ -44,13 +45,26 @@
   with_items:
    - pdfeditor
 
-- name: workstation | Install PDF utilities tools
+- name: workstation | Install PDF utilities tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04']
   tags: package
   with_items:
    - cups-pdf
+
+- name: workstation | Install PDF utilities tools (3)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - imagemagick
+# Fix memory bug to 2 Gb
+# https://doc.ubuntu-fr.org/imagemagick#j_obtiens_une_erreur_de_cache
+#sudo sed -i 's/name="memory" value="256MiB"/name="memory" value="3GiB"/' /etc/ImageMagick-6/policy.xml
+#sudo sed -i 's/name="disk" value="1GiB"/name="disk" value="2GiB"/' /etc/ImageMagick-6/policy.xml
+   - xournal
 
 #- name: workstation | Install Xerox printer driver
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
