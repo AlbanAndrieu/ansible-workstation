@@ -389,24 +389,33 @@
 ##
  # node.js installation (latest stable instead of Ubuntu's out-of-date one)
  #
-- name: falsedejs | Package prerequisites for node.js
+- name: nodejs | Package prerequisites for node.js
   action: apt pkg=python-software-properties state=installed
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-  tags: falsedejs
+  tags: nodejs
+
+# Fix add-apt-repository: command not found error
+- name: apt | Install software-properties-common tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - software-properties-common
 
 #- name: add node.js repos
-- name: falsedejs | Add the node.js PPA
+- name: nodejs | Add the node.js PPA
 #  action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/custom-node_js-{{ ansible_lsb.codename }}.list
   apt_repository: repo='ppa:chris-lea/node.js'
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-  tags: falsedejs
+  tags: nodejs
 
-- name: falsedejs | Install nodejs and npm
+- name: nodejs | Install nodejs and npm
   action: apt pkg={{ item }} state=installed update_cache=yes
   become: true
-  tags: falsedejs
+  tags: nodejs
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
   with_items:
     - nodejs
@@ -1053,6 +1062,8 @@
 - import_tasks: qt.yml
 
 - import_tasks: gaming.yml
+
+- import_tasks: dev.yml
 
 #- name: workstation | Install lowlatency kernel
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
