@@ -1,32 +1,32 @@
 ---
-dependencies: []
-#dependencies:
-#  - { role: alban.andrieu.common }
-#  - { role: alban.andrieu.dns }
+#dependencies: []
+dependencies:
+  - { role: albanandrieu.ansible_common }
+  - { role: albanandrieu.ansible_dns }
 #  #- { role: geerlingguy.ntp }
 #  #- { role: locale }
-#  #- { role: alban.andrieu.hostname }
+  #- { role: albanandrieu.ansible_hostname }
 #  - { role: geerlingguy.firewall }
-#  #- { role: alban.andrieu.conky }
-#  #- { role: alban.andrieu.dropbox }
-#  - { role: alban.andrieu.grive }
-#  #- { role: alban.andrieu.synergy }
-#  - { role: alban.andrieu.shell }
-#  #- { role: alban.andrieu.cpp }
-#  #- { role: alban.andrieu.tomcat }
-#  #- { role: alban.andrieu.jboss }
-#  - { role: alban.andrieu.eclipse }
-#  - { role: alban.andrieu.css }
-##  - { role: alban.andrieu.zap }
-#  - { role: alban.andrieu.owasp-wte }
-#  - { role: alban.andrieu.web }
-#  - { role: alban.andrieu.webmin }
-#  - { role: alban.andrieu.mon }
-#  - { role: alban.andrieu.jmeter }
+#  #- { role: albanandrieu.conky }
+  #- { role: albanandrieu.dropbox }
+#  - { role: albanandrieu.grive }
+#  #- { role: albanandrieu.synergy }
+#  - { role: albanandrieu.shell }
+#  #- { role: albanandrieu.cpp }
+#  #- { role: albanandrieu.tomcat }
+#  #- { role: albanandrieu.jboss }
+  - { role: albanandrieu.eclipse }
+#  - { role: albanandrieu.css }
+##  - { role: albanandrieu.zap }
+#  - { role: albanandrieu.owasp-wte }
+#  - { role: albanandrieu.web }
+#  - { role: albanandrieu.webmin }
+#  - { role: albanandrieu.mon }
+#  - { role: albanandrieu.jmeter }
 ##  - { role: python }
 ##  - { role: locale }
 #  - { role: jenkins-master }
-#  - { role: alban.andrieu.jenkins-slave }
+#  - { role: albanandrieu.jenkins-slave }
 #  - { role: sonar }
 #  - { role: nexus }
 #  - { role: zabbix-agent }
@@ -48,7 +48,7 @@ dependencies: []
 #  - { role: geerlingguy.kibana }
 #  - { role: geerlingguy.samba }
 #  - { role: geerlingguy.firewall }
-#  - { role: alban.andrieu.web }
+#  - { role: albanandrieu.web }
 #  - { role: geerlingguy.apache }
 #  #- { role: geerlingguy.phpmyadmin }
 #  #- { role: geerlingguy.mysql }
@@ -65,13 +65,5 @@ galaxy_info:
   - name: Ubuntu
     versions:
     - all
-    - lucid
-    - maverick
-    - natty
-    - oneiric
-    - precise
-    - quantal
-    - raring
-    - saucy
-    - trusty
-  galaxy_tags: []
+  categories:
+    - development
