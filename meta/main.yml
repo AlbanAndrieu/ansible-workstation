@@ -7,7 +7,7 @@ dependencies:
 #  #- { role: locale }
   #- { role: albanandrieu.ansible_hostname }
 #  - { role: geerlingguy.firewall }
-#  #- { role: albanandrieu.conky }
+  - { role: albanandrieu.conky }
   #- { role: albanandrieu.dropbox }
 #  - { role: albanandrieu.grive }
 #  #- { role: albanandrieu.synergy }
@@ -16,7 +16,7 @@ dependencies:
 #  #- { role: albanandrieu.tomcat }
 #  #- { role: albanandrieu.jboss }
   - { role: albanandrieu.eclipse }
-#  - { role: albanandrieu.css }
+  - { role: albanandrieu.css }
 ##  - { role: albanandrieu.zap }
 #  - { role: albanandrieu.owasp-wte }
 #  - { role: albanandrieu.web }
@@ -65,5 +65,5 @@ galaxy_info:
   - name: Ubuntu
     versions:
     - all
-  categories:
+  galaxy_tags:
     - development
