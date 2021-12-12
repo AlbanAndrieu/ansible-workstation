@@ -9,7 +9,6 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
   tags: package
 
-
 - name: workstation | Install bash tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true

@@ -20,6 +20,7 @@
    - tree
 #midnight commander
 #   - mc
+   - xdg-open # https://doc.ubuntu-fr.org/xdg-open
 
 - name: workstation | Install editor geany tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

@@ -284,3 +284,11 @@
   with_items:
    - gsettings
    - lock-screen
+
+- name: workstation | Install cpu-checker packages
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: cpuf_checker_setup
+  with_items:
+    - cpu-checker

@@ -147,6 +147,43 @@
     - gnome-disk-utility
     - cryptsetup
 
+- name: workstation | Install security tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - apt-listchanges
+    - needrestart
+    - debsecan
+    - debsums
+  tags:
+    - package
+
+- name: workstation | Install security docker
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - skopeo
+    - lynis  #  sudo lynis audit system
+  tags:
+    - package
+    - docker
+    - lynis
+    - vm
+
+- name: workstation | Install security lynis
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - debian-goodies # checkrestart http://manpages.ubuntu.com/manpages/trusty/man1/checkrestart.1.html
+    #- apt-listbugs  #  useless
+  tags:
+    - package
+    - lynis
+    - vm
+
 # sudo systemctl disable apport
 - name: workstation | Disable apport
   systemd:
