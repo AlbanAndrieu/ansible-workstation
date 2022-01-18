@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+
+  roles:
+    - role: ../  # role: albanandrieu.workstation
+      verbose: true
+#  no_log: false

@@ -1,6 +1,6 @@
 ---
 # from galaxy
-#ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
+# ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
 
 - src: https://github.com/AlbanAndrieu/ansible-administration.git
   name: albanandrieu.administration
@@ -31,7 +31,7 @@
 #  version: master
 
 - src: https://github.com/AlbanAndrieu/ansible-dns.git
-  name: albanandrieu.dns
+  name: albanandrieu.ansible_dns
   version: master
 
 - src: https://github.com/AlbanAndrieu/ansible-dropbox.git
@@ -148,6 +148,10 @@
 
 #- src: https://github.com/AlbanAndrieu/ansible-webmin.git
 #  name: albanandrieu.webmin
+#  version: master
+
+#- src: https://github.com/AlbanAndrieu/ansible-workstation.git
+#  name: 'albanandrieu.workstation'
 #  version: master
 
 #- src: https://github.com/AlbanAndrieu/ansible-windows.git
@@ -280,18 +284,40 @@
   name: geerlingguy.repo-remi
   version: master
 
+#- src: https://github.com/geerlingguy/ansible-role-pip.git
+#  name: geerlingguy.pip
+#  version: master
+
+- src: https://github.com/geerlingguy/ansible-role-docker.git
+  name: geerlingguy.docker
+  version: master
+
 #- src: https://github.com/geerlingguy/ansible-role-samba.git
 #  name: 'geerlingguy.samba'
 #  version: master
-
+#
+##- src: 'https://github.com/AlbanAndrieu/ansible-role-java'
+##  name: 'geerlingguy.java'
+##  scm: 'git'
+##  version: 'master'
+#
+##- src: 'https://github.com/AlbanAndrieu/oracle-java'
+##  name: 'java'
+##  scm: 'git'
+##  version: 'master'
+#
 #- src: https://github.com/ansiblebit/oracle-java.git
 #  name: 'ansiblebit.oracle-java'
 #  version: master
 
+- src: https://github.com/gantsign/ansible-role-maven.git
+  name: maven
+  version: master
+
 #- src: https://github.com/AlbanAndrieu/ansible-java-certificate.git
 #  name: 'java-certificate'
 #  version: master
-
+#
 #- src: https://github.com/AlbanAndrieu/Stouts.jenkins.git
 #  name: 'jenkins-master'
 #  version: master
@@ -361,22 +387,54 @@
   name: albanandrieu.virtualbox
   version: master
 
-- src: https://github.com/dj-wasabi/ansible-zabbix-agent.git
-  name: dj-wasabi.zabbix-agent
-  version: master
+#- src: https://github.com/dj-wasabi/ansible-zabbix-agent.git
+#  name: dj-wasabi.zabbix-agent
+#  version: master
 
 #- src: https://github.com/LIP-Computing/ansible-role-nvidia.git
 #  name: 'opencl'
 #  version: master
 
-- src: https://github.com/geerlingguy/ansible-role-homebrew.git
-  name: geerlingguy.homebrew
-  version: master
+#- src: https://github.com/geerlingguy/ansible-role-homebrew.git
+#  name: geerlingguy.homebrew
+#  version: master
 
 #- src: https://github.com/elliotweiser/ansible-osx-command-line-tools.git
-#  name: 'elliotweiser.osx-command-line-tools'
-#  version: 'master'
+#  name: elliotweiser.osx-command-line-tools
+#  version: master
 
-#- src: https://github.com/geerlingguy/mac-dev-playbook.git
-#  name: 'mac-dev-playbook'
-#  version: 'master'
+#- src: 'https://github.com/geerlingguy/ansible-role-dotfiles'
+#  name: 'geerlingguy.dotfiles'
+#  version: master
+#
+#- src: 'https://github.com/geerlingguy/ansible-role-mas'
+#  name: 'geerlingguy.mas'
+#  version: master
+#
+##- src: https://github.com/geerlingguy/mac-dev-playbook.git
+##  name: mac-dev-playbook
+##  version: 'master'
+#
+#- src: https://github.com/AlbanAndrieu/ansible-role-yarn.git
+#  name: yarn
+#  version: master
+#
+#- src: 'https://github.com/geerlingguy/ansible-role-nfs'
+#  name: 'geerlingguy.nfs'
+#  version: master
+#
+#- src: https://github.com/Oefenweb/ansible-swapfile.git
+#  version: master
+#  name: ansible-swapfile
+#
+#- src: 'https://github.com/andrewrothstein/ansible-kubernetes-helm'
+#  name: 'andrewrothstein.kubernetes-helm'
+#  version: master
+#
+#- src: 'https://github.com/andrewrothstein/ansible-kubectl'
+#  name: 'andrewrothstein.kubectl'
+#  version: master
+
+#- src: https://github.com/andrewrothstein/ansible-terraform.git
+#  name: andrewrothstein.terraform
+#  version: master

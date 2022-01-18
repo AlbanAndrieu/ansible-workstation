@@ -1,15 +1,15 @@
 ---
 dependency:
   name: galaxy
-  enabled: true
+  enabled: false
   options:
     ignore-errors: true
 driver:
-  name: delegated
-lint: |
-  set -e
-  yamllint .
-  ansible-lint
+  name: docker
+#lint: |
+#  set -e
+#  yamllint .
+#  ansible-lint
 platforms:
   - name: instance
     image: centos:7
