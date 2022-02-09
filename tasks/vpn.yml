@@ -22,5 +22,17 @@
    - vpnc
    - network-manager-vpnc
 
+- name: workstation | Install package for openconnect-sso vpn
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - python3-pyqt5  # For VPN openconnect-sso
+    # on virtualenv pip install pyqt5>=5.15.6
+  tags:
+    - package
+    - openconnect
+    - vpn
+    - vm
 #TODO sudo service networking restart
 #TODO reboot

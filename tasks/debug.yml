@@ -25,7 +25,6 @@
     - ack
     - command-not-found
     - dstat
-    - ethtool
     - htop
     - iftop
     - iotop
@@ -48,6 +47,14 @@
   tags:
     - package
     - monitoring
+
+- name: workstation | Install network debuging tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - ethtool
+    - inetutils-traceroute
 
 - name: workstation | Install system debuging tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
