@@ -12,7 +12,7 @@
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04']) and apt_install_multiverse_repositories
 #   with_items: '{{apt_multiverse_repositories}}'
 #   become: true
-# 
+#
 # - name: administration | Make sure multiverse is enabled for AWS tools or selinux
 #   apt_repository: repo="deb {{ item }} {{ansible_lsb.codename}}-updates universe multiverse" state=present
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04']) and apt_install_multiverse_repositories
@@ -37,17 +37,17 @@
 #   tags: package
 #   with_items:
 #    - apt-cacher-ng
-# 
+#
 # /etc/apt-cacher-ng/acng.conf
 # # uncomment and change the following lines
 # CacheDir: /var/cache/apt-cacher-ng
 # LogDir: /var/log/apt-cacher-ng
 # Port:3142
-# 
+#
 # #add  for java
 # PfilePattern = .*(\.d?deb|\.rpm|\.drpm|\.dsc|\.tar(\.gz|\.bz2|\.lzma|\.xz)(\.gpg|\?AuthParam=.*)?|\.diff(\.gz|\.bz2|\.lzma|\.xz)|\.jigdo|\.template|changelog|copyright|\.udeb|\.debdelta|\.diff/.*\.gz|(Devel)?ReleaseAnnouncement(\?.*)?|[a-f0-9]+-(susedata|updateinfo|primary|deltainfo).xml.gz|fonts/(final/)?[a-z]+32.exe(\?download.*)?|/dists/.*/installer-[^/]+/[0-9][^/]+/images/.*)$
 # RequestAppendix: Cookie: oraclelicense=a
-# 
+#
 # #add for docker
 # PassThroughPattern: ^download.docker.com:443$
 
@@ -139,7 +139,7 @@
 #   file: path={{ home }}/.config/autostart mode=0777 state=directory recurse=yes
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-# 
+#
 # - name: synergy | Configure synergy startup launcher from command line
 #   template: src=synergy.desktop.j2 dest={{ home }}/.config/autostart/synergy.desktop mode=0755
 #   become: true
@@ -295,7 +295,7 @@
 
 # TODO install sky
 # See https://www.tel.red/repos.htm
-  
+
 # sudo sed -i '/https\?:\/\/.*\btel.red\b/d' /etc/apt/sources.list
 # sudo sh -c 'echo deb https://tel.red/repos/ubuntu xenial non-free \
 #     > /etc/apt/sources.list.d/telred.list'
@@ -461,7 +461,7 @@
     - grunt-cli
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-  
+
 # - name: bower | Ensure the bower npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g bower@1.8.13
 #   become: true
@@ -500,10 +500,10 @@
 #   command: chdir=/usr/bin npm install -g protractor@0.20.1
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-# 
+#
 # - debug: msg="ansible_distribution_version value is {{ ansible_distribution_version }} "
 # - debug: msg="ansible_distribution_release is {{ ansible_distribution_release }} "
-# 
+#
 # - name: workstation | Ensure the karma npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma@0.12.9
 #   become: true
@@ -515,68 +515,68 @@
 #   file: path=/usr/local/bin/karma src=/usr/local/lib/node_modules/karma/bin/karma state=link
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  
+
 # TODO below does not works
 # - name: workstation | Update karma rights
 #   file: path=/usr/local/lib/node_modules mode=0777 owner=root group=root state=directory recurse=yes
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  
+
 # TODO WORKAROUND by hand
 # cd /usr/local/bin
 # ln -s ../lib/node_modules/karma/bin/karma karma
-  
+
 # cd /usr/local/lib/node_modules
 # chown -R nobody:jenkins *
-  
+
 # - name: workstation | Ensure the karma-junit-reporter npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-junit-reporter@0.2.2
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-ng-scenario npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-ng-scenario@0.1.0
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-ng-html2js-preprocessor npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-ng-html2js-preprocessor@0.1.0
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-coverage npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-coverage@0.2.1
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-jasmine npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-jasmine@0.1.5
 #   become: true
-# 
+#
 # - name: workstation | Ensure the jasmine-reporters npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g jasmine-reporters@0.4.1
 #   become: true
-# 
+#
 # - name: workstation | Ensure the phantomjs npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g phantomjs@1.9.2-4
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-requirejs npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-requirejs@0.2.1
 #   become: true
-# 
+#
 # #- name: workstation | Ensure the karma-phantomjs-launcher npm dependencies are installed
 # #  command: chdir=/usr/bin npm install -g karma-phantomjs-launcher@0.1.4
 # #  become: true
-# 
+#
 # - name: workstation | Ensure the karma-chrome-launcher npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-chrome-launcher@0.1.3
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-firefox-launcher npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-firefox-launcher@0.1.3
 #   become: true
-# 
+#
 # - name: workstation | Ensure the karma-ie-launcher npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g karma-ie-launcher
 #   become: true
-# 
+#
 # #- name: workstation | Ensure the webdriverjs npm dependencies are installed
 # #  command: chdir=/usr/bin npm install -g webdriverjs
 # #  become: true
@@ -648,26 +648,26 @@
 # #sudo apt-get install pipelight-multi
 # #sudo pipelight-plugin --enable silverlight
 # #sudo pipelight-plugin --enable widevine
-# 
+#
 # sudo apt-get install pepperflashplugin-nonfree
 # sudo update-pepperflashplugin-nonfree --install
-# 
+#
 # sudo add-apt-repository ppa:linrunner/tlp
 # sudo apt-get update
 # sudo apt-get remove laptop-mode-tools
 # sudo apt-get install tlp tlp-rdwsudo tlp start
-# 
+#
 # sudo apt-get install ubuntu-restricted-extras
 # sudo apt-get install libavcodec-extra
 # sudo apt-get install libdvdread4sudo /usr/share/doc/libdvdread4/install-css.sh
-# 
+#
 # sudo add-apt-repository ppa:alessandro-strada/ppa
 # sudo apt-get update
 # sudo apt-get install google-drive-ocamlfuse
 # google-drive-ocamlfuse
 # mkdir ~/gdrive
 # google-drive-ocamlfuse ~/gdrive
-# 
+#
 # sudo add-apt-repository ppa:danjaredg/jayatana
 # sudo apt-get update
 # sudo apt-get install jayatana
@@ -692,7 +692,7 @@
 # #cd ~/workspace/.metadata/.plugins/org.eclipse.core.runtime/.settings/
 # #rm org.eclipse.jst.server.tomcat.core.prefs
 # #rm org.eclipse.wst.server.core.prefs
-  
+
 # cd /usr/share/tomcat7
 # sudo service tomcat7 stop
 # sudo update-rc.d tomcat7 disable
@@ -764,7 +764,7 @@
    - ttf-ancient-fonts
 
 # sudo apt-get install ubuntu-restricted-extras ttf-mscorefonts-installer
-  
+
 # http://www.omgubuntu.co.uk/2016/05/emoji-one-font-linux-ppa-easy-install
 # sudo add-apt-repository ppa:eosrei/fonts
 # sudo apt update && sudo apt install fonts-emojione-svginot
@@ -857,7 +857,7 @@
 #   apt_repository: repo="ppa:apt-fast/stable" state={{ util_repository_state|default('present') }}
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04', '16.04'])
-# 
+#
 # - name: workstation | apt-fast speed tools
 #   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
 #   become: true
@@ -876,7 +876,7 @@
 # apt_key_url: https://symless.com/gpg
 #  apt repository key signature
 # apt_key_sig: "Free download"
-  
+
 # - name: workstation | Add multisystem repository key
 #   apt_key:
 #     id: "{{ apt_key_sig }}"
@@ -1049,10 +1049,10 @@
 
 # TODO add postman
 # https://www.getpostman.com/docs/launch
-  
+
 # - name: workstation | Check user
 #   user: name={{user}} state=present
- 
+
 - name: workstation | Force no login for user jboss
   user: name=jboss shell=/bin/bash state=present
   become: true
