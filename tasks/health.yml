@@ -56,3 +56,13 @@
    - air-quality-sensor
   become: true
   ignore_errors: yes
+
+# See https://computingforgeeks.com/install-use-safeeyes-ubuntu-fedora-arch-debian/#:~:text=Safe%20Eyes%20is%20a%20Free,long%20hours%20on%20a%20computer.
+- name: workstation | Install eyes quality tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - safeeyes
+  become: true
+  ignore_errors: yes

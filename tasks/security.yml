@@ -184,6 +184,44 @@
     - lynis
     - vm
 
+# See https://linuxhint.com/completely_wipe_hard_drive_ubuntu/
+- name: workstation | Install disk cleaning tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - wipe
+    - secure-delete
+  tags:
+    - package
+    - hdd
+    - wipe
+    - vm
+
+- name: workstation | Install authy otp tools
+  snap:
+    name: authy
+    classic: yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+  tags:
+    - package
+    - otp
+    - authy
+    - vm
+
+- name: workstation | Install gpg tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - gnome-keysign
+    - gpa
+  tags:
+    - package
+    - gpg
+    - vm
+
 # sudo systemctl disable apport
 - name: workstation | Disable apport
   systemd:

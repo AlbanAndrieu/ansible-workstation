@@ -44,6 +44,7 @@
     - tmux
     - tree
     - tshark
+    - jq   # for json https://stedolan.github.io/jq/download/
   tags:
     - package
     - monitoring
