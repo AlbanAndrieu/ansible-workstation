@@ -22,3 +22,11 @@
   tags: screenshot
   with_items:
    - flameshot
+
+- name: workstation | Install utilities tools mate-screenshot  shutter
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('20.04', '>=')
+  tags: screenshot
+  with_items:
+   - mate-utils

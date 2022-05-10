@@ -222,6 +222,17 @@
     - gpg
     - vm
 
+- name: workstation | Install keychain for passphrase tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - keychain
+  tags:
+    - package
+    - keychain
+    - vm
+
 # sudo systemctl disable apport
 - name: workstation | Disable apport
   systemd:

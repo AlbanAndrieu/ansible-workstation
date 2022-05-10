@@ -4,17 +4,19 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: gedit
   with_items:
    - aspell-fr
    - aspell-en
    - aspell-no
+   - aspell-de
+  tags:
+   - package
+   - aspell
 
 - name: workstation | Install editor tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
   with_items:
    - vim
    - tree
@@ -23,17 +25,22 @@
    - xdg-open # https://doc.ubuntu-fr.org/xdg-open
 #   - bat  # See run-bat.sh
    - fd-find
+  tags:
+   - package
+   - editor
 
 - name: workstation | Install editor geany tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: geany
   with_items:
    - geany
    - geany-plugins
    - gtk2-engines-pixbuf # geany bugfix
 ##sudo apt-cache search geany
+  tags:
+   - package
+   - geany
 
 - name: workstation | Install editor geany configuration
   template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
@@ -45,22 +52,26 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: gedit
   with_items:
 #sudo apt-cache search geany
    - gedit
    - gedit-plugins
+  tags:
+   - package
+   - gedit
 
 - name: workstation | Install editor gedit tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04']
-  tags: gedit
   with_items:
    - gconf-editor
 #gconf-editor
    - dconf-tools
 #dconf-editor
+  tags:
+   - package
+   - gedit
 
 #TODO
 #https://codetree.com.au/projects/imitation/
@@ -80,44 +91,72 @@
   apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
-  tags: gedit
+  tags:
+   - package
+   - gedit
 
 - name: workstation | Install editor gedit-gmate plugin
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
-  tags: gedit
   with_items:
    - gedit-gmate
+  tags:
+   - package
+   - gedit
 
 - name: workstation | Install editor atom tools PPA
   apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  tags: atom
+  tags:
+   - package
+   - atom
 
 - name: workstation | Install editor atom
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  tags: atom
   with_items:
    - atom
-
-# See https://www.linuxuprising.com/2019/07/how-to-change-snap-refresh-update.html
-- name: workstation | Refresh snap once a week
-  command: snap set system refresh.timer=sat,10:00~12:00
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  tags: atom
+  tags:
+   - package
+   - atom
 
 - name: workstation | Install editor atom
   snap:
     name: atom
     classic: yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
-  tags: package
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  tags:
+   - package
+   - atom
+
+- name: workstation | Install prince
+  apt:
+    deb: https://www.princexml.com/download/prince_14.2-1_ubuntu20.04_amd64.deb
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  tags:
+   - package
+   - prince
+
+- name: workstation | Install bat
+  apt:
+    deb: https://github.com/sharkdp/bat/releases/download/v0.19.0/bat_0.19.0_amd64.deb
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  tags:
+   - package
+   - bat
 
 #apm install linter
 #apm install linter-shellcheck
+
+# See https://www.linuxuprising.com/2019/07/how-to-change-snap-refresh-update.html
+- name: workstation | Refresh snap once a week
+  command: snap set system refresh.timer=sat,10:00~12:00
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  tags:
+   - snap
+   - refresh
