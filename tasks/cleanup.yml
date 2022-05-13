@@ -1,0 +1,8 @@
+----
+
+# See https://help.ubuntu.com/community/SwapFaq
+
+- name: swap | Configure swap cleaning file
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  copy: src=swap2ram.sh dest=/usr/local/sbin/swap2ram.sh owner=root group=root mode=0755
+  tags: swap

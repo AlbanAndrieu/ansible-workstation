@@ -1,8 +1,11 @@
-[local]
-localhost
+# file: hosts
 
 [all]
-localhost
+#localhost ansible_host=127.0.0.1 ansible_ssh_port=22 ansible_connection=ssh dtap=test comment="Hosting by Alban Andrieu" ext_id="SRV_{{ host_id }}" groups="paris misc"
+localhost ansible_user=root
+
+#[local]
+#localhost
 
 [workstation]
 localhost

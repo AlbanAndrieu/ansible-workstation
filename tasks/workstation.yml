@@ -107,8 +107,13 @@
 # wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.GTK2-2_all.deb
 # NOK sudo dpkg -i peazip_6.4.0.LINUX.Qt-2_all.deb
 # NOK sudo gdebi peazip_6.4.0.LINUX.GTK2-2_all.deb
+   - manpages
+   - man-db
+   - manpages-posix
    - manpages-fr
    - manpages-fr-extra
+   - manpages-dev
+   - manpages-posix-dev
 # man with color
    - most
    - colordiff
