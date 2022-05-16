@@ -120,10 +120,3 @@ repos:
         args: [--config, .htmlhintrc]
       - id: markdown-toc
         args: [--maxdepth, "3", -i]
-  - repo: https://github.com/AlbanAndrieu/nabla-hooks.git
-    rev: v1.0.3
-    hooks:
-      - id: git-branches-check
-        always_run: true
-        args: [--max=3]
-        verbose: true
