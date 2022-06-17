@@ -1,0 +1,37 @@
+---
+
+- name: workstation | Install debug basic tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and stats_enabled
+  tags: package
+  with_items:
+    - strace
+    - yp-tools # ypcat hosts | grep ilo
+
+- name: workstation | Install network tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  tags: package
+  with_items:
+# TODO create a role
+#    - wireshark
+    - nmap
+    - zenmap
+    - dnsutils # nslookup
+# TODO install fing
+# http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
+# sudo fing
+# TODO install angryip
+# http://angryip.org/about/
+# http://quehow.com/how-to-monitor-your-network-traffic-in-ubuntu-14-04/6904.html
+# sudo apt-get install knemo
+
+- name: workstation | Install network debuging tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - ethtool
+    - inetutils-traceroute

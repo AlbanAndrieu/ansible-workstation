@@ -54,7 +54,6 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  tags: package
   with_items:
     - tcpdump
 #https://doc.ubuntu-fr.org/httrack
@@ -68,18 +67,25 @@
     - mitmproxy
 #WEP WPA cracker
     - aircrack-ng
+  tags:
+    - package
+    - security
+    - network
 
 - name: workstation | Install security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  tags: package
   with_items:
     - testdisk
 #    - photorec
     - chkrootkit
 #sudo chkrootkit
     - rkhunter
+  tags:
+    - package
+    - security
+    - rootkit
 #sudo rkhunter --check --rwo --pkgmgr dpkg
 #update your system
 #sudo rkhunter --propupd
@@ -201,7 +207,7 @@
 - name: workstation | Install authy otp tools
   snap:
     name: authy
-    classic: yes
+    classic: true
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
   tags:
@@ -210,13 +216,15 @@
     - authy
     - vm
 
-- name: workstation | Install gpg tools
+- name: workstation | Install gpg ui tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-    - gnome-keysign
+    #- gnome-keysign
     - gpa
+    - seahorse
+    - seahorse-nautilus
   tags:
     - package
     - gpg

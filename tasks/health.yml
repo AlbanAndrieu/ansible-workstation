@@ -7,7 +7,7 @@
    - redshift
    - redshift-gtk
   become: true
-  ignore_errors: yes
+  ignore_errors: true
 
 #https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
 - name: workstation | Configure redshift startup launcher from command line
@@ -35,7 +35,7 @@
   with_items:
    - plasma-applet-redshift-control
   become: true
-  ignore_errors: yes
+  ignore_errors: true
 
 #lightdm crash
 #- name: redshift | Autostart redshift before logging in (LightDM) | Update client
@@ -55,7 +55,7 @@
   with_items:
    - air-quality-sensor
   become: true
-  ignore_errors: yes
+  ignore_errors: true
 
 # See https://computingforgeeks.com/install-use-safeeyes-ubuntu-fedora-arch-debian/#:~:text=Safe%20Eyes%20is%20a%20Free,long%20hours%20on%20a%20computer.
 - name: workstation | Install eyes quality tools
@@ -65,4 +65,4 @@
   with_items:
    - safeeyes
   become: true
-  ignore_errors: yes
+  ignore_errors: true

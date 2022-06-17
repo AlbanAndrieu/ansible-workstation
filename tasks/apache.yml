@@ -39,7 +39,7 @@
   command: a2enmod proxy
   #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
   become: true
-  ignore_errors: yes
+  ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
@@ -57,7 +57,7 @@
 - name: Web | Enable the jenkins site
   command: a2ensite jenkins
   become: true
-  ignore_errors: yes
+  ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
@@ -75,7 +75,7 @@
 - name: Web | Enable the nabla site
   command: a2ensite nabla
   become: true
-  ignore_errors: yes
+  ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
@@ -92,14 +92,14 @@
 #- name: Web | Enable the awx ansible tower site
 #  action: command a2ensite awx-httpd-7077
 #  become: true
-#  ignore_errors: yes
+#  ignore_errors: true
 #  tags: apache
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the apache mod headers
   command: a2enmod headers
   become: true
-  ignore_errors: yes
+  ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 

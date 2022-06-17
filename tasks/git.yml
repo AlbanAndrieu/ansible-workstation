@@ -46,6 +46,6 @@
   homebrew:
     name: ['hub']
     state: present
-    update_homebrew: yes
+    update_homebrew: true
   ignore_errors: true
   become: true

@@ -309,34 +309,6 @@
   with_items:
     - ubuntu-make
 
-- name: workstation | Install debug basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and stats_enabled
-  tags: package
-  with_items:
-    - strace
-    - yp-tools #ypcat hosts | grep ilo
-
-- name: workstation | Install network tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  tags: package
-  with_items:
-# TODO create a role
-#    - wireshark
-    - nmap
-    - zenmap
-    - dnsutils #nslookup
-# TODO install fing
-# http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
-# sudo fing
-# TODO install angryip
-# http://angryip.org/about/
-# http://quehow.com/how-to-monitor-your-network-traffic-in-ubuntu-14-04/6904.html
-# sudo apt-get install knemo
-
 # - name: workstation | Install utilities tools
 #   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
 #   become: true
@@ -373,14 +345,6 @@
   tags: package
   with_items:
    - stacer
-
-- name: workstation | Install vpn tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  tags: package
-  with_items:
-    - network-manager-openconnect
 
 ##
  # node.js installation (latest stable instead of Ubuntu's out-of-date one)
@@ -1012,6 +976,8 @@
 
 - import_tasks: vpn.yml
 
+- import_tasks: network.yml
+
 - import_tasks: backup.yml
 
 - import_tasks: fun.yml
@@ -1031,6 +997,8 @@
 - import_tasks: gaming.yml
 
 - import_tasks: dev.yml
+
+- import_tasks: debug.yml
 
 # - name: workstation | Install lowlatency kernel
 #   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

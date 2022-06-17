@@ -49,7 +49,7 @@
   git:
     repo: "{{ homebrew_repository }}"
     dest: "{{ home }}/.linuxbrew"
-    accept_hostkey: yes
+    accept_hostkey: true
     update: no
     version: master
   when: >
@@ -92,7 +92,7 @@
   homebrew:
     name: ['cairo', 'libxml2', 'libffi']
     state: present
-    update_homebrew: yes
+    update_homebrew: true
   ignore_errors: true
   become: true
   become_user: "{{ jenkins_user }}"

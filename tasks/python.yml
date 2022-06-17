@@ -3,7 +3,7 @@
   apt:
     pkg: "{{ item }}"
 #    state: latest
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 600
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
   with_items:

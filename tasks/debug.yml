@@ -4,7 +4,7 @@
 - name: workstation | Install postman
   snap:
     name: postman
-    classic: yes
+    classic: true
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
   tags: package
@@ -48,14 +48,6 @@
   tags:
     - package
     - monitoring
-
-- name: workstation | Install network debuging tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - ethtool
-    - inetutils-traceroute
 
 - name: workstation | Install system debuging tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
