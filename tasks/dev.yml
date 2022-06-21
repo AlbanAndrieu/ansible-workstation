@@ -48,3 +48,49 @@
   tags:
    - package
    - envsubst
+
+- name: workstation | Install debian packaging tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+   - ubuntu-dev-tools #reverse-depends -b scons
+
+- name: workstation | Install utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+   - sshpass
+   - ssh-askpass
+   - meld
+   - dos2unix
+# xclip -selection clipboard < ~/.ssh/id_rsa.pub
+   - xclip
+   - rar
+# TODO http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
+# wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.Qt-2_all.deb
+# wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.GTK2-2_all.deb
+# NOK sudo dpkg -i peazip_6.4.0.LINUX.Qt-2_all.deb
+# NOK sudo gdebi peazip_6.4.0.LINUX.GTK2-2_all.deb
+   - manpages
+   - man-db
+   - manpages-posix
+   - manpages-fr
+   - manpages-fr-extra
+   - manpages-dev
+   - manpages-posix-dev
+# man with color
+   - most
+   - colordiff
+   - colormake
+# Colorize log tools
+   - multitail
+   - grc
+   - ccze
+   - imagemagick
+   - stress
+# https://www.rackaid.com/blog/linux-screen-tutorial-and-how-to/
+   - screen
+  tags: package
