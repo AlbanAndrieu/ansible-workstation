@@ -4,7 +4,7 @@
 
   roles:
     - { role: ./,
-        dash_enabled: no,
-        webapps_enabled: no,
-        apache_create_vhosts: no
-     }
+        dash_enabled: false,
+        webapps_enabled: false,
+        apache_create_vhosts: false
+      }

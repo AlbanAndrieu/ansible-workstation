@@ -598,7 +598,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: cleaning
   with_items:
-    - bleachbit
+   - bleachbit
 
 #########################
 
@@ -981,14 +981,14 @@
   become: true
   ignore_errors: true
 
-#- name: workstation | Force no login for user vagrant
-#  user: name=vagrant shell=/bin/false state=present
-#  become: true
+# - name: workstation | Force no login for user vagrant
+#   user: name=vagrant shell=/bin/false state=present
+#   become: true
 
-#- name: workstation | Force no login for user zap
-#  user: name=zap shell=/bin/false state=present
-#  become: true
+# - name: workstation | Force no login for user zap
+#   user: name=zap shell=/bin/false state=present
+#   become: true
 
-#- name: workstation | Force no login for user jenkins
-#  user: name=jenkins shell=/bin/bash state=present
-#  become: true
+# - name: workstation | Force no login for user jenkins
+#   user: name=jenkins shell=/bin/bash state=present
+#   become: true
