@@ -1,5 +1,7 @@
 ---
 exclude_paths:
+  - .github/
+  - .gitlab/
   - ./report/
   - ./requirements.yml
   - ./.travis.yml
@@ -27,4 +29,6 @@ warn_list:  # or 'skip_list' to silence them completely
   - yaml  # Violations reported by yamllint
 use_default_rules: true
 # verbosity: 1
+
+# Offline mode disables installation of requirements.yml
 offline: true
