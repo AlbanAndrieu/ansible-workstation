@@ -1,5 +1,4 @@
 ---
-
 #See https://forum.ubuntu-fr.org/viewtopic.php?id=6125 needed for french accent
 # Typing -> Compose Key -> Right Win
 - name: workstation | Install editor gnome-tweaks
@@ -7,14 +6,14 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '>=')
   with_items:
-   - gnome-tweaks
+    - gnome-tweaks
 
 - name: workstation | Install editor gnome-tweaks
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '<')
   with_items:
-   - gnome-tweak-tool #fix for meld, for For older Debian and Ubuntu versions, install GNOME Tweaks Tool using the command
+    - gnome-tweak-tool  # fix for meld, for For older Debian and Ubuntu versions, install GNOME Tweaks Tool using the command
 
 # See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
 - name: workstation | Install editor gnome extensions
@@ -22,8 +21,8 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   with_items:
-   - gnome-shell-extensions
-   - chrome-gnome-shell
+    - gnome-shell-extensions
+    - chrome-gnome-shell
 
 - name: workstation | Install gnome-calculator tools
   snap:
@@ -39,7 +38,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - gnome-terminal
+    - gnome-terminal
 
 - name: workstation | Install network tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

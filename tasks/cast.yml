@@ -1,5 +1,4 @@
 ---
-
 # See https://vitux.com/how-to-cast-video-from-ubuntu-to-chromecast/
 
 - name: workstation | Install chromecast tool
@@ -7,7 +6,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags: chromecast
   with_items:
-   - mkchromecast
+    - mkchromecast
   become: true
   ignore_errors: true
 

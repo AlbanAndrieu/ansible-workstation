@@ -1,5 +1,4 @@
 ---
-
 - name: cloud | Install multipass
   snap:
     name: multipass

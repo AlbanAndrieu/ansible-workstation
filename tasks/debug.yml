@@ -30,6 +30,7 @@
     - iotop
     - iperf
     - lsof
+    - socat  # socat unix-connect:/tmp/haproxy.socket stdio
     - ltrace
     - multitail
     - mtr

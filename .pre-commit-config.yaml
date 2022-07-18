@@ -1,5 +1,4 @@
 ---
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
     rev: v4.3.0
@@ -7,7 +6,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-added-large-files
-        args: ["--maxkb=123"]
+        args: [--maxkb=123]
         exclude: >
           (?x)^(
               .pnp.cjs|
