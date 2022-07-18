@@ -3,18 +3,18 @@
 dependencies:
   - { role: albanandrieu.ansible_common }
   - { role: albanandrieu.ansible_dns }
-#  #- { role: geerlingguy.ntp }
-#  #- { role: locale }
+  #  #- { role: geerlingguy.ntp }
+  #  #- { role: locale }
   #- { role: albanandrieu.ansible_hostname }
-#  - { role: geerlingguy.firewall }
+  #  - { role: geerlingguy.firewall }
   - { role: albanandrieu.conky }
   #- { role: albanandrieu.dropbox }
-#  - { role: albanandrieu.grive }
-#  #- { role: albanandrieu.synergy }
-#  - { role: albanandrieu.shell }
-#  #- { role: albanandrieu.cpp }
-#  #- { role: albanandrieu.tomcat }
-#  #- { role: albanandrieu.jboss }
+  #  - { role: albanandrieu.grive }
+  #  #- { role: albanandrieu.synergy }
+  #  - { role: albanandrieu.shell }
+  #  #- { role: albanandrieu.cpp }
+  #  #- { role: albanandrieu.tomcat }
+  #  #- { role: albanandrieu.jboss }
   - { role: albanandrieu.eclipse }
   - { role: albanandrieu.css }
 ##  - { role: albanandrieu.zap }
@@ -64,8 +64,8 @@ galaxy_info:
   license: GPLv3
   min_ansible_version: 2.7.8
   platforms:
-  - name: Ubuntu
-    versions:
-    - all
+    - name: Ubuntu
+      versions:
+        - all
   galaxy_tags:
     - development

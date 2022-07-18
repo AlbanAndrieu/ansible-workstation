@@ -1,5 +1,4 @@
 ---
-
 - name: Check user
   user: name={{ variety_owner }} state=present
 
@@ -11,19 +10,15 @@
   when: home_present.stat.isdir is defined and home_present.stat.isdir == true
 
 - name: variety | Create base directory
-  file:
-    dest="{{ variety_directory }}"
-    state=directory
-    owner="{{ variety_owner }}"
-    group="{{ variety_group }}"
+  file: dest="{{ variety_directory }}" state=directory owner="{{ variety_owner }}" group="{{ variety_group }}"
   ignore_errors: true
-#  sudo_user: "{{ variety_owner }}"
+  #  sudo_user: "{{ variety_owner }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
   tags: variety
 
 - name: variety | Add variety configuration.
   template:
-    src: "variety.conf.j2"
+    src: variety.conf.j2
     dest: "{{ variety_directory }}/variety.conf"
     owner: "{{ variety_owner }}"
     group: "{{ variety_group }}"
@@ -45,5 +40,5 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04']) and variety_enabled
   tags: variety
   with_items:
-   - variety-slideshow
-   - variety
+    - variety-slideshow
+    - variety

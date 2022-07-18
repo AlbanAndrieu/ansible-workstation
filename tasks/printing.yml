@@ -1,25 +1,25 @@
-
+---
 - name: workstation | Install OCR utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-# https://help.ubuntu.com/community/OCR
-   - gocr
-   - tesseract-ocr
-   - tesseract-ocr-fra
-   - tesseract-ocr-nor
-#   - gscan2pdf
-   - ocrfeeder
-#   - aspell-fr   # Already in editor.yml
-#   - aspell-en   # Already in editor.yml
-#   - aspell-no   # Already in editor.yml
-   - hunspell
-   - hunspell-fr
-# http://sourceforge.net/projects/lios/files/latest/download
-# lios
-   - cuneiform
+    # https://help.ubuntu.com/community/OCR
+    - gocr
+    - tesseract-ocr
+    - tesseract-ocr-fra
+    - tesseract-ocr-nor
+    #   - gscan2pdf
+    - ocrfeeder
+    #   - aspell-fr   # Already in editor.yml
+    #   - aspell-en   # Already in editor.yml
+    #   - aspell-no   # Already in editor.yml
+    - hunspell
+    - hunspell-fr
+    # http://sourceforge.net/projects/lios/files/latest/download
+    # lios
+    - cuneiform
 
 - name: workstation | Install OCR utilities tools (addition)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -27,7 +27,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04']
   tags: package
   with_items:
-   - hunspell-no
+    - hunspell-no
 
 #- name: workstation | Install Xerox printer driver
 #  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -43,11 +43,11 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - ocl-icd-libopencl1
-   - ocl-icd-opencl-dev
-   - libnuma-dev
-#get cpu info
-   - clinfo
+    - ocl-icd-libopencl1
+    - ocl-icd-opencl-dev
+    - libnuma-dev
+    #get cpu info
+    - clinfo
 
 #http://www.linux.com/learn/tutorials/442456-how-to-scan-and-ocr-like-a-pro-with-open-source-tools
 ##convert -monochrome politet-17-01-2016.pdf page.tif
@@ -63,7 +63,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04']
   tags: package
   with_items:
-   - pdfeditor
+    - pdfeditor
 
 - name: workstation | Install PDF utilities tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -71,7 +71,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04']
   tags: package
   with_items:
-   - cups-pdf
+    - cups-pdf
 
 - name: workstation | Install PDF utilities tools (3)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -79,12 +79,12 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - imagemagick
-# Fix memory bug to 2 Gb
-# https://doc.ubuntu-fr.org/imagemagick#j_obtiens_une_erreur_de_cache
-#sudo sed -i 's/name="memory" value="256MiB"/name="memory" value="3GiB"/' /etc/ImageMagick-6/policy.xml
-#sudo sed -i 's/name="disk" value="1GiB"/name="disk" value="2GiB"/' /etc/ImageMagick-6/policy.xml
-   - xournal
+    - imagemagick
+    # Fix memory bug to 2 Gb
+    # https://doc.ubuntu-fr.org/imagemagick#j_obtiens_une_erreur_de_cache
+    #sudo sed -i 's/name="memory" value="256MiB"/name="memory" value="3GiB"/' /etc/ImageMagick-6/policy.xml
+    #sudo sed -i 's/name="disk" value="1GiB"/name="disk" value="2GiB"/' /etc/ImageMagick-6/policy.xml
+    - xournal
 
 - name: workstation | Install PDF utilities tools (4)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -92,9 +92,9 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - poppler-utils # for pdftotext
-   - pdfarranger
-   - xournal
+    - poppler-utils # for pdftotext
+    - pdfarranger
+    - xournal
 
 # See run-accent.sh
 - name: workstation | Install accent utilities tools
@@ -102,37 +102,37 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-   - gnome-user-docs-fr
-   - language-pack-fr
-   - gimp-help-en
-   - libreoffice-help-fr
-#   - hunspell-en-za
-   - libreoffice-l10n-fr
-   - language-pack-gnome-fr
-   - libreoffice-help-en-gb
-#   - hunspell-en-ca
-   - gimp-help-fr
-   - hyphen-en-gb
-   - hunspell-en-gb
-   - firefox-locale-fr
-#   - mythes-en-au
-#   - hunspell-en-au
-   - gnome-getting-started-docs-fr
-#   - hyphen-en-ca
-   - chromium-browser-l10n
-   - wfrench
-   - hyphen-fr
-   - libreoffice-l10n-en-gb
-   - mythes-fr
-#   - libreoffice-l10n-en-za
+    - gnome-user-docs-fr
+    - language-pack-fr
+    - gimp-help-en
+    - libreoffice-help-fr
+    #   - hunspell-en-za
+    - libreoffice-l10n-fr
+    - language-pack-gnome-fr
+    - libreoffice-help-en-gb
+    #   - hunspell-en-ca
+    - gimp-help-fr
+    - hyphen-en-gb
+    - hunspell-en-gb
+    - firefox-locale-fr
+    #   - mythes-en-au
+    #   - hunspell-en-au
+    - gnome-getting-started-docs-fr
+    #   - hyphen-en-ca
+    - chromium-browser-l10n
+    - wfrench
+    - hyphen-fr
+    - libreoffice-l10n-en-gb
+    - mythes-fr
+  #   - libreoffice-l10n-en-za
   tags:
-   - package
-   - lang-fr
-   - lang-en-gb
+    - package
+    - lang-fr
+    - lang-en-gb
 
 - name: workstation | Install multi key right ctrl
   shell: >
     echo "keycode 115 = Multi_key" | xmodmap -
   tags:
-   - accent
-   - multi-key
+    - accent
+    - multi-key

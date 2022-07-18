@@ -1,5 +1,4 @@
 ---
-
 # See https://help.ubuntu.com/community/SwapFaq
 - name: workstation | Configure swap cleaning file
   copy: src=swap2ram.sh dest=/usr/local/sbin/swap2ram.sh owner=root group=root mode=0755

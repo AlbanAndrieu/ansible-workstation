@@ -1,3 +1,4 @@
+---
 #TODO https://doc.ubuntu-fr.org/optimisation
 
 - name: workstation | Install kerrnel cleaning utilities tools
@@ -5,15 +6,15 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - byobu
+    - byobu
   become: true
 
 - name: workstation | Cron | Purge kernel images @reboot special time
   cron:
-    name: "Purge kernel images"
+    name: Purge kernel images
     special_time: reboot
     job: apt-get -y autoremove ; purge-old-kernels -y --keep 3 -q
-    cron_file: "purge_kernel_images"
+    cron_file: purge_kernel_images
     user: root
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true

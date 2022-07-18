@@ -1,5 +1,4 @@
 ---
-
 # See https://www.linuxuprising.com/2020/01/4-tools-to-record-your-linux-desktop.html
 
 # See https://doc.ubuntu-fr.org/recordmydesktop
@@ -9,9 +8,9 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.10, '<=')
   tags: package
   with_items:
-   - recordmydesktop
-   #- qt-recordmydesktop
-   - gtk-recordmydesktop # Ubuntu 20 missing
+    - recordmydesktop
+    #- qt-recordmydesktop
+    - gtk-recordmydesktop # Ubuntu 20 missing
 
 # Switching to https://www.linuxuprising.com/2020/05/simplescreenrecorder-updated-with.html
 - name: workstation | Install record video tools
@@ -20,4 +19,4 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.10, '<=')
   tags: package
   with_items:
-   - simplescreenrecorder
+    - simplescreenrecorder

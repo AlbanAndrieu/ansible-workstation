@@ -1,11 +1,11 @@
-
+---
 - name: workstation | Install eyes tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version('19.10', '<='))
   tags: package
   with_items:
-   - redshift
-   - redshift-gtk
+    - redshift
+    - redshift-gtk
   become: true
   ignore_errors: true
 
@@ -33,7 +33,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
   tags: package
   with_items:
-   - plasma-applet-redshift-control
+    - plasma-applet-redshift-control
   become: true
   ignore_errors: true
 
@@ -53,7 +53,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - air-quality-sensor
+    - air-quality-sensor
   become: true
   ignore_errors: true
 
@@ -63,6 +63,6 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - safeeyes
+    - safeeyes
   become: true
   ignore_errors: true

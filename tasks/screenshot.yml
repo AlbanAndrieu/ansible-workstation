@@ -1,19 +1,20 @@
 ---
-
 # sudo add-apt-repository ppa:linuxuprising/shutter
 - name: workstation | Install utilities tools screenshot shutter PPA
   apt_repository: repo='ppa:linuxuprising/shutter' update_cache=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and ansible_distribution_version is version('19.10', '<=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and ansible_distribution_version
+    is version('19.10', '<=')
   tags: screenshot
 
 - name: workstation | Install utilities tools screenshot shutter
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and ansible_distribution_version is version('19.10', '<=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and ansible_distribution_version
+    is version('19.10', '<=')
   tags: screenshot
   with_items:
-   - shutter
+    - shutter
 
 - name: workstation | Install utilities tools flameshot shutter
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -21,7 +22,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('20.04', '>=')
   tags: screenshot
   with_items:
-   - flameshot
+    - flameshot
 
 - name: workstation | Install utilities tools mate-screenshot  shutter
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -29,4 +30,4 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('20.04', '>=')
   tags: screenshot
   with_items:
-   - mate-utils
+    - mate-utils

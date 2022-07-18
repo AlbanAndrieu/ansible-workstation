@@ -1,15 +1,15 @@
-
+---
 - name: workstation | Install messaging communication
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
-   - pidgin
-   - pidgin-sipe
-   - pidgin-skype
-   - pidgin-otr
-   - irssi-plugin-otr
+    - pidgin
+    - pidgin-sipe
+    - pidgin-skype
+    - pidgin-otr
+    - irssi-plugin-otr
 
 - name: workstation | Install messaging communication tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -17,9 +17,9 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pidgin_enabled
   tags: package
   with_items:
-   - pidgin-awayonlock
-   - pidgin-plugin-pack
-   #- nautilus-sendto
+    - pidgin-awayonlock
+    - pidgin-plugin-pack
+#- nautilus-sendto
 
 #sudo add-apt-repository ppa:scopes-packagers/ppa
 #sudo apt-get update && sudo apt-get install unity-lens-pidgin

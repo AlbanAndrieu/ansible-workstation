@@ -1,4 +1,4 @@
-
+---
 - name: workstation | Install nemo tools PPA
   apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
   become: true
@@ -11,29 +11,29 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: nemo
   with_items:
-   - nemo
-#Check for the best file manager at
-#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-#Install nemo
-#http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
-#TODO
-#sudo add-apt-repository ppa:webupd8team/nemo
-#sudo apt-get update
-#sudo apt-get install nemo nemo-fileroller
-#sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
-   - nemo-fileroller
-   - nemo-compare
-   - nemo-dropbox
-   - nemo-media-columns
-   - nemo-pastebin
-   - nemo-seahorse
-   - nemo-share
-   - nemo-emblems
-   - nemo-image-converter
-   - nemo-audio-tab
-# rabbitvcs is using too much resources
-#   - nemo-rabbitvcs
-   - nemo-terminal
+    - nemo
+    #Check for the best file manager at
+    #https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+    #Install nemo
+    #http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
+    #TODO
+    #sudo add-apt-repository ppa:webupd8team/nemo
+    #sudo apt-get update
+    #sudo apt-get install nemo nemo-fileroller
+    #sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
+    - nemo-fileroller
+    - nemo-compare
+    - nemo-dropbox
+    - nemo-media-columns
+    - nemo-pastebin
+    - nemo-seahorse
+    - nemo-share
+    - nemo-emblems
+    - nemo-image-converter
+    - nemo-audio-tab
+    # rabbitvcs is using too much resources
+    #   - nemo-rabbitvcs
+    - nemo-terminal
 
 #Fix issues with python-nemo
 #sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
@@ -50,9 +50,9 @@
 #nemo
 
 ##
- # Dash unity lens installation
- # http://doc.ubuntu-fr.org/unity-lens
- #
+# Dash unity lens installation
+# http://doc.ubuntu-fr.org/unity-lens
+#
 - name: dash | Uninstall unity-lens and unity-scope packages
   apt: >
     pkg={{ item }}
@@ -82,10 +82,10 @@
   with_items:
     - unity-lens-applications
     - unity-lens-files
-#    - unity-lens-wikipedia
-#    - unity-lens-radios
-#    - unity-lens-vm
-#    - unity-lens-github
+    #    - unity-lens-wikipedia
+    #    - unity-lens-radios
+    #    - unity-lens-vm
+    #    - unity-lens-github
     - unity-scope-gdrive
     - unity-scope-chromiumbookmarks
     - unity-scope-firefoxbookmarks
@@ -244,12 +244,12 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-#Check for the best file manager at
-#https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-#Remove default nautilus file manager
-   - nautilus
-   - nautilus-sendto
-   - nautilus-open-terminal
+    #Check for the best file manager at
+    #https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
+    #Remove default nautilus file manager
+    - nautilus
+    - nautilus-sendto
+    - nautilus-open-terminal
 
 - name: gtk | Install gtk canberra missing packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -274,7 +274,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
   tags: package
   with_items:
-   - gksu
+    - gksu
 
 - name: workstation | Enable lock-screen
   command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'
@@ -282,8 +282,8 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - gsettings
-   - lock-screen
+    - gsettings
+    - lock-screen
 
 - name: workstation | Install cpu-checker packages
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

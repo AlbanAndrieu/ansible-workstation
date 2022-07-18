@@ -1,5 +1,4 @@
 ---
-
 #See https://help.ubuntu.com/community/UbuntuStudioPreparation
 - name: workstation | Install Ubuntu studio requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -7,10 +6,10 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
   tags: extras
   with_items:
-   - vlc
-   - ubuntu-restricted-extras
-   - ubuntustudio-menu
-   - cdrdao
+    - vlc
+    - ubuntu-restricted-extras
+    - ubuntustudio-menu
+    - cdrdao
 
 - name: workstation | Install gimp requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -18,12 +17,12 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
   tags: gimp
   with_items:
-   - gimp
-   - gimp-data-extras
-   - gimp-lensfun
-   - gimp-texturize
-   - create-resources
-   - ink-generator
+    - gimp
+    - gimp-data-extras
+    - gimp-lensfun
+    - gimp-texturize
+    - create-resources
+    - ink-generator
 #   - darktable
 
 # See https://doc.ubuntu-fr.org/inkscape
@@ -33,5 +32,5 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
   tags: gimp
   with_items:
-   - inkscape
+    - inkscape
 #   - sozi

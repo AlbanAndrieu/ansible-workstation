@@ -1,20 +1,19 @@
 ---
-
 ansigenome_info: # noqa 701
-  galaxy_id: ''
-  galaxy_url: 'https://galaxy.ansible.com/alban.andrieu/workstation/'
-  galaxy_user: 'alban.andrieu'
-  galaxy_name: 'workstation'
-  galaxy_docker_name: 'ansible-workstation'
+  galaxy_id: ""
+  galaxy_url: https://galaxy.ansible.com/alban.andrieu/workstation/
+  galaxy_user: alban.andrieu
+  galaxy_name: workstation
+  galaxy_docker_name: ansible-workstation
 
   travis: true
 
   authors:
-    - name: 'Alban Andrieu'
-      url: 'fr.linkedin.com/in/nabla/'
-      email: 'alban.andrieu@free.fr'
-      twitter: 'AlbanAndrieu'
-      github: 'AlbanAndrieu'
+    - name: Alban Andrieu
+      url: fr.linkedin.com/in/nabla/
+      email: alban.andrieu@free.fr
+      twitter: AlbanAndrieu
+      github: AlbanAndrieu
 
   description: A role for installing workstation
   company: Nabla

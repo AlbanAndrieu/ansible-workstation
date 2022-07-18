@@ -1,46 +1,45 @@
 ---
-
 - name: workstation | Install spelling tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-   - aspell-fr
-   - aspell-en
-   - aspell-no
-   - aspell-de
+    - aspell-fr
+    - aspell-en
+    - aspell-no
+    - aspell-de
   tags:
-   - package
-   - aspell
+    - package
+    - aspell
 
 - name: workstation | Install editor tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-   - vim
-   - tree
-#midnight commander
-#   - mc
-   - xdg-open # https://doc.ubuntu-fr.org/xdg-open
-#   - bat  # See run-bat.sh
-   - fd-find
+    - vim
+    - tree
+    #midnight commander
+    #   - mc
+    - xdg-open # https://doc.ubuntu-fr.org/xdg-open
+    #   - bat  # See run-bat.sh
+    - fd-find
   tags:
-   - package
-   - editor
+    - package
+    - editor
 
 - name: workstation | Install editor geany tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-   - geany
-   - geany-plugins
-   - gtk2-engines-pixbuf # geany bugfix
-##sudo apt-cache search geany
+    - geany
+    - geany-plugins
+    - gtk2-engines-pixbuf # geany bugfix
+  ##sudo apt-cache search geany
   tags:
-   - package
-   - geany
+    - package
+    - geany
 
 - name: workstation | Install editor geany configuration
   template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
@@ -53,25 +52,25 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-#sudo apt-cache search geany
-   - gedit
-   - gedit-plugins
+    #sudo apt-cache search geany
+    - gedit
+    - gedit-plugins
   tags:
-   - package
-   - gedit
+    - package
+    - gedit
 
 - name: workstation | Install editor gedit tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04']
   with_items:
-   - gconf-editor
-#gconf-editor
-   - dconf-tools
-#dconf-editor
+    - gconf-editor
+    #gconf-editor
+    - dconf-tools
+  #dconf-editor
   tags:
-   - package
-   - gedit
+    - package
+    - gedit
 
 #TODO
 #https://codetree.com.au/projects/imitation/
@@ -92,36 +91,36 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   tags:
-   - package
-   - gedit
+    - package
+    - gedit
 
 - name: workstation | Install editor gedit-gmate plugin
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   with_items:
-   - gedit-gmate
+    - gedit-gmate
   tags:
-   - package
-   - gedit
+    - package
+    - gedit
 
 - name: workstation | Install editor atom tools PPA
   apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags:
-   - package
-   - atom
+    - package
+    - atom
 
 - name: workstation | Install editor atom
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   with_items:
-   - atom
+    - atom
   tags:
-   - package
-   - atom
+    - package
+    - atom
 
 - name: workstation | Install editor atom
   snap:
@@ -130,24 +129,24 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   tags:
-   - package
-   - atom
+    - package
+    - atom
 
 - name: workstation | Install prince
   apt:
     deb: https://www.princexml.com/download/prince_14.2-1_ubuntu20.04_amd64.deb
     when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   tags:
-   - package
-   - prince
+    - package
+    - prince
 
 - name: workstation | Install bat
   apt:
     deb: https://github.com/sharkdp/bat/releases/download/v0.19.0/bat_0.19.0_amd64.deb
     when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   tags:
-   - package
-   - bat
+    - package
+    - bat
 
 #apm install linter
 #apm install linter-shellcheck
@@ -158,5 +157,5 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags:
-   - snap
-   - refresh
+    - snap
+    - refresh

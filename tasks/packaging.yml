@@ -1,13 +1,12 @@
 ---
-
 - name: workstation | Install packaging tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: packaging
   with_items:
-   - synaptic
-   - snapd
+    - synaptic
+    - snapd
 
 #sudo snap install snap-store
 ##sudo snap install snapcraft --classic

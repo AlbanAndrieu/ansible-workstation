@@ -1,15 +1,15 @@
-
+---
 #TODO move git to a role
 - name: workstation | Install SCM
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
-#   - cvs
-#   - mercurial
-   - git
-   - gitg
-#   - gitk
+    #   - cvs
+    #   - mercurial
+    - git
+    - gitg
+  #   - gitk
   become: true
 
 - name: workstation | Install git diff tools
@@ -17,12 +17,12 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
   with_items:
-   - python-excelerator
-   - catdoc
-   - docx2txt
-   - python-pdfminer
-   - odt2txt
-   - libimage-exiftool-perl
+    - python-excelerator
+    - catdoc
+    - docx2txt
+    - python-pdfminer
+    - odt2txt
+    - libimage-exiftool-perl
   become: true
 
 # See https://myrepos.branchable.com/install/
@@ -31,12 +31,12 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
-   - myrepos
+    - myrepos
   become: true
   ignore_errors: true
 
 - name: workstation | Initalize myrepos
-  shell: 'for d in $(find /workspace/users/{{ jenkins_user }}{{ shell_default_version }}/ -type d -name .git); do (mr register $d/..); done'
+  shell: for d in $(find /workspace/users/{{ jenkins_user }}{{ shell_default_version }}/ -type d -name .git); do (mr register $d/..); done
   changed_when: false
   become: true
   ignore_errors: true
@@ -44,7 +44,7 @@
 # See https://github.com/github/hub
 - name: brew | Install hub
   homebrew:
-    name: ['hub']
+    name: [hub]
     state: present
     update_homebrew: true
   ignore_errors: true

@@ -1,12 +1,11 @@
 ---
-
 - name: workstation | Install useless tool
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['14.04', '16.04'])
   tags: screenfetch
   with_items:
-   - screenfetch
-   - neofetch
+    - screenfetch
+    - neofetch
   become: true
   ignore_errors: true
 
@@ -16,16 +15,16 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
-   - python3-dev
-   - python3-pip
-   - python3-setuptools
+    - python3-dev
+    - python3-pip
+    - python3-setuptools
   become: true
   ignore_errors: true
 
 - name: workstation  | Install thefuck
   pip:
     name: "{{ item }}"
-    executable: "pip3"
+    executable: pip3
   with_items:
     - thefuck
   when: ansible_python_version | version_compare('2.7', '>=')
@@ -38,7 +37,7 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
-   - gource
+    - gource
   become: true
   ignore_errors: true
 
@@ -46,13 +45,13 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
   with_items:
-   - fortune-mod
-   - fortunes-ubuntu-server
-   - fortunes-off
-   - fortunes-bofh-excuses
-   - fortunes-debian-hints
-   - fortunes-spam
-   - cowsay
+    - fortune-mod
+    - fortunes-ubuntu-server
+    - fortunes-off
+    - fortunes-bofh-excuses
+    - fortunes-debian-hints
+    - fortunes-spam
+    - cowsay
   become: true
   ignore_errors: true
 
@@ -62,7 +61,7 @@
 
 - name: jenkins-slave | Get Adwaita themes
   get_url:
-    url: "wget https://www.gnome-look.org/p/1368915/startdownload?file_id=1585605568&file_name=Adwaita-all.tar.gz&file_type=application/x-gzip&file_size=8619948"
+    url: wget https://www.gnome-look.org/p/1368915/startdownload?file_id=1585605568&file_name=Adwaita-all.tar.gz&file_type=application/x-gzip&file_size=8619948
     dest: "{{ home }}/.themes/"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
   become: true

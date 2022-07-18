@@ -13,7 +13,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '<')
   with_items:
-    - gnome-tweak-tool  # fix for meld, for For older Debian and Ubuntu versions, install GNOME Tweaks Tool using the command
+    - gnome-tweak-tool # fix for meld, for For older Debian and Ubuntu versions, install GNOME Tweaks Tool using the command
 
 # See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
 - name: workstation | Install editor gnome extensions

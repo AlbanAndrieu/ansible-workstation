@@ -26,7 +26,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-    - python3-pyqt5  # For VPN openconnect-sso
+    - python3-pyqt5 # For VPN openconnect-sso
     # on virtualenv pip install pyqt5>=5.15.6
   tags:
     - package

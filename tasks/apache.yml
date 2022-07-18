@@ -1,37 +1,21 @@
-
+---
 - name: Web | Create directory
-  file:
-    dest="{{ web_base_dir }}/"
-    state=directory
-    owner="{{ apache_owner }}"
-    group="{{ apache_group }}"
+  file: dest="{{ web_base_dir }}/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create jenkins directory
-  file:
-    dest="/var/www/jenkins/"
-    state=directory
-    owner="{{ apache_owner }}"
-    group="{{ apache_group }}"
+  file: dest="/var/www/jenkins/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create nabla directory
-  file:
-    dest="/var/www/nabla/"
-    state=directory
-    owner="{{ apache_owner }}"
-    group="{{ apache_group }}"
+  file: dest="/var/www/nabla/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create bababou directory
-  file:
-    dest="/var/www/bababou/"
-    state=directory
-    owner="{{ apache_owner }}"
-    group="{{ apache_group }}"
+  file: dest="/var/www/bababou/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
@@ -45,13 +29,13 @@
 
 - name: Web | Add apache jenkins vhosts configuration.
   template:
-    src: "apache-jenkins.conf.j2"
+    src: apache-jenkins.conf.j2
     dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
     owner: root
     group: root
     mode: 0644
   become: true
-#  notify: restart apache
+  #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the jenkins site
@@ -63,13 +47,13 @@
 
 - name: Web | Add apache nabla vhosts configuration.
   template:
-    src: "apache-nabla.conf.j2"
+    src: apache-nabla.conf.j2
     dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
     owner: root
     group: root
     mode: 0644
   become: true
-#  notify: restart apache
+  #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the nabla site
@@ -108,11 +92,11 @@
 #WARNING this is a whole file overwrite
 - name: Web | Add apache main configuration (ports.conf).
   template:
-    src: "ports.conf.j2"
+    src: ports.conf.j2
     dest: "{{ apache_conf_path }}/ports.conf"
     owner: root
     group: root
     mode: 0644
   become: true
-#  notify: restart apache
+  #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts

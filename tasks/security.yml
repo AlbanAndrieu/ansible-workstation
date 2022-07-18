@@ -1,14 +1,13 @@
 ---
-
 - name: workstation | Install certificates tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-   - libnss3-tools # for certutil
-   - apt-transport-https
-   - ca-certificates
+    - libnss3-tools # for certutil
+    - apt-transport-https
+    - ca-certificates
 
 - name: workstation | Install VNC
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -16,7 +15,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
   with_items:
-   - vnc4server
+    - vnc4server
 
 - name: workstation | Install XRDP
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -24,7 +23,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xrdp_enabled
   tags: package
   with_items:
-   - xrdp
+    - xrdp
 
 #Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
@@ -37,13 +36,13 @@
     - finger
     - sysstat
     - net-tools # for netstat
-#    - rusersd
+    #    - rusersd
     - rusers
-#    - rwho
-#    - rwhod
-#check ssl
-#sslscan --no-failed --ssl3 localhost:443
-#    - sslscan
+    #    - rwho
+    #    - rwhod
+    #check ssl
+    #sslscan --no-failed --ssl3 localhost:443
+    #    - sslscan
     - curl
     - wget
     - rsync
@@ -56,16 +55,16 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
     - tcpdump
-#https://doc.ubuntu-fr.org/httrack
-#    - httrack
-#    - httraqt
-#    - webhttrack
-#Spoofing ARP
+    #https://doc.ubuntu-fr.org/httrack
+    #    - httrack
+    #    - httraqt
+    #    - webhttrack
+    #Spoofing ARP
     - dsniff
     - arpalert
-#Pyhton proxy
+    #Pyhton proxy
     - mitmproxy
-#WEP WPA cracker
+    #WEP WPA cracker
     - aircrack-ng
   tags:
     - package
@@ -78,9 +77,9 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
     - testdisk
-#    - photorec
+    #    - photorec
     - chkrootkit
-#sudo chkrootkit
+    #sudo chkrootkit
     - rkhunter
   tags:
     - package
@@ -120,11 +119,11 @@
     - beef-project
     - metasploit-framework
     - whatweb
-#    - wpscan
+    #    - wpscan
     - setoolkit
     - openvas
     - sqlite3
-#https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
+    #https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
     - hydra-gtk
   become: true
 #sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
@@ -171,7 +170,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - skopeo
-    - lynis  #  sudo lynis audit system
+    - lynis #  sudo lynis audit system
   tags:
     - package
     - docker
@@ -246,7 +245,7 @@
   systemd:
     name: apport
     state: stopped
-    enabled: no
+    enabled: false
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   changed_when: false
   become: true

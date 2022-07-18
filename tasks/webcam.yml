@@ -1,5 +1,4 @@
 ---
-
 #https://doc.ubuntu-fr.org/webcam
 #lsusb | grep -i logitech
 
@@ -18,10 +17,10 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
   tags: package
   with_items:
-#    - libv4l-0
-#    - libv4l-dev
-#http://blog.nicolargo.com/2013/05/streaming-depuis-la-raspberry-camera.html
-#    - gstreamer-properties
+    #    - libv4l-0
+    #    - libv4l-dev
+    #http://blog.nicolargo.com/2013/05/streaming-depuis-la-raspberry-camera.html
+    #    - gstreamer-properties
     - guvcview
     - cheese
 #    - gphoto2
@@ -86,4 +85,4 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
   tags: howdy
   with_items:
-   - howdy
+    - howdy

@@ -1,5 +1,4 @@
 ---
-
 - name: workstation | Install debug basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -15,8 +14,8 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
   with_items:
-# TODO create a role
-#    - wireshark
+    # TODO create a role
+    #    - wireshark
     - nmap
     - zenmap
     - dnsutils # nslookup
