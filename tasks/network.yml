@@ -19,6 +19,7 @@
     - nmap
     - zenmap
     - dnsutils # nslookup
+
 # TODO install fing
 # http://www.overlooksoft.com/getfing4linux?plat=lx64&ext=deb
 # sudo fing
@@ -33,4 +34,5 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - ethtool
+    - iputils-ping
     - inetutils-traceroute
