@@ -8,9 +8,9 @@
     - network-manager-openconnect
     - network-manager-openconnect-gnome
 
-#http://www.humans-enabled.com/2011/06/how-to-connect-ubuntu-linux-to-cisco.html
-#then in network manager click add
-#Then Cisco AnyConnect Compatible VPN openconnect
+# http://www.humans-enabled.com/2011/06/how-to-connect-ubuntu-linux-to-cisco.html
+# then in network manager click add
+# Then Cisco AnyConnect Compatible VPN openconnect
 
 - name: workstation | Install vpc tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -33,5 +33,62 @@
     - openconnect
     - vpn
     - vm
-#TODO sudo service networking restart
-#TODO reboot
+
+- name: Get OpenVPN repo key
+  ansible.builtin.get_url:
+    url: https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
+    dest: /tmp/openvpn-repo-pkg-key.pub
+    mode: '0644'
+    force: true
+  tags:
+    - package
+    - openvpn
+    - vpn
+    - vm
+
+- name: Import key
+  ansible.builtin.rpm_key:
+    state: present
+    key: /tmp/openvpn-repo-pkg-key.pub
+  tags:
+    - package
+    - openvpn
+    - vpn
+    - vm
+
+- name: Add an apt key by id from a keyserver
+  ansible.builtin.apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 551180AB92C319F8
+  tags:
+    - package
+    - openvpn
+    - vpn
+    - vm
+
+- name: Add repo to sources
+  ansible.builtin.apt_repository:
+    repo: "deb https://swupdate.openvpn.net/community/openvpn3/repos {{ ansible_distribution_release }} main"
+    filename: openvpn3
+    state: present
+  tags:
+    - package
+    - openvpn
+    - vpn
+    - vm
+
+- name: Installing apt packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - openvpn3
+    - openvpn-systemd-resolved
+  tags:
+    - package
+    - openvpn
+    - vpn
+    - vm
+
+# TODO sudo service networking restart
+# TODO reboot

@@ -967,9 +967,6 @@
 # #   - linux-realtime
 # #   - linux-headers-realtime
 
-# TODO add postman
-# https://www.getpostman.com/docs/launch
-
 # - name: workstation | Check user
 #   user: name={{user}} state=present
 

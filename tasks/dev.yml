@@ -1,8 +1,18 @@
 ---
-#sudo snap install postman --classic
+
+# sudo snap install postman --classic
+
 - name: workstation | Install postman
   snap:
     name: postman
+    classic: true
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+  tags: package
+
+- name: workstation | Install insomnia
+  snap:
+    name: insomnia
     classic: true
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')

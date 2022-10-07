@@ -1,0 +1,44 @@
+---
+
+- name: Install default
+  hosts: localhost
+  gather_facts: true
+  gather_subset: hardware
+  become: true
+
+  roles:
+    - { role: ../, dash_enabled: false, webapps_enabled: false, apache_create_vhosts: false }
+
+- name: Increase SWAP
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    swap_enabled: true
+    swap_file_size_go: 16
+    swap_file_path: /swapfile
+
+  tasks:
+    - name: disable swap
+      command: swapoff -a
+      changed_when: true
+      when: ansible_swaptotal_mb > 0
+
+    - name: Create swap file
+      command: dd if=/dev/zero of={{ swap_file_path }} bs=1G count={{ swap_file_size_go }}
+
+    - name: Change swap file permissions
+      file: path="{{ swap_file_path }}" owner=root group=root mode=0600
+
+    - name: Check swap file type
+      command: file {{ swap_file_path }}
+      register: swapfile
+
+    - name: Make swap file
+      command: mkswap {{ swap_file_path }}
+      when: swapfile.stdout.find('swap file') == -1
+
+    - name: Mount swap
+      command: swapon {{ swap_file_path }}
+      when: ansible_swaptotal_mb < 1
