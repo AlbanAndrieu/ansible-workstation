@@ -78,11 +78,7 @@
     # xclip -selection clipboard < ~/.ssh/id_rsa.pub
     - xclip
     - rar
-    # TODO http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
-    # wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.Qt-2_all.deb
-    # wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.GTK2-2_all.deb
-    # NOK sudo dpkg -i peazip_6.4.0.LINUX.Qt-2_all.deb
-    # NOK sudo gdebi peazip_6.4.0.LINUX.GTK2-2_all.deb
+    - gdebi-core
     - manpages
     - man-db
     - manpages-posix
@@ -110,3 +106,48 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - libevent-dev # for https://github.com/marketplace/actions/git-version
+
+# TODO http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
+# wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.Qt-2_all.deb
+# wget https://github.com/giorgiotani/PeaZip/releases/download/6.4.0/peazip_6.4.0.LINUX.GTK2-2_all.deb
+# NOK sudo dpkg -i peazip_6.4.0.LINUX.Qt-2_all.deb
+# NOK sudo gdebi peazip_6.4.0.LINUX.GTK2-2_all.deb
+
+- name: workstation | Install peazip tools (1)
+  get_url:
+    url: http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
+    dest: "{{ home }}/Downloads/"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and peazip_enabled
+  become: true
+  changed_when: false
+  tags:
+    - peazip
+    - vm # do not install on docker image
+
+- name: workstation |Install githubdesktop tools (2)
+  command: gdebi {{ home }}/Downloads/peazip_5.3.1.LINUX.Qt-2_i386.deb
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+  tags:
+    - peazip
+    - vm # do not install on docker image
+
+# sudo wget https://github.com/shiftkey/desktop/releases/download/release-2.9.3-linux3/GitHubDesktop-linux-2.9.3-linux3.deb
+# sudo apt-get install gdebi-core
+# sudo gdebi GitHubDesktop-linux-2.9.3-linux3.deb
+
+- name: workstation | Install githubdesktop tools (1)
+  get_url:
+    url: https://github.com/shiftkey/desktop/releases/download/release-2.9.3-linux3/GitHubDesktop-linux-2.9.3-linux3.deb
+    dest: "{{ home }}/Downloads/"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+  become: true
+  changed_when: false
+  tags:
+    - githubdesktop
+    - vm # do not install on docker image
+
+- name: workstation |Install githubdesktop tools (2)
+  command: gdebi {{ home }}/Downloads/GitHubDesktop-linux-2.9.3-linux3.deb
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
