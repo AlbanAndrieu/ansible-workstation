@@ -9,7 +9,7 @@ ansible-core = ">=2.13.0"
 #jmespath = "==0.10.0"
 zabbix-api = "==0.5.4"
 netaddr = ">=0.8.0"
-ansible-lint = {extras = ["yamllint"], version = "==6.0.2"}
+ansible-lint = {extras = ["yamllint"], version = ">=6.0.2"}
 
 [dev-packages]
 checkov = ">=2.0.1144"
@@ -21,4 +21,4 @@ ansible-playbook-grapher = "==1.1.0"
 git-pre-commit-hook-utils = ">=0.0.5"
 
 [requires]
-python_version = "3.8"
+python_version = "3.10"

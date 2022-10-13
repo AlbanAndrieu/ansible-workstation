@@ -67,3 +67,15 @@
     - system
 
 #sudo apt-get install gnome-shell-dbgsym libglib2.0-*dbgsym libgtk*-dbgsym
+
+- name: workstation | Add putty
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - putty  # for netgear
+  tags:
+    - package
+    - serial
+    - ssh
+    - netgear
