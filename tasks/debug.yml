@@ -1,5 +1,4 @@
 ---
-
 - name: workstation | Install debuging tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true

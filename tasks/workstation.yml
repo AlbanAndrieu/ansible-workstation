@@ -940,7 +940,7 @@
 
 - import_tasks: variety.yml
 
-- import_tasks: music.yml
+# - import_tasks: music.yml
 
 - import_tasks: mobile.yml
 

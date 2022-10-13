@@ -38,7 +38,7 @@
   ansible.builtin.get_url:
     url: https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
     dest: /tmp/openvpn-repo-pkg-key.pub
-    mode: '0644'
+    mode: "0644"
     force: true
   tags:
     - package
@@ -68,7 +68,7 @@
 
 - name: Add repo to sources
   ansible.builtin.apt_repository:
-    repo: "deb https://swupdate.openvpn.net/community/openvpn3/repos {{ ansible_distribution_release }} main"
+    repo: deb https://swupdate.openvpn.net/community/openvpn3/repos {{ ansible_distribution_release }} main
     filename: openvpn3
     state: present
   tags:

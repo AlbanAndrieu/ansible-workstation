@@ -1,5 +1,4 @@
 ---
-
 # sudo snap install postman --classic
 
 - name: workstation | Install postman
