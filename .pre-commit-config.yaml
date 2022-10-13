@@ -10,6 +10,7 @@ repos:
         exclude: >
           (?x)^(
               .pnp.cjs|
+              Pipfile.lock|
               package-lock.json|
           )$
       - id: check-case-conflict
