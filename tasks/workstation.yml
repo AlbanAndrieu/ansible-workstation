@@ -956,6 +956,8 @@
 
 - import_tasks: debug.yml
 
+- import_tasks: optimization.yml
+
 # - name: workstation | Install lowlatency kernel
 #   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
 #   become: true
