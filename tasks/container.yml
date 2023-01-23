@@ -1,0 +1,54 @@
+---
+
+- name: workstation | Install docker tool
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and docker_enabled
+  tags: docker
+  with_items:
+    # - "linux-image-extra-$(uname -r)"
+    # - "linux-image-extra-virtual"
+    - auditd
+    - cpuset # sudo cset set -l
+
+# Add https://github.com/GovReady/ubuntu-scap
+- name: workstation | Install ubuntu-scap prerequisite
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and docker_enabled
+  tags: docker
+  with_items:
+    - libopenscap8
+    #   - scap-workbench
+    - lynx
+
+- name: workstation | Install docker requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04','14.04'])
+  tags: docker
+  with_items:
+    - apparmor-utils
+    - cgroup-tools
+
+- name: workstation | Install podman
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and podman_enabled
+  tags: docker
+  with_items:
+    - podman
+
+- name: workstation | Install podman registries tweak
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and podman_enabled
+  tags: podman
+  with_items:
+    - podman
+
+- name: workstation | Install podman registries tweak
+  command: sed -i "s/# unqualified-search-registries.*/unqualified-search-registries\ =\ [\"docker.io\"]/" /etc/containers/registries.conf
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and podman_enabled
+  tags: podman

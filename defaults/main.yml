@@ -78,6 +78,7 @@ variety_enabled: true
 plank_enabled: true
 android_enabled: true
 docker_enabled: true
+podman_enabled: true
 backbox_enabled: true
 smb_enabled: true
 grub_customizer_enabled: true
