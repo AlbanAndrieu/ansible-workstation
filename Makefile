@@ -55,7 +55,7 @@ run: down up
 fmt: ## Run formating
 	@echo "=> Executing formating..."
 	shfmt -i 2 -ci -w *.sh || true
-	ansible-lint --write ./
+	ansible-lint --write ./tasks
 
 ## —— Tests Ansible 🧪🔗 —————————————————————————————————————————————————————————————————
 .PHONY: test

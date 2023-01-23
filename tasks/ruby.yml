@@ -1,5 +1,4 @@
 ---
-
 # ruby-bundler for bundle init
 - name: brew | Install dependencies for ruby requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"

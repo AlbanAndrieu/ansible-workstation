@@ -4,21 +4,26 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ansible-cmdb = ">=1.31"
-ansible-core = ">=2.13.0"
+ansible-cmdb = "~=1.31"
+ansible-core = "~=2.14.1"
 #jmespath = "==0.10.0"
-zabbix-api = "==0.5.4"
-netaddr = ">=0.8.0"
-ansible-lint = {extras = ["yamllint"], version = ">=6.0.2"}
+zabbix-api = "~=0.5.5"
+netaddr = "~=0.8.0"
+ansible-lint = {extras = ["yamllint"], version = "~=6.10.2"}
 
 [dev-packages]
+ansible-navigator = ">=1.1.0"
+ansible-runner = ">=2.2.1"
+ansible-builder = ">=1.1.0"
+ansible-playbook-grapher = ">=1.1.0"
+bindep = ">=2.11.0"
 checkov = ">=2.0.1144"
-semgrep = ">=0.94.0"
+#semgrep = ">=0.118.0"
 #pipenv = ">=2022.6.7"
-pre-commit = ">=2.19.0"
-pre-commit-hooks = ">=4.2.0"
-ansible-playbook-grapher = "==1.1.0"
-git-pre-commit-hook-utils = ">=0.0.5"
+pre-commit = "~=2.20.0"
+pre-commit-hooks = "~=4.4.0"
+#git-pre-commit-hook-utils = ">=0.0.5"
+yamllint = "~=1.28.0"
 
 [requires]
 python_version = "3.10"
