@@ -31,6 +31,15 @@
     - apparmor-utils
     - cgroup-tools
 
+- name: workstation | Install docker credential helper
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04','14.04'])
+  tags: docker
+  with_items:
+    - amazon-ecr-credential-helper
+    - golang-docker-credential-helpers
+
 - name: workstation | Install podman
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
