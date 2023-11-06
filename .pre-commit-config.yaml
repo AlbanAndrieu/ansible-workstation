@@ -76,7 +76,7 @@ repos:
     hooks:
       - id: add-trailing-comma
   - repo: https://github.com/willthames/ansible-lint.git
-    rev: v6.3.0
+    rev: v6.19.0 # NOK v6.18.0
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$

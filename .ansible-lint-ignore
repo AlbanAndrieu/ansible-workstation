@@ -1,0 +1,4 @@
+# This file contains ignores rule violations for ansible-lint
+roles/chrome/.travis.yml load-failure[runtimeerror]
+roles/chrome/tasks/main.yml warning[outdated-tag]
+tasks/brew.yml syntax-check[specific]

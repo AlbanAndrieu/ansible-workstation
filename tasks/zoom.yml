@@ -1,0 +1,8 @@
+---
+- name: zoom | Install zoom requirement
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and zoom_enabled
+  tags: zoom_setup
+  with_items:
+    - libxcb-cursor0

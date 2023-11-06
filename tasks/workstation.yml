@@ -243,6 +243,10 @@
 
 - import_tasks: pidgin.yml
 
+# - import_tasks: skype.yml
+
+- import_tasks: zoom.yml
+
 # TODO install sky
 # See https://www.tel.red/repos.htm
 
