@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ansible-cmdb = "~=1.31"
-ansible-core = "~=2.15.4"
+ansible-cmdb = ">=1.31"
+ansible-core = ">=2.16.8"
+dnspython = ">=2.3.0"
 #jmespath = "==0.10.0"
-zabbix-api = "~=0.5.5"
-netaddr = "~=0.8.0"
+zabbix-api = ">=0.5.5"
+netaddr = ">=0.8.0"
 #awscli = ">=1.29.47" # OK >=1.27.165
 #awscli-plugin-endpoint = ">=0.4"
 cryptography = ">=42.0.8"

@@ -120,6 +120,13 @@ repos:
         args: [--config, .htmlhintrc]
       - id: markdown-toc
         args: [--maxdepth, "3", -i]
+  - repo: https://github.com/AlbanAndrieu/nabla-hooks.git
+    rev: v1.0.4
+    hooks:
+      - id: git-branches-check
+        always_run: true
+        args: [--max=3]
+        verbose: true
   - repo: https://github.com/oxsecurity/megalinter
     rev: v7.13.0
     hooks:
