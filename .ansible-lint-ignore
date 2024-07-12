@@ -1,4 +1,5 @@
 # This file contains ignores rule violations for ansible-lint
+roles/albanandrieu.ansible_common/tasks/main.yml warning[outdated-tag]
+roles/albanandrieu.shell/vars/custom-Windows.yml load-failure[runtimeerror]
 roles/chrome/.travis.yml load-failure[runtimeerror]
 roles/chrome/tasks/main.yml warning[outdated-tag]
-tasks/brew.yml syntax-check[specific]
