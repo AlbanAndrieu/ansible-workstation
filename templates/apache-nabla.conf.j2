@@ -17,6 +17,7 @@
 			  {% if vhost.serveralias is defined %}
 				ServerAlias {{ vhost.serveralias }}
 			  {% endif %}
+			    RemoteIPHeader CF-Connecting-IP
 
 				DocumentRoot {{ vhost.documentroot }}
 
@@ -34,6 +35,20 @@
 				#       Order allow,deny
 				#       Allow from all
 				#</Directory>
+				
+				
+				AddDefaultCharset utf-8
+
+				LogFormat "{ \"version\": \"1.1\", \"host\": \"%V\", \"short_message\": \"%r\", \"timestamp\": %{%s}t, \"level\": 6, \"_user_agent\": \"%{User-Agent}i\", \"_source_ip\": \"%{jm-client-ip}i\", \"_duration_usec\": %D, \"_duration_sec\": %T, \"_request_size_byte\": %O, \"_http_status_orig\": %s, \"_http_status\": %>s, \"_http_request_path\": \"%U\", \"_http_request\": \"%U%q\", \"_http_method\": \"%m\", \"_http_referer\": \"%{Referer}i\", \"_from_apache\": \"true\" }" graylog_access
+
+				LogFormat "{ \"timestamp\": \"%t\", \"service_name\": \"front\", \"trace_id\": \"%{X-Trace-ID}i\", \"level\": \"INFO\", \"client_ip\": \"%a\", \"jm_client_ip\": \"%{jm-client-ip}i\", \"http_endpoint\": \"%U\", \"http_request\": \"%U%q\", \"http_method\": \"%m\", \"http_referer\": \"%{Referer}i\", \"user_agent\": \"%{User-Agent}i\", \"duration\": %{ms}T, \"http_status_orig\": %s, \"http_status\": %>s, \"request_size_byte\": %O }" nabla_stdout
+
+				ErrorLogFormat "{ \"timestamp\": \"%{%Y-%m-%d %T}t.%{usec_frac}t\", \"service_name\": \"front\", \"trace_id\": \"%{X-Trace-ID}i\", \"level\": \"%l\", \"pid\": %P, \"apr_os_error_state\": \"%E\", \"src_file\": \"%F\", \"client_ip\": \"%a\", \"jm_client_ip\": \"%{jm-client-ip}i\", \"message\": \"%M\" }"
+
+                LogFormat "%a %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+                
+				ServerSignature Off
+				ServerTokens Prod
 
 				# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
 				# error, crit, alert, emerg.
@@ -63,6 +78,20 @@
 
 <IfModule mod_headers.c>
 
+    Header unset ETag
+    Header set X-Frame-Options: deny
+    Header set X-XSS-Protection: "1; mode=block"
+    Header set X-Content-Type-Options: nosniff
+    Header set X-WebKit-CSP: "default-src 'self'"
+    Header set X-Permitted-Cross-Domain-Policies: "master-only"
+    Header always unset Date
+    Header always unset Connection
+    Header always unset Keep-Alive
+    Header always unset Server
+    Header always unset X-Powered-By
+    Header always set ProcessingTime "%D"
+#    Header always set Server albandri
+
     #Header set Content-Security-Policy "script-src 'self'; object-src 'self'"
 
     # `mod_headers` cannot match based on the content-type, however,
@@ -75,6 +104,12 @@
 
     Header set Content-Security-Policy-Report-Only "script-src 'self'; object-src 'self'"
 
+</IfModule>
+
+<IfModule security2_module>
+    SecRuleEngine on
+    ServerTokens Full
+    SecServerSignature "Microsoft-IIS/6.0"
 </IfModule>
 
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet

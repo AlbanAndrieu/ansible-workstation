@@ -27,6 +27,25 @@
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
+- name: Web | Enable some required configuration remoteip
+  command: a2enconf remoteip
+  become: true
+  ignore_errors: true
+  tags: apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+# See https://developers.cloudflare.com/support/troubleshooting/restoring-visitor-ips/restoring-original-visitor-ips/
+- name: Web | Add apache nabla remoteip configuration.
+  template:
+    src: remoteip.conf.j2
+    dest: "{{ apache_conf_path }}/conf-available/remoteip.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  #  notify: restart apache
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+  
 - name: Web | Add apache jenkins vhosts configuration.
   template:
     src: apache-jenkins.conf.j2
@@ -100,3 +119,12 @@
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
+
+- name: workstation | Install awstats
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  with_items:
+    - awstats
+    
+  

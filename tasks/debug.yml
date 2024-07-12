@@ -79,3 +79,13 @@
     - serial
     - ssh
     - netgear
+
+- name: workstation | Add wakeonlan
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - wakeonlan  # for freenas
+  tags:
+    - package
+    - freenas
