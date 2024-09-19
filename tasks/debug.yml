@@ -9,13 +9,18 @@
     - dstat
     - htop
     - iftop
+    - etherape
+    - iptraf-ng
+    - nload
+    - avahi-utils
+    - mtr
     - iotop
     - iperf
+    - fping
     - lsof
     - socat # socat unix-connect:/tmp/haproxy.socket stdio
     - ltrace
     - multitail
-    - mtr
     - ncdu
     - pciutils
     - pstack
@@ -27,6 +32,8 @@
     - tmux
     - tree
     - tshark
+    - cpu-x
+    - lm-sensors
     - jq # for json https://stedolan.github.io/jq/download/
   tags:
     - package
