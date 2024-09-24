@@ -1,6 +1,7 @@
 ---
 - hosts: all
   become: true
+  gather_facts: false
 
   roles:
     - { role: ./, dash_enabled: false, webapps_enabled: false, apache_create_vhosts: false }

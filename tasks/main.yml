@@ -1,6 +1,6 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
 
-- include: workstation.yml
+- import_tasks: workstation.yml
   when: workstation_enabled
   tags: [workstation]

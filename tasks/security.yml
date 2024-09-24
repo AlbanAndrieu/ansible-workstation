@@ -203,17 +203,22 @@
     - wipe
     - vm
 
-- name: workstation | Install authy otp tools
-  snap:
-    name: authy
-    classic: true
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
-  tags:
-    - package
-    - otp
-    - authy
-    - vm
+# - name: workstation | Install authy otp tools
+#   snap:
+#     name: authy
+#     classic: true
+#   become: true
+#   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+#   tags:
+#     - package
+#     - otp
+#     - authy
+#     - vm
+# TODO
+# flatpak install flathub com.belmoussaoui.Authenticator
+# flatpak run com.belmoussaoui.Authenticator
+
+# DO not install bitwarden via snap
 
 - name: workstation | Install gpg ui tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

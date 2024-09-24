@@ -221,6 +221,7 @@
   with_items:
     - ec2-api-tools
     - s3cmd
+    - rclone
 
 - name: workstation | Install Samba tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
