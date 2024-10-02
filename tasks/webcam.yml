@@ -24,6 +24,7 @@
     - guvcview
     - cheese
 #    - gphoto2
+    - motion
 
 - name: webcam | Install webcam tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"

@@ -1,19 +1,89 @@
 ---
+# ansible-playbook -i hosts -c local workstation.yml -vvv --ask-become-pass --become | tee setup.log
+
+- name: Assert platform is supported
+  hosts: all
+  remote_user: root
+  gather_facts: true
+
+  tasks:
+    - name: Assert platform is supported
+      assert:
+        that:
+          - ansible_os_family in ['Debian', 'RedHat', 'CentOS', 'Windows', 'Solaris']
+          - ansible_architecture in ['x86_64']
+
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: group hosts by distribution
+      group_by: key="{{ ansible_distribution }}-{{ ansible_distribution_version }}"
+
+- hosts: RedHat-7*:RedHat-6*:CentOS-7*:CentOS-6*:Ubuntu-24*:Ubuntu-23*:Ubuntu-22*:Ubuntu-21*:Ubuntu-20*:Ubuntu-19*:Ubuntu-18*:Ubuntu-17*:Ubuntu-16*:Ubuntu-15*:Ubuntu-14*:Ubuntu-13*:Ubuntu-12*
+  gather_facts: false
+  tasks:
+    - name: group hosts for supported distributions
+      group_by: key="supported"
+
+- hosts: "!supported"
+  gather_facts: false
+  tasks:
+    - name: fail for unsupported distribution
+      fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
+                 is not a supported OS for a Tower installation.  Supported
+                 OSes include Red Hat Enterprise Linux 6/7, CentOS 6/7, or
+                 Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04"
+    - debug: msg="Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
+
+- hosts: all
+  tasks:
+    - name: check that i have log file for all hosts on my local machine
+      stat: path=/var/log/hosts/{{inventory_hostname}}.log
+      delegate_to: localhost
+
 - hosts: localhost
   gather_facts: yes
 
-  tasks:
+  pre_tasks:
     - name: run_command
-      action: run_cmd cmd=date
+      # ansible.builtin.command: date
+      ansible.builtin.shell: date
+      delegate_to: localhost
       register: user
 
-    - debug: msg="{{ user.msg }}"
+    - debug: msg="{{ user.stdout }}"
 
     - debug: msg="Hostname is {{ ansible_hostname }}"
 
-- hosts: localhost
+- hosts: localhost #, albandrieu, workstation
   become: true
+  # remote_user: albandrieu
   gather_facts: false
 
-  roles:
-    - { role: ./, dash_enabled: false, webapps_enabled: false, apache_create_vhosts: false }
+  # tasks:
+  #   - name: Call the 'common' role to do some general setup
+  #     import_tasks: ./tasks/main.yml
+  #     delegate_to: localhost
+
+  tasks:
+    - name: Run tasks/debug.yml instead of 'main'
+      ansible.builtin.include_role:
+        # name: alban.andrieu.workstation
+        name: albanandrieu.workstation
+        # NOK name: ./
+        tasks_from: services
+
+      vars:
+        dash_enabled: false
+        webapps_enabled: false
+        apache_create_vhosts: false
+
+  # roles:
+  #   - { role: ./, dash_enabled: false, webapps_enabled: false, apache_create_vhosts: false }
+  # roles:
+  #    - albanandrieu.workstation
+  #
+  # vars:
+  #   dash_enabled: false
+  #   webapps_enabled: false
+  #   apache_create_vhosts: false

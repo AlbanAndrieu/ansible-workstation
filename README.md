@@ -123,8 +123,12 @@ redshift_options: "-l 48.86:2.34" #For Paris
 Run the following command :
 
 ```bash
-ansible-playbook -i hosts -c local workstation.yml -vvvv --ask-become-pass --become | tee setup.log`
-ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
+ansible -m setup localhost
+cd roles
+ln -s ../ albanandrieu.workstation
+cd ..
+ansible-playbook -i hosts -c local workstation.yml -vvv --ask-become-pass --become | tee setup.log
+ANSIBLE_NOCOLOR=True && ansible-playbook -i hosts -c local -v workstation.yml -vvv --ask-become-pass --become > workstation.log  2>&1
 ```
 
 ### Testing

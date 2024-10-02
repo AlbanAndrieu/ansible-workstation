@@ -1,0 +1,42 @@
+---
+
+- name: php | Install ppa:ondrej/php tools PPA
+  apt_repository: repo='ppa:ondrej/php'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and php_enabled
+  become: true
+  tags: uai
+
+- name: php | Install PHP 7.4
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and php_74_enabled
+  tags: package
+  with_items:
+    - php7.4-cli
+    - php7.4-json
+    - php7.4-common
+    - php7.4-mysql
+    - php7.4-zip
+    - php7.4-gd
+    - php7.4-mbstring
+    - php7.4-curl
+    - php7.4-xml
+    - php7.4-bcmath
+    - php7.4-dev
+    - php7.4-imap
+    - php7.4-fpm
+    - php7.4-tidy
+    - php7.4-dom
+    - php7.4-pgsql
+    - php7.4-intl
+    - php7.4-sockets
+    - php7.4-opcache
+    - php7.4-apcu
+    - php7.4-pdo
+    - php7.4-redis
+    - php7.4-cgi
+
+- name: php -fpm | Ensure npm settings
+  command: wget -O /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/v0.5.0/php-fpm-healthcheck && chmod +x /usr/local/bin/php-fpm-healthcheck
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and php_fpm_healthcheck_enabled

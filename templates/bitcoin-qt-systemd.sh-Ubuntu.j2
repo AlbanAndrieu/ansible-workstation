@@ -1,0 +1,13 @@
+[Unit]
+Description=bitcoin-qt
+PartOf=graphical-session.target
+Before=kubelet.service openvpn.service expressvpn.service
+After=network-online.target firewalld.service containerd.service autofs.service iscsid.service folder.mount
+Wants=network-online.target
+Requires=docker.socket containerd.service
+
+[Service]
+ExecStart=/bin/bash -c '/usr/local/bin/bitcoin-qt -disablewallet -listenonion -listen=1 -prune=0'
+
+[Install]
+WantedBy=xsession.target

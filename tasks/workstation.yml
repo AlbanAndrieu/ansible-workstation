@@ -901,9 +901,6 @@
 # TODO
 # sudo usermod -a -G adm "$USER"
 
-# TODO
-# sudo apt-get install motion
-
 #- import_tasks: hdd.yml
 
 - import_tasks: vpn.yml
@@ -948,15 +945,15 @@
 # - name: workstation | Check user
 #   user: name={{user}} state=present
 
-- name: workstation | Force no login for user jboss
-  user: name=jboss shell=/bin/bash state=present
-  become: true
-  ignore_errors: true
-
-- name: workstation | Force no login for user sonar
-  user: name=sonar shell=/sbin/nologin state=present
-  become: true
-  ignore_errors: true
+# - name: workstation | Force no login for user jboss
+#   user: name=jboss shell=/bin/bash state=present
+#   become: true
+#   ignore_errors: true
+#
+# - name: workstation | Force no login for user sonar
+#   user: name=sonar shell=/sbin/nologin state=present
+#   become: true
+#   ignore_errors: true
 
 # - name: workstation | Force no login for user vagrant
 #   user: name=vagrant shell=/bin/false state=present
@@ -969,3 +966,7 @@
 # - name: workstation | Force no login for user jenkins
 #   user: name=jenkins shell=/bin/bash state=present
 #   become: true
+
+- import_tasks: php.yml
+
+- import_tasks: services.yml

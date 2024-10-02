@@ -1,0 +1,13 @@
+#!/bin/bash
+
+dns_default="172.17.0.33" # 127.0.0.53 192.168.0.1
+dns_cloudflare="172.64.36.1 172.64.36.2"
+dns_opendns="208.67.222.222 208.67.220.220"
+dns_new=${dns_cloudflare}
+net_interface_wifi="wlp0s20f3"
+net_interface_home="eno1"
+net_interface="${net_interface_wifi}"
+
+if sudo resolvectl status | grep -q $dns_default; then
+  sudo resolvectl dns $net_interface $dns_new
+fi

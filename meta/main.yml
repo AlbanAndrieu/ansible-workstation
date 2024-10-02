@@ -1,30 +1,21 @@
 ---
-#dependencies: []
-dependencies:
-  - { role: albanandrieu.ansible_common }
-  - { role: albanandrieu.ansible_dns }
-  #  #- { role: geerlingguy.ntp }
-  #  #- { role: locale }
-  #- { role: albanandrieu.ansible_hostname }
-  #  - { role: geerlingguy.firewall }
-  - { role: albanandrieu.conky }
-  #- { role: albanandrieu.dropbox }
-  #  - { role: albanandrieu.grive }
-  #  #- { role: albanandrieu.synergy }
-  #  - { role: albanandrieu.shell }
-  #  #- { role: albanandrieu.cpp }
-  #  #- { role: albanandrieu.tomcat }
-  #  #- { role: albanandrieu.jboss }
-  - { role: albanandrieu.eclipse }
-  - { role: albanandrieu.css }
-##  - { role: albanandrieu.zap }
+dependencies: []
+#dependencies:
+#  - { role: albanandrieu.ansible_common }
+#  - { role: albanandrieu.ansible_dns }
+#  #  - { role: albanandrieu.ansible_hostname }
+#  #  - { role: albanandrieu.conky }
+#  #  - { role: albanandrieu.dropbox }
+#  #  - { role: albanandrieu.grive }
+#  #  - { role: albanandrieu.shell }
+#  #  - { role: albanandrieu.css }
+#  #  - { role: albanandrieu.zap }
 #  - { role: albanandrieu.owasp-wte }
 #  - { role: albanandrieu.web }
 #  - { role: albanandrieu.webmin }
 #  - { role: albanandrieu.mon }
 #  - { role: albanandrieu.jmeter }
 ##  - { role: python }
-##  - { role: locale }
 #  - { role: jenkins-master }
 #  - { role: albanandrieu.jenkins-slave }
 #  - { role: sonar }

@@ -140,7 +140,7 @@ repos:
   #      - id: dockerfile_lint
   #        args: [--permissive, --verbose, --dockerfile, ./docker/ubuntu20/Dockerfile]
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.15.2 # NOK v8.18.4
+    rev: v8.19.3 # NOK v8.18.4
     hooks:
       - id: gitleaks
         args: [--config, .gitleaks.toml]
@@ -155,12 +155,12 @@ repos:
   #      verbose: true
   #      args: [--soft-fail]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.5
+    rev: 0.29.3
     hooks:
       - id: check-github-workflows
       - id: check-gitlab-ci
   - repo: https://github.com/gitguardian/ggshield
-    rev: v1.28.0
+    rev: v1.32.1
     hooks:
       - id: ggshield
         language_version: python3

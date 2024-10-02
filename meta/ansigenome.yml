@@ -40,7 +40,14 @@ ansigenome_info: # noqa 701
   usage: |
     Run the following command :
 
-    `ansible-playbook -i hosts -c local -v workstation.yml -vvvv --ask-sudo-pass | tee setup.log`
+    ```bash
+    ansible -m setup localhost
+    cd roles
+    ln -s ../ albanandrieu.workstation
+    cd ..
+    ansible-playbook -i hosts -c local workstation.yml -vvv --ask-become-pass --become | tee setup.log
+    ANSIBLE_NOCOLOR=True && ansible-playbook -i hosts -c local -v workstation.yml -vvv --ask-become-pass --become > workstation.log  2>&1
+    ```
 
   custom: |
     ### Contributor
