@@ -45,7 +45,7 @@
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
-  
+
 - name: Web | Add apache jenkins vhosts configuration.
   template:
     src: apache-jenkins.conf.j2
@@ -126,5 +126,3 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   with_items:
     - awstats
-    
-  

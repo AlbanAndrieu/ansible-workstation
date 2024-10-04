@@ -106,3 +106,43 @@
   tags:
     - package
     - freenas
+
+# Lens
+# curl -fsSL https://downloads.k8slens.dev/keys/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/lens-archive-keyring.gpg > /dev/null
+# echo "deb [arch=amd64 signed-by=/usr/share/keyrings/lens-archive-keyring.gpg] https://downloads.k8slens.dev/apt/debian stable main" | sudo tee /etc/apt/sources.list.d/lens.list > /dev/null
+# sudo apt update && sudo apt install lens
+
+- name: workstation | Add k8slens GPG key
+  ansible.builtin.get_url:
+    url: https://downloads.k8slens.dev/keys/gp
+    # dest: /etc/apt/keyrings/lens-archive-keyring.gpg
+    dest: /usr/share/keyrings/lens-archive-keyring.gpg
+    mode: '0644'
+    force: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and and ansible_distribution_version not in ['12.04'] and lens_enabled
+  tags:
+    - package
+    - lens
+
+- name: workstation | Make sure k8slens is enabled for usr tools
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/lens-archive-keyring.gpg] https://downloads.k8slens.dev/apt/debian stable main"
+    state: present
+    update_cache: yes
+    filename: lens.list
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and and ansible_distribution_version not in ['12.04'] and lens_enabled
+  become: true
+  ignore_errors: true
+  tags:
+    - package
+    - lens
+
+- name: workstation | Install lens tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and and ansible_distribution_version not in ['12.04'] and lens_enabled
+  tags:
+    - package
+    - lens
+  with_items:
+    - lens

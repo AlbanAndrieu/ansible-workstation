@@ -94,6 +94,7 @@ php_fpm_healthcheck_enabled: true
 pfsense_enabled: true
 netgear_enabled: true
 s6_enabled: true
+lens_enabled: true
 
 apache_vhosts_jenkins:
   - { servername: localhost, serveradmin: alban.andrieu@free.fr, documentroot: /var/www/jenkins }

@@ -35,8 +35,8 @@
 				#       Order allow,deny
 				#       Allow from all
 				#</Directory>
-				
-				
+
+
 				AddDefaultCharset utf-8
 
 				LogFormat "{ \"version\": \"1.1\", \"host\": \"%V\", \"short_message\": \"%r\", \"timestamp\": %{%s}t, \"level\": 6, \"_user_agent\": \"%{User-Agent}i\", \"_source_ip\": \"%{jm-client-ip}i\", \"_duration_usec\": %D, \"_duration_sec\": %T, \"_request_size_byte\": %O, \"_http_status_orig\": %s, \"_http_status\": %>s, \"_http_request_path\": \"%U\", \"_http_request\": \"%U%q\", \"_http_method\": \"%m\", \"_http_referer\": \"%{Referer}i\", \"_from_apache\": \"true\" }" graylog_access
@@ -46,7 +46,7 @@
 				ErrorLogFormat "{ \"timestamp\": \"%{%Y-%m-%d %T}t.%{usec_frac}t\", \"service_name\": \"front\", \"trace_id\": \"%{X-Trace-ID}i\", \"level\": \"%l\", \"pid\": %P, \"apr_os_error_state\": \"%E\", \"src_file\": \"%F\", \"client_ip\": \"%a\", \"jm_client_ip\": \"%{jm-client-ip}i\", \"message\": \"%M\" }"
 
                 LogFormat "%a %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
-                
+
 				ServerSignature Off
 				ServerTokens Prod
 
