@@ -5,12 +5,11 @@
 # ansible-galaxy collection install -r requirements.yml --force
 # ansible-galaxy collection list
 # ansible-galaxy collection install community.general --force
-
 collections:
   - name: community.crypto
-    version: ">=2.2.0"
+    version: '>=2.2.0'
   - name: community.general
-    version: ">=4.5.0"
+    version: '>=4.5.0'
   - name: ansible.utils
   - name: ansible.netcommon
   - name: ansible.posix
@@ -18,7 +17,6 @@ collections:
   - name: devsec.hardening
   - name: community.docker
   - name: containers.podman
-
 roles:
   - src: https://github.com/AlbanAndrieu/ansible-administration.git
     name: albanandrieu.administration
@@ -27,19 +25,15 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-awstats.git
   #  name: albanandrieu.awstats
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-cmake.git
     name: albanandrieu.cmake
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-common.git
     name: albanandrieu.ansible_common
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-conky.git
     name: albanandrieu.conky
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-cpp.git
     name: albanandrieu.cpp
     version: master
@@ -47,11 +41,9 @@ roles:
   #- src: 'https://github.com/AlbanAndrieu/ansible-css'
   #  name: 'albanandrieu.css'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-dns.git
     name: albanandrieu.ansible_dns
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-dropbox.git
     name: albanandrieu.dropbox
     version: master
@@ -63,7 +55,6 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-evasive.git
   #  name: albanandrieu.evasive
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-gcc.git
     name: albanandrieu.gcc
     version: master
@@ -71,7 +62,6 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-grive.git
   #  name: 'albanandrieu.grive'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-hostname.git
     name: albanandrieu.ansible_hostname
     version: master
@@ -79,9 +69,8 @@ roles:
   #- src: 'https://github.com/AlbanAndrieu/ansible-jboss'
   #  name: 'albanandrieu.jboss'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-jdiskreport.git
-    name: 'albanandrieu.jdiskreport'
+    name: albanandrieu.jdiskreport
     version: master
 
   #- src: https://github.com/AlbanAndrieu/ansible-jenkins-slave.git
@@ -119,17 +108,14 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-private-bower.git
   #  name: 'albanandrieu.private-bower'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-scons.git
     name: albanandrieu.scons
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-selenium.git
     name: albanandrieu.selenium
     version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-shell.git
-    name: 'albanandrieu.shell'
+    name: albanandrieu.shell
     version: master
 
   #- src: https://github.com/AlbanAndrieu/ansible-solaris.git
@@ -175,7 +161,6 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-windows.git
   #  name: 'alban.andrieu.windows'
   #  version: 'master'
-
   - src: https://github.com/AlbanAndrieu/ansible-xvbf.git
     name: albanandrieu.xvbf
     version: master
@@ -199,7 +184,6 @@ roles:
   #- src: 'https://github.com/AlbanAndrieu/ansible-newrelic'
   #  name: 'newrelic'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/devbox.chrome.git
     name: chrome
     version: master
@@ -273,7 +257,6 @@ roles:
   #- src: https://github.com/AlbanAndrieu/ansible-role-nginx.git
   #  name: 'geerlingguy.nginx'
   #  version: master
-
   - src: https://github.com/geerlingguy/ansible-role-ntp.git
     name: geerlingguy.ntp
     version: master
@@ -293,11 +276,9 @@ roles:
   #- src:'https://github.com/AlbanAndrieu/ansible-role-redis.git
   #  name: 'geerlingguy.redis'
   #  version: master
-
   - src: https://github.com/geerlingguy/ansible-role-repo-epel.git
     name: geerlingguy.repo-epel
     version: master
-
   - src: https://github.com/geerlingguy/ansible-role-repo-remi.git
     name: geerlingguy.repo-remi
     version: master
@@ -305,7 +286,6 @@ roles:
   #- src: https://github.com/geerlingguy/ansible-role-pip.git
   #  name: geerlingguy.pip
   #  version: master
-
   - src: https://github.com/geerlingguy/ansible-role-docker.git
     name: geerlingguy.docker
     version: master
@@ -327,7 +307,6 @@ roles:
   #- src: https://github.com/ansiblebit/oracle-java.git
   #  name: 'ansiblebit.oracle-java'
   #  version: master
-
   - src: https://github.com/gantsign/ansible-role-maven.git
     name: maven
     version: master
@@ -360,23 +339,21 @@ roles:
   #- src: 'https://github.com/AlbanAndrieu/ansible-sonatype_nexus'
   #  name: 'nexus'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-nodejs.git
     name: geerlingguy.nodejs
     version: master
-
   - src: https://github.com/Stouts/Stouts.python.git
     name: python
     version: master
 
-  #- src: 'https://github.com/AlbanAndrieu/ansible-role-security'
-  #  name: 'security'
-  #  version: master
+  # - src: https://github.com/AlbanAndrieu/ansible-role-security.git
+  - src: https://github.com/geerlingguy/ansible-role-security.git
+    name: geerlingguy.security
+    version: master
 
   #- src: 'https://github.com/AlbanAndrieu/ansible-sonar'
   #  name: 'sonar'
   #  version: master
-
   - src: https://github.com/geerlingguy/ansible-role-sonar-runner.git
     name: geerlingguy.sonar-runner
     version: master
@@ -400,7 +377,6 @@ roles:
   #- src: 'https://github.com/AlbanAndrieu/ansible-vagrant-role'
   #  name: 'vagrant'
   #  version: master
-
   - src: https://github.com/AlbanAndrieu/ansible-galaxy.ubuntu.virtualbox.git
     name: albanandrieu.virtualbox
     version: master

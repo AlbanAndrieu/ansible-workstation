@@ -41,7 +41,8 @@
       stat: path=/var/log/hosts/{{inventory_hostname}}.log
       delegate_to: localhost
 
-- hosts: localhost
+- name: workstation | Test configuration
+  hosts: localhost
   gather_facts: yes
 
   pre_tasks:
@@ -55,7 +56,31 @@
 
     - debug: msg="Hostname is {{ ansible_hostname }}"
 
-- hosts: localhost #, albandrieu, workstation
+- name: workstation | Apply security configuration
+  hosts: localhost
+  become: true
+  gather_facts: false
+
+  roles:
+    - geerlingguy.security
+
+  vars:
+      # sudoers_enabled: no
+      security_ssh_port: 2849
+      restart_ssh_enabled: false
+      security_ssh_password_authentication: "yes"
+      security_ssh_permit_root_login: "yes"
+      security_ssh_x11_forwarding: "yes"
+      security_fail2ban_enabled: false
+      # security_autoupdate_enabled: false # make yum to get stuck later
+      security_ssh_allowed_users:
+        - albandrieu
+        - albanandrieu
+      security_sudoers_passwordless:
+        - albandrieu
+
+- name: workstation | Apply configuration
+  hosts: localhost #, albandrieu, workstation
   become: true
   # remote_user: albandrieu
   gather_facts: false
