@@ -2,7 +2,9 @@
 
 # 0 2 * * 0 /usr/local/lynis/lynis audit system > /var/log/lynis.log 2>&1
 # 0 5 * * 1 sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/docker-cleaning.log 2>&1
-# 0 0 * * * /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null # clamtk-scan
+# 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/system_monitor.log
+## 0 * * * tail -n 25 /var/log/system_monitor.log | mail -s "Daily Report" -a /var/log/system_monitor.log a.andrieu@free.com
+# 0 0 * * * /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null  # clamtk-scan
 # 0 1 * * * /usr/bin/speedtest --accept-license --accept-gdpr
 # 0 1 * * * curl -fsSL https://betteruptime.com/api/v1/heartbeat/DK8xvD3a4NRynYviNuTFofxJ
 
@@ -13,12 +15,13 @@
   become: true
   ansible.builtin.cron:
     name: Lynis check
-    minute: "0"
-    hour: "2"
-    day: "*"
-    month: "*"
-    weekday: "0"
-    job: sudo /usr/local/lynis/lynis audit system > /var/log/cron-lynis.log 2>&1 2>&1
+    minute: '0'
+    hour: '2'
+    day: '*'
+    month: '*'
+    weekday: '0'
+    job: sudo /usr/local/lynis/lynis audit system > /var/log/cron-lynis.log 2>&1
+      2>&1
   tags:
     - cron
     - lynis
@@ -32,46 +35,42 @@
   become: true
   ansible.builtin.cron:
     name: Docker cleaning
-    minute: "0"
-    hour: "5"
-    day: "*"
-    month: "*"
-    weekday: "1"
-    job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/cron-docker-cleaning.log 2>&1
-  tags:
-    - cron
-    - docker
-    - cleaning
-
+    minute: '0'
+    hour: '5'
+    day: '*'
+    month: '*'
+    weekday: '1'
+    job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all
+      --force > /var/log/cron-docker-cleaning.log 2>&1
+  tags: [cron, docker, cleaning]
 - name: Clamscan check
   # become_user: ubuntu
   user: root
   become: true
   ansible.builtin.cron:
     name: Clamscan check
-    minute: "0"
-    hour: "2"
-    day: "*"
-    month: "*"
-    weekday: "0"
-    job: sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null
-  tags:
-    - cron
-    - clamscan
-    - security
-
+    minute: '0'
+    hour: '2'
+    day: '*'
+    month: '*'
+    weekday: '0'
+    job: sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k
+      --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs
+      --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution
+      --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date
+      +\%b-\%d-\%Y).log" 2>/dev/null
+  tags: [cron, clamscan, security]
 - name: Speedtest check
   # become_user: ubuntu
   user: root
   become: true
   ansible.builtin.cron:
     name: Speedtest check
-    minute: "0"
-    hour: "2"
-    day: "*"
-    month: "*"
-    weekday: "0"
-    job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log 2>&1
-  tags:
-    - cron
-    - speedtest
+    minute: '0'
+    hour: '2'
+    day: '*'
+    month: '*'
+    weekday: '0'
+    job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
+      2>&1
+  tags: [cron, speedtest]

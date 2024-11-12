@@ -1,0 +1,34 @@
+---
+- name: workstation | Install performance tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    stats_enabled
+  tags: package
+  with_items:
+    #    - jmeter
+    - optipng
+    - pngtools
+    - imagemagick
+    # sudo nethogs eth1
+    - nethogs
+    - ifstat
+
+# Install stacer perf ui monitoring tool
+- name: workstation | Install stacer tools PPA
+  apt_repository: repo="ppa:oguzhaninan/stacer" state={{ util_repository_state|default('present') }}
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version not in ['12.04', '14.04'] and ansible_distribution_version
+    is version('19.04', '<')
+  # Ubuntu 19 The repository 'http://ppa.launchpad.net/oguzhaninan/stacer/ubuntu eoan Release' does not have a Release file
+  become: true
+  tags: stacer
+- name: workstation | Install stacer tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version not in ['12.04','14.04'] and ansible_distribution_version
+    is version('19.04', '<')
+  tags: package
+  with_items: [stacer]

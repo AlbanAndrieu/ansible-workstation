@@ -92,10 +92,6 @@ repos:
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
-  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-    rev: 0.2.1  # or other specific tag
-    hooks:
-      - id: yamlfmt
   - repo: https://github.com/doublify/pre-commit-hindent.git
     rev: b3680b6ebf9f7cf29b19307f246adef66756feef
     hooks:

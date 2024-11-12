@@ -1,6 +1,5 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
-
 - name: workstation | Update the apt cache (in case of issue)
   action: apt update-cache=yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -18,11 +17,12 @@
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04']) and apt_install_multiverse_repositories
 #   with_items: '{{apt_multiverse_repositories}}'
 #   become: true
-
 - name: workstation | Install apt tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version not in ['12.04']
   tags: package
   with_items:
     - apt-show-versions
@@ -44,33 +44,33 @@
 # LogDir: /var/log/apt-cacher-ng
 # Port:3142
 #
-# #add  for java
+#  # add  for java
 # PfilePattern = .*(\.d?deb|\.rpm|\.drpm|\.dsc|\.tar(\.gz|\.bz2|\.lzma|\.xz)(\.gpg|\?AuthParam=.*)?|\.diff(\.gz|\.bz2|\.lzma|\.xz)|\.jigdo|\.template|changelog|copyright|\.udeb|\.debdelta|\.diff/.*\.gz|(Devel)?ReleaseAnnouncement(\?.*)?|[a-f0-9]+-(susedata|updateinfo|primary|deltainfo).xml.gz|fonts/(final/)?[a-z]+32.exe(\?download.*)?|/dists/.*/installer-[^/]+/[0-9][^/]+/images/.*)$
 # RequestAppendix: Cookie: oraclelicense=a
 #
-# #add for docker
+#  # add for docker
 # PassThroughPattern: ^download.docker.com:443$
-
 - import_tasks: editor.yml
 
 # Install Ubuntu After Install on Ubuntu 15.04
 # http://www.ubuntugeek.com/ubuntu-after-install-automated-installation-of-useful-extra-software-on-ubuntu.html
 - name: workstation | Install ubuntu-after-install tools PPA
   apt_repository: repo='ppa:thefanclub/ubuntu-after-install'
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version in ['16.04']
   become: true
   tags: uai
-
 - name: workstation | Install ubuntu-after-install tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version in ['16.04']
   tags: package
   with_items:
     - ubuntu-after-install
 
 # TODO run UAI by hand
-
 - name: workstation | Install extra
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -80,9 +80,7 @@
     - ubuntu-restricted-extras
     # lsb_release -a
     - lsb-core
-
 - import_tasks: screenshot.yml
-
 - name: workstation | Install prerequisits for synergy
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -104,7 +102,6 @@
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #   tags: configure
-
 - import_tasks: health.yml
 
 # - name: dropbox | Configure dropbox startup launcher from command line
@@ -112,79 +109,60 @@
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #   tags: configure
-
 - import_tasks: gui.yml
-
 - import_tasks: printing.yml
-
 - name: workstation | Install memory utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:
-    - edac-utils
-
+  with_items: [edac-utils]
 - import_tasks: desktop.yml
-
 - import_tasks: cast.yml
-
 - name: workstation | Install desktop tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04', '14.04', '16.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version in ['12.04', '14.04', '16.04']
   tags: package
-  with_items:
-    - software-center
-
+  with_items: [software-center]
 - name: workstation | Install disk/recovery tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:
-    - testdisk
-    - gparted
-    - usbmount
-    - remmina
-
+  with_items: [testdisk, gparted, usbmount, remmina]
 - name: workstation | Install disk/recovery tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('18.04', '<=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version is version('18.04', '<=')
   tags: package
-  with_items:
-    - unetbootin
-
+  with_items: [unetbootin]
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version in ['14.04', '16.04']
   tags: package
-  with_items:
-    - system-storage-manager
-    - system-config-lvm
-
+  with_items: [system-storage-manager, system-config-lvm]
 - name: workstation | Install disk/hdd tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ jenkins_pkg_state|default('present') }}"
-  with_items:
-    - system-storage-manager
-    - system-config-lvm
+  with_items: [system-storage-manager, system-config-lvm]
   tags: cpp
   # CentOS only
-  when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')
+  when: (ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution
+    == 'RedHat')
   #  when: (ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7')
   become: true
   ignore_errors: true
-
 - import_tasks: brew.yml
-
 - import_tasks: git.yml
-
 - name: workstation | Install gnuplot tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    scm_enabled
   tags: package
   with_items:
     - gnuplot
@@ -194,58 +172,43 @@
 - name: workstation | Install CPP scons build tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scons_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    scons_enabled
   tags: package
-  with_items:
-    - scons
-
+  with_items: [scons]
 - name: workstation | Install Java ant build tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:
-    - ant
-    - ant-contrib
-
+  with_items: [ant, ant-contrib]
 - name: workstation | Add repo for aws packages
   apt_repository: repo="ppa:awstools-dev/awstools" state={{ util_repository_state|default('present') }}
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['16.04'])
   tags: package
-
 - name: workstation | Install AWS tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and aws_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04']) and aws_enabled
   tags: package
-  with_items:
-    - ec2-api-tools
-    - s3cmd
-    - rclone
-
+  with_items: [ec2-api-tools, s3cmd, rclone]
 - name: workstation | Install Samba tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and smb_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    smb_enabled
   tags: package
-  with_items:
-    - samba
-    - samba-common
-    - python-glade2
-    - smbclient
-
+  with_items: [samba, samba-common, python-glade2, smbclient]
 - import_tasks: webcam.yml
-
 - import_tasks: cloud.yml
-
 - import_tasks: security.yml
-
 - import_tasks: record.yml
-
 - import_tasks: pidgin.yml
 
 # - import_tasks: skype.yml
-
 - import_tasks: zoom.yml
 
 # TODO install sky
@@ -259,11 +222,12 @@
 #     --recv-keys 9454C19A66B920C83DDF696E07C8CCAFCE49F8C5
 # sudo apt-get update
 # sudo apt-get install sky
-
 - name: workstation | Install Ubuntu make tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and make_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and
+    make_enabled
   tags: package
   with_items:
     - ubuntu-make
@@ -275,37 +239,8 @@
 #   tags: package
 #   with_items:
 #     - linux-disk-cleaner
-
-- name: workstation | Install performance tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  tags: package
-  with_items:
-    #    - jmeter
-    - optipng
-    - pngtools
-    - imagemagick
-    # sudo nethogs eth1
-    - nethogs
-
-# Install stacer perf ui monitoring tool
-- name: workstation | Install stacer tools PPA
-  apt_repository: repo="ppa:oguzhaninan/stacer" state={{ util_repository_state|default('present') }}
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04'] and ansible_distribution_version
-    is version('19.04', '<')
-  # Ubuntu 19 The repository 'http://ppa.launchpad.net/oguzhaninan/stacer/ubuntu eoan Release' does not have a Release file
-  become: true
-  tags: stacer
-
-- name: workstation | Install stacer tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04'] and ansible_distribution_version
-    is version('19.04', '<')
-  tags: package
-  with_items:
-    - stacer
+- import_tasks: perf.yml
+- import_tasks: mail.yml
 
 ##
 # node.js installation (latest stable instead of Ubuntu's out-of-date one)
@@ -313,7 +248,8 @@
 - name: nodejs | Package prerequisites for node.js
   action: apt pkg=python-software-properties state=installed
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
   tags: nodejs
 
 # Fix add-apt-repository: command not found error
@@ -330,78 +266,76 @@
   #  action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/custom-node_js-{{ ansible_lsb.codename }}.list
   apt_repository: repo='ppa:chris-lea/node.js'
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
   tags: nodejs
-
 - name: nodejs | Install nodejs and npm
   action: apt pkg={{ item }} state=installed update_cache=yes
   become: true
   tags: nodejs
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
   with_items:
     - nodejs
 # WARNING DO NOT INSTALL    - node
-
 - name: karma | Install karma tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
   with_items:
     - karma-tools
 
 # NPM may or may not succeed, if you give it time, care, etc. it eventually works
-
 - name: npm | Ensure npm settings
   command: chdir=/usr/bin npm config set prefix /usr/local
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
 - name: npm | Ensure npm is properly installed
   command: chdir=/usr/bin npm config get prefix
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
 - name: grunt | Ensure the grunt npm dependencies are installed
   npm: >
     name={{ item }}
     state=present
     global=yes
     version={{ grunt_version }}
-  with_items:
-    - grunt
+  with_items: [grunt]
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
 - name: grunt | Ensure the grunt-cli npm dependencies are installed
   npm: >
     name={{ item }}
     state=present
     global=yes
     version={{ grunt_cli_version }}
-  with_items:
-    - grunt-cli
+  with_items: [grunt-cli]
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
 
 # - name: bower | Ensure the bower npm dependencies are installed
 #   command: chdir=/usr/bin npm install -g bower@1.8.13
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
 - name: bower | Ensure the bower npm dependencies are installed
   npm: >
     name={{ item }}
     state=present
     global=yes
     version={{ bower_version }}
-  with_items:
-    - bower
+  with_items: [bower]
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled
 - name: bower | Clean cache
   command: bower cache clean
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and nodejs_enabled and bower_clean_cache_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    nodejs_enabled and bower_clean_cache_enabled
 
 # - name: bower | Ensure the other npm dependencies are installed
 #   npm: >
@@ -501,7 +435,6 @@
 # #- name: workstation | Ensure the webdriverjs npm dependencies are installed
 # #  command: chdir=/usr/bin npm install -g webdriverjs
 # #  become: true
-
 - name: workstation | Mount | Disable mount points
   mount: >
     name='{{ item }}'
@@ -509,7 +442,8 @@
     fstype=nfs
     state=unmounted
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    mount_enabled
   tags: mount
   with_items:
     - /image
@@ -523,7 +457,8 @@
     fstype=nfs
     state=mounted
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mount_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    mount_enabled
   tags: mount
   with_items:
     - /media/ftp
@@ -551,24 +486,26 @@
 - name: keepass2 | Add keepass2 repo
   apt_repository: repo="ppa:jtaylor/keepass" state={{ util_repository_state|default('present') }}
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+    and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
-
 - name: keepass2 | Install keepass2 packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    ansible_distribution_version in ['14.04', '16.04'] and keepass2_enabled
   tags: keepass2_setup
   with_items:
     - keepass2
 #    - keepassx
 
 #
-# #sudo apt-add-repository ppa:pipelight/stable
-# #sudo apt-get update
-# #sudo apt-get install pipelight-multi
-# #sudo pipelight-plugin --enable silverlight
-# #sudo pipelight-plugin --enable widevine
+#  # sudo apt-add-repository ppa:pipelight/stable
+#  # sudo apt-get update
+#  # sudo apt-get install pipelight-multi
+#  # sudo pipelight-plugin --enable silverlight
+#  # sudo pipelight-plugin --enable widevine
 #
 # sudo apt-get install pepperflashplugin-nonfree
 # sudo update-pepperflashplugin-nonfree --install
@@ -592,13 +529,11 @@
 # sudo add-apt-repository ppa:danjaredg/jayatana
 # sudo apt-get update
 # sudo apt-get install jayatana
-
 - import_tasks: laptop.yml
 
 # http://www.omgubuntu.co.uk/2016/04/10-things-to-do-after-installing-ubuntu-16-04-lts
 # gsettings set org.compiz.unityshell:/org/compiz/profiles/unity/plugins/unityshell/ launcher-minimize-window true
-# #gsettings set com.canonical.Unity.Launcher launcher-position Bottom
-
+#  # gsettings set com.canonical.Unity.Launcher launcher-position Bottom
 - name: cleaning | Add cleaning tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -610,9 +545,9 @@
 #########################
 
 # TODO for tomcat7 to work on eclipse
-# #cd ~/workspace/.metadata/.plugins/org.eclipse.core.runtime/.settings/
-# #rm org.eclipse.jst.server.tomcat.core.prefs
-# #rm org.eclipse.wst.server.core.prefs
+#  # cd ~/workspace/.metadata/.plugins/org.eclipse.core.runtime/.settings/
+#  # rm org.eclipse.jst.server.tomcat.core.prefs
+#  # rm org.eclipse.wst.server.core.prefs
 
 # cd /usr/share/tomcat7
 # sudo service tomcat7 stop
@@ -624,31 +559,25 @@
 # sudo ln -s /var/lib/tomcat7/common common
 # sudo ln -s /var/lib/tomcat7/server server
 # sudo ln -s /var/lib/tomcat7/shared shared
-
 - import_tasks: apache.yml
-
 - name: nextcloud | Install webdav tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04'])
   tags: webdav
-  with_items:
-    - davfs2
-
+  with_items: [davfs2]
 - import_tasks: python.yml
-
 - import_tasks: plank.yml
-
 - import_tasks: container.yml
-
 - import_tasks: studio.yml
 
 # sudo apt-get install gucharmap
-
 - name: workstation | Install font unicode utf8 requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04'])
   tags: fonts
   with_items:
     - fontforge
@@ -660,88 +589,76 @@
 # http://www.omgubuntu.co.uk/2016/05/emoji-one-font-linux-ppa-easy-install
 # sudo add-apt-repository ppa:eosrei/fonts
 # sudo apt update && sudo apt install fonts-emojione-svginot
-
 - name: workstation | Install eclipse javaHL requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04'])
   tags: eclipse
-  with_items:
-    - libsvn-java
-
+  with_items: [libsvn-java]
 - name: workstation | Install wine requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '14.04', '16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['12.04', '14.04', '16.04'])
   tags: wine
-  with_items:
-    - wine
-    - winetricks
-
+  with_items: [wine, winetricks]
 - name: workstation | Install wine requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['17.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['17.04'])
   tags: wine
-  with_items:
-    - wine-stable
-    - winetricks
-
+  with_items: [wine-stable, winetricks]
 - name: workstation | Install xhost+ requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: x11
-  with_items:
-    - x11-xserver-utils
-
+  with_items: [x11-xserver-utils]
 - name: workstation | Install shell requirement
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: shellcheck
-  with_items:
-    - shellcheck
-
+  with_items: [shellcheck]
 - name: workstation | Add grub customizer ppa
   apt_repository: repo="ppa:danielrichter2007/grub-customizer" state={{ util_repository_state|default('present') }}
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['18.04', '18.10']) and grub_customizer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['18.04', '18.10']) and grub_customizer_enabled
   tags: grub_customizer
-
 - name: workstation | Add grub tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['18.04', '18.10']) and grub_customizer_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['18.04', '18.10']) and grub_customizer_enabled
   tags: grub_customizer
-  with_items:
-    - grub-customizer
-
+  with_items: [grub-customizer]
 - name: workstation | Add speed tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
-  with_items:
-    - preload
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04', '14.04'])
+  with_items: [preload]
 - name: workstation | Add speed tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['19.04', '19.10'])
-  with_items:
-    - ureadahead
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['19.04', '19.10'])
+  with_items: [ureadahead]
 - name: workstation | Add perl tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
-  with_items:
-    - perl-doc
-
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04', '14.04'])
+  with_items: [perl-doc]
 - name: workstation | Add alternatives tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version not in ['12.04', '14.04'])
   with_items:
     - galternatives
 
@@ -761,7 +678,8 @@
 - name: workstation | Add repo for multisystem
   apt_repository: repo="deb http://liveusb.info/multisystem/depot all main" state=present
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['14.04', '16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['14.04', '16.04'])
   tags: multisystem
 
 # Place to get apt repository key
@@ -778,7 +696,6 @@
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #   tags: multisystem
 #   ignore_errors: true
-
 - name: workstation | Alternative | Add multisystem repository key
   # shell: wget -q http://liveusb.info/multisystem/depot/multisystem.asc -O- | sudo apt-key add -
   apt_key:
@@ -789,9 +706,11 @@
 
 # multisystem is ok for 18.04 but not yet for 19.04
 - name: workstation | Install multisystem
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
+    \ update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['12.04', '18.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    (ansible_distribution_version in ['12.04', '18.04'])
   tags: multisystem
   with_items:
     - multisystem
@@ -807,11 +726,8 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:
-    - avahi-daemon
-
+  with_items: [avahi-daemon]
 - import_tasks: screensaver.yml
-
 - name: workstation | Uninstall whoopsie packages
   apt: >
     pkg={{ item }}
@@ -821,9 +737,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
-  with_items:
-    - whoopsie
-
+  with_items: [whoopsie]
 - name: workstation | Uninstall zeitgeist packages
   apt: >
     pkg={{ item }}
@@ -833,11 +747,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: zeitgeist_setup
-  with_items:
-    - zeitgeist
-    - zeitgeist-datahub
-    - rhythmbox-plugin-zeitgeist
-
+  with_items: [zeitgeist, zeitgeist-datahub, rhythmbox-plugin-zeitgeist]
 - name: workstation | Uninstall cinnamon desktop packages
   apt: >
     pkg={{ item }}
@@ -845,11 +755,10 @@
     purge=yes
     force=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not cinnamon_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    not cinnamon_enabled
   tags: desktop_setup
-  with_items:
-    - cinnamon
-
+  with_items: [cinnamon]
 - name: workstation | Uninstall desktop plasma packages
   apt: >
     pkg={{ item }}
@@ -857,11 +766,10 @@
     purge=yes
     force=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not plasma_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    not plasma_enabled
   tags: desktop_setup
-  with_items:
-    - plasma-desktop
-
+  with_items: [plasma-desktop]
 - name: workstation | Uninstall xfce plasma packages
   apt: >
     pkg={{ item }}
@@ -869,13 +777,10 @@
     purge=yes
     force=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and not xfce_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    not xfce_enabled
   tags: desktop_setup
-  with_items:
-    - xfce4
-    - xfce4-goodies
-    - xubuntu-desktop
-
+  with_items: [xfce4, xfce4-goodies, xubuntu-desktop]
 - name: workstation | Uninstall unused applications
   apt: >
     pkg={{ item }}
@@ -901,34 +806,21 @@
 # TODO
 # sudo usermod -a -G adm "$USER"
 
-#- import_tasks: hdd.yml
-
+# - import_tasks: hdd.yml
 - import_tasks: vpn.yml
-
 - import_tasks: network.yml
-
 - import_tasks: backup.yml
-
 - import_tasks: fun.yml
-
 - import_tasks: variety.yml
 
 # - import_tasks: music.yml
-
 - import_tasks: mobile.yml
-
 - import_tasks: cpp.yml
-
 - import_tasks: gnome.yml
-
 - import_tasks: qt.yml
-
 - import_tasks: gaming.yml
-
 - import_tasks: dev.yml
-
 - import_tasks: debug.yml
-
 - import_tasks: optimization.yml
 
 # - name: workstation | Install lowlatency kernel
@@ -966,7 +858,5 @@
 # - name: workstation | Force no login for user jenkins
 #   user: name=jenkins shell=/bin/bash state=present
 #   become: true
-
 - import_tasks: php.yml
-
 - import_tasks: services.yml
