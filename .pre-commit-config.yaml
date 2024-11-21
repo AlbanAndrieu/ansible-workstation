@@ -171,16 +171,21 @@ repos:
         language_version: python3
         stages: [commit]
         # args: ['secret', 'scan', 'pre-commit']
-#  - repo: https://github.com/Checkmarx/kics
-#    rev: "v1.5.9"
-#    hooks:
-#      #- id: kics
-#      #  exclude: >
-#      #    (?x)^(
-#      #        .direnv$|
-#      #        .*\.terraform.*$|
-#      #        .*\.tfvars$|
-#      #    )$
-#      - id: kics-scan
-#        verbose: true
-#        args: [--ignore-on-exit, "all", --config, "kics-config.json"]
+  - repo: https://github.com/oxsecurity/megalinter
+    rev: v8.2.0
+    hooks:
+      - id: megalinter-incremental  # Faster, less thorough
+        stages:
+          - commit
+        args:
+          - mega-linter-runner
+          - --containername
+          - "megalinter-incremental"
+          - --remove-container
+          - --env
+          - "'CLEAR_REPORT_FOLDER=true'"
+          - --env
+          - "'LOG_LEVEL=warning'"
+          - --filesonly
+          - --flavor
+          - "ci_light"
