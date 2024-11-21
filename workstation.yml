@@ -69,7 +69,7 @@
       security_ssh_port: 2849
       restart_ssh_enabled: false
       security_ssh_password_authentication: "yes"
-      security_ssh_permit_root_login: "yes"
+      security_ssh_permit_root_login: "no"
       security_ssh_x11_forwarding: "yes"
       security_fail2ban_enabled: false
       # security_autoupdate_enabled: false # make yum to get stuck later

@@ -67,6 +67,9 @@
     - mitmproxy
     #WEP WPA cracker
     - aircrack-ng
+    - nikto
+    - hydra
+    - hydra-gtk
   tags:
     - package
     - security
