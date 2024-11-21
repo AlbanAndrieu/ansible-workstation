@@ -1,9 +1,10 @@
 [Unit]
 Description=Hide MAC
+Before=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/etc/systemd/system/hide-mac.sh
+ExecStart=/opt/script/hide-mac.sh
 
 [Install]
 WantedBy=multi-user.target

@@ -1,6 +1,10 @@
 [Unit]
 Description=Hide location DNS
+Before=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/etc/systemd/system/hide-location.sh
+ExecStart=/opt/script/hide-location.sh
+
+[Install]
+WantedBy=multi-user.target

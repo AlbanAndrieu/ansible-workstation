@@ -1,0 +1,7 @@
+[Unit]
+Description=Service de mise a jour
+After=network.target
+
+[Service]
+ExecStart=apt-get update && apt-get upgrade
+Type=oneshot

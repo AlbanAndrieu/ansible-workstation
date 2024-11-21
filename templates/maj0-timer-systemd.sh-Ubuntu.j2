@@ -1,0 +1,13 @@
+[Unit]
+Description=Lance une mise à jour de l'ordinateur quinze minutes après le démarrage de la machine et  itère toutes les trente minutes.
+
+[Timer]
+OnBootSec=15m
+# le service démarrera A0 minutes après le démarrage de la machine
+OnUnitActiveSec=10m
+Persistent=true
+# le service démarrera toutes les trente minutes après la dernière activation du timer
+###    voir toutes les possibilités de choix  dans ce  document https://man7.org/linux/man-pages/man7/systemd.time.7.html
+
+[Install]
+WantedBy=timers.target
