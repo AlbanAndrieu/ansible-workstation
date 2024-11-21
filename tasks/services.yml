@@ -1,4 +1,49 @@
 ---
+
+# sudo mkdir /opt/script
+
+# ls -lrta /etc/systemd/user/
+
+# - name: Get the username running the deploy
+#   become: false
+#   local_action: command whoami
+#   register: username_on_the_host
+#
+# - debug: var=username_on_the_host
+
+- name: Define variables
+  set_fact:
+    net_interface: 'eno1'  # or eno1 or wlp0s20f3 or wlp2s0f3u2
+    net_mac: 'ac:74:b1:9e:8a:81'
+    dns_default: '172.17.0.33'
+    # dns_cloudflare: '172.64.36.1 172.64.36.2'
+    # dns_opendns: '208.67.222.222 208.67.220.220'
+    # dns_quad: '9.9.9.9 149.112.112.112'
+    dns_new: '9.9.9.9 149.112.112.112'
+
+- debug:
+    msg: "Interface: {{ net_interface }}, Mac: {{ net_mac }}, DNS: {{ dns_default }}, DNS New: {{ dns_new }}"
+
+- name: Get running ansible user
+  ansible.builtin.set_fact:
+    local_ansible_user: "{{ lookup('env', 'USER') }}"
+  delegate_to: localhost
+
+- debug:
+    msg: "User: {{local_ansible_user}}"
+
+  # - name: Check if local user account '{{ lookup('env', 'USER') }}' exists
+  #   assert:
+  #     that:
+  #       - {{ local_ansible_user }} in 'albandrieu'
+  #     fail_msg: "Given user not exists!"
+  #     success_msg: "Given user exists."
+
+- name: Setting host facts using key=value pairs, this format can only create strings or booleans
+  ansible.builtin.set_fact: one_fact="something" other_fact="{{ local_ansible_user }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+
 - name: bitcoin-qt | Copy the bitcoin-qt init script
   template: src=bitcoin-qt-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/bitcoin-qt.service
     mode=0644
@@ -7,20 +52,34 @@
     bitcoinqt_enabled
   tags: configure
 
+- name: bitcoin-qt | Copy the bitcoin-qt-timer init script
+  template: src=maj0-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/bitcoin-qt.timer
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
 # See https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_service_module.html#parameter-scope
 - name: bitcoin-qt | Start the bitcoin-qt service
   ansible.builtin.systemd_service:
     name: bitcoin-qt
+    daemon_reload: true
     state: started
     scope: user
     enabled: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
     and (ansible_distribution_version not in ['16.04']) and bitcoinqt_enabled
   tags: service
-  become: true
-  ignore_errors: true
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true
 
-# sudo systemctl --user enable bitcoin-qt.service
+# systemctl --user enable bitcoin-qt.service
+# systemctl --user enable bitcoin-qt.timer
+# systemctl --user daemon-reload
+# systemctl --user status bitcoin-qt.service
+
 - name: macchanger | Install macchanger
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}\
     \ update_cache=yes"
@@ -29,6 +88,7 @@
     macchanger_enabled
   tags: package
   with_items: [macchanger]
+
 - name: macchanger | Copy the hide-mac script
   template: src=hide-mac.sh-{{ ansible_distribution }}.j2 dest=/opt/script/hide-mac.sh
     mode=0755
@@ -36,6 +96,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: macchanger | Copy the hide-mac init script
   template: src=hide-mac-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/hide-mac.service
     mode=0644
@@ -43,17 +104,30 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: macchanger | Start the hide-mac service
   ansible.builtin.systemd_service:
     name: hide-mac
+    daemon_reload: true
     state: started
     scope: user
     enabled: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
     and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
   tags: service
-  become: true
-  ignore_errors: true
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true
+
+# systemctl --user enable hide-mac.service
+# systemctl --user status hide-mac.service
+
+# systemctl show -pUser,UID hide-mac.service
+
+# systemctl --user list-unit-files
+# systemctl --user list-jobs
+
+
 - name: macchanger | Copy the hide-location script
   template: src=hide-location.sh-{{ ansible_distribution }}.j2 dest=/opt/script/hide-location.sh
     mode=0755
@@ -61,6 +135,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: macchanger | Copy the hide-location init script
   template: src=hide-location-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/hide-location.service
     mode=0644
@@ -68,6 +143,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: macchanger | Copy the hide-location-timer init script
   template: src=hide-location-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/hide-location.timer
     mode=0644
@@ -75,21 +151,26 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: macchanger | Start the hide-location service
   ansible.builtin.systemd_service:
     name: hide-location
+    daemon_reload: true
     state: started
     scope: user
     enabled: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
     and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
   tags: service
-  become: true
-  ignore_errors: true
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true
+
+# TODO guard.sh.j2
 
 # ll ~/.config/systemd/user
-# mv /etc/systemd/user/hide-mac.service /usr/lib/systemd/user/
-# /etc/systemd/user/default.target.wants/yubikey-agent.service
+# TODO mv /etc/systemd/user/hide-mac.service /usr/lib/systemd/user/
+#
 # sudo systemctl enable hide-mac.service
 # sudo systemctl enable hide-location.timer
 
@@ -104,6 +185,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: maj0 | Copy the maj0-timer init script
   template: src=maj0-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/etc/systemd/system/maj0.timer
     mode=0644
@@ -111,19 +193,119 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     macchanger_enabled
   tags: configure
+
 - name: maj0 | Start the maj0 service
   ansible.builtin.systemd_service:
     name: maj0.timer
+    daemon_reload: true
     state: started
     enabled: true
   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
     and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
   tags: service
   become: true
-  ignore_errors: true
+  # ignore_errors: true
 
 # sudo systemd-analyze verify maj0.timer
 
 # sudo systemctl enable maj0.timer
 # sudo systemctl start  maj0.timer
 # sudo systemctl status maj0.timer
+
+- name: boot-update | Copy the boot-update script
+  template: src=boot-update.sh-{{ ansible_distribution }}.j2 dest=/opt/script/boot-update.sh
+    mode=0755
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: boot-update | Copy the boot-update init script
+  template: src=boot-update-systemd.sh-{{ ansible_distribution }}.j2 dest=/etc/systemd/system/boot-update.service
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: boot-update | Copy the boot-update-timer init script
+  template: src=boot-update-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/etc/systemd/system/boot-update.timer
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: boot-update | Start the boot-update service
+  ansible.builtin.systemd_service:
+    name: boot-update.timer
+    daemon_reload: true
+    state: started
+    # scope: user
+    enabled: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+    and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  tags: service
+  become: true
+  # become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true
+
+- name: boot-ip | Copy the boot-ip init script
+  template: src=boot-ip-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/boot-ip.service
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: boot-ip | Copy the boot-ip-timer init script
+  template: src=boot-ip-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/boot-ip.timer
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: boot-ip | Start the boot-ip service
+  ansible.builtin.systemd_service:
+    name: boot-ip.timer
+    daemon_reload: true
+    state: started
+    scope: user
+    enabled: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+    and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  tags: service
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true
+
+- name: conky | Copy the conky init script
+  template: src=conky-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/conky.service
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: conky | Copy the conky-timer init script
+  template: src=conky-timer-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/conky.timer
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+    macchanger_enabled
+  tags: configure
+
+- name: conky | Start the conky service
+  ansible.builtin.systemd_service:  
+    name: conky.timer
+    daemon_reload: true
+    state: started
+    scope: user
+    enabled: true
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+    and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  tags: service
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+  # ignore_errors: true

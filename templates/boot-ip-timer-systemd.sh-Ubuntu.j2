@@ -1,11 +1,11 @@
 [Unit]
-Description=Lance une mise à jour de l'ordinateur quinze minutes après le démarrage de la machine et itère toutes les trente minutes.
+Description=Show IP, stop motion.
 
 [Timer]
 OnBootSec=15m
-# le service démarrera 30 minutes après le démarrage de la machine
-OnUnitActiveSec=30m
-Persistent=true
+# le service démarrera 5 minutes après le démarrage de la machine
+# OnUnitActiveSec=5m
+# Persistent=true
 # le service démarrera toutes les trente minutes après la dernière activation du timer
 ###    voir toutes les possibilités de choix  dans ce  document https://man7.org/linux/man-pages/man7/systemd.time.7.html
 

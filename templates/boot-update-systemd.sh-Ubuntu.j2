@@ -1,0 +1,10 @@
+[Unit]
+Description=bootIp
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/script/boot update-location.sh
+
+[Install]
+WantedBy=xsession.target

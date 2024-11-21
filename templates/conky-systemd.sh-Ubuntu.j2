@@ -1,0 +1,19 @@
+[Unit]
+Description=conky
+PartOf=graphical-session.target
+
+[Service]
+#Type=notify
+Type=simple
+User=albandrieu
+# Group=sudo
+WorkingDirectory=/home/albandrieu/.conky
+ExecStart=/bin/bash -c '/home/albandrieu/.conky/conky-startup.sh'
+ExecReload=/bin/kill --signal HUP $MAINPID
+KillMode=process
+KillSignal=SIGTERM
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=xsession.target

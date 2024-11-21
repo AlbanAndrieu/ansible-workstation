@@ -1,0 +1,15 @@
+#!/bin/bash
+#set -xv
+
+sudo systemd-analyze time
+sudo systemd-analyze plot >/home/albandrieu/Downloads/file.svg
+sudo systemd-analyze blame
+
+cd /home/albandrieu/w && mr update || true
+cd /home/albandrieu/w/jm && mr update || true
+
+# apt-get update && apt-get upgrade
+
+/bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Rpi Update"'
+
+exit 0
