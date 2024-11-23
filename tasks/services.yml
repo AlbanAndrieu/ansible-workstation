@@ -171,8 +171,8 @@
 # ll ~/.config/systemd/user
 # TODO mv /etc/systemd/user/hide-mac.service /usr/lib/systemd/user/
 #
-# sudo systemctl enable hide-mac.service
-# sudo systemctl enable hide-location.timer
+# systemctl --user enable hide-mac.service
+# systemctl --user enable hide-location.timer
 
 # See https://doc.ubuntu-fr.org/creer_un_service_avec_systemd
 
@@ -236,19 +236,19 @@
     macchanger_enabled
   tags: configure
 
-- name: boot-update | Start the boot-update service
-  ansible.builtin.systemd_service:
-    name: boot-update.timer
-    daemon_reload: true
-    state: started
-    # scope: user
-    enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
-    and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
-  tags: service
-  become: true
-  # become_user: "{{ lookup('env', 'USER') }}"
-  # ignore_errors: true
+# - name: boot-update | Start the boot-update service
+#   ansible.builtin.systemd_service:
+#     name: boot-update.timer
+#     daemon_reload: true
+#     state: started
+#     # scope: user
+#     enabled: true
+#   when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
+#     and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+#   tags: service
+#   become: true
+#   # become_user: "{{ lookup('env', 'USER') }}"
+#   # ignore_errors: true
 
 - name: boot-ip | Copy the boot-ip init script
   template: src=boot-ip-systemd.sh-{{ ansible_distribution }}.j2 dest=/usr/lib/systemd/user/boot-ip.service
@@ -297,7 +297,7 @@
   tags: configure
 
 - name: conky | Start the conky service
-  ansible.builtin.systemd_service:  
+  ansible.builtin.systemd_service:
     name: conky.timer
     daemon_reload: true
     state: started
@@ -309,3 +309,8 @@
   become: false
   become_user: "{{ lookup('env', 'USER') }}"
   # ignore_errors: true
+
+# systemctl --user enable conky.service
+# systemctl --user enable conky.timer
+# systemctl --user daemon-reload
+# systemctl --user status conky.service
