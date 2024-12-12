@@ -1,6 +1,8 @@
 #!/bin/bash
 #set -xv
 
+/bin/bash -c 'zenity --info --text="`hostname -I` Update started" --title="Update started"'
+
 sudo systemd-analyze time
 sudo systemd-analyze plot >/home/albandrieu/Downloads/file.svg
 sudo systemd-analyze blame
@@ -10,6 +12,8 @@ cd /home/albandrieu/w/jm && mr update || true
 
 # apt-get update && apt-get upgrade
 
-/bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Rpi Update"'
+sudo service docker restart
+
+/bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Update completed"'
 
 exit 0
