@@ -259,3 +259,46 @@
   changed_when: false
   become: true
   ignore_errors: true
+
+- name: workstation | Install unattended upgrade
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  with_items:
+    - unattended-upgrades
+  tags:
+    - package
+    - unattended-upgrades
+    - vm
+
+- name: workstation | Enable unattended upgrade
+  command: dpkg-reconfigure --priority=low unattended-upgrades
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  tags:
+    - package
+    - unattended-upgrades
+    - vm
+
+- name: workstation | Install logwatch
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  with_items:
+    - logwatch
+  tags:
+    - package
+    - logwatch
+    - vm
+
+# Fix sshd's configuration for use within the container.
+# See playbook geerlingguy.security
+
+# Port 9922
+# sed -i -e 's/^UsePAM .*/UsePAM no/' /etc/ssh/sshd_config
+# sed -i -e 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+# sed -i -e 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+# edit your /etc/ssh/sshd_config to allow 2FA
+# sed -i -e 's/^ChallengeResponseAuthentication .*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+
+# AllowUsers albandrieu albanandrieu

@@ -19,7 +19,7 @@
   with_items:
     - vim
     - tree
-    #midnight commander
+    # midnight commander
     #   - mc
     - xdg-open # https://doc.ubuntu-fr.org/xdg-open
     #   - bat  # See run-bat.sh

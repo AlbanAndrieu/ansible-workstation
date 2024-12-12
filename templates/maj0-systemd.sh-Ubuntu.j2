@@ -3,5 +3,5 @@ Description=Server upgrade
 After=network.target
 
 [Service]
-ExecStart=apt-get update && apt-get upgrade
+ExecStart=apt-get update && apt-get upgrade -y
 Type=oneshot
