@@ -16,7 +16,7 @@ repos:
     # pre-commit-hooks.git from v2.1.0 to v2.4.0
     #    rev: v2.1.0 # ok python3.6  # 18.04.3
     #    rev: v2.2.3 # ok python3.6  # 19.04 but failing on 18.04.3
-    rev: v4.6.0  # ok python3.6 on Ubuntu 18.04 AND python3.7 on Ubuntu 19.04
+    rev: v5.0.0  # ok python3.6 on Ubuntu 18.04 AND python3.7 on Ubuntu 19.04
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -88,7 +88,7 @@ repos:
   #       files: \.(yaml|yml)$
   #       exclude: ".travis.yml"
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.21.0  # or higher tag
+    rev: v1.35.1  # or higher tag
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
@@ -145,7 +145,7 @@ repos:
   #      - id: dockerfile_lint
   #        args: [--permissive, --verbose, --dockerfile, ./docker/ubuntu20/Dockerfile]
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.19.3 # NOK v8.18.4
+    rev: v8.21.2 # NOK v8.18.4
     hooks:
       - id: gitleaks
         args: [--config, .gitleaks.toml]
@@ -160,7 +160,7 @@ repos:
   #      verbose: true
   #      args: [--soft-fail]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.3
+    rev: 0.30.0
     hooks:
       - id: check-github-workflows
       - id: check-gitlab-ci

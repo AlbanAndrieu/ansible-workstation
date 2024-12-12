@@ -12,11 +12,11 @@ platforms:
   #   groups:
   #     - group1
   #   privileged: true
-  - name: eclipse-debian-jessie
-    image: maint/debian-systemd:latest
-    groups:
-      - group1
-    privileged: true
+  # - name: eclipse-debian-jessie
+  #   image: maint/debian-systemd:latest
+  #   groups:
+  #     - group1
+  #   privileged: true
   - name: eclipse-debian-stretch
     image: minimum2scp/systemd-stretch:latest
     command: /sbin/init
