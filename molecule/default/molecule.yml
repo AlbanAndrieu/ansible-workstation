@@ -6,10 +6,6 @@ dependency:
     ignore-errors: true
 driver:
   name: docker
-# lint: |
-#   set -e
-#   yamllint .
-#   ansible-lint
 platforms:
   # - name: eclipse-centos
   #   image: milcom/centos7-systemd:latest
@@ -50,8 +46,6 @@ platforms:
   #   pre_build_image: true
 provisioner:
   name: ansible
-  lint:
-    name: ansible-lint
 scenario:
   name: default
   test_sequence:
