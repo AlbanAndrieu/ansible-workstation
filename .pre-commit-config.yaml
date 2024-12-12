@@ -169,14 +169,14 @@ repos:
     hooks:
       - id: ggshield
         language_version: python3
-        stages: [commit]
+        stages: [pre-commit]
         # args: ['secret', 'scan', 'pre-commit']
   - repo: https://github.com/oxsecurity/megalinter
     rev: v8.2.0
     hooks:
       - id: megalinter-incremental  # Faster, less thorough
         stages:
-          - commit
+          - pre-commit
         args:
           - mega-linter-runner
           - --containername
