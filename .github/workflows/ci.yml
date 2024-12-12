@@ -41,12 +41,10 @@ jobs:
     strategy:
       matrix:
         include:
-          # - distro: rockylinux9
-          #   playbook: converge.yml
           - distro: ubuntu2404
             playbook: converge.yml
-          - distro: debian12
-            playbook: converge.yml
+          # - distro: debian12
+          #   playbook: converge.yml
 
     steps:
       - name: Check out the codebase.
