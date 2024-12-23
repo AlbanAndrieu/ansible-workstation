@@ -74,3 +74,19 @@
     job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
       2>&1
   tags: [cron, speedtest]
+
+# 0 3 * * * /usr/bin/aide --check > /var/log/cron-aide.log
+# Use File Integrity Monitoring (FIM)
+- name: Aide check
+  # become_user: ubuntu
+  user: root
+  become: true
+  ansible.builtin.cron:
+    name: aide check
+    minute: '0'
+    hour: '3'
+    day: '*'
+    month: '*'
+    weekday: '0'
+    job: /usr/bin/aide --check > /var/log/cron-aide.log 2>&1
+  tags: [cron, aide]

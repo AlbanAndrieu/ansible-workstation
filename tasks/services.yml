@@ -13,7 +13,7 @@
 
 - name: Define variables
   set_fact:
-    net_interface: 'eno1'  # or eno1 or wlp0s20f3 or wlp2s0f3u2
+    net_interface: 'wlp0s20f3'  # or eno1 or wlp0s20f3 or wlp2s0f3u2
     net_mac: 'ac:74:b1:9e:8a:81'
     dns_default: '172.17.0.33'
     # dns_cloudflare: '172.64.36.1 172.64.36.2'
