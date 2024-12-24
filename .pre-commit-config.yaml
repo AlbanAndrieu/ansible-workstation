@@ -25,7 +25,8 @@ repos:
         exclude: >
           (?x)^(
               package-lock.json|
-              npm-shrinkwrap.json
+              npm-shrinkwrap.json|
+              poetry.lock|
           )$
       - id: check-case-conflict
       - id: check-docstring-first

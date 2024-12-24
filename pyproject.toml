@@ -1,0 +1,242 @@
+[tool.poetry]
+name = "ansible-workstation"
+version = "1.0.0"
+description = "Custom hooks to improve code quality before pushing to git"
+authors = ["Andrieu, Alban <alban.andrieu@free.fr>"]
+license = "MIT"
+homepage = "https://github.com/AlbanAndrieu/ansible-workstation.git"
+readme = "README.md"
+
+#[repositories]
+
+#[repositories.my-gitlab]
+#url = "https://gitlab.com/api/v4/projects/<your project id>/packages/pypi"
+
+[[tool.poetry.source]]
+name = "gitlab"
+# poetry config http-basic.gitlab __token__ ${CI_PIP_GITLABJUSMUNDI_TOKEN}
+# export POETRY_GITLAB_TOKEN_GITLAB=${CI_PIP_GITLABJUSMUNDI_TOKEN}
+url = "https://gitlab.com/api/v4/groups/7364654/-/packages/pypi/simple"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+python = ">=3.10, <3.11"
+ansible-core = ">=2.17.1"
+ansicolors = ">=1.1.8"
+cfgv = ">=3.3.0"
+chardet = ">=5.0.0"
+click = ">=8.1.3"
+click-completion = ">=0.5.2"
+colorama = ">=0.4.6"
+git-url-parse = ">=1.2.2"
+gitpython = ">=3.1.29"
+podmena = ">=0.6.1"
+pyyaml = ">=6.0"
+# six = ">=1.16.0"
+termcolor = ">=2.1.1"
+requests = ">=2.32.0"
+urllib3 = ">=2.2.2"
+
+[tool.poetry.group.api]
+optional = true
+[tool.poetry.group.api.dependencies]
+fastapi = "^0.109.1"
+python-multipart = ">=0.0.6"
+
+[tool.poetry.group.deployment]
+optional = true
+[tool.poetry.group.deployment.dependencies]
+python-keystoneclient = ">5.1.0"
+python-swiftclient = ">4.2.0"
+asyncpg = ">=0.27.0"
+dateparser = "~1.1.8"
+reretry = ">=0.11.8"
+prometheus-client = ">=0.16.0"
+
+# See https://github.com/temporalio/samples-python/blob/main/pyproject.toml
+[tool.poetry.group.encryption]
+optional = false
+dependencies = { cryptography = ">=42.0.2", aiohttp = "^3.8.1" }
+
+[tool.poetry.group.temporal]
+optional = true
+[tool.poetry.group.temporal.dependencies]
+temporalio = {version = "~=1.2.0", extras = ["opentelemetry"] }
+
+[tool.poetry.group.open_telemetry]
+optional = true
+[tool.poetry.group.open_telemetry.dependencies]
+# temporalio = { version = "*", extras = ["opentelemetry"] }
+opentelemetry-distro = ">=0.41b0"
+opentelemetry-exporter-otlp = ">=1.19.0"
+opentelemetry-exporter-otlp-proto-grpc = ">=1.19.0"
+opentelemetry-instrumentation-fastapi = ">=0.41b0"
+opentelemetry-instrumentation-logging = ">=0.41b0"
+opentelemetry-exporter-jaeger-thrift = "~=1.13.0"
+opentelemetry-api = ">=1.19.0"
+opentelemetry-sdk = ">=1.19.0"
+
+[tool.poetry.group.influxdb]
+optional = true
+[tool.poetry.group.influxdb.dependencies]
+influxdb-client = ">=1.29.1"
+
+[tool.poetry.group.csv]
+optional = true
+[tool.poetry.group.csv.dependencies]
+asyncpg = ">=0.27.0"
+
+[tool.poetry.group.pytorch]
+optional = true
+[tool.poetry.group.pytorch.dependencies]
+python = ">=3.10, <3.11"
+pydantic = {version = ">=1.8.0", extras = ["dotenv"]}
+
+[tool.poetry.group.notebook]
+optional = true
+[tool.poetry.group.notebook.dependencies]
+notebook = "^6.4.12"
+# poetry run nbdev_install_quarto
+# poetry run nbdev_install_hooks
+nbdev = "^2.3.7"
+
+[tool.poetry.group.test]
+optional = false
+[tool.poetry.group.test.dependencies]
+coverage = ">= 7.2.7"
+# molecule = "~=5.1.0"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-dependency = "^0.5.1"
+pytest-asyncio = "^0.21.0"
+pytest-order = "^1.0.1"
+pytest-testinfra = "~=6.4.0"
+nox = "~=2023.4.22"
+tox = "~=3.27.1"
+
+[tool.poetry.group.format]
+optional = false
+[tool.poetry.group.format.dependencies]
+ruff = ">=0.5.1"
+
+[tool.poetry.group.ci]
+optional = false
+[tool.poetry.group.ci.dependencies]
+# bandit = ">=1.7.5"
+sphinx = ">=7.1.2"
+twine = ">=4.0.2"
+
+[tool.poetry.dev-dependencies]
+httpx = "~=0.23.3"
+# ansible-cmdb = "~=1.31"
+# ansible-lint = {extras = ["yamllint"], version = "~=6.17.2"}
+# ansible-navigator = ">=1.1.0"
+# ansible-runner = ">=2.2.1"
+# ansible-builder = ">=1.1.0"
+# ansible-playbook-grapher = ">=1.1.0"
+# conan = ">=1.31.0"
+cyclonedx-bom = ">=4.5.0"
+pre-commit = ">=4.0.1"
+pre-commit-hooks = "~=4.4.0"
+readme-renderer = {version = ">=37.3", extras = ["md"]}
+setup-cfg-fmt = ">=2.2.0"
+setuptools = ">=70.0.0"
+wheel = ">=0.42.0"
+
+[tool.setuptools-pipfile]
+
+#[tool]
+#setuptools-pipfile = "src/Pipfile"
+
+[tool.pytest.ini_options]
+testpaths = "tests/"
+
+#[tool.bandit]
+#skips = ["B101", "B311"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311"]
+include = "/(tests|nabla)"
+
+[tool.ruff]
+# Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E", "F"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+per-file-ignores = {}
+
+# Same as Black.
+line-length = 88
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.8
+target-version = "py38"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*site-packages*",
+    "*__init__.py",
+]
+
+[tool.pdm]
+[[tool.pdm.source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+# requires = ["poetry-core"]
+# build-backend = "poetry.core.masonry.api"
+
+#[virtualenvs]
+#in-project = true
