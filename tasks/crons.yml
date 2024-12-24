@@ -1,8 +1,11 @@
 ---
 
 # 0 2 * * 0 /usr/local/lynis/lynis audit system > /var/log/lynis.log 2>&1
+# 0 3 * * * /usr/bin/aide --config=/usr/share/aide/config/aide/aide.conf  --check > /var/log/cron-aide.log
+# 0 4 * * 0 oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level2_server --fetch-remote-resources --results before-hardening-results.xml --results-arf before-hardening-arf-results.xml --report /var/www/html/nabla/before-hardening-report.html scap-security-guide-0.1.75/ssg-ubuntu2204-ds.xml > /var/log/openscap.log 2>&1
 # 0 5 * * 1 sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/docker-cleaning.log 2>&1
-# 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/system_monitor.log
+# 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/run-perf-monitoring.log
+# 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-alert-monitoring.sh >> /var/log/run-alert-monitoring.log
 ## 0 * * * tail -n 25 /var/log/system_monitor.log | mail -s "Daily Report" -a /var/log/system_monitor.log a.andrieu@free.com
 # 0 0 * * * /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null  # clamtk-scan
 # 0 1 * * * /usr/bin/speedtest --accept-license --accept-gdpr
@@ -88,5 +91,5 @@
     day: '*'
     month: '*'
     weekday: '0'
-    job: /usr/bin/aide --check > /var/log/cron-aide.log 2>&1
+    job: /usr/bin/aide --config=/usr/share/aide/config/aide/aide.conf --check > /var/log/cron-aide.log 2>&1
   tags: [cron, aide]
