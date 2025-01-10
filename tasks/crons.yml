@@ -1,12 +1,17 @@
 ---
 
-# 0 2 * * 0 /usr/local/lynis/lynis audit system > /var/log/lynis.log 2>&1
-# 0 3 * * * /usr/bin/aide --config=/usr/share/aide/config/aide/aide.conf  --check > /var/log/cron-aide.log
+# 5 10 * * 0 /etc/webmin/package-updates/update.pl
+# @weekly /etc/webmin/backup-config/backup.pl 158335938332630
+# @weekly /etc/webmin/backup-config/backup.pl 15833631519537
+# 0 2 * * 0 /usr/local/lynis/lynis audit system | ansi2html -l > /var/www/html/nabla/lynis-report.html
+# #0 3 * * * /usr/bin/aide --config=/usr/share/aide/config/aide/aide.conf --check > /var/log/cron-aide.log
 # 0 4 * * 0 oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level2_server --fetch-remote-resources --results before-hardening-results.xml --results-arf before-hardening-arf-results.xml --report /var/www/html/nabla/before-hardening-report.html scap-security-guide-0.1.75/ssg-ubuntu2204-ds.xml > /var/log/openscap.log 2>&1
+# 0 0 1 * * rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log
+# 0 3 * * * /home/albanandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-cleaning.log
 # 0 5 * * 1 sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/docker-cleaning.log 2>&1
 # 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/run-perf-monitoring.log
 # 0 * * * * /home/albanandrieu/w/nabla/env/linux/run-alert-monitoring.sh >> /var/log/run-alert-monitoring.log
-## 0 * * * tail -n 25 /var/log/system_monitor.log | mail -s "Daily Report" -a /var/log/system_monitor.log a.andrieu@free.com
+# # 0 * * * tail -n 25 /var/log/system_monitor.log | mail -s "Daily Report" -a /var/log/system_monitor.log a.andrieu@free.com
 # 0 0 * * * /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null  # clamtk-scan
 # 0 1 * * * /usr/bin/speedtest --accept-license --accept-gdpr
 # 0 1 * * * curl -fsSL https://betteruptime.com/api/v1/heartbeat/DK8xvD3a4NRynYviNuTFofxJ
@@ -46,6 +51,7 @@
     job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all
       --force > /var/log/cron-docker-cleaning.log 2>&1
   tags: [cron, docker, cleaning]
+
 - name: Clamscan check
   # become_user: ubuntu
   user: root
@@ -63,6 +69,7 @@
       --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date
       +\%b-\%d-\%Y).log" 2>/dev/null
   tags: [cron, clamscan, security]
+
 - name: Speedtest check
   # become_user: ubuntu
   user: root
@@ -77,6 +84,42 @@
     job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
       2>&1
   tags: [cron, speedtest]
+
+# Clear logs every month
+# 0 0 1 * * rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log
+- name: Auditd cleaning
+  # become_user: ubuntu
+  user: root
+  become: true
+  ansible.builtin.cron:
+    name: Auditd cleaning
+    minute: '0'
+    hour: '0'
+    day: '1'
+    month: '*'
+    weekday: '*'
+    job: rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log
+      2>&1
+  tags: [cron, auditd]
+
+# Archive Logs
+# 0 3 * * * /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-cleaning.log
+- name: Auditd archiving
+  # become_user: ubuntu
+  user: root
+  become: true
+  ansible.builtin.cron:
+    name: Auditd archiving
+    minute: '0'
+    hour: '2'
+    day: '*'
+    month: '*'
+    weekday: '*'
+    job: /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-archiving.log
+      2>&1
+  tags: [cron, auditd]
+
+# 0 * * * * /home/albandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/system_monitor.log
 
 # 0 3 * * * /usr/bin/aide --check > /var/log/cron-aide.log
 # Use File Integrity Monitoring (FIM)
