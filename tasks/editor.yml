@@ -24,6 +24,8 @@
     - xdg-open # https://doc.ubuntu-fr.org/xdg-open
     #   - bat  # See run-bat.sh
     - fd-find
+    - less
+    - most  # for psql
   tags:
     - package
     - editor

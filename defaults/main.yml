@@ -119,3 +119,4 @@ brew_packages:
   - randomize-lines  # For git-radar
   - michaeldfallen/formula/git-radar
   - up # Ultimate Plumber
+  - navi
