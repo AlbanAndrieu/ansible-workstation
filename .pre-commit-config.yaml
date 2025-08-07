@@ -79,7 +79,7 @@ repos:
       - id: sort-simple-yaml
       - id: file-contents-sorter
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.1.0
+    rev: v3.2.0
     hooks:
       - id: add-trailing-comma
   # - repo: https://github.com/willthames/ansible-lint.git
@@ -89,7 +89,7 @@ repos:
   #       files: \.(yaml|yml)$
   #       exclude: ".travis.yml"
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.35.1  # or higher tag
+    rev: v1.37.1  # or higher tag
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
@@ -127,7 +127,7 @@ repos:
   #    hooks:
   #    - id: bandit
   - repo: https://github.com/IamTheFij/ansible-pre-commit
-    rev: v0.1.2
+    rev: v1.0.1
     hooks:
       - id: encryption-check
         exclude: >
@@ -146,7 +146,7 @@ repos:
   #      - id: dockerfile_lint
   #        args: [--permissive, --verbose, --dockerfile, ./docker/ubuntu20/Dockerfile]
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.21.2 # NOK v8.18.4
+    rev: v8.28.0 # NOK v8.18.4
     hooks:
       - id: gitleaks
         args: [--config, .gitleaks.toml]
@@ -161,19 +161,19 @@ repos:
   #      verbose: true
   #      args: [--soft-fail]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.30.0
+    rev: 0.33.2
     hooks:
       - id: check-github-workflows
       - id: check-gitlab-ci
   - repo: https://github.com/gitguardian/ggshield
-    rev: v1.32.1
+    rev: v1.42.0
     hooks:
       - id: ggshield
         language_version: python3
         stages: [pre-commit]
         # args: ['secret', 'scan', 'pre-commit']
   - repo: https://github.com/oxsecurity/megalinter
-    rev: v8.2.0
+    rev: v8.8.0
     hooks:
       - id: megalinter-incremental  # Faster, less thorough
         stages:
