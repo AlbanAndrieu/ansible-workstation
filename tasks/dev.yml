@@ -63,7 +63,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
-    - ubuntu-dev-tools #reverse-depends -b scons
+    - ubuntu-dev-tools # reverse-depends -b scons
 
 - name: workstation | Install utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -97,7 +97,19 @@
     - stress
     # https://www.rackaid.com/blog/linux-screen-tutorial-and-how-to/
     - screen
-  tags: package
+  tags:
+    - package
+
+- name: workstation | Install search utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - ripgrep
+    - gawk
+    - moreutils
+  tags:
+    - package
 
 - name: workstation | Install utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
