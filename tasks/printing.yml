@@ -102,22 +102,13 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-    - gnome-user-docs-fr
-    - language-pack-fr
-    - gimp-help-en
-    - libreoffice-help-fr
     #   - hunspell-en-za
-    - libreoffice-l10n-fr
-    - language-pack-gnome-fr
-    - libreoffice-help-en-gb
     #   - hunspell-en-ca
-    - gimp-help-fr
     - hyphen-en-gb
     - hunspell-en-gb
     - firefox-locale-fr
     #   - mythes-en-au
     #   - hunspell-en-au
-    - gnome-getting-started-docs-fr
     #   - hyphen-en-ca
     - chromium-browser-l10n
     - wfrench

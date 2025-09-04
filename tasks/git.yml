@@ -49,3 +49,11 @@
     update_homebrew: true
   ignore_errors: true
   become: true
+
+- name: workstation | Install gitlab CLI
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
+  tags: package
+  with_items:
+    - glab
+  become: true

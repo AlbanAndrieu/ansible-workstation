@@ -222,8 +222,6 @@
 # flatpak install flathub com.belmoussaoui.Authenticator
 # flatpak run com.belmoussaoui.Authenticator
 
-# DO not install bitwarden via snap
-
 - name: workstation | Install gpg ui tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -290,6 +288,19 @@
     - package
     - logwatch
     - vm
+
+# DO not install bitwarden via snap
+- name: workstation | Install key manager
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  with_items:
+    - lastpass-cli  # https://github.com/lastpass/lastpass-cli
+    # - vault
+    # - 1password-cli
+  tags:
+    - package
+    - lastpass
 
 # Fix sshd's configuration for use within the container.
 # See playbook geerlingguy.security

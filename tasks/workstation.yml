@@ -110,7 +110,11 @@
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #   tags: configure
 - import_tasks: gui.yml
+
 - import_tasks: printing.yml
+
+- import_tasks: docs.yml
+
 - name: workstation | Install memory utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
