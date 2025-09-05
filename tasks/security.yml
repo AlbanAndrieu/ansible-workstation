@@ -289,6 +289,17 @@
     - logwatch
     - vm
 
+- name: workstation | Install secrets tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  with_items:
+    - libsecret-tools
+    - gnome-keyring
+  tags:
+    - package
+    - secrets
+
 # DO not install bitwarden via snap
 - name: workstation | Install key manager
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -300,6 +311,7 @@
     # - 1password-cli  # https://developer.1password.com/docs/cli/get-started/
   tags:
     - package
+    - secrets
     - lastpass
 
 # Fix sshd's configuration for use within the container.
