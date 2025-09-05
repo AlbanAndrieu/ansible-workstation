@@ -26,7 +26,7 @@
   with_items:
     - xrdp
 
-#Warning might be in conflict with security profile
+# Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -41,14 +41,14 @@
     - rusers
     #    - rwho
     #    - rwhod
-    #check ssl
-    #sslscan --no-failed --ssl3 localhost:443
+    # check ssl
+    # sslscan --no-failed --ssl3 localhost:443
     #    - sslscan
     - curl
     - wget
     - rsync
     - unar
-    - pydf #disk
+    - pydf  # disk
 
 - name: workstation | Install network security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -56,16 +56,16 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
     - tcpdump
-    #https://doc.ubuntu-fr.org/httrack
+    # https://doc.ubuntu-fr.org/httrack
     #    - httrack
     #    - httraqt
     #    - webhttrack
-    #Spoofing ARP
+    # Spoofing ARP
     - dsniff
     - arpalert
-    #Pyhton proxy
+    # Pyhton proxy
     - mitmproxy
-    #WEP WPA cracker
+    # WEP WPA cracker
     - aircrack-ng
     - nikto
     - hydra
@@ -83,32 +83,32 @@
     - testdisk
     #    - photorec
     - chkrootkit
-    #sudo chkrootkit
+    # sudo chkrootkit
     - rkhunter
   tags:
     - package
     - security
     - rootkit
-#sudo rkhunter --check --rwo --pkgmgr dpkg
-#update your system
-#sudo rkhunter --propupd
-#TODO    - burp
-#TODO    - mig
-#See https://tools.pentestbox.com/ on windows
-#https://github.com/stasinopoulos/commix
-#see : https://blog.anantshri.info/ironwasp-on-linux/
-#wget https://blog.anantshri.info/content/uploads/2013/01/ironwasp_installer.sh.txt -O ~/ironwasp_installer.sh && sh ~/ironwasp_installer.sh
-#see https://github.com/0xsauby/yasuo
-#sudo gem install ruby-nmap net-http-persistent mechanize text-table
+# sudo rkhunter --check --rwo --pkgmgr dpkg
+# update your system
+# sudo rkhunter --propupd
+# TODO    - burp
+# TODO    - mig
+# See https://tools.pentestbox.com/ on windows
+# https://github.com/stasinopoulos/commix
+# see : https://blog.anantshri.info/ironwasp-on-linux/
+# wget https://blog.anantshri.info/content/uploads/2013/01/ironwasp_installer.sh.txt -O ~/ironwasp_installer.sh && sh ~/ironwasp_installer.sh
+# see https://github.com/0xsauby/yasuo
+# sudo gem install ruby-nmap net-http-persistent mechanize text-table
 
-#TODO
-#http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
+# TODO
+# http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
 
-#See BackBox https://backbox.org/
-#TODO
-#sudo apt-get purge ri1.9.1 ruby1.9.1 ruby1.9.3 bundler
-#sudo gem cleanup
-#sudo rm -rf /var/lib/gems/1.*
+# See BackBox https://backbox.org/
+# TODO
+# sudo apt-get purge ri1.9.1 ruby1.9.1 ruby1.9.3 bundler
+# sudo gem cleanup
+# sudo rm -rf /var/lib/gems/1.*
 - name: video | Add repo for security pentest packages
   apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
   become: true
@@ -127,10 +127,10 @@
     - setoolkit
     - openvas
     - sqlite3
-    #https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
+    # https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
     - hydra-gtk
   become: true
-#sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
+# sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
 
 - name: workstation | Install security antivirus tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -144,9 +144,9 @@
     - tiger
     - inotify-tools
 
-#https://askubuntu.com/questions/645097/installing-sophos-anti-virus
+# https://askubuntu.com/questions/645097/installing-sophos-anti-virus
 
-#See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
+# See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
 - name: workstation | Install security encryption tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -174,7 +174,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - skopeo
-    - lynis #  sudo lynis audit system
+    - lynis  # sudo lynis audit system
   tags:
     - package
     - docker
@@ -187,7 +187,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - debian-goodies # checkrestart http://manpages.ubuntu.com/manpages/trusty/man1/checkrestart.1.html
-    #- apt-listbugs  #  useless
+    # - apt-listbugs  #  useless
   tags:
     - package
     - lynis
@@ -227,7 +227,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-    #- gnome-keysign
+    # - gnome-keysign
     - gpa
     - seahorse
     - seahorse-nautilus
@@ -297,7 +297,7 @@
   with_items:
     - lastpass-cli  # https://github.com/lastpass/lastpass-cli
     # - vault
-    # - 1password-cli
+    # - 1password-cli  # https://developer.1password.com/docs/cli/get-started/
   tags:
     - package
     - lastpass

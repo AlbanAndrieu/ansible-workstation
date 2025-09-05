@@ -1,0 +1,31 @@
+---
+- name: workstation | Install help docs
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - gnome-user-docs-fr
+    - language-pack-fr
+    - gimp-help-en
+    - libreoffice-help-fr
+    - libreoffice-l10n-fr
+    - language-pack-gnome-fr
+    - libreoffice-help-en-gb
+    - gimp-help-fr
+    - firefox-locale-fr
+    - gnome-getting-started-docs-fr
+  tags:
+    - package
+    - lang-fr
+    - lang-en-gb
+
+- name: workstation | Install docs utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - asciidoc
+    - xsltproc
+  tags:
+    - package
+    - docs
