@@ -1,192 +1,482 @@
 # vi: ft=yaml.ansible.jinja2
 ---
-fail_fast: true
-minimum_pre_commit_version: 3.7.1
-exclude: "docs/_build/"
-#  default_language_version:
-#    python: python3.6  # Ubuntu 18.04.3
-#    python: python3.7  # Ubuntu 19.04
-#    python: python3.9  # Ubuntu 20.04
-#    python: python3.10  # Ubuntu 22.04
-#    python: python3.11  # Ubuntu 24.04
+# fail_fast: true
+minimum_pre_commit_version: 4.2.0
+exclude: |
+  (?x)^(
+      .*\{\{.*\}\}.*|     # Exclude any files with cookiecutter variables
+      docs/site/.*|       # Exclude mkdocs compiled files
+      docs/_build/.*|
+      \.history/.*|       # Exclude history files
+      .*cache.*/.*|       # Exclude cache directories
+      .*venv.*/.*|        # Exclude virtual environment directories
+      .direnv/.*|
+      .yarn/.*|
+      .ansible/.*|
+      node_modules/.*|
+      .npm/.*|
+      .nuxt/.*|
+      .netlify.*|
+  )$
+ci:
+  # format compatible with commitlint
+  autoupdate_commit_msg: "chore: pre-commit autoupdate"
+  autoupdate_schedule: monthly
+  autofix_commit_msg: |
+    chore: auto fixes from pre-commit.com hooks
+    for more information, see https://pre-commit.ci
+  skip:
+    # https://github.com/pre-commit-ci/issues/issues/55
+    - pip-compile
+    - pyright
+    - schemas
+  submodules: true
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
 repos:
+  # ---------------------------------------------------------------------------- #
+  #                              🔄 Pre-Commit Hooks                             #
+  # ---------------------------------------------------------------------------- #
+  - repo: meta
+    hooks:
+      - id: check-useless-excludes
+
+  # ---------------------------- 📁 Filesystem Tools --------------------------- #
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
-    # pre-commit-hooks is not working on both environment
-    # You will have to switch
-    # pre-commit-hooks.git from v2.1.0 to v2.4.0
-    #    rev: v2.1.0 # ok python3.6  # 18.04.3
-    #    rev: v2.2.3 # ok python3.6  # 19.04 but failing on 18.04.3
-    rev: v6.0.0  # ok python3.6 on Ubuntu 18.04 AND python3.7 on Ubuntu 19.04
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        name: "📁 filesystem/⚙️ exec · Remove trailing whitespace"
+        args: [--markdown-linebreak-ext=md]
+      - id: fix-byte-order-marker
+        name: "📁 filesystem/⚙️ exec · Verify byte order"
+      - id: mixed-line-ending
+        name: "📁 filesystem/⚙️ exec · Verify mixed line ending"
+        args: [--fix=lf]
       - id: end-of-file-fixer
-      - id: check-added-large-files
-        args: ["--maxkb=123"]
-        exclude: >
-          (?x)^(
-              package-lock.json|
-              npm-shrinkwrap.json|
-              poetry.lock|
-          )$
-      - id: check-case-conflict
-      - id: check-docstring-first
+        name: "📁 filesystem/⚙️ exec · Verify end of file"
       - id: check-executables-have-shebangs
-        exclude: >
-          (?x)^(
-              env/home/log4j.xml
-              clean.bat|
-              build.bat|
-              mvnw.cmd|
-              .mvn/|
-              env/winnt|
-          )$
-      - id: check-json
-        exclude: ^.vscode/
-      - id: check-xml
-      - id: check-yaml
-        exclude: >
-          (?x)^(
-              packs/.*|
-              k8s/.*|
-          )$
+        name: "📁 filesystem/⚙️ exec · Verify shebang preset"
+        # exclude: >
+        #   (?x)^(
+        #       .mvn/|
+        #       .venv|
+        #       .direnv|
+        #   )$
+      - id: check-shebang-scripts-are-executable
+        name: "📁 filesystem/⚙️ exec · Verify script permissions"
       - id: check-symlinks
-      - id: check-merge-conflict
+        name: "📁 filesystem/🔗 symlink · Check symlink validity"
+      - id: destroyed-symlinks
+        name: "📁 filesystem/🔗 symlink · Detect broken symlinks"
       - id: debug-statements
-        exclude: >
-          (?x)^(
-              env/scripts/zodclient.py|
-              env/scripts/server-connector.py
-          )$
-      - id: detect-private-key
-        exclude: >
-          (?x)^(
-              .ssh/id_rsa|
-              roles/jenkins-master/defaults/main.yml|
-              roles/jenkins-master/README.md|
-              env/scripts/server-connector.py
-          )$
-      - id: double-quote-string-fixer
+        name: "📁 filesystem/📝 debug · Check debug statements"
+      - id: check-ast
+        name: "📁 filesystem/📝 ast · Check ast"
+      - id: check-builtin-literals
+        name: "📁 filesystem/📝 literals · Check builtin literals"
+      - id: check-case-conflict
+        name: "📁 filesystem/📝 names · Check case sensitivity"
+      - id: check-illegal-windows-names
+        name: "📁 filesystem/📝 names · Validate Windows filenames"
+      - id: check-docstring-first
+        name: "📁 filesystem/📝 docstring · Validate docstring first"
       - id: name-tests-test
+        name: "📁 filesystem/📝 names · Check tests names"
+
+      # --------------------------- 🔍 Code Quality Tools -------------------------- #
+      - id: check-json
+        name: "📁 filesystem/📝 json · Check json"
+      - id: check-toml
+        name: "📁 filesystem/📜 toml - Check toml"
+      - id: check-xml
+        name: "📁 filesystem/📜 xml - Check xml"
+      - id: check-yaml
+        name: "📁 filesystem/📜 yaml - Check yaml"
+        args: [--allow-multiple-documents]
+      - id: sort-simple-yaml
+        name: "🔀 sort/📜 yaml - Sort yaml"
+      - id: file-contents-sorter
+        name: "🔀 sort/📜 file · Sort contents"
+      - id: requirements-txt-fixer
+        name: "🔀 sort/🐍 json · Sort requirements"
+      # ------------------------------- 🌳 Git Tools ------------------------------- #
+      - id: check-merge-conflict
+        name: "🌳 git · Detect conflict markers"
+      - id: forbid-new-submodules
+        name: "🌳 git · Prevent submodule creation"
+      # - id: no-commit-to-branch
+      #   name: "🌳 git · Protect main branches"
+      #   args: [--branch, main, --branch, master, --branch, release/*]
+      - id: check-added-large-files
+        name: "🌳 git · Block large file commits"
+        args: [--maxkb=123]
         exclude: >
           (?x)^(
-              molecule/default/tests/test_default.py|
+            .pnp.cjs|
+            package-lock.json|
+            npm-shrinkwrap.json|
+            poetry.lock|
+            Pipfile.lock|
+            yarn.lock|
+            sbom.json|
           )$
-      #      - id: no-commit-to-branch
-      #        args: [--branch, develop, --branch, master, --branch, release/*]
-      - id: end-of-file-fixer
-      - id: fix-encoding-pragma
-      - id: requirements-txt-fixer
-      - id: sort-simple-yaml
-      - id: file-contents-sorter
-  - repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.2.0
+      # ----------------------------- 🔒 Security Tools ---------------------------- #
+      - id: detect-private-key
+        name: "🔒 security · Detect private keys"
+
+  - repo: https://github.com/pre-commit/pre-commit.git
+    rev: v4.3.0
     hooks:
-      - id: add-trailing-comma
-  # - repo: https://github.com/willthames/ansible-lint.git
-  #   rev: v24.2.2
-  #   hooks:
-  #     - id: ansible-lint
-  #       files: \.(yaml|yml)$
-  #       exclude: ".travis.yml"
-  - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1  # or higher tag
-    hooks:
-      - id: yamllint
-        args: [--format, parsable, --strict]
+      - id: validate_manifest
+        name: "🤖 manifest · Validate manifest scripts"
+
   - repo: https://github.com/doublify/pre-commit-hindent.git
     rev: b3680b6ebf9f7cf29b19307f246adef66756feef
     hooks:
       - id: hindent
+        name: "🤖 hindent · Format scripts"
+
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v4.0.0
+    hooks:
+      - id: add-trailing-comma
+        name: "🤖 comma · Add trailing comma"
+
+  # --------------------------- 🔍 Code Quality Tools -------------------------- #
+
+  ### Python Tools ###
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.0
+    hooks:
+      - id: pyupgrade
+        name: "🐍 python · Py Upgrade"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-format
+        name: "🐍 python · Format with Ruff"
+
+      - id: ruff
+        name: "🐍 python · Lint and perform unsafe auto-fixes with Ruff"
+        args: [--unsafe-fixes]
+
+      - id: ruff-check
+        name: "🐍 python · Check with Ruff"
+        args: [--fix]
+
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.406
+  #   hooks:
+  #     - id: pyright
+  #       name: "🐍 python · Check types"
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject
+        name: "🐍 python · Validate pyproject.toml"
+        additional_dependencies: ["validate-pyproject-schema-store[all]"]
+
+  # ----------------------------- ⚡️ uv Build Tools ---------------------------- #
+  # This helps ensure cross-compatibility with people who don't wish to use uv
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.5.27
+    hooks:
+      - id: uv-sync
+        name: "⚡️ uv · Sync dependencies with uv"
+      - id: uv-lock
+        name: "⚡️ uv · Update dependency lockfile"
+      - id: uv-lock
+        name: "⚡️ uv · Upgrade via uv sync --upgrade"
+        alias: deps
+        args: ["--upgrade"]
+        stages: [manual]
+      - id: uv-export
+        name: "⚡️ uv · Export dependencies to requirements.txt"
+        args:
+          - "--no-dev"
+          - "--no-emit-package"
+          - ansible-core
+          - "--no-emit-package"
+          - resolvelib
+          - "--no-emit-package"
+          - ruamel-yaml-clib
+          - "--no-emit-package"
+          - tomli
+          - "--no-emit-package"
+          - typing-extensions
+          - "--no-emit-project"
+          - "--no-hashes"
+          - "-o"
+          - ".config/requirements-lock.txt"
+
+  ### Shell ###
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      # Choose one of:
+      # - id: shfmt         # native (requires Go to build)
+      - id: shfmt-docker # Docker image (requires Docker to run)
+        name: "🐚 🐳 shell · Format shell scripts"
   - repo: https://github.com/detailyang/pre-commit-shell
     rev: 1.0.5
     hooks:
       - id: shell-lint
-        # entry: pre_commit_hooks/shell-lint.sh -x
+        name: "🐚 shell · Lint shell scripts"
         args: [-x]
         exclude: >
           (?x)^(
-              mvnw|
-              hooks|
-              env/linux/.*|
-              env/home/dev.env.sh|
-              env/home/dotfiles/.*|
-              .git-prompt.sh|
+            hooks|
+            tests/.*|
+            .envrc|
           )$
-  #  - repo: https://github.com/PyCQA/flake8
-  #    rev: 3.9.2
-  #    hooks:
-  #      - id: flake8
-  #        args: [--max-line-length=120]
-  #        exclude: >
-  #          (?x)^(
-  #              env/scripts/zodclient.py|
-  #              env/scripts/server-connector.py
-  #          )$
-  #  - repo: https://github.com/PyCQA/bandit
-  #    rev: master
-  #    hooks:
-  #    - id: bandit
+
+  - repo: https://github.com/openstack/bashate
+    rev: 2.1.1
+    hooks:
+      - id: bashate
+        name: "🐚 shell · Check shell script code style"
+        args: [-i, "E003,E006"]
+
+  ### Makefile ###
+  - repo: https://github.com/mrtazz/checkmake.git
+    rev: 0.2.2
+    hooks:
+      - id: checkmake
+        name: "🐮 Makefile · Lint Makefile"
+
+  ### SQL ###
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 3.4.2
+    hooks:
+      - id: sqlfluff-fix
+        name: "📊 SQL · Attempts to fix rule violations."
+      - id: sqlfluff-lint
+        name: "📊 SQL · Lint SQL code files"
+
+  ### Notebooks ###
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.9.1
+    hooks:
+      - id: nbqa
+        entry: nbqa mdformat
+        name: "📓 notebook · Format markdown cells"
+        args: ["--nbqa-md"]
+        types: [jupyter]
+        additional_dependencies:
+          - mdformat
+          - mdformat-gfm
+          - mdformat-ruff
+          - mdformat-frontmatter
+          - ruff
+      # - id: nbqa-mypy
+      #   name: "📓 notebook · Type-check cells"
+
+  ### Markdown ###
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.22
+    hooks:
+      - id: mdformat
+        name: "📝 markdown · Format markdown"
+        additional_dependencies:
+          - mdformat-gfm # GitHub-Flavored Markdown support
+          - mdformat-ruff # Python code formatting
+          - mdformat-frontmatter # YAML frontmatter support
+          - ruff # Required for mdformat-ruff
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.12.0
+    hooks:
+      - id: markdownlint
+        name: "📝 markdown · Lint markdown"
+        exclude: >
+          (?x)^(
+              CHANGELOG.md|
+              README.md|
+          )$
+
+  ### Javascript & Web Tools ###
+  - repo: https://github.com/biomejs/pre-commit
+    rev: "v2.2.6"
+    hooks:
+      - id: biome-check
+        name: "🟨 javascript · Lint, format, and safe fixes with Biome"
+        additional_dependencies: ["@biomejs/biome@1.9.4"]
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
+    rev: v1.1.2
+    hooks:
+      - id: htmllint
+        name: "📝 html · Lint html"
+        args: [--config, .eslintrc.json]
+        files: ^src/
+      - id: htmlhint
+        name: "📝 html · Hint html"
+        args: [--config, .htmlhintrc]
+      - id: markdown-toc
+        name: "📝 markdown · Toc markdown"
+        args: [--maxdepth, "3", -i]
+
+  ### PNG Images ###
+  # - repo: https://github.com/shssoichiro/oxipng
+  #   rev: v9.1.5
+  #   hooks:
+  #     - id: oxipng
+  #       name: "🖼️ images · Optimize PNG files"
+  #       args: ["-o", "4", "--strip", "safe", "--alpha"]
+
+  ### Additional File Types ###
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: "✨ misc-files · Format misc web files"
+        types_or: [yaml, html, scss]
+        additional_dependencies:
+          - prettier@3.4.2
+
+  ### Data & Config Validation ###
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.34.1
+    hooks:
+      - id: check-github-workflows
+        name: "🧩 github-actions · Validate gh workflow files"
+        args: ["--verbose"]
+      - id: check-taskfile
+        name: "✅ taskfile · Validate Task configuration"
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
+        name: "🐳 hadolint · Validate Dockerfile"
+
+  # ----------------------------- 🔒 Security Tools ---------------------------- #
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        name: "🔒 security · Detect security issues"
+        args: [-c, .bandit.yml]
+
   - repo: https://github.com/IamTheFij/ansible-pre-commit
     rev: v1.0.1
     hooks:
       - id: encryption-check
+        name: "🔒 security · Detect encryption"
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks-docker
+        name: "🔒 🐳 security · Detect hardcoded secrets"
+        entry: zricethezav/gitleaks protect --verbose --redact --staged
+
+  ### Ansible ###
+  - repo: https://github.com/ansible-community/ansible-lint.git
+    rev: v25.9.2
+    hooks:
+      - id: ansible-lint
+        name: "📜 ansible - Lint Ansible"
+        # args: [--verbose]
+        files: \.(yaml|yml)$
         exclude: >
           (?x)^(
-              .github/workflows/vault.yml|
-              infra/terraform/nomad/jobs/vault-backup.nomad|
-              infra/terraform/vault/.*|
+            .travis.yml|
+            docker/|
+            requirements.yml|
+            playbooks/group_vars/all/vault.yml|
+            .gitlab-ci.yml|
           )$
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
-    rev: v1.1.2
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.37.1
     hooks:
-      - id: htmlhint
-        args: [--config, .htmlhintrc]
-  #      - id: markdown-toc
-  #        args: [--maxdepth, "3", -i]
-  #      - id: dockerfile_lint
-  #        args: [--permissive, --verbose, --dockerfile, ./docker/ubuntu20/Dockerfile]
-  - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.28.0 # NOK v8.18.4
+      - id: yamllint
+        name: "📜 yamllint - Lint Yaml"
+        args: [--format, parsable, --strict]
+
+  # ---------------------------------------------------------------------------- #
+  #                            📝 Commit Message Hooks                           #
+  # ---------------------------------------------------------------------------- #
+  #
+  # --------------------------- ✍️ Git Commit Quality -------------------------- #
+
+  ### Commit Message Standards ###
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.9.1
     hooks:
-      - id: gitleaks
-        args: [--config, .gitleaks.toml]
-      # diff: line 0: git-crypt: not found
-      # - id: gitleaks-docker
-      #   entry: zricethezav/gitleaks protect --verbose --redact --staged # --config .gitleaks.toml
-      #   #entry: zricethezav/gitleaks detect --verbose --config .gitleaks.toml
-  #  - repo: https://github.com/bridgecrewio/checkov.git
-  #    rev: '2.0.1145' # change to tag or sha
-  #    hooks:
-  #    - id: checkov
-  #      verbose: true
-  #      args: [--soft-fail]
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.3
+      - id: commitizen
+        name: "🌳 git · Validate commit message"
+        stages: [commit-msg]
+        additional_dependencies: [cz-conventional-gitmoji]
+      - id: commitizen-branch
+        stages: [pre-push]
+
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
     hooks:
-      - id: check-github-workflows
-      - id: check-gitlab-ci
-  - repo: https://github.com/gitguardian/ggshield
-    rev: v1.43.0
+      - id: gitlint
+        name: "🌳 git · Lint"
+        additional_dependencies:
+          - gitlint-core[trusted-deps]==0.19.1
+
+  # ---------------------------------------------------------------------------- #
+  #                            👑 Mega linter                                    #
+  # ---------------------------------------------------------------------------- #
+
+  # - repo: https://github.com/oxsecurity/megalinter
+  #   rev: v9.0.1
+  #   hooks:
+  #     - id: megalinter-incremental  # Faster, less thorough
+  #       name: "👑 🐳 megalinter - All in linter"
+  #       stages:
+  #         - pre-commit
+  #       args:
+  #         - mega-linter-runner
+  #         - --containername
+  #         - "megalinter-incremental"
+  #         - --remove-container
+  #         # - --fix
+  #         # - --env
+  #         # - "'APPLY_FIXES=all'"
+  #         - --env
+  #         - "'CLEAR_REPORT_FOLDER=true'"
+  #         - --env
+  #         - "'LOG_LEVEL=warning'"
+  #         - --filesonly
+  #         - --flavor
+  #         - "python"
+
+  # ---------------------------------------------------------------------------- #
+  #                             🧪 Fast Tests (Local)                            #
+  # ---------------------------------------------------------------------------- #
+
+  - repo: local
     hooks:
-      - id: ggshield
-        language_version: python3
-        stages: [pre-commit]
-        # args: ['secret', 'scan', 'pre-commit']
-  - repo: https://github.com/oxsecurity/megalinter
-    rev: v8.8.0
-    hooks:
-      - id: megalinter-incremental  # Faster, less thorough
-        stages:
-          - pre-commit
-        args:
-          - mega-linter-runner
-          - --containername
-          - "megalinter-incremental"
-          - --remove-container
-          - --env
-          - "'CLEAR_REPORT_FOLDER=true'"
-          - --env
-          - "'LOG_LEVEL=warning'"
-          - --filesonly
-          - --flavor
-          - "ci_light"
+      #     - id: lint
+      #       name: Lint
+      #       entry: python3 -m nox -rs lint
+      #       language: system
+      #       pass_filenames: false
+      #     - id: test
+      #       name: Test
+      #       entry: python3 -m nox -rs test
+      #       language: system
+      #       pass_filenames: false
+      - id: pytest-collect
+        name: 🧪 test · Validate test formatting
+        entry: ./.venv/bin/pytest tests
+        language: system
+        types: [python]
+        args: ["--collect-only"]
+        pass_filenames: false
+      - id: pytest-fast
+        name: 🧪 test · Run fast tests
+        entry: ./.venv/bin/pytest tests
+        language: system
+        types: [python]
+        args: ["--timeout=3"]
+        pass_filenames: false
+        always_run: true

@@ -162,3 +162,12 @@
   command: gdebi {{ home }}/Downloads/GitHubDesktop-linux-2.9.3-linux3.deb
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+
+- name: workstation | Install python utilities tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - python3-versioneer
+  tags:
+    - package

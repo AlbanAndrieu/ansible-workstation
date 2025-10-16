@@ -1,0 +1,20 @@
+---
+- name: workstation | Add repo for yubikey packages
+  apt_repository: repo="ppa:yubico/stable" state={{ util_repository_state|default('present') }}
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+
+- name: workstation | Install yubikey tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and yubikey_enabled
+  tags: package
+  with_items:
+    - libfido2-1
+    - libpam-u2f
+    - pamu2fcfg
+    - libykpiv1 # version 2.7.0~ppa1~noble1 # not libykpiv2
+    - python3-ykman
+    - yubikey-manager
+    - yubico-piv-tool
+    - yubikey-agent
+  become: true
