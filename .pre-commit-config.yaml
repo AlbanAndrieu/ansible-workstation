@@ -448,35 +448,3 @@ repos:
   #         - --filesonly
   #         - --flavor
   #         - "python"
-
-  # ---------------------------------------------------------------------------- #
-  #                             🧪 Fast Tests (Local)                            #
-  # ---------------------------------------------------------------------------- #
-
-  - repo: local
-    hooks:
-      #     - id: lint
-      #       name: Lint
-      #       entry: python3 -m nox -rs lint
-      #       language: system
-      #       pass_filenames: false
-      #     - id: test
-      #       name: Test
-      #       entry: python3 -m nox -rs test
-      #       language: system
-      #       pass_filenames: false
-      - id: pytest-collect
-        name: 🧪 test · Validate test formatting
-        entry: ./.venv/bin/pytest tests
-        language: system
-        types: [python]
-        args: ["--collect-only"]
-        pass_filenames: false
-      - id: pytest-fast
-        name: 🧪 test · Run fast tests
-        entry: ./.venv/bin/pytest tests
-        language: system
-        types: [python]
-        args: ["--timeout=3"]
-        pass_filenames: false
-        always_run: true
