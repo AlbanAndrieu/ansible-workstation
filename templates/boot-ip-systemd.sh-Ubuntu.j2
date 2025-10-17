@@ -5,7 +5,6 @@ PartOf=graphical-session.target
 [Service]
 Type=oneshot
 ExecStart=/bin/bash -c 'systemctl stop motion.service && zenity --info --text="Motion stopped - `hostname -I`" --title="Motion stopped - Local IP as root"'
-#  --display=:0.0
 
 [Install]
 WantedBy=xsession.target

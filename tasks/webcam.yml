@@ -23,7 +23,7 @@
     #    - gstreamer-properties
     - guvcview
     - cheese
-#    - gphoto2
+    #    - gphoto2
     - motion
 
 - name: webcam | Install webcam tools (2)
@@ -83,7 +83,14 @@
 - name: webcam | Install howdy tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and howdy_enabled
   tags: howdy
   with_items:
     - howdy
+
+- name: webcam | Copy the howdy config
+  template: src=howdy.conf.j2 dest=/etc/howdy/config.ini
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and howdy_enabled
+  tags: howdy

@@ -18,3 +18,17 @@
     - yubico-piv-tool
     - yubikey-agent
   become: true
+
+# - name: workstation | Copy the pam login config
+#   template: src=pamd-login.conf.j2 dest=/etc/pam.d/login
+#     mode=0644
+#   become: true
+#   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pam_enabled
+#   tags: pam
+
+- name: workstation | Copy the pam common config
+  template: src=pamd-common-auth.conf.j2 dest=/etc/pam.d/common-auth
+    mode=0644
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and pam_enabled
+  tags: pam

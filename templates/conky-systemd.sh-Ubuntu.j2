@@ -1,18 +1,44 @@
 [Unit]
 Description=conky
 PartOf=graphical-session.target
+# https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
+After=default.target network-online.target nss-lookup.target docker.socket firewalld.service containerd.service time-set.target autofs.service iscsid.service folder.mount
+Wants=network-online.target default.target
 
 [Service]
 #Type=notify
-Type=simple
+#Type=simple
+Type=forking
+#Type=exec
+
+PIDFile=/home/albandrieu/.conky/conky.pid
+Restart=on-failure
+TimeoutStartSec=infinity
+TimeoutStopSec=600
+
 User=albandrieu
-# Group=sudo
+# Group=albandrieu
+Group=sudo
 WorkingDirectory=/home/albandrieu/.conky
-ExecStart=/bin/bash -c '/home/albandrieu/.conky/conky-startup.sh'
-ExecReload=/bin/kill --signal HUP $MAINPID
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/sh -c '/home/albandrieu/.conky/conky-startup.sh'
+#ExecReload=/bin/kill --signal HUP $MAINPID
+ExecReload=killall /usr/bin/conky
+Environment=DISPLAY=:1
+Restart=on-failure
+Restart=always
+RestartSec=30
+
+ExecStopPost=-/bin/rm -rf /home/albandrieu/.conky/conky.pid
+
+# Process management
+####################
+
+# Make sure the config directory is readable by the service user
+PermissionsStartOnly=true
+
 KillMode=process
 KillSignal=SIGTERM
-Restart=on-failure
 LimitNOFILE=65536
 
 [Install]

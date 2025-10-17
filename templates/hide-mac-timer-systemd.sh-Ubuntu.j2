@@ -1,0 +1,10 @@
+[Unit]
+Description=Hide mac timer
+
+[Timer]
+OnBootSec=1m
+OnUnitActiveSec=1m
+# Unit=hide-location.service
+
+[Install]
+WantedBy=timers.target

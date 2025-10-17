@@ -1,5 +1,5 @@
 ---
-workstation_enabled: true  # Enable module
+workstation_enabled: true # Enable module
 
 # TODO apache_directory : "httpd" #RedHat
 # TODO see apache role
@@ -46,7 +46,7 @@ util_repository_state: present
 # apt_install_multiverse_repositories: true  # Install some repositories (see list bellow)
 # apt_multiverse_repositories: ["http://us.archive.ubuntu.com/ubuntu/"]          # List of sources which be added
 
-stats_enabled: true  # Turn it to false in order to be uninstall in security role
+stats_enabled: true # Turn it to false in order to be uninstall in security role
 scm_enabled: false
 screensaver_enabled: true
 dash_enabled: true
@@ -59,6 +59,7 @@ tlp_enabled: true
 tweak_enabled: true
 compizconfig_enabled: true
 gstreamer_enabled: true
+howdy_enabled: true
 skype_enabled: false
 webapps_enabled: true
 pidgin_enabled: false
@@ -74,6 +75,7 @@ ansigenome_enabled: true
 apache_create_vhosts: true
 webcam_enabled: true
 keepass2_enabled: true
+pam_enabled: true
 variety_enabled: true
 plank_enabled: true
 android_enabled: true
@@ -97,7 +99,11 @@ s6_enabled: true
 lens_enabled: true
 
 apache_vhosts_jenkins:
-  - { servername: localhost, serveradmin: alban.andrieu@free.fr, documentroot: /var/www/jenkins }
+  - {
+      servername: localhost,
+      serveradmin: alban.andrieu@free.fr,
+      documentroot: /var/www/jenkins,
+    }
 
 apache_vhosts_nabla:
   - servername: www.albandrieu.albandrieu.com
@@ -110,13 +116,13 @@ bower_clean_cache_enabled: false
 grunt_version: 1.6.1
 grunt_cli_version: 1.4.3
 
-redshift_options: -l 48.86:2.34  # For Paris
+redshift_options: -l 48.86:2.34 # For Paris
 
 homebrew_check_path: "{{ home }}/.linuxbrew/bin/brew"
 jenkins_user: "{{ user }}"
 
 brew_packages:
-  - randomize-lines  # For git-radar
+  - randomize-lines # For git-radar
   - michaeldfallen/formula/git-radar
   - up # Ultimate Plumber
   - navi
