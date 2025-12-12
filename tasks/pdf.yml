@@ -1,0 +1,50 @@
+---
+- name: workstation | Install latex tools for CV
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items:
+    - texlive-full
+    - fonts-font-awesome
+  tags:
+    - package
+    - latex
+
+- name: workstation | Install PDF utilities tools (1)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04']
+  tags: package
+  with_items:
+    - pdfeditor
+
+- name: workstation | Install PDF utilities tools (2)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04']
+  tags: package
+  with_items:
+    - cups-pdf
+
+- name: workstation | Install PDF utilities tools (3)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - imagemagick
+    # Fix memory bug to 2 Gb
+    # https://doc.ubuntu-fr.org/imagemagick#j_obtiens_une_erreur_de_cache
+    #sudo sed -i 's/name="memory" value="256MiB"/name="memory" value="3GiB"/' /etc/ImageMagick-6/policy.xml
+    #sudo sed -i 's/name="disk" value="1GiB"/name="disk" value="2GiB"/' /etc/ImageMagick-6/policy.xml
+    - xournal
+
+- name: workstation | Install PDF utilities tools (4)
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - poppler-utils # for pdftotext
+    - pdfarranger
+    - xournal

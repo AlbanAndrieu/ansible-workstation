@@ -1,5 +1,4 @@
 ---
-
 - name: workstation | Install certificates tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
@@ -48,7 +47,7 @@
     - wget
     - rsync
     - unar
-    - pydf  # disk
+    - pydf # disk
 
 - name: workstation | Install network security basic tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
@@ -174,7 +173,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - skopeo
-    - lynis  # sudo lynis audit system
+    - lynis # sudo lynis audit system
   tags:
     - package
     - docker
@@ -306,7 +305,7 @@
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   with_items:
-    - lastpass-cli  # https://github.com/lastpass/lastpass-cli
+    - lastpass-cli # https://github.com/lastpass/lastpass-cli
     # - vault
     # - 1password-cli  # https://developer.1password.com/docs/cli/get-started/
   tags:
@@ -325,3 +324,28 @@
 # sed -i -e 's/^ChallengeResponseAuthentication .*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
 
 # AllowUsers albandrieu albanandrieu
+
+- name: workstation | Uninstall unsecured applications
+  apt: >
+    pkg={{ item }}
+    state=absent
+    purge=yes
+    force=yes
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags: package
+  with_items:
+    - telnetd
+    - ftpd
+    - vsftpd
+
+- name: workstation | Install and start Chrony for time synchronization (Audit Requirement)
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: workstation | Ensure chrony is enabled and started
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: yes

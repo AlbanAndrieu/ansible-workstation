@@ -9,10 +9,18 @@ sudo systemd-analyze blame
 
 cd /home/albandrieu/w && mr update || true
 cd /home/albandrieu/w/jm && mr update || true
+cd /home/albandrieu/w/jm/infra && mr update || true
+cd /home/albandrieu/w/jm/data  && mr update || true
+sudo apt-get update # && apt-get upgrade
 
-# apt-get update && apt-get upgrade -y
+tldr --update
 
-sudo service docker restart
+echo "brew upgrade asdf"
+
+sudo docker systeme prune
+# sudo service docker restart
+
+/workspace/users/albandrieu30/nabla/env/linux/cleanup-snap.sh
 
 /bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Update completed"'
 

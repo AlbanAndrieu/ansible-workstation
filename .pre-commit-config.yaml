@@ -158,7 +158,7 @@ repos:
       - id: pyupgrade
         name: "🐍 python · Py Upgrade"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.8
+    rev: v0.14.9
     hooks:
       - id: ruff-format
         name: "🐍 python · Format with Ruff"
@@ -188,7 +188,7 @@ repos:
     # This helps ensure cross-compatibility with people who don't wish to use uv
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.9.15
+    rev: 0.9.17
     hooks:
       - id: uv-sync
         name: "⚡️ uv · Sync dependencies with uv"
@@ -405,7 +405,7 @@ repos:
 
     ### Ansible ###
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v25.12.0
+    rev: v25.12.1
     hooks:
       - id: ansible-lint
         name: "📜 ansible - Lint Ansible"
@@ -442,7 +442,7 @@ repos:
           - "@commitlint/config-conventional"
           - conventional-changelog-conventionalcommits
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.10.0
+    rev: v4.10.1
     hooks:
       - id: commitizen
         name: "🌳 git · Validate commit message"

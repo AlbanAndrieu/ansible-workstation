@@ -120,6 +120,8 @@
 
 - import_tasks: printing.yml
 
+- import_tasks: pdf.yml
+
 - import_tasks: docs.yml
 
 - name: workstation | Install memory utilities tools
