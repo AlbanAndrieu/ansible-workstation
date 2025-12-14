@@ -17,11 +17,20 @@ tldr --update
 
 echo "brew upgrade asdf"
 
-sudo docker systeme prune
+brew cleanup || true
+pip cache purge || true
+pipenv --clear || true
+sudo docker systeme prune || true
+
 # sudo service docker restart
 
-/workspace/users/albandrieu30/nabla/env/linux/cleanup-snap.sh
+/workspace/users/albandrieu30/nabla/env/linux/cleanup-snap.sh || true
+
+cd /workspace/users/albandrieu30/nabla/infra/docker-compose
+docker compose --env-file .env --env-file .env.secrets -f  docker-compose.yml up -d
 
 /bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Update completed"'
+
+# sudo systemctl status boot-update.service
 
 exit 0
