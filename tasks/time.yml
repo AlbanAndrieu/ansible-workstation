@@ -1,0 +1,28 @@
+---
+- name: workstation | Configure keyboard
+  ansible.builtin.copy:
+    src: "files/{{ item }}"
+    dest: "/etc/default/{{ item }}"
+    force: true
+    owner: root
+    group: root
+    mode: "0640"
+  loop:
+    - keyboard
+    - locale
+
+- name: workstation | Set timezone
+  community.general.timezone:
+    name: "Europe/Paris"
+  tags: keyboard
+
+- name: workstation | Install and start Chrony for time synchronization (Audit Requirement)
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: workstation | Ensure chrony is enabled and started
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true

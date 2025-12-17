@@ -131,7 +131,11 @@
   tags: package
   with_items: [edac-utils]
 
+- import_tasks: asdf.yml
+
 - import_tasks: desktop.yml
+
+- import_tasks: time.yml
 
 - import_tasks: cast.yml
 

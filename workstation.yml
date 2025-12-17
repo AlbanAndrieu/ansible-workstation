@@ -19,7 +19,7 @@
     - name: group hosts by distribution
       group_by: key="{{ ansible_distribution }}-{{ ansible_distribution_version }}"
 
-- hosts: RedHat-7*:RedHat-6*:CentOS-7*:CentOS-6*:Ubuntu-24*:Ubuntu-23*:Ubuntu-22*:Ubuntu-21*:Ubuntu-20*:Ubuntu-19*:Ubuntu-18*:Ubuntu-17*:Ubuntu-16*:Ubuntu-15*:Ubuntu-14*:Ubuntu-13*:Ubuntu-12*
+- hosts: RedHat-7*:RedHat-6*:CentOS-7*:CentOS-6*:Ubuntu-25*:Ubuntu-24*:Ubuntu-23*:Ubuntu-22*:Ubuntu-21*:Ubuntu-20*:Ubuntu-19*:Ubuntu-18*:Ubuntu-17*:Ubuntu-16*:Ubuntu-15*:Ubuntu-14*:Ubuntu-13*:Ubuntu-12*
   gather_facts: false
   tasks:
     - name: group hosts for supported distributions
@@ -30,9 +30,9 @@
   tasks:
     - name: fail for unsupported distribution
       fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
-                 is not a supported OS for a Tower installation.  Supported
-                 OSes include Red Hat Enterprise Linux 6/7, CentOS 6/7, or
-                 Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04"
+        is not a supported OS for a Tower installation.  Supported
+        OSes include Red Hat Enterprise Linux 6/7, CentOS 6/7, or
+        Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04/25.04"
     - debug: msg="Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
 
 - hosts: all
@@ -43,7 +43,7 @@
 
 - name: workstation | Test configuration
   hosts: localhost
-  gather_facts: yes
+  gather_facts: true
 
   pre_tasks:
     - name: run_command
@@ -65,19 +65,19 @@
     - geerlingguy.security
 
   vars:
-      # sudoers_enabled: no
-      security_ssh_port: 2849
-      restart_ssh_enabled: false
-      security_ssh_password_authentication: "yes"
-      security_ssh_permit_root_login: "no"
-      security_ssh_x11_forwarding: "yes"
-      security_fail2ban_enabled: false
-      # security_autoupdate_enabled: false # make yum to get stuck later
-      security_ssh_allowed_users:
-        - albandrieu
-        - albanandrieu
-      security_sudoers_passwordless:
-        - albandrieu
+    # sudoers_enabled: no
+    security_ssh_port: 2849
+    restart_ssh_enabled: false
+    security_ssh_password_authentication: "yes"
+    security_ssh_permit_root_login: "no"
+    security_ssh_x11_forwarding: "yes"
+    security_fail2ban_enabled: false
+    # security_autoupdate_enabled: false # make yum to get stuck later
+    security_ssh_allowed_users:
+      - albandrieu
+      - albanandrieu
+    security_sudoers_passwordless:
+      - albandrieu
 
 - name: workstation | Apply configuration
   hosts: localhost #, albandrieu, workstation
