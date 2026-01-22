@@ -14,3 +14,13 @@ def test_hosts_file(host):
     assert f.exists
     assert f.user == 'root'
     assert f.group == 'root'
+
+
+def test_gpg_installed(host):
+    gpg = host.package('gnupg')
+    assert gpg.is_installed
+
+
+def test_age_installed(host):
+    age = host.package('age')
+    assert age.is_installed

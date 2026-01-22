@@ -150,10 +150,15 @@
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
   with_items:
+    - gnupg
+    - age
     - gnome-disk-utility
     - cryptsetup
+  tags:
+    - package
+    - encryption
+    - gpg
 
 - name: workstation | Install security tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
