@@ -20,7 +20,10 @@ echo "brew upgrade asdf"
 brew cleanup || true
 pip cache purge || true
 pipenv --clear || true
-sudo docker systeme prune || true
+sudo docker system prune || true
+
+sudo rm -f /workspace/Dropbox/motion/*.jpg
+sudo rm -f /workspace/Dropbox/motion/*.mkv
 
 # sudo service docker restart
 
