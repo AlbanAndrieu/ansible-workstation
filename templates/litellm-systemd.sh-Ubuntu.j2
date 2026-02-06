@@ -1,0 +1,17 @@
+[Unit]
+Description=LiteLLM Proxy for Azure OpenAI
+After=network.target
+
+[Service]
+Type=simple
+User=albandrieu
+# source ~/litellm-venv/bin/activate
+WorkingDirectory=/home/albandrieu/litellm-venv
+ExecStart=/home/albandrieu/litellm-venv/bin/litellm \
+    --config /home/albandrieu/litellm_config.yaml \
+    --port 4100
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

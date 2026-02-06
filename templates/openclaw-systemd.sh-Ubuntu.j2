@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network.target litellm.service
+Requires=litellm.service
+
+[Service]
+Type=simple
+User=albandrieu
+WorkingDirectory=/home/albandrieu/openclaw-workdir
+EnvironmentFile=/home/albandrieu/.openclaw/.env
+ExecStart=/home/albandrieu/.local/share/pnpm/openclaw gateway \
+    --port 18789
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

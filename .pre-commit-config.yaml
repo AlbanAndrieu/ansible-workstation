@@ -158,7 +158,7 @@ repos:
       - id: pyupgrade
         name: "🐍 python · Py Upgrade"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       - id: ruff-format
         name: "🐍 python · Format with Ruff"
@@ -178,7 +178,7 @@ repos:
     #       name: "🐍 python · Check types"
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject
         name: "🐍 python · Validate pyproject.toml"
@@ -188,7 +188,7 @@ repos:
     # This helps ensure cross-compatibility with people who don't wish to use uv
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.9.26
+    rev: 0.10.0
     hooks:
       - id: uv-sync
         name: "⚡️ uv · Sync dependencies with uv"
@@ -313,7 +313,7 @@ repos:
 
     ### Javascript & Web Tools ###
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v2.3.11"
+    rev: "v2.3.14"
     hooks:
       - id: biome-check
         name: "🟨 javascript · Lint, format, and safe fixes with Biome"
@@ -363,7 +363,7 @@ repos:
 
     ### Data & Config Validation ###
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.36.0
+    rev: 0.36.1
     hooks:
       - id: check-github-workflows
         name: "🧩 github-actions · Validate gh workflow files"
@@ -442,7 +442,7 @@ repos:
           - "@commitlint/config-conventional"
           - conventional-changelog-conventionalcommits
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.12.1
+    rev: v4.13.5
     hooks:
       - id: commitizen
         name: "🌳 git · Validate commit message"
