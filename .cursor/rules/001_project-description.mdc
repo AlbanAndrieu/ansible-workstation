@@ -1,455 +1,79 @@
 ---
-description: General project description
-globs:
+description: Project description and best practices for the Ansible workstation role (playbooks, tasks, defaults)
 alwaysApply: true
 ---
-{# This is a dynamically generated cursorrules file. #}
-# Cursor Rules for {{ cookiecutter.repo_name }}
 
+# ansible-workstation — Ansible role to configure a workstation
 
-## Origin
-This is a project generated from "Gatlen's Opinionated Template (GOTem)". GOTem is forked from (and synced with) [CookieCutter Data Science (CCDS) V2](), one of the most popular, flexible, and well maintained Python templates out there. GOTem extends CCDS with carefully selected defaults, dependency stack, customizations, additional features (that I maybe should have spent time contributing to the original project), and contemporary best practices. Ready for not just data science but also general Python development, research projects, and academic work. Most of the documentation is written with the modern package and project managing tool known as [uv]()
-
-
-The source code can be found at https://github.com/GatlenCulp/gatlens-opinionated-template.
-
-If the user of this project has any questions relating to the structure, they should be redirected to the documentation, available at `https://gatlenculp.github.io/gatlens-opinionated-template/{page_name}` without the `.md`
-
-```yaml
-nav:
-   - 🏠 Home: index.md                       # Project overview, quickstart guide, and complete directory structure walkthrough
-   - 🛠️ Core Tools: core-tools.md            # Comprehensive breakdown of all core tools (IDE, Docker, AWS, etc.) and Python dependencies with explanations
-   - 💻 VSCode & Cursor: vscode.md           # Detailed guide to workspace configuration, debug profiles, recommended extensions, and AI integration
-   - ❓ Why gotem?: why.md                   # Discussion of code quality, project organization, and reproducibility benefits
-   - 🗯️ Opinions: opinions.md                # Core principles about data hygiene, notebooks, modeling, and environment management
-   - 📑 Using the template: using-the-template.md  # Step-by-step guide on how to use the template
-   - ⚙️ All options: all-options.md          # List of available command-line options and configuration choices
-   - ❤️ Contributing: contributing.md         # Guidelines for contributing to the project
-   - 🔗 Related projects: related.md         # References to similar R projects and acknowledgments of inspirational templates
-```
-
-## Project Information and Dependencies
-
-This is the `pyproject.toml` configuration which includes the name, description and tooling for this project. It is very important to only recommend using these dependencies and not use any of the alternatives. (Ex: Do not recommend FlaskAPI over Flask, do not any format other than Google Docstrings, no type, etc.)
-
-{# This is a cut-down version of `pyproject.toml` #}
-```toml
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
-[project]
-name = {{ cookiecutter.module_name|tojson }}
-version = "0.0.1"
-description = {{ cookiecutter.description|tojson }}
-authors = [
-  { name = {{ cookiecutter.author_name|tojson }} },
-]
-{% if cookiecutter.open_source_license != 'No license file' %}license = { file = "LICENSE" }{% endif %}
-readme = {file = "README.md", content-type = "text/markdown"}
-classifiers = [
-    "Private :: Do Not Upload",
-    "Programming Language :: Python :: 3",
-    {% if cookiecutter.open_source_license == 'MIT' %}"License :: OSI Approved :: MIT License"{% elif cookiecutter.open_source_license == 'BSD-3-Clause' %}"License :: OSI Approved :: BSD License"{% endif %}
-]
-requires-python = "~={{ cookiecutter.python_version_number }}"
-
-dependencies = [
-    "loguru>=0.7.3",         # Better logging
-    "plotly>=5.24.1",        # Interactive plotting
-    "pydantic>=2.10.3",      # Data validation
-    "rich>=13.9.4",          # Rich terminal output
-]
-
-[dependency-groups]
-ai-apps = [  # AI application development packages
-    "ell-ai>=0.0.15",        # AI toolkit
-    "langchain>=0.3.12",     # LLM application framework
-    "megaparse>=0.0.45",     # Advanced text parsing
-]
-ai-train = [  # Machine learning and model training packages
-    "datasets>=3.1.0",           # Dataset handling
-    "einops>=0.8.0",            # Tensor operations
-    "jaxtyping>=0.2.36",        # Type hints for JAX
-    "onnx>=1.17.0",             # ML model interoperability
-    "pytorch-lightning>=2.4.0",  # PyTorch training framework
-    "ray[tune]>=2.40.0",        # Distributed computing
-    "safetensors>=0.4.5",       # Safe tensor serialization
-    "scikit-learn>=1.6.0",      # Traditional ML algorithms
-    "shap>=0.46.0",             # Model explainability
-    "torch>=2.5.1",             # Deep learning framework
-    "transformers>=4.47.0",     # Transformer models
-    "umap-learn>=0.5.7",        # Dimensionality reduction
-    "wandb>=0.19.1",            # Experiment tracking
-    "nnsight>=0.3.7",           # ML Interp and Manipulation
-]
-async = [  # Asynchronous programming
-    "uvloop>=0.21.0",           # Fast event loop implementation
-]
-cli = [  # Command-line interface tools
-    "typer>=0.15.1",            # CLI builder
-]
-cloud = [  # Cloud infrastructure tools
-    "ansible>=11.1.0",          # Infrastructure automation
-    "boto3>=1.35.81",          # AWS SDK
-]
-config = [  # Configuration management
-    "cookiecutter>=2.6.0",      # Project templating
-    "gin-config>=0.5.0",        # Config management
-    "jinja2>=3.1.4",           # Template engine
-]
-data = [  # Data processing and storage
-    "dagster>=1.9.5",           # Data orchestration
-    "duckdb>=1.1.3",           # Embedded analytics database
-    "lancedb>=0.17.0",         # Vector database
-    "networkx>=3.4.2",         # Graph operations
-    "numpy>=1.26.4",           # Numerical computing
-    "orjson>=3.10.12",         # Fast JSON parsing
-    "pillow>=10.4.0",          # Image processing
-    "polars>=1.17.0",          # Fast dataframes
-    "pygwalker>=0.4.9.13",     # Data visualization
-    "sqlmodel>=0.0.22",        # SQL ORM
-    "tomli>=2.0.1",            # TOML parsing
-]
-dev = [  # Development tools
-    "bandit>=1.8.0",           # Security linter
-    "better-exceptions>=0.3.3", # Improved error messages
-    "cruft>=2.15.0",           # Project template management
-    "faker>=33.1.0",           # Fake data generation
-    "hypothesis>=6.122.3",     # Property-based testing
-    "pip>=24.3.1",             # Package installer
-    "polyfactory>=2.18.1",     # Test data factory
-    "pydoclint>=0.5.11",       # Docstring linter
-    "pyinstrument>=5.0.0",     # Profiler
-    "pyprojectsort>=0.3.0",    # pyproject.toml sorter
-    "pyright>=1.1.390",        # Static type checker
-    "pytest-cases>=3.8.6",     # Parametrized testing
-    "pytest-cov>=6.0.0",       # Coverage reporting
-    "pytest-icdiff>=0.9",      # Improved diffs
-    "pytest-mock>=3.14.0",     # Mocking
-    "pytest-playwright>=0.6.2", # Browser testing
-    "pytest-profiling>=1.8.1", # Test profiling
-    "pytest-random-order>=1.1.1", # Randomized test order
-    "pytest-shutil>=1.8.1",    # File system testing
-    "pytest-split>=0.10.0",    # Parallel testing
-    "pytest-sugar>=1.0.0",     # Test progress visualization
-    "pytest-timeout>=2.3.1",   # Test timeouts
-    "pytest>=8.3.4",           # Testing framework
-    "ruff>=0.8.3",             # Fast Python linter
-    "taplo>=0.9.3",            # TOML toolkit
-    "tox>=4.23.2",             # Test automation
-    "uv>=0.5.7",               # Fast pip replacement
-]
-dev-doc = [  # Documentation tools
-    "mdformat>=0.7.19",        # Markdown formatter
-    "mkdocs-material>=9.5.48", # Documentation theme
-    "mkdocs>=1.6.1",          # Documentation generator
-]
-dev-nb = [  # Notebook development tools
-    "jupyter-book>=1.0.3",     # Notebook publishing
-    "nbformat>=5.10.4",        # Notebook file format
-    "nbqa>=1.9.1",             # Notebook linting
-    "testbook>=0.4.2",         # Notebook testing
-]
-gui = [  # Graphical interface tools
-    "streamlit>=1.41.1",       # Web app framework
-]
-misc = [  # Miscellaneous utilities
-    "boltons>=24.1.0",         # Python utilities
-    "cachetools>=5.5.0",       # Caching utilities
-    "wrapt>=1.17.0",           # Decorator utilities
-]
-nb = [  # Jupyter notebook tools
-    "chime>=0.7.0",            # Sound notifications
-    "ipykernel>=6.29.5",       # Jupyter kernel
-    "ipython>=7.34.0",         # Interactive Python shell
-    "ipywidgets>=8.1.5",       # Jupyter widgets
-    "jupyterlab>=4.3.3",       # Notebook IDE
-]
-web = [  # Web development and scraping
-    "beautifulsoup4>=4.12.3",  # HTML parsing
-    "fastapi>=0.115.6",        # Web framework
-    "playwright>=1.49.1",      # Browser automation
-    "requests>=2.32.3",        # HTTP client
-    "scrapy>=2.12.0",          # Web scraping
-    "uvicorn>=0.33.0",         # ASGI server
-    "zrok>=0.4.42",            # Tunnel service
-]
-
-[tool.uv]
-default-groups = ["dev", "data", "nb"]
-
-# [project.urls]
-# Homepage = "https://{{cookiecutter.author_github_handle}}.github.io/{{cookiecutter.project_name}}/"
-# Repository = "https://github.com/{{cookiecutter.author_github_handle}}/{{cookiecutter.project_name}}"
-# Documentation = "https://{{cookiecutter.author_github_handle}}.github.io/{{cookiecutter.project_name}}/"
-
-[tool.ruff]
-cache-dir = ".cache/ruff"
-line-length = 100
-extend-include = ["*.ipynb"]
-
-[tool.ruff.lint]
-# TODO: Different groups of linting styles depending on code use.
-select = ["ALL"]
-ignore = [] # Add ignores as needed
-
-
-[tool.ruff.lint.isort]
-known-first-party = ["{{ cookiecutter.module_name }}"]
-force-sort-within-sections = true
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"] # Allow unused imports in __init__.py
-
-[tool.ruff.lint.mccabe]
-max-complexity = 10
-
-[tool.ruff.lint.pycodestyle]
-max-doc-length = 99
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-
-[tool.pytest.ini_options]
-addopts = """
---tb=long
---code-highlight=yes
-"""
-
-log_file = "./logs/pytest.log"
-
-
-[tool.pydoclint]
-style = "google"
-arg-type-hints-in-docstring = false
-check-return-types = true
-exclude = '\.venv'
-
-[tool.pyright]
-include = ["."]
-```
-
-
-The following is the `README.md` file for GOTem. Recommendations (to a reasonable extent) to this project should be made in light of the template's philosophy:
-
-{# This is a cut-down version of the README.md #}
-{% raw %}
-```markdown
-# Gatlen's Opinionated Template (GOTem)
-
-**_Cutting-edge, opinionated, and ambitious project builder for power users and researchers._**
-
-GOTem is forked from (and synced with) [CookieCutter Data Science (CCDS) V2](), one of the most popular, flexible, and well maintained Python templates out there. GOTem extends CCDS with carefully selected defaults, dependency stack, customizations, additional features (that I maybe should have spent time contributing to the original project), and contemporary best practices. Ready for not just data science but also general Python development, research projects, and academic work.
-
-### Key Features
-
-- **🚀 Modern Tooling & Living Template** – Start with built-in support for UV, Ruff, FastAPI, Pydantic, Typer, Loguru, and Polars so you can tackle cutting-edge Python immediately. Template updates as environment changes.
-- **🙌 Instant Git & CI/CD** – Enjoy automatic repo creation, branch protections, and preconfigured GitHub Actions that streamline your workflow from day one.
-- **🤝 Small-Scale to Scalable** – Ideal for solo projects or small teams, yet robust enough to expand right along with your growth.
-- **🏃‍♂️ Start Fast, Stay Strong** – Encourages consistent structure, high-quality code, and minimal friction throughout your project’s entire lifecycle.
-- **🌐 Full-Stack + Rare Boilerplates** – Covers standard DevOps, IDE configs, and publishing steps, plus extra setups for LaTeX assignments, web apps, CLI tools, and more—perfect for anyone seeking a “one-stop” solution.
-
-### Who is this for?
-
-**CCDS** is white bread: simple, familiar, unoffensive, and waiting for your choice of toppings. **GOTem** is the expert-crafted and opinionated “everything burger,” fully loaded from the start for any task you want to do (so long as you want to do it in a specific way). Some of the selections might be an acquired taste and users are encouraged to leave them off as they start and perhaps not all will appreciate my tastes even with time, but it is the setup I find \*_delicious_\*.
-
-|                                                                                                                                                   **✅ Use GOTem if…**                                                                                                                                                   |                                                                                                                    **❌ Might Not Be for You if…**                                                                                                                     |
-| :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| **🍔 You Want the “Everything Burger”** <br> - You’re cool with an opinionated, “fully loaded” setup, even if you don’t use all the bells and whistles up front. <br> - You love having modern defaults (FastAPI, Polars, Loguru). at the ready for any case life throws at you from school work to research to websites | **🛣️ You’re a Minimalist** <br> - You prefer the bare bones or “default” approach. <br> - GOTem’s many integrations and new libraries feel too “extra” or opinionated for you, adding more complexity than you want. When you really just want to "get the task done". |
-|                                                           **🎓 You’re a Learner / Explorer** <br> - You like experimenting with cutting-edge tools (Polars, Typer, etc.) even if they’re not as common. <br> - “Modern Over Ubiquitous” libraries excite you.                                                            |                    **🕰️ You’re a Legacy Lover** <br> - Tried-and-true frameworks (e.g., Django, Pandas, standard logging) give you comfort. <br> - You’d rather stick to old favorites than wrestle with fresh tech that might be less documented.                     |
-|                                                        **👨‍💻 You’re a Hacker / Tinkerer** <br> - You want code that’s as **sexy** and elegant as it is functional. <br> - You love tinkering, customizing, and “pretty colors” that keep the ADHD brain wrinkled.                                                         |                            **🔎 You’re a Micro-Optimizer** <br> - You need to dissect every configuration before even starting. <br> - GOTem’s “Aspirational Over Practical” angle might make you wary of unproven or cutting-edge setups.                             |
-|                                                     **⚡ You’re a Perfection & Performance Seeker** <br> - You enjoy pushing Python’s boundaries in speed, design, and maintainability. <br> - You're always looking for the best solution, not just quick patches.                                                      |                    **🏛️ You Need Old-School Stability** <br> - You want a large, established user base and predictable release cycles. <br> - You get uneasy about lesser-known or younger libraries that might break your production environment.                     |
-|                                                           **🏃‍♂️ You’re a Quick-Start Enthusiast** <br> - You want a template that practically configures itself so you can jump in. <br> - You like having robust CI/CD, Git setup, and docs all done for you.                                                            |               **🚶‍♂️ You Prefer Slow, Manual Setups** <br> - You don’t mind spending time creating everything from scratch for each new project. <br> - Doing things the classic or “official” way is more comfortable than using “opinionated” shortcuts.               |
-
-If the right-hand column describes you better, [CookieCutter Data Science (CCDS)]() or another minimal template might be a better fit.
-
-**[View the full documentation here]() ➡️**
-
----
-
-## Getting Started
-
-<b>⚡️ With UV (Recommended)</b>
-
-```bash
-uv tool install gatlens-opinionated-template
-
-# From the parent directory where you want your project
-uvx --from gatlens-opinionated-template gotem
-```
+This repository is an **Ansible role** used to configure the user’s workstation (packages, dev tools, NFS mounts, security, etc.). Main entry: **playbooks/workstation.yml**, which applies the role from the repo root to `localhost` with `become: true`.
 
 <details>
-<summary><b>📦 With Pipx</b></summary>
+<summary><b>Project directory structure</b></summary>
 
-```bash
-pipx install gatlens-opinionated-template
-
-# From the parent directory where you want your project
-gotem
 ```
-
-</details>
-
-<details>
-<summary><b>🐍 With Pip</b></summary>
-
-```bash
-pip install gatlens-opinionated-template
-
-# From the parent directory where you want your project
-gotem
-```
-
-</details>
-
-### The resulting directory structure
-
-The directory structure of your new project will look something like this (depending on the settings that you choose):
-
 📁 .
-├── ⚙️ .cursor/rules/                  <- LLM instructions for Cursor IDE
-├── 💻 .devcontainer/                  <- Devcontainer config
-├── ⚙️ .gitattributes                  <- GIT-LFS Setup Configuration
-├── 🧑‍💻 .gitlab/
-├── 🧑‍💻 .github/
-│   ├── ⚡️ actions
-│   │   └── 📁 setup-python-env       <- Automated python setup w/ uv
-│   ├── 💡 ISSUE_TEMPLATE             <- Templates for Raising Issues on GH
-│   ├── 💡 pull_request_template.md   <- Template for making GitHub PR
-│   └── ⚡️ workflows
-│       ├── 🚀 main.yml               <- Automated cross-platform testing w/ uv, precommit, deptry,
-│       └── 🚀 on-release-main.yml    <- Automated mkdocs updates
-├── 💻 .vscode/                       <- Preconfigured extensions, debug profiles, workspaces, and tasks for VSCode/Cursor powerusers
-│   ├── 🚀 launch.json
-│   ├── ⚙️ settings.json
-│   ├── 📋 tasks.json
-│   └── ⚙️ '{{ cookiecutter.repo_name }}.code-workspace'
-├── 📁 data/
-│   ├── 📁 external                      <- Data from third party sources
-│   ├── 📁 interim                       <- Intermediate data that has been transformed
-│   ├── 📁 processed                     <- The final, canonical data sets for modeling
-│   └── 📁 raw                           <- The original, immutable data dump
-├── 📚 docs/                             <- Project documentation (using mkdocs)
-├── 🐳 Dockerfile                        <- Docker configuration for reproducability
-├── 👩‍⚖️ LICENSE                           <- Open-source license if one is chosen
-├── 📋 logs/                             <- Preconfigured logging directory for
-├── 👷‍♂️ Makefile                          <- Makefile with convenience commands (PyPi publishing, formatting, testing, and more)
-├── 🚀 Taskfile.yml                      <- Modern alternative to Makefile w/ same functionality
-├── 📁 notebooks/                        <- Jupyter notebooks
-│   ├── 📓 01_name_example.ipynb
-│   └── 📰 README.md
-├── 🗑️ out/
-│   ├── 📁 features                      <- Extracted Features
-│   ├── 📁 models                        <- Trained and serialized models
-│   └── 📚 reports                       <- Generated analysis
-│       └── 📊 figures                   <- Generated graphics and figures
-├── ⚙️ pyproject.toml                    <- Project configuration file w/ carefully selected dependency stacks
-├── 📰 README.md                         <- The top-level README
-├── 🔒 secrets/                          <- Ignored project-level secrets directory to keep API keys and SSH keys safe and separate from your system (no setting up a new SSH-key in ~/.ssh for every project)
-│   └── ⚙️ schema                        <- Clearly outline expected variables
-│       ├── ⚙️ example.env
-│       └── 🔑 ssh
-│           ├── ⚙️ example.config.ssh
-│           ├── 🔑 example.something.key
-│           └── 🔑 example.something.pub
-└── 🚰 '{{ cookiecutter.module_name }}'  <- Easily publishable source code
-    ├── ⚙️ config.py                     <- Store useful variables and configuration (Preset)
-    ├── 🐍 dataset.py                    <- Scripts to download or generate data
-    ├── 🐍 features.py                   <- Code to create features for modeling
-    ├── 📁 modeling
-    │   ├── 🐍 __init__.py
-    │   ├── 🐍 predict.py               <- Code to run model inference with trained models
-    │   └── 🐍 train.py                 <- Code to train models
-    └── 🐍 plots.py                     <- Code to create visualizations
-
+├── ⚙️ .cursor/rules/           <- Cursor rules (*.mdc), including Ansible best practices
+├── ⚡ .github/workflows/       <- CI (lint, Molecule), Ansible playbook workflow
+├── 📁 defaults/                <- Role defaults (main.yml: *_enabled, mount_nfs_entries, etc.)
+├── 📁 handlers/                <- Role handlers
+├── 📁 meta/                    <- Role metadata, dependencies
+├── 📁 molecule/                <- Molecule scenario (e.g. default with converge.yml)
+├── 📁 playbooks/               <- Playbooks (workstation.yml runs the role)
+├── 📁 tasks/                   <- Role task files (workstation.yml imports them by category)
+│   ├── README.md               <- Task layout and categories
+│   ├── main.yml                <- Entry: imports workstation.yml when workstation_enabled
+│   ├── workstation.yml         <- Main task list (sections 1–12)
+│   ├── nodejs.yml, git.yml, python.yml, container.yml, ai_tools.yml, ...
+│   ├── mount.yml, keepass.yml, build_tools.yml, storage_disk.yml
+│   ├── system_remove.yml, system_tuning.yml
+│   └── ...
+├── 📁 templates/               <- Jinja2 templates (if any)
+├── 📁 vars/                    <- Role vars (if any)
+├── 📄 .ansible-lint             <- ansible-lint config
+├── 📄 .pre-commit-config.yaml   <- Hooks: ansible-lint, yamllint, commitlint, etc.
+├── 📄 .yamllint                 <- yamllint config (2-space indent, truthy)
+├── 📄 requirements.yml          <- Galaxy collections/roles (optional)
+└── 📄 README.md, Makefile, ...
 ```
-{% endraw %}
 
+</details>
 
-## Style
+## General best practices
 
-For general style, you should adhere to the following rules:
-
-{# Data Science / Deep Learning #}
-{# TODO: Have the style be selected based on the chosen type of project. #}
-{# Adapted from https://cursor.directory/deep-learning-developer-python-cursor-rules #}
-
-```
-You are an expert in deep learning with PyTorch and Python, using the most up-to-date and powerful libraries.
-
-General best pratices:
 - Always look for existing code to iterate on instead of creating new code.
-- Do not drastically change the patterns before trying to iterate on existing patterns.
-- Always prefer simple solutions
-- Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code and functionality
-- You are careful to only make changes that are requested or you are confident are well understood and related to the change being requested
-- When fixing an issue or bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. And if you finally do this, make sure to remove the old implementation afterwards so we don't have duplicate logic.
-- Keep the codebase very clean and organized
-- Avoid writing scripts in files if possible, especially if the script is likely only to be run once
-- Avoid having files over 200-300 lines of code. Refactor at that point.
-- Never overwrite my .env file without first asking and confirming
-- Focus on the areas of code relevant to the task
-- Do not touch code that is unrelated to the task
-- Write thorough tests for all major functionality
-- Avoid making major changes to the patterns and architecture of how a feature works, after it has shown to work well, unless explicitly instructed
-- Always think about what other methods and areas of code might be affected by code changes
+- Do not drastically change patterns before trying to iterate on existing patterns.
+- Always prefer simple solutions.
+- Avoid duplication of code whenever possible; check for other areas of the codebase that might already have similar code and functionality.
+- Only make changes that are requested or that you are confident are well understood and related to the change being requested.
+- When fixing an issue or bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. If you do introduce something new, remove the old implementation afterwards so we don't have duplicate logic.
+- Keep the codebase very clean and organized.
+- Avoid writing scripts in files when possible, especially if the script is likely only to be run once.
+- Avoid having files over 200–300 lines of code; refactor at that point.
+- Never overwrite `.env` without first asking and confirming.
+- Focus on the areas of code relevant to the task; do not touch code that is unrelated to the task.
+- Write thorough tests for all major functionality.
+- Avoid making major changes to the patterns and architecture of how a feature works after it has shown to work well, unless explicitly instructed.
+- Always think about what other methods and areas of code might be affected by code changes.
+- Prefer iterating on existing code and patterns instead of introducing new ones.
+- Avoid duplication; reuse defaults/vars and shared task patterns (see `tasks/README.md` for categories).
+- Prefer simple solutions and the `apt` module with `name`/`state`/`loop` on Debian/Ubuntu.
+- Only change what’s requested or clearly related; don’t touch unrelated tasks or files.
+- When fixing a bug, exhaust existing patterns before adding new ones; if you add something new, remove the old approach so there’s no duplicate logic.
+- Keep tasks and playbooks clean and organized; avoid files growing beyond ~200–300 lines (split into more task files if needed).
+- Do not overwrite `.env` or sensitive config without explicit confirmation.
+- Ansible code must pass **ansible-lint** and **yamllint** (enforced by `.pre-commit-config.yaml`); see rule **134_ansible-best-practices.mdc** for details.
 
-Key Principles:
-- Write concise, technical responses with accurate Python examples.
-- Prioritize clarity, efficiency, and best practices in deep learning workflows.
-- Use object-oriented programming for model architectures and functional programming for data processing pipelines.
-- Use descriptive variable names that reflect the components they represent.
-- Use type annotations wherever available.
-- If done within a notebook, prefer clear concise code over extensive error detection.
-- If done within a python module, prefer reproducability and consistency, recommending PyTests as Needed
+## Role and playbook usage
 
-Deep Learning and Model Development:
-- Use PyTorch, Lightning, RayTune, and WandB as the primary framework for deep learning tasks.
-- Implement custom nn.Module classes for model architectures.
-- Utilize PyTorch's autograd for automatic differentiation.
-- Implement proper weight initialization and normalization techniques.
-- Use appropriate loss functions and optimization algorithms.
+- **Entry point**: `playbooks/workstation.yml` runs the role with `role: ../` and overrides (e.g. `dash_enabled: false`, `apache_create_vhosts: false`). Run with: `ansible-playbook playbooks/workstation.yml -i localhost, --connection=local` (use `-e` or a vars file to set `*_enabled` as needed).
+- **Task layout**: `tasks/workstation.yml` is organized by category (system base, editor, desktop, storage, development, cloud, tuning, etc.). New tasks should go in the right category file or a new file imported from `workstation.yml`.
+- **Defaults**: Toggles and lists live in `defaults/main.yml` (e.g. `mount_enabled`, `mount_nfs_entries`, `nodejs_enabled`, `ai_tools_enabled`). Prefer adding or tuning variables there instead of hardcoding in tasks.
+- **NFS mounts**: Mount points and options are defined in `defaults/main.yml` (`mount_nfs_entries`, `mount_nfs_opts`) and applied in `tasks/mount.yml`.
 
-Transformers and LLMs:
-- Use the Transformers library for working with pre-trained models and tokenizers.
-- Implement attention mechanisms and positional encodings correctly.
-- Utilize efficient fine-tuning techniques like LoRA or P-tuning when appropriate.
-- Implement proper tokenization and sequence handling for text data.
+## Quality and tooling
 
-Model Training and Evaluation:
-- Implement efficient data loading using PyTorch's DataLoader.
-- Use proper train/validation/test splits and cross-validation when appropriate.
-- Implement early stopping and learning rate scheduling.
-- Use appropriate evaluation metrics for the specific task.
-- Implement gradient clipping and proper handling of NaN/Inf values.
+- **ansible-lint** and **yamllint** run via pre-commit; fix any reported issues before committing.
+- Use `pre-commit run --all-files` (or `pre-commit run ansible-lint --all-files` / `pre-commit run yamllint --all-files`) to validate.
+- Follow the conventions in **134_ansible-best-practices.mdc** (naming, `loop` vs `with_items`, `ansible_os_family`, FQCN when required, idempotency).
 
-Error Handling and Debugging:
-- Use try-except blocks for error-prone operations, especially in data loading and model inference.
-- Implement proper logging for training progress and errors.
-- Use PyTorch's built-in debugging tools like autograd.detect_anomaly() when necessary.
-
-Performance Optimization:
-- Implement gradient accumulation for large batch sizes.
-- Use mixed precision training with torch.cuda.amp when appropriate.
-- Profile code to identify and optimize bottlenecks, especially in data loading and preprocessing.
-
-Key Conventions:
-1. Begin projects with clear problem definition and dataset analysis.
-2. Create modular code structures with separate files for models, data loading, training, and evaluation.
-3. Use configuration files (e.g., YAML) for hyperparameters and model settings.
-4. Implement proper experiment tracking and model checkpointing.
-5. Use version control (e.g., git) for tracking changes in code and configurations.
-
-Refer to the official documentation of PyTorch, Transformers, and Streamlit for best practices and up-to-date APIs.
-```
-
-### Additional Styling Notes
-1. Add typing wherever possible
-2. Add trailing commas (COM812)
-3. Avoid generic variable name df for dataframes (PD901)
-4. Prefer `Path.open()` over `open()` (PTH123)
+When editing tasks, playbooks, or defaults, keep behavior consistent with existing categories and variable naming; preserve idempotency and avoid breaking existing `*_enabled` toggles.

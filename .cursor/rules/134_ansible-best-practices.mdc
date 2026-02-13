@@ -1,0 +1,40 @@
+---
+description: Ansible best practices; ansible-lint and yamllint enforced via pre-commit
+globs: "**/tasks/**/*.yml,**/playbooks/**/*.yml,**/defaults/**/*.yml,**/handlers/**/*.yml,**/meta/**/*.yml,**/vars/**/*.yml"
+alwaysApply: false
+---
+
+# Ansible Best Practices
+
+All Ansible code must satisfy **ansible-lint** and **yamllint**. Both run automatically via **pre-commit** (see `.pre-commit-config.yaml`). Fix any reported issues before committing.
+
+## Pre-commit and configs
+
+- **ansible-lint**: config in `.ansible-lint`; hook runs on `*.yaml` / `*.yml` (with documented excludes).
+- **yamllint**: config in `.yamllint` (extends `relaxed`, 2-space indent, truthy rules); hook uses `--format parsable --strict`.
+- Run all hooks: `pre-commit run --all-files`. Run only Ansible/YAML: `pre-commit run ansible-lint --all-files` and `pre-commit run yamllint --all-files`.
+
+## Ansible style and structure
+
+- Use the **`apt`** module with `name` and `state` (and `loop`) instead of `action: "{{ ansible_pkg_mgr }}..."` on Debian/Ubuntu.
+- Prefer **`loop`** over **`with_items`**.
+- Use **`ansible_os_family == 'Debian'`** in `when` for Debian/Ubuntu instead of repeating long distribution checks.
+- Name tasks clearly: **`category | Short description`** (e.g. `git | Install SCM packages`).
+- Use **FQCN** when required by ansible-lint (e.g. `ansible.builtin.apt`, `community.general.npm`).
+- Keep tasks idempotent; avoid `command`/`shell` when a module exists (e.g. use `lineinfile` or `template` instead of `sed`).
+- Put repeated conditionals or list data in **defaults** or **vars** and reference them (e.g. `mount_nfs_entries`).
+
+## YAML format (yamllint)
+
+- **Indent with 2 spaces**; no tabs.
+- **Truthy**: use `true`/`false` (or allowed values in `.yamllint`), not `yes`/`no` for booleans in YAML.
+- No trailing spaces; single newline at end of file (pre-commit hooks enforce this).
+
+## Quick checks before commit
+
+```bash
+pre-commit run ansible-lint --all-files
+pre-commit run yamllint --all-files
+```
+
+If pre-commit changes files (e.g. trailing whitespace), re-add and re-commit.
