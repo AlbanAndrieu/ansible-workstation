@@ -4,7 +4,7 @@
 
 # See https://wenchaojames.wordpress.com/2013/01/03/convert-video-format-mts-to-mp4-in-ubuntu/
 # - name: webcam | Install mts to mp4 converter tools
-#   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+#   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
 #   become: true
 #   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 #   tags: package
@@ -12,7 +12,7 @@
 #     - libav-tools #avconv -i input.mts -qscale 1 -strict experimental output.mp4
 
 - name: webcam | Install webcam tools (1)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and webcam_enabled
   tags: package
@@ -27,7 +27,7 @@
     - motion
 
 - name: webcam | Install webcam tools (2)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and webcam_enabled
   tags: package
@@ -35,13 +35,13 @@
     - camorama
 
 - name: video | Add repo for gstreamer packages
-  apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state|default('present') }}
+  ansible.builtin.apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04'] and gstreamer_enabled
   tags: gstreamer_setup
 
 - name: video | Install gstreamer packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
   tags: gstreamer_setup
@@ -49,7 +49,7 @@
     - gstreamer0.10-ffmpeg
 
 - name: webcam | Install webcam tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gstreamer_enabled
   tags: gstreamer_setup
@@ -60,7 +60,7 @@
     - gstreamer0.10-plugins-ugly
 
 - name: webcam | Install webcam tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and gstreamer_enabled
   tags: gstreamer_setup
@@ -72,7 +72,7 @@
 
 # See https://www.freeyourdesktop.com/2018/07/howdy-unlock-your-desktop-with-face-recognition/
 - name: webcam | Install howdy tools PPA
-  apt_repository: repo='ppa:boltgolt/howdy' update_cache=yes
+  ansible.builtin.apt_repository: repo='ppa:boltgolt/howdy' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
   tags: howdy
@@ -81,7 +81,7 @@
 # sudo ln -s /usr/local/bin/pip3 /usr/bin/pip3
 
 - name: webcam | Install howdy tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and howdy_enabled
   tags: howdy

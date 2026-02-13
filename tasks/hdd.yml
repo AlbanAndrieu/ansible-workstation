@@ -1,5 +1,5 @@
 ---
-#ansible-playbook playbooks/hdd.yml -i inventory/production --limit albandrieu.albandrieu.com -vvvv
+# ansible-playbook playbooks/hdd.yml -i inventory/production --limit albandrieu.albandrieu.com -vvvv
 
 # WARNING below order is important
 
@@ -22,7 +22,7 @@
     dest: /etc/iscsi/iscsid.conf
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
 #      notify: restart iscsi
 
 #    - name: Copy isci configuration.
@@ -31,43 +31,43 @@
 #        dest: "/etc/iscsi/nodes/{{ freenas_ssh_target_global }}\:{{ freenas_ssh_target }}/{{ freenas_ssh_host }}\,{{ freenas_ssh_port }}"
 #        owner: root
 #        group: root
-#        mode: 0600
-##      notify: restart iscsi
+#        mode: '0600'
+# #      notify: restart iscsi
 # systemctl restart open-iscsi
 
 # TODO target albandri albandrieu
 
 # See https://www.tecmint.com/create-luns-using-lvm-in-iscsi-target/
-#fdisk -c /dev/sdd
-#Welcome to fdisk (util-linux 2.31.1).
-#Changes will remain in memory only, until you decide to write them.
-#Be careful before using the write command.
+# fdisk -c /dev/sdd
+# Welcome to fdisk (util-linux 2.31.1).
+# Changes will remain in memory only, until you decide to write them.
+# Be careful before using the write command.
 #
-#Device does not contain a recognized partition table.
-#Created a new DOS disklabel with disk identifier 0x06091fe8.
+# Device does not contain a recognized partition table.
+# Created a new DOS disklabel with disk identifier 0x06091fe8.
 #
-#Command (m for help): n
-#Partition type
+# Command (m for help): n
+# Partition type
 #   p   primary (0 primary, 0 extended, 4 free)
 #   e   extended (container for logical partitions)
-#Select (default p): p
-#Partition number (1-4, default 1):
-#First sector (2048-4194303, default 2048):
-#Last sector, +sectors or +size{K,M,G,T,P} (2048-4194303, default 4194303):
+# Select (default p): p
+# Partition number (1-4, default 1):
+# First sector (2048-4194303, default 2048):
+# Last sector, +sectors or +size{K,M,G,T,P} (2048-4194303, default 4194303):
 #
-#Created a new partition 1 of type 'Linux' and of size 2 GiB.
+# Created a new partition 1 of type 'Linux' and of size 2 GiB.
 #
-#Command (m for help): w
-#The partition table has been altered.
-#Calling ioctl() to re-read partition table.
-#Syncing disks.
+# Command (m for help): w
+# The partition table has been altered.
+# Calling ioctl() to re-read partition table.
+# Syncing disks.
 
-#lsblk
-#mkfs.ext4 /dev/sdd1
-#sudo mkdir /data
-#mount /dev/sdd1 /data
+# lsblk
+# mkfs.ext4 /dev/sdd1
+# sudo mkdir /data
+# mount /dev/sdd1 /data
 
-#fdisk -l /dev/sdd
+# fdisk -l /dev/sdd
 
 - name: hdd | Create vg_iscsi volume group
   command: umount /data && vgcreate vg_iscsi /dev/sdd1
@@ -75,7 +75,7 @@
   become: true
   ignore_errors: true
 
-#pvs && vgs && lvs
+# pvs && vgs && lvs
 
 - name: hdd | Create sdd1
   command: pvcreate /dev/sdd1
@@ -255,7 +255,7 @@
 # extend size of logical volume
 # lvextend --resizefs -L +6G /dev/rhel_fr1cslvcacrhel71/swap
 # lvextend --resizefs -L +17G /dev/rhel_fr1cslvcacrhel71/root
-# #lvextend -l +100%FREE /dev/rhel_fr1cslvcacrhel71/root
+# # lvextend -l +100%FREE /dev/rhel_fr1cslvcacrhel71/root
 # RedHat 6
 # lvextend --resizefs -L +6G /dev/VolGroup00/usrvol
 
@@ -263,7 +263,7 @@
 # Do not reboot the server if entry in wrong in fstab you will have IS team to get console on booting
 
 - name: hdd | Install hdd tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'RedHat' and not ansible_distribution_major_version == '6')
   with_items:
     - system-storage-manager
@@ -271,28 +271,27 @@
   changed_when: false
 
 - name: hdd | Install hdd tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=true"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=true"
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')
   with_items:
     - gnome-disk-utility
   become: true
 
 - name: hdd | Install disk hdd tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  #  work both on ubuntu and RedHat
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  # work both on ubuntu and RedHat
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04']
   tags: package
   with_items:
     - baobab
     - filelight
   become: true
-
 # Change quota on xfs for oracle database
 # See https://help.directadmin.com/item.php?id=557
 
 # nano /etc/default/grub
 # GRUB_CMDLINE_LINUX="rd.lvm.lv=rhel_fr1cslvcacrhel71/swap rd.lvm.lv=rhel_fr1cslvcacrhel71/root rhgb quiet rootflags=uquota,pquota"
-## GRUB_CMDLINE_LINUX="rd.lvm.lv=centos_tmpvcaccent7/root rd.lvm.lv=centos_tmpvcaccent7/swap rhgb quiet"
+# # GRUB_CMDLINE_LINUX="rd.lvm.lv=centos_tmpvcaccent7/root rd.lvm.lv=centos_tmpvcaccent7/swap rhgb quiet"
 
 # cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.orig
 # grub2-mkconfig -o /boot/grub2/grub.cfg

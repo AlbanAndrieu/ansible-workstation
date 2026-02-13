@@ -1,6 +1,6 @@
 ---
 - name: skype | Install skype fixes
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and skype_enabled
   tags: skype_setup
@@ -10,8 +10,8 @@
     - sni-qt:i386
     - libjpeg62:i386
 
-#See https://www.onmsft.com/office365/how-to-get-microsoft-teams-app-on-linux-and-ubuntu
-#sudo snap install teams-for-linux
+# See https://www.onmsft.com/office365/how-to-get-microsoft-teams-app-on-linux-and-ubuntu
+# sudo snap install teams-for-linux
 - name: workstation | Install teams
   snap:
     name: teams-for-linux

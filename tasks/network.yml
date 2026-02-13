@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install debug basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and stats_enabled
   tags: package
@@ -9,7 +9,7 @@
     - yp-tools # ypcat hosts | grep ilo
 
 - name: workstation | Install network tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
@@ -29,7 +29,7 @@
 # sudo apt-get install knemo
 
 - name: workstation | Install network debuging tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:

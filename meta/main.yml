@@ -1,6 +1,6 @@
 ---
 dependencies: []
-#dependencies:
+# dependencies:
 #  - { role: albanandrieu.ansible_common }
 #  - { role: albanandrieu.ansible_dns }
 #  #  - { role: albanandrieu.ansible_hostname }

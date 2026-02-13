@@ -1,15 +1,15 @@
 ---
-#See https://forum.ubuntu-fr.org/viewtopic.php?id=6125 needed for french accent
+# See https://forum.ubuntu-fr.org/viewtopic.php?id=6125 needed for french accent
 # Typing -> Compose Key -> Right Win
 - name: workstation | Install editor gnome-tweaks
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '>=')
   with_items:
     - gnome-tweaks
 
 - name: workstation | Install editor gnome-tweaks
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '<')
   with_items:
@@ -17,7 +17,7 @@
 
 # See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
 - name: workstation | Install editor gnome extensions
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
   with_items:
@@ -33,7 +33,7 @@
   tags: package
 
 - name: workstation | Install utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
@@ -41,7 +41,7 @@
     - gnome-terminal
 
 - name: workstation | Install network tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
@@ -51,10 +51,9 @@
     - package
     - gnome
     - network
-
 #
-##gsettings set org.gnome.nautilus.preferences enable-interactive-search false
-##gsettings set org.gnome.nautilus.preferences enable-interactive-search true
+# # gsettings set org.gnome.nautilus.preferences enable-interactive-search false
+# # gsettings set org.gnome.nautilus.preferences enable-interactive-search true
 
 # See https://doc.ubuntu-fr.org/gnome-session-fallback
 #   - gnome-session-fallback

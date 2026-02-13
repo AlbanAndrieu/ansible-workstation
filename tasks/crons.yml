@@ -1,5 +1,4 @@
 ---
-
 # 5 10 * * 0 /etc/webmin/package-updates/update.pl
 # @weekly /etc/webmin/backup-config/backup.pl 158335938332630
 # @weekly /etc/webmin/backup-config/backup.pl 15833631519537
@@ -23,11 +22,11 @@
   become: true
   ansible.builtin.cron:
     name: Lynis check
-    minute: '0'
-    hour: '2'
-    day: '*'
-    month: '*'
-    weekday: '0'
+    minute: "0"
+    hour: "2"
+    day: "*"
+    month: "*"
+    weekday: "0"
     job: sudo /usr/local/lynis/lynis audit system > /var/log/cron-lynis.log 2>&1
       2>&1
   tags:
@@ -43,12 +42,13 @@
   become: true
   ansible.builtin.cron:
     name: Docker cleaning
-    minute: '0'
-    hour: '5'
-    day: '*'
-    month: '*'
-    weekday: '1'
-    job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all
+    minute: "0"
+    hour: "5"
+    day: "*"
+    month: "*"
+    weekday: "1"
+    job:
+      sudo docker system prune -a -f --volumes && sudo docker volume prune --all
       --force > /var/log/cron-docker-cleaning.log 2>&1
   tags: [cron, docker, cleaning]
 
@@ -58,12 +58,13 @@
   become: true
   ansible.builtin.cron:
     name: Clamscan check
-    minute: '0'
-    hour: '2'
-    day: '*'
-    month: '*'
-    weekday: '0'
-    job: sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k
+    minute: "0"
+    hour: "2"
+    day: "*"
+    month: "*"
+    weekday: "0"
+    job:
+      sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k
       --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs
       --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution
       --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date
@@ -76,12 +77,13 @@
   become: true
   ansible.builtin.cron:
     name: Speedtest check
-    minute: '0'
-    hour: '2'
-    day: '*'
-    month: '*'
-    weekday: '0'
-    job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
+    minute: "0"
+    hour: "2"
+    day: "*"
+    month: "*"
+    weekday: "0"
+    job:
+      sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
       2>&1
   tags: [cron, speedtest]
 
@@ -93,11 +95,11 @@
   become: true
   ansible.builtin.cron:
     name: Auditd cleaning
-    minute: '0'
-    hour: '0'
-    day: '1'
-    month: '*'
-    weekday: '*'
+    minute: "0"
+    hour: "0"
+    day: "1"
+    month: "*"
+    weekday: "*"
     job: rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log
       2>&1
   tags: [cron, auditd]
@@ -110,12 +112,13 @@
   become: true
   ansible.builtin.cron:
     name: Auditd archiving
-    minute: '0'
-    hour: '2'
-    day: '*'
-    month: '*'
-    weekday: '*'
-    job: /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-archiving.log
+    minute: "0"
+    hour: "2"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    job:
+      /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-archiving.log
       2>&1
   tags: [cron, auditd]
 
@@ -129,10 +132,10 @@
   become: true
   ansible.builtin.cron:
     name: aide check
-    minute: '0'
-    hour: '3'
-    day: '*'
-    month: '*'
-    weekday: '0'
+    minute: "0"
+    hour: "3"
+    day: "*"
+    month: "*"
+    weekday: "0"
     job: /usr/bin/aide --config=/usr/share/aide/config/aide/aide.conf --check > /var/log/cron-aide.log 2>&1
   tags: [cron, aide]

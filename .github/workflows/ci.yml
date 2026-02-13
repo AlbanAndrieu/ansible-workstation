@@ -1,6 +1,6 @@
 ---
 name: CI
-'on':
+"on":
   pull_request:
   push:
     branches:
@@ -10,10 +10,9 @@ name: CI
 
 defaults:
   run:
-    working-directory: 'alban.andrieu.workstation'
+    working-directory: "alban.andrieu.workstation"
 
 jobs:
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -21,13 +20,13 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v4
         with:
-          path: 'alban.andrieu.workstation'
+          path: "alban.andrieu.workstation"
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-          cache: 'pip'
+          python-version: "3.x"
+          cache: "pip"
           # cache-dependency-path: '**/requirements-dev.txt'
           check-latest: true
 
@@ -56,13 +55,13 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v4
         with:
-          path: 'alban.andrieu.workstation'
+          path: "alban.andrieu.workstation"
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-          cache: 'pip'
+          python-version: "3.x"
+          cache: "pip"
           # cache-dependency-path: '**/requirements-dev.txt'
           check-latest: true
 
@@ -72,8 +71,8 @@ jobs:
       - name: Run Molecule tests.
         run: molecule test
         env:
-          ANSIBLE_PYTHON_INTERPRETER: '/usr/bin/python'
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_PYTHON_INTERPRETER: "/usr/bin/python"
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
           MOLECULE_DISTRO: ${{ matrix.distro }}
           MOLECULE_PLAYBOOK: ${{ matrix.playbook }}

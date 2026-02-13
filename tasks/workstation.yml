@@ -16,7 +16,7 @@
 - name: workstation | Install apt utilities
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian' and
@@ -30,15 +30,15 @@
 - name: workstation | Install software-properties-common (for add-apt-repository)
   apt:
     name: software-properties-common
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: package
 
 - name: workstation | Install ubuntu-after-install PPA (16.04)
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "ppa:thefanclub/ubuntu-after-install"
-    state: "{{ util_repository_state|default('present') }}"
+    state: "{{ util_repository_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['16.04']
@@ -47,7 +47,7 @@
 - name: workstation | Install ubuntu-after-install
   apt:
     name: ubuntu-after-install
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian' and
@@ -57,7 +57,7 @@
 - name: workstation | Install extra base packages
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   loop:
@@ -69,18 +69,20 @@
 # 2. EDITOR
 # =============================================================================
 
-- import_tasks: editor.yml
+- name: workstation | Load editor tasks
+  ansible.builtin.import_tasks: editor.yml
 
 # =============================================================================
 # 3. DESKTOP & GUI – screenshot, gui, synergy deps, memory, desktop, time, cast
 # =============================================================================
 
-- import_tasks: screenshot.yml
+- name: workstation | Load screenshot tasks
+  ansible.builtin.import_tasks: screenshot.yml
 
 - name: workstation | Install synergy QML prerequisites
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   loop:
@@ -90,48 +92,61 @@
     - qml-module-qtquick2
   tags: package
 
-- import_tasks: health.yml
-- import_tasks: gui.yml
-- import_tasks: printing.yml
-- import_tasks: pdf.yml
-- import_tasks: docs.yml
+- name: workstation | Load health tasks
+  ansible.builtin.import_tasks: health.yml
+- name: workstation | Load gui tasks
+  ansible.builtin.import_tasks: gui.yml
+- name: workstation | Load printing tasks
+  ansible.builtin.import_tasks: printing.yml
+- name: workstation | Load pdf tasks
+  ansible.builtin.import_tasks: pdf.yml
+- name: workstation | Load docs tasks
+  ansible.builtin.import_tasks: docs.yml
 
 - name: workstation | Install memory utilities (edac-utils)
   apt:
     name: edac-utils
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: package
 
-- import_tasks: asdf.yml
-- import_tasks: desktop.yml
-- import_tasks: time.yml
-- import_tasks: cast.yml
+- name: workstation | Load asdf tasks
+  ansible.builtin.import_tasks: asdf.yml
+- name: workstation | Load desktop tasks
+  ansible.builtin.import_tasks: desktop.yml
+- name: workstation | Load time tasks
+  ansible.builtin.import_tasks: time.yml
+- name: workstation | Load cast tasks
+  ansible.builtin.import_tasks: cast.yml
 
 # =============================================================================
 # 4. STORAGE – disk, recovery, LVM, mount points
 # =============================================================================
 
-- import_tasks: storage_disk.yml
+- name: workstation | Load storage_disk tasks
+  ansible.builtin.import_tasks: storage_disk.yml
 
-- import_tasks: brew.yml
-- import_tasks: git.yml
+- name: workstation | Load brew tasks
+  ansible.builtin.import_tasks: brew.yml
+- name: workstation | Load git tasks
+  ansible.builtin.import_tasks: git.yml
 
 # =============================================================================
 # 5. BUILD TOOLS – gnuplot, scons, ant, ubuntu-make
 # =============================================================================
 
-- import_tasks: build_tools.yml
+- name: workstation | Load build_tools tasks
+  ansible.builtin.import_tasks: build_tools.yml
 
 # =============================================================================
 # 6. CLOUD & SHARING – AWS, Samba
 # =============================================================================
 
 - name: workstation | Add AWS tools PPA (16.04)
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "ppa:awstools-dev/awstools"
-    state: "{{ util_repository_state|default('present') }}"
+    state: "{{ util_repository_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['16.04']
@@ -140,7 +155,7 @@
 - name: workstation | Install AWS tools
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian' and
@@ -155,7 +170,7 @@
 - name: workstation | Install Samba tools
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     smb_enabled
@@ -170,31 +185,43 @@
 # 7. COMMUNICATION & MEDIA – webcam, record, pidgin, zoom
 # =============================================================================
 
-- import_tasks: webcam.yml
-- import_tasks: cloud.yml
-- import_tasks: security.yml
-- import_tasks: record.yml
-- import_tasks: pidgin.yml
-- import_tasks: zoom.yml
+- name: workstation | Load webcam tasks
+  ansible.builtin.import_tasks: webcam.yml
+- name: workstation | Load cloud tasks
+  ansible.builtin.import_tasks: cloud.yml
+- name: workstation | Load security tasks
+  ansible.builtin.import_tasks: security.yml
+- name: workstation | Load record tasks
+  ansible.builtin.import_tasks: record.yml
+- name: workstation | Load pidgin tasks
+  ansible.builtin.import_tasks: pidgin.yml
+- name: workstation | Load zoom tasks
+  ansible.builtin.import_tasks: zoom.yml
 
 # =============================================================================
 # 8. DEVELOPMENT – Node.js, Python, dev tools, AI tools, C++, PHP
 # =============================================================================
 
-- import_tasks: perf.yml
-- import_tasks: mail.yml
+- name: workstation | Load perf tasks
+  ansible.builtin.import_tasks: perf.yml
+- name: workstation | Load mail tasks
+  ansible.builtin.import_tasks: mail.yml
 
-- import_tasks: nodejs.yml
+- name: workstation | Load nodejs tasks
+  ansible.builtin.import_tasks: nodejs.yml
 
-- import_tasks: mount.yml
+- name: workstation | Load mount tasks
+  ansible.builtin.import_tasks: mount.yml
 
-- import_tasks: keepass.yml
-- import_tasks: laptop.yml
+- name: workstation | Load keepass tasks
+  ansible.builtin.import_tasks: keepass.yml
+- name: workstation | Load laptop tasks
+  ansible.builtin.import_tasks: laptop.yml
 
 - name: workstation | Install cleaning tools (bleachbit)
   apt:
     name: bleachbit
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: cleaning
@@ -203,21 +230,26 @@
 # 9. WEB & CONTAINERS – Apache, WebDAV, Python, container runtimes
 # =============================================================================
 
-- import_tasks: apache.yml
+- name: workstation | Load apache tasks
+  ansible.builtin.import_tasks: apache.yml
 
 - name: workstation | Install WebDAV tools (Nextcloud)
   apt:
     name: davfs2
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04']
   tags: webdav
 
-- import_tasks: python.yml
-- import_tasks: plank.yml
-- import_tasks: container.yml
-- import_tasks: studio.yml
+- name: workstation | Load python tasks
+  ansible.builtin.import_tasks: python.yml
+- name: workstation | Load plank tasks
+  ansible.builtin.import_tasks: plank.yml
+- name: workstation | Load container tasks
+  ansible.builtin.import_tasks: container.yml
+- name: workstation | Load studio tasks
+  ansible.builtin.import_tasks: studio.yml
 
 # =============================================================================
 # 10. APPS & RUNTIME REQUIREMENTS – fonts, Eclipse, Wine, X11, shellcheck
@@ -226,7 +258,7 @@
 - name: workstation | Install font and Unicode tools
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04']
@@ -239,7 +271,7 @@
 - name: workstation | Install Eclipse JavaHL dependency
   apt:
     name: libsvn-java
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04']
@@ -248,7 +280,7 @@
 - name: workstation | Install Wine (legacy versions)
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['12.04', '14.04', '16.04']
@@ -260,7 +292,7 @@
 - name: workstation | Install Wine stable (17.04)
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['17.04']
@@ -272,7 +304,7 @@
 - name: workstation | Install X11 server utilities (xhost)
   apt:
     name: x11-xserver-utils
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: x11
@@ -280,7 +312,7 @@
 - name: workstation | Install shellcheck
   apt:
     name: shellcheck
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: shellcheck
@@ -289,28 +321,48 @@
 # 11. SYSTEM TUNING & REMOVALS – grub, preload, multisystem, purge packages
 # =============================================================================
 
-- import_tasks: system_tuning.yml
-- import_tasks: screensaver.yml
-- import_tasks: system_remove.yml
+- name: workstation | Load system_tuning tasks
+  ansible.builtin.import_tasks: system_tuning.yml
+- name: workstation | Load screensaver tasks
+  ansible.builtin.import_tasks: screensaver.yml
+- name: workstation | Load system_remove tasks
+  ansible.builtin.import_tasks: system_remove.yml
 
 # =============================================================================
 # 12. NETWORK, BACKUP, MOBILE & MISC
 # =============================================================================
 
-- import_tasks: vpn.yml
-- import_tasks: network.yml
-- import_tasks: backup.yml
-- import_tasks: fun.yml
-- import_tasks: variety.yml
-- import_tasks: mobile.yml
-- import_tasks: cpp.yml
-- import_tasks: gnome.yml
-- import_tasks: qt.yml
-- import_tasks: gaming.yml
-- import_tasks: dev.yml
-- import_tasks: ai_tools.yml
-- import_tasks: debug.yml
-- import_tasks: optimization.yml
-- import_tasks: php.yml
-- import_tasks: services.yml
-- import_tasks: yubikey.yml
+- name: workstation | Load vpn tasks
+  ansible.builtin.import_tasks: vpn.yml
+- name: workstation | Load network tasks
+  ansible.builtin.import_tasks: network.yml
+- name: workstation | Load backup tasks
+  ansible.builtin.import_tasks: backup.yml
+- name: workstation | Load fun tasks
+  ansible.builtin.import_tasks: fun.yml
+- name: workstation | Load variety tasks
+  ansible.builtin.import_tasks: variety.yml
+- name: workstation | Load mobile tasks
+  ansible.builtin.import_tasks: mobile.yml
+- name: workstation | Load cpp tasks
+  ansible.builtin.import_tasks: cpp.yml
+- name: workstation | Load gnome tasks
+  ansible.builtin.import_tasks: gnome.yml
+- name: workstation | Load qt tasks
+  ansible.builtin.import_tasks: qt.yml
+- name: workstation | Load gaming tasks
+  ansible.builtin.import_tasks: gaming.yml
+- name: workstation | Load dev tasks
+  ansible.builtin.import_tasks: dev.yml
+- name: workstation | Load ai_tools tasks
+  ansible.builtin.import_tasks: ai_tools.yml
+- name: workstation | Load debug tasks
+  ansible.builtin.import_tasks: debug.yml
+- name: workstation | Load optimization tasks
+  ansible.builtin.import_tasks: optimization.yml
+- name: workstation | Load php tasks
+  ansible.builtin.import_tasks: php.yml
+- name: workstation | Load services tasks
+  ansible.builtin.import_tasks: services.yml
+- name: workstation | Load yubikey tasks
+  ansible.builtin.import_tasks: yubikey.yml

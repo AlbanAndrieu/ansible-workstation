@@ -1,10 +1,10 @@
 ---
 language: python
 python:
-#  - 2.7
-#  - 3.3
-#  - 3.4
-#  - 3.5
+  #  - 2.7
+  #  - 3.3
+  #  - 3.4
+  #  - 3.5
   - 3.6
 services:
   - docker
@@ -18,10 +18,10 @@ env:
     - DOCKER_GID=999
     - secure: MD73NCVzctbVmi2QnQtwtH/ISXN2K0alsLbixoaXl7gr3XvTB4sYB0u+KKtPV46jbeAlQqTRObPfQouPrsLsiNDYcpuN0I5bKsn3TTs4ZHIkD0I2Q9Wh3qNM2fYf9mw3ZUhvXVTEod0W7jzkVGb6kitRCJj8rioKKzvE/YdVsG4=
   matrix:
-#  - ANSIBLE_VERSION=latest
+    # - ANSIBLE_VERSION=latest
     - ANSIBLE_VERSION=2.7.2
 sudo: required
-#dist: travis_lts
+# dist: travis_lts
 dist: trusty
 branches:
   only:
@@ -52,10 +52,10 @@ script:
   # Add user jenkins to the image
   - id -a
   - getent passwd 3000 || true # 3000 not found we can use it for jenkins user
-#  - groupadd -g ${DOCKER_GID} docker && \
+  #  - groupadd -g ${DOCKER_GID} docker && \
   - sudo adduser --quiet --disabled-password --shell /bin/bash --uid ${JENKINS_UID} --gid ${DOCKER_GID} --home ${JENKINS_HOME} --gecos "Jenkins" jenkins
   # Set password for the jenkins user (you may want to alter this).
-#  - sudo echo "jenkins:jenkins1234" | sudo chpasswd
+  #  - sudo echo "jenkins:jenkins1234" | sudo chpasswd
 
   # Check syntax
   - ansible-playbook -i ./hosts --syntax-check ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
@@ -64,7 +64,7 @@ script:
   # - molecule test
 
   # First run
-  #- travis_wait 30
+  # - travis_wait 30
   - ansible-playbook -i ./hosts --connection=local -vvvv ./workstation.yml -e "python_versions=[2.7, 3.5]" -e "docker_gid=${DOCKER_GID}" -e "jenkins_id=${JENKINS_UID}"
 
 notifications:
@@ -72,5 +72,5 @@ notifications:
   email:
     recipients:
       - alban.andrieu@nabla.mobi
-    on_success: [always|never|change]         # default: change
-    on_failure: [always|never|change]         # default: always
+    on_success: [always|never|change] # default: change
+    on_failure: [always|never|change] # default: always

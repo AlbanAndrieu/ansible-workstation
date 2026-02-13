@@ -1,6 +1,6 @@
 ---
-#http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
-#Uninstall default black screensaver
+# http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
+# Uninstall default black screensaver
 - name: workstation | Uninstall default black screensaver
   apt: >
     pkg={{ item }}
@@ -14,7 +14,7 @@
     - gnome-screensaver
 
 - name: workstation | Install screensaver
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
   tags: package
@@ -22,6 +22,5 @@
     - xscreensaver
     - xscreensaver-data-extra
     - xscreensaver-gl-extra
-
 # Test it with xscreensaver-demo
 # Change to XMatrix

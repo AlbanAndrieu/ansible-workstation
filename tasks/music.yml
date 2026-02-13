@@ -1,5 +1,4 @@
 ---
-
 # TODO below is making failing teams-for-linux
 # - name: music | Create a link to music
 #   file:
@@ -12,7 +11,7 @@
 #   tags: eclipse_setup
 
 - name: workstation | Install minidlna tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   with_items:

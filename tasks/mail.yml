@@ -1,8 +1,9 @@
 ---
 - name: workstation | Install mailutils
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     mail_enabled
   tags: package
   with_items: [mailutils]

@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install eyes tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version('19.10', '<='))
   tags: package
   with_items:
@@ -9,27 +9,27 @@
   become: true
   ignore_errors: true
 
-#https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
+# https://askubuntu.com/questions/598195/how-to-add-a-script-to-startup-applications-from-the-command-line
 - name: workstation | Configure redshift startup launcher from command line
   template: src=redshift-gtk.desktop.j2 dest={{ home }}/.config/autostart/redshift-gtk.desktop mode=0755
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: configure
 
-#Fix geoclue location
-#sudo apt-get install geoclue-2.0
-#https://github.com/jonls/redshift/issues/445
-#Settings > Privacy > Location Services
+# Fix geoclue location
+# sudo apt-get install geoclue-2.0
+# https://github.com/jonls/redshift/issues/445
+# Settings > Privacy > Location Services
 
-#info redshift
+# info redshift
 
-#- name: workstation | Make sure universe is enabled for eyes applet
+# - name: workstation | Make sure universe is enabled for eyes applet
 #  apt_repository: repo="deb http://cz.archive.ubuntu.com/ubuntu {{ansible_lsb.codename}} main universe" state=present update_cache=yes
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: workstation | Install eyes applet tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plasma_enabled
   tags: package
   with_items:
@@ -37,8 +37,8 @@
   become: true
   ignore_errors: true
 
-#lightdm crash
-#- name: redshift | Autostart redshift before logging in (LightDM) | Update client
+# lightdm crash
+# - name: redshift | Autostart redshift before logging in (LightDM) | Update client
 #  lineinfile:
 #    dest=/etc/lightdm/lightdm.conf
 #    line="greeter-setup-script=/usr/bin/redshift {{ redshift_options }}"
@@ -49,7 +49,7 @@
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: workstation | Install air quality tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -59,7 +59,7 @@
 
 # See https://computingforgeeks.com/install-use-safeeyes-ubuntu-fedora-arch-debian/#:~:text=Safe%20Eyes%20is%20a%20Free,long%20hours%20on%20a%20computer.
 - name: workstation | Install eyes quality tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:

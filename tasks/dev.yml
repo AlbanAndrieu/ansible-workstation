@@ -18,7 +18,7 @@
   tags: package
 
 - name: workstation | Install bash tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -28,7 +28,7 @@
     - sysvbanner
 
 - name: workstation | Install direnv bash tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -48,7 +48,7 @@
 
 # See https://skofgar.ch/dev/2020/08/how-to-quickly-replace-environment-variables-in-a-file/
 - name: workstation | Install bash envsubst tool
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -58,7 +58,7 @@
     - envsubst
 
 - name: workstation | Install debian packaging tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
@@ -66,7 +66,7 @@
     - ubuntu-dev-tools # reverse-depends -b scons
 
 - name: workstation | Install utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -101,7 +101,7 @@
     - package
 
 - name: workstation | Install search utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -112,7 +112,7 @@
     - package
 
 - name: workstation | Install utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -164,7 +164,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
 
 - name: workstation | Install python utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:

@@ -6,27 +6,26 @@
   tags: configure
 
 - name: workstation | Add repo for plank packages
-  apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state|default('present') }}
+  ansible.builtin.apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
   tags: plank
 
 - name: workstation | Install plank
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
   tags: plank
   with_items:
     - plank
-
-#- name: workstation | Add repo for plank themes
-#  apt_repository: repo="ppa:noobslab/apps" state={{ util_repository_state|default('present') }}
+# - name: workstation | Add repo for plank themes
+#  apt_repository: repo="ppa:noobslab/apps" state={{ util_repository_state | default('present') }}
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
 #  tags: plank
 #
-#- name: workstation | Install plank themes
-#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+# - name: workstation | Install plank themes
+#  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=yes"
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
 #  tags: plank

@@ -80,7 +80,7 @@
       - albandrieu
 
 - name: workstation | Apply configuration
-  hosts: localhost #, albandrieu, workstation
+  hosts: localhost # , albandrieu, workstation
   become: true
   # remote_user: albandrieu
   gather_facts: false

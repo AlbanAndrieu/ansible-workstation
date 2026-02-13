@@ -5,7 +5,7 @@
 - name: container | Install Docker host tools
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04'] and
@@ -18,7 +18,7 @@
 - name: container | Install ubuntu-scap prerequisites
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04'] and
@@ -31,7 +31,7 @@
 - name: container | Install Docker requirements (cgroups, apparmor)
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04', '14.04']
@@ -43,7 +43,7 @@
 - name: container | Install Docker credential helpers
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04', '14.04']
@@ -55,7 +55,7 @@
 - name: container | Install Podman
   apt:
     name: podman
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     podman_enabled

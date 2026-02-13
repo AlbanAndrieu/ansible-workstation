@@ -12,9 +12,9 @@
   tags: nodejs
 
 - name: nodejs | Add Node.js PPA
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "ppa:chris-lea/node.js"
-    state: "{{ util_repository_state|default('present') }}"
+    state: "{{ util_repository_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     nodejs_enabled
@@ -33,7 +33,7 @@
 - name: nodejs | Install karma tools
   apt:
     name: karma-tools
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     nodejs_enabled

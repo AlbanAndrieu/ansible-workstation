@@ -6,10 +6,15 @@ After=network.target
 Type=simple
 User=albandrieu
 # source ~/litellm-venv/bin/activate
-WorkingDirectory=/home/albandrieu/litellm-venv
-ExecStart=/home/albandrieu/litellm-venv/bin/litellm \
-    --config /home/albandrieu/litellm_config.yaml \
-    --port 4100
+# prisma generate --schema ~/litellm-venv/lib/python3.12/site-packages/litellm/proxy/schema.prisma
+# EnvironmentFile=/home/albandrieu/.litellm/.env
+# WorkingDirectory=/home/albandrieu/litellm-venv
+# ExecStart=/home/albandrieu/litellm-venv/bin/litellm \
+#     --config /home/albandrieu/.litellm/litellm_config.yaml \
+#     --port 4100
+WorkingDirectory=/home/albandrieu/w/nabla-compose/litellm
+ExecStart=docker-compose up -d
+    
 Restart=always
 RestartSec=10
 

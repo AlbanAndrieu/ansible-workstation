@@ -2,9 +2,9 @@
 # System tuning: grub, preload, ureadahead, perl-doc, galternatives, multisystem.
 
 - name: system_tuning | Add Grub Customizer PPA
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "ppa:danielrichter2007/grub-customizer"
-    state: "{{ util_repository_state|default('present') }}"
+    state: "{{ util_repository_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['18.04', '18.10'] and
@@ -14,7 +14,7 @@
 - name: system_tuning | Install Grub Customizer
   apt:
     name: grub-customizer
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian' and
@@ -25,7 +25,7 @@
 - name: system_tuning | Install preload
   apt:
     name: preload
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04', '14.04']
@@ -34,7 +34,7 @@
 - name: system_tuning | Install ureadahead
   apt:
     name: ureadahead
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['19.04', '19.10']
@@ -43,7 +43,7 @@
 - name: system_tuning | Install perl-doc
   apt:
     name: perl-doc
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04', '14.04']
@@ -52,14 +52,14 @@
 - name: system_tuning | Install galternatives
   apt:
     name: galternatives
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04', '14.04']
   tags: package
 
 - name: system_tuning | Add multisystem repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb http://liveusb.info/multisystem/depot all main"
     state: present
   become: true
@@ -70,7 +70,7 @@
 - name: system_tuning | Add multisystem repository key
   apt_key:
     url: http://liveusb.info/multisystem/depot/multisystem.asc
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version in ['14.04', '16.04']
@@ -79,7 +79,7 @@
 - name: system_tuning | Install multisystem
   apt:
     name: multisystem
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian' and

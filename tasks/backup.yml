@@ -1,7 +1,7 @@
 ---
 # http://stackoverflow.com/questions/36826277/ubuntu-16-04-built-in-back-up-app-deja-dup-wont-work
 - name: workstation | Fix automatic backup issue
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04', '18.04']
   tags: duplicity
@@ -9,7 +9,7 @@
     - duplicity
 
 - name: workstation | Add backup tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version in ['16.04'])
   tags: aptoncd
@@ -17,8 +17,8 @@
     - aptoncd
 #   - clonezilla
 
-#sudo pip2 install PyDrive
-#sudo pip3.7 install PyDrive
+# sudo pip2 install PyDrive
+# sudo pip3.7 install PyDrive
 
 - name: workstation | Install deja-dup tools
   snap:

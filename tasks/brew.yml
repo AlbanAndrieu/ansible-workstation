@@ -1,6 +1,6 @@
 ---
 - name: brew | Install dependencies for brew requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }} update_cache=yes"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=yes"
   with_items:
     - curl
     - file
@@ -10,7 +10,7 @@
 - name: brew | Install apt dependencies for brew requirement
   apt:
     pkg: [build-essential, python-setuptools, ruby]
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true
@@ -18,7 +18,7 @@
 - name: brew | Install yum dependencies for brew requirement
   yum:
     pkg: [irb, python-setuptools, ruby]
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'RedHat')
   become: true
@@ -57,8 +57,8 @@
   #  become_user: "{{ shell_owner }}"
   become: true
 
-#BELOW do not work when /home cannot be wrote due to nis user
-#- name: brew | Installing Homebrew
+# BELOW do not work when /home cannot be wrote due to nis user
+# - name: brew | Installing Homebrew
 #  command: '/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
 #  when: >
 #        not homebrew_check.stat.exists and
@@ -69,8 +69,8 @@
     path: "{{ homebrew_check_path }}"
   register: homebrew_check_path
 
-#test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
-#test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+# test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
+# test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 - name: brew | Fail if Homebrew bin does not exist
   fail:
@@ -78,14 +78,14 @@
   when: >
     not homebrew_check_path.stat.exists
 
-#- name: brew | Check Homebrew
+# - name: brew | Check Homebrew
 #  shell: "{{ homebrew_check_path }} list"
 #  when: >
 #        homebrew_check_path.stat.exists
 ##  become_user: "{{ shell_owner }}"
 #  become: true
 
-#export PATH=$HOME/homebrew/bin:$PATH
+# export PATH=$HOME/homebrew/bin:$PATH
 
 - name: brew | Install brew requirements
   homebrew:
@@ -153,14 +153,13 @@
   become: true
   become_user: "{{ jenkins_user }}"
 
-#brew update && brew upgrade; brew cleanup
+# brew update && brew upgrade; brew cleanup
 - name: brew | Homebrew Cleaning
   command: "{{ homebrew_check_path }} cleanup"
   when: homebrew_check_path.stat.exists
   become: true
   ignore_errors: true
-
-#- name: brew | Updating Homebrew
+# - name: brew | Updating Homebrew
 #  homebrew:
 #    update_homebrew: true
 #  when: homebrew_check.stat.exists

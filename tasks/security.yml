@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install certificates tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
@@ -10,7 +10,7 @@
     - ca-certificates
 
 - name: workstation | Install VNC
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
   tags: package
@@ -18,7 +18,7 @@
     - vnc4server
 
 - name: workstation | Install XRDP
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xrdp_enabled
   tags: package
@@ -27,7 +27,7 @@
 
 # Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
@@ -50,7 +50,7 @@
     - pydf # disk
 
 - name: workstation | Install network security basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
@@ -75,7 +75,7 @@
     - network
 
 - name: workstation | Install security basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   with_items:
@@ -109,13 +109,13 @@
 # sudo gem cleanup
 # sudo rm -rf /var/lib/gems/1.*
 - name: video | Add repo for security pentest packages
-  apt_repository: repo="ppa:backbox/four" state={{ util_repository_state|default('present') }} update_cache=yes
+  ansible.builtin.apt_repository: repo="ppa:backbox/four" state={{ util_repository_state | default('present') }} update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
 
 - name: workstation | Install security pentest tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and backbox_enabled
   tags: package
   with_items:
@@ -132,7 +132,7 @@
 # sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
 
 - name: workstation | Install security antivirus tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
   tags: package
@@ -147,7 +147,7 @@
 
 # See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
 - name: workstation | Install security encryption tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -161,7 +161,7 @@
     - gpg
 
 - name: workstation | Install security tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -173,7 +173,7 @@
     - package
 
 - name: workstation | Install security docker
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -186,7 +186,7 @@
     - vm
 
 - name: workstation | Install security lynis
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -199,7 +199,7 @@
 
 # See https://linuxhint.com/completely_wipe_hard_drive_ubuntu/
 - name: workstation | Install disk cleaning tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -227,7 +227,7 @@
 # flatpak run com.belmoussaoui.Authenticator
 
 - name: workstation | Install gpg ui tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -241,7 +241,7 @@
     - vm
 
 - name: workstation | Install keychain for passphrase tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -263,7 +263,7 @@
   ignore_errors: true
 
 - name: workstation | Install unattended upgrade
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   with_items:
@@ -283,7 +283,7 @@
     - vm
 
 - name: workstation | Install logwatch
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   with_items:
@@ -294,7 +294,7 @@
     - vm
 
 - name: workstation | Install secrets tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   with_items:
@@ -306,7 +306,7 @@
 
 # DO not install bitwarden via snap
 - name: workstation | Install key manager
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   with_items:

@@ -1,6 +1,7 @@
 ---
 # This playbook contains common plays that will be run on all nodes.
 
-- import_tasks: workstation.yml
+- name: workstation | Load main workstation tasks
+  ansible.builtin.import_tasks: workstation.yml
   when: workstation_enabled
   tags: [workstation]

@@ -1,8 +1,8 @@
 ---
-#TODO https://doc.ubuntu-fr.org/optimisation
+# TODO https://doc.ubuntu-fr.org/optimisation
 
 - name: workstation | Install kernel cleaning utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
@@ -20,13 +20,12 @@
   become: true
 
 - name: workstation | Install tuning utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
   with_items:
     - tuned
   become: true
-
 # sudo systemctl status tuned
 # tuned-adm list
 # sudo tuned-adm profile desktop-powersave

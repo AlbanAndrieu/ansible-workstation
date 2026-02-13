@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install spelling tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -13,7 +13,7 @@
     - aspell
 
 - name: workstation | Install editor tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -25,20 +25,20 @@
     #   - bat  # See run-bat.sh
     - fd-find
     - less
-    - most  # for psql
+    - most # for psql
   tags:
     - package
     - editor
 
 - name: workstation | Install editor geany tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - geany
     - geany-plugins
     - gtk2-engines-pixbuf # geany bugfix
-  ##sudo apt-cache search geany
+  # # sudo apt-cache search geany
   tags:
     - package
     - geany
@@ -50,11 +50,11 @@
   tags: geany
 
 - name: workstation | Install editor gedit tools (1)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
-    #sudo apt-cache search geany
+    # sudo apt-cache search geany
     - gedit
     - gedit-plugins
   tags:
@@ -62,34 +62,34 @@
     - gedit
 
 - name: workstation | Install editor gedit tools (2)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04']
   with_items:
     - gconf-editor
-    #gconf-editor
+    # gconf-editor
     - dconf-tools
-  #dconf-editor
+  # dconf-editor
   tags:
     - package
     - gedit
 
-#TODO
-#https://codetree.com.au/projects/imitation/
-#cd /workspace
-#mkdir imitation-1.3
-#cd imitation-1.3
-#wget https://codetree.com.au/static/content/imitation/releases/imitation-1.3.tar.gz
-#tar -xvf imitation-1.3.tar.gz
-#cd imitation
-#sudo cp ../org.gnome.gedit.plugins.imitation.gschema.xml /usr/share/glib-2.0/schemas/
-#sudo glib-compile-schemas /usr/share/glib-2.0/schemas
-#cd ..
-#sudo cp -r imitation/ /usr/lib/gedit/plugins/
-#sudo cp imitation.plugin /usr/lib/gedit/plugins/
+# TODO
+# https://codetree.com.au/projects/imitation/
+# cd /workspace
+# mkdir imitation-1.3
+# cd imitation-1.3
+# wget https://codetree.com.au/static/content/imitation/releases/imitation-1.3.tar.gz
+# tar -xvf imitation-1.3.tar.gz
+# cd imitation
+# sudo cp ../org.gnome.gedit.plugins.imitation.gschema.xml /usr/share/glib-2.0/schemas/
+# sudo glib-compile-schemas /usr/share/glib-2.0/schemas
+# cd ..
+# sudo cp -r imitation/ /usr/lib/gedit/plugins/
+# sudo cp imitation.plugin /usr/lib/gedit/plugins/
 
 - name: workstation | Install editor gedit-gmate tools PPA
-  apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
+  ansible.builtin.apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   tags:
@@ -97,7 +97,7 @@
     - gedit
 
 - name: workstation | Install editor gedit-gmate plugin
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
   with_items:
@@ -107,7 +107,7 @@
     - gedit
 
 - name: workstation | Install editor atom tools PPA
-  apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
+  ansible.builtin.apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags:
@@ -115,7 +115,7 @@
     - atom
 
 - name: workstation | Install editor atom
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   with_items:
@@ -150,8 +150,8 @@
     - package
     - bat
 
-#apm install linter
-#apm install linter-shellcheck
+# apm install linter
+# apm install linter-shellcheck
 
 # See https://www.linuxuprising.com/2019/07/how-to-change-snap-refresh-update.html
 - name: workstation | Refresh snap once a week

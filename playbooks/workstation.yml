@@ -6,8 +6,12 @@
   become: true
 
   roles:
-    - { role: ../, dash_enabled: false, webapps_enabled: false, apache_create_vhosts: false }
-
+    - {
+        role: ../,
+        dash_enabled: false,
+        webapps_enabled: false,
+        apache_create_vhosts: false,
+      }
 # - name: Increase SWAP
 #   hosts: localhost
 #   connection: local

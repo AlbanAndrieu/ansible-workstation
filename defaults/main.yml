@@ -120,11 +120,9 @@ lens_enabled: true
 ai_tools_enabled: true
 
 apache_vhosts_jenkins:
-  - {
-      servername: localhost,
-      serveradmin: alban.andrieu@free.fr,
-      documentroot: /var/www/jenkins,
-    }
+  - servername: localhost
+    serveradmin: alban.andrieu@free.fr
+    documentroot: /var/www/jenkins
 
 apache_vhosts_nabla:
   - servername: www.albandrieu.albandrieu.com

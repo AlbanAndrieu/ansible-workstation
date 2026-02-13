@@ -21,7 +21,7 @@
 
 - name: Web | Enable some required modules proxy
   command: a2enmod proxy
-  #proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
+  # proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
   become: true
   ignore_errors: true
   tags: apache
@@ -41,7 +41,7 @@
     dest: "{{ apache_conf_path }}/conf-available/remoteip.conf"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -52,7 +52,7 @@
     dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -70,7 +70,7 @@
     dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
@@ -82,18 +82,18 @@
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
-#- name: Web | Add apache awx ansible tower vhosts configuration.
-#  template:
+# - name: Web | Add apache awx ansible tower vhosts configuration.
+#   template:
 #    src: "apache-awx-httpd-7077.conf.j2"
 #    dest: "{{ apache_conf_path }}/sites-available/awx-httpd-7077.conf"
 #    owner: root
 #    group: root
-#    mode: 0644
+#    mode: '0644'
 #  become: true
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
-#- name: Web | Enable the awx ansible tower site
-#  action: command a2ensite awx-httpd-7077
+# - name: Web | Enable the awx ansible tower site
+#   action: command a2ensite awx-httpd-7077
 #  become: true
 #  ignore_errors: true
 #  tags: apache
@@ -106,22 +106,22 @@
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
-#Fix security issue :
-#X-Content-Type-Options: nosniff
-#WARNING this is a whole file overwrite
+# Fix security issue :
+# X-Content-Type-Options: nosniff
+# WARNING this is a whole file overwrite
 - name: Web | Add apache main configuration (ports.conf).
   template:
     src: ports.conf.j2
     dest: "{{ apache_conf_path }}/ports.conf"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   become: true
   #  notify: restart apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: workstation | Install awstats
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
   with_items:

@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install android tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
@@ -13,14 +13,14 @@
     - libmtp9
     - jmtpfs
 
-#lsusb
+# lsusb
 #
-#mtp-detect
-#mtp-connect
-#mtp-folders
+# mtp-detect
+# mtp-connect
+# mtp-folders
 
 - name: workstation | Install gnome sushi
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04'])
   tags: android
@@ -28,7 +28,7 @@
     - gnome-sushi
 
 - name: workstation | Install android sdk
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and android_enabled
   tags: android

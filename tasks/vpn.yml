@@ -1,6 +1,6 @@
 ---
 - name: workstation | Install Cisco AnyConnect Compatible VPN openconnect tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: vpn
@@ -13,7 +13,7 @@
 # Then Cisco AnyConnect Compatible VPN openconnect
 
 - name: workstation | Install vpc tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: vpn
@@ -22,7 +22,7 @@
     - network-manager-vpnc
 
 - name: workstation | Install package for openconnect-sso vpn
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
@@ -89,6 +89,5 @@
     - openvpn
     - vpn
     - vm
-
 # TODO sudo service networking restart
 # TODO reboot

@@ -19,7 +19,7 @@
 - name: python | Install Python utilities (flake8, netaddr)
   apt:
     name: "{{ item }}"
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian' and
     ansible_distribution_version not in ['12.04'] and
@@ -74,7 +74,7 @@
 - name: python | Install pylint
   apt:
     name: pylint
-    state: "{{ util_pkg_state|default('present') }}"
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
   when: ansible_os_family == 'Debian'
   tags: package
