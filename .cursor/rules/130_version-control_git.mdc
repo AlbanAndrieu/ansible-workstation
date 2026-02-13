@@ -1,0 +1,88 @@
+---
+description: Guidelines for using Git and GitHub in this project
+globs: *.git*
+alwaysApply: true
+---
+
+# Version Control
+
+This project uses **Git** for version control with repositories hosted on **GitHub**.
+
+## Git Best Practices
+
+- Use `git mv <src> <dst>` for renaming or moving files to preserve history
+- Commit frequently with logical, self-contained changes
+- Don't commit generated files, credentials, or large binary files
+- Use `.gitignore` to exclude unnecessary files (build artifacts, cache files, etc.)
+
+## Conventional Commits
+
+Use the [Conventional Commits](mdc:https:/www.conventionalcommits.org) specification for commit messages:
+
+When suggesting or writing commit messages (e.g. in review-changes), follow the project's Conventional Commits rules from `commitlint.config.ts` and `.opencommit-commitlint`.
+
+## Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+- **Header**: `type(scope): subject` — max **80 characters**.
+- **Body**: optional; **blank line** after subject; each line max **100 characters**.
+- **Footer**: optional; **blank line** before footer; each line max **100 characters**.
+
+## Type (required, lower-case)
+
+One of: `build`, `chore`, `ci`, `docs`, `feat`, `feature`, `fix`, ``, `refactor`, `revert`, `style`, `test`.
+
+
+Types include:
+
+- **build**: Change the build and deployment of the project, including docker, k8s, helm charts or Nomad jobs
+- **ci**: Change the SDLC, CI/CD delivery or release process
+- **feat**: New feature
+- **fix**: Bug fix
+- **docs**: Documentation only changes
+- **revert**: Revert another commit
+- **style**: Changes that don't affect code meaning
+- **perf**: Changes that affect performance
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **test**: Adding missing tests
+- **chore**: Changes to build process or auxiliary tools
+
+## Scope (optional, lower-case)
+
+e.g. component or file name. Use lower-case.
+
+## Subject (required)
+
+- **Imperative**, short description of the change.
+- **No** sentence-case, start-case, pascal-case, or upper-case.
+- **No** trailing period.
+- Not empty.
+
+## Issue references (optional)
+
+Supported prefixes: `ANDR-`, `TEST-`, `DSC-`, `NABLA-`, `JM-`.
+
+## Git Flow Model
+
+This project follows the Git Flow branching model:
+
+- **main**: Production-ready code only
+- **develop**: Integration branch for features
+- **feat/**: New functionality (branch from and merge to develop)
+- **release/**: Preparing for a release (branch from develop, merge to main and develop)
+- **hotfix/**: Urgent production fixes (branch from main, merge to main and develop)
+
+## Workflow
+
+1. Create feature branch: `git checkout -b feature/new-feature develop`
+1. Make changes and commit regularly using `cz`
+1. Push to remote: `git push -u origin feature/new-feature`
+1. Open pull request to develop branch
+1. After code review and testing, merge to develop

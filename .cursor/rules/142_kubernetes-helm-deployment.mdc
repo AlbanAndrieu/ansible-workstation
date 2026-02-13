@@ -1,0 +1,29 @@
+---
+description: Kubernetes best practices and Helm charts as the standard deployment method
+globs: applications/**/*.yaml,charts/**/*.yaml,charts/**/*.tpl,**/application.yaml
+alwaysApply: false
+---
+
+# Kubernetes & Helm Deployment
+
+## Deployment method
+
+- **Use Helm charts** as the standard way to deploy applications to Kubernetes.
+- Prefer existing project charts (e.g. `charts/generic-service`, `charts/cronjob`) over raw manifests.
+- ArgoCD Applications should reference a Helm chart path and value files; avoid pointing at raw YAML unless the workload has no suitable chart (e.g. one-off CronJobs with custom logic).
+
+## Kubernetes best practices
+
+- **Resources:** Set `requests` and `limits` (CPU/memory) on every container; avoid BestEffort QoS.
+- **Probes:** Define `livenessProbe` and `readinessProbe` (e.g. HTTP `/health`) for long-running apps.
+- **Security:** Use Pod/container `securityContext`: `runAsNonRoot`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` where possible.
+- **Secrets:** Use External Secrets Operator (or similar) with Vault; do not put secrets in ConfigMaps or in repo.
+- **Images:** Pin tags (no `:latest`); use image pull secrets for private registries.
+- **Labels:** Use consistent `app.kubernetes.io/*` labels and match selectors in Services/Deployments.
+
+## When to use raw manifests
+
+- CronJobs or Jobs with one-off/special config that don’t fit the generic cronjob chart.
+- Cluster-specific resources (e.g. Kustomize overlays) where a chart would add no value.
+
+See `.github/instructions/kubernetes-deployment-best-practices.instructions.md` for full guidance.

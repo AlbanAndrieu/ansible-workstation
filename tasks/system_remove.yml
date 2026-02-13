@@ -1,0 +1,79 @@
+---
+# Remove or purge packages not wanted on the workstation.
+
+- name: system_remove | Purge avahi-daemon
+  apt:
+    name: avahi-daemon
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian'
+  tags: package
+
+- name: system_remove | Purge whoopsie
+  apt:
+    name: whoopsie
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian'
+  tags: package
+
+- name: system_remove | Purge zeitgeist packages
+  apt:
+    name: "{{ item }}"
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian'
+  loop:
+    - zeitgeist
+    - zeitgeist-datahub
+    - rhythmbox-plugin-zeitgeist
+  tags: zeitgeist_setup
+
+- name: system_remove | Purge cinnamon (when disabled)
+  apt:
+    name: cinnamon
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian' and
+    not cinnamon_enabled
+  tags: desktop_setup
+
+- name: system_remove | Purge plasma-desktop (when disabled)
+  apt:
+    name: plasma-desktop
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian' and
+    not plasma_enabled
+  tags: desktop_setup
+
+- name: system_remove | Purge xfce (when disabled)
+  apt:
+    name: "{{ item }}"
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian' and
+    not xfce_enabled
+  loop:
+    - xfce4
+    - xfce4-goodies
+    - xubuntu-desktop
+  tags: desktop_setup
+
+- name: system_remove | Purge unused applications
+  apt:
+    name: "{{ item }}"
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian'
+  loop:
+    - modemmanager
+    - thunderbird
+  tags: package

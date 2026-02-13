@@ -1,0 +1,45 @@
+---
+# Build tools: gnuplot, scons, ant, ubuntu-make.
+# Used by SCM/development workflows.
+
+- name: build_tools | Install gnuplot (for SCM)
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    scm_enabled
+  loop:
+    - gnuplot
+    - python-gnuplot
+  tags: package
+
+- name: build_tools | Install scons
+  apt:
+    name: scons
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    scons_enabled
+  tags: package
+
+- name: build_tools | Install Java ant
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian'
+  loop:
+    - ant
+    - ant-contrib
+  tags: package
+
+- name: build_tools | Install ubuntu-make
+  apt:
+    name: ubuntu-make
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version not in ['12.04', '13.04', '14.04', '16.04'] and
+    make_enabled
+  tags: package

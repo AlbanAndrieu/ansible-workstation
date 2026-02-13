@@ -65,6 +65,26 @@ webapps_enabled: true
 pidgin_enabled: false
 nodejs_enabled: false
 mount_enabled: false
+
+# NFS mounts (nabla server). Options match /etc/fstab: nfs4 defaults,user,auto,noatime,bg,rsize=16384,wsize=16384
+mount_nfs_opts: "defaults,user,auto,noatime,bg,rsize=16384,wsize=16384"
+mount_nfs_entries:
+  - { path: /media/ftp, src: nabla:/mnt/cpool/ftp }
+  - { path: /media/music, src: nabla:/mnt/cpool/media/music }
+  - { path: /media/photo, src: nabla:/mnt/cpool/media/photo }
+  - { path: /media/archive, src: nabla:/mnt/cpool/archive }
+  - { path: /media/backup, src: nabla:/mnt/cpool/backup }
+  - { path: /media/jenkins, src: nabla:/mnt/cpool/jenkins }
+  - { path: /workspace-backup, src: nabla:/mnt/cpool/workspace }
+  - { path: /media/bitcoin, src: nabla:/mnt/cpool/bitcoin }
+  - { path: /media/www, src: nabla:/mnt/cpool/www }
+  - { path: /media/bower, src: nabla:/mnt/cpool/bower }
+  - { path: /media/nexus, src: nabla:/mnt/cpool/nexus }
+  - { path: /media/nexus3, src: nabla:/mnt/cpool/nexus3 }
+  - { path: /media/home/albandrieu, src: nabla:/mnt/cpool/home/albandrieu }
+  - { path: /media/share, src: nabla:/mnt/cpool/share }
+  - { path: /media/model, src: nabla:/mnt/cpool/model }
+  - { path: /media/bababou, src: nabla:/mnt/cpool/bababou }
 vnc_enabled: false
 xrdp_enabled: false
 synergy_enabled: true
@@ -97,6 +117,7 @@ pfsense_enabled: true
 netgear_enabled: true
 s6_enabled: true
 lens_enabled: true
+ai_tools_enabled: true
 
 apache_vhosts_jenkins:
   - {

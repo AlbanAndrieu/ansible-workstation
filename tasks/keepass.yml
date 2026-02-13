@@ -1,0 +1,24 @@
+---
+# KeePass2 password manager (PPA + package).
+# Controlled by: keepass2_enabled.
+
+- name: keepass | Add KeePass2 PPA
+  apt_repository:
+    repo: "ppa:jtaylor/keepass"
+    state: "{{ util_repository_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version in ['14.04', '16.04'] and
+    keepass2_enabled
+  tags: keepass2_setup
+
+- name: keepass | Install KeePass2
+  apt:
+    name: keepass2
+    state: "{{ util_pkg_state|default('present') }}"
+    update_cache: true
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version in ['14.04', '16.04'] and
+    keepass2_enabled
+  tags: keepass2_setup

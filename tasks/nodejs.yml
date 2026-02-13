@@ -1,0 +1,100 @@
+---
+# Node.js, npm, and global JS tooling (grunt, bower).
+# Requires: software-properties-common (installed in system section).
+
+- name: nodejs | Install package prerequisites for node.js
+  apt:
+    name: python-software-properties
+    state: present
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: nodejs | Add Node.js PPA
+  apt_repository:
+    repo: "ppa:chris-lea/node.js"
+    state: "{{ util_repository_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: nodejs | Install nodejs and npm
+  apt:
+    name: nodejs
+    state: present
+    update_cache: true
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: nodejs | Install karma tools
+  apt:
+    name: karma-tools
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: npm | Set npm global prefix
+  command: npm config set prefix /usr/local
+  args:
+    chdir: /usr/bin
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: npm | Verify npm prefix
+  command: npm config get prefix
+  args:
+    chdir: /usr/bin
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  changed_when: false
+  tags: nodejs
+
+- name: npm | Install grunt globally
+  npm:
+    name: grunt
+    state: present
+    global: true
+    version: "{{ grunt_version }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: npm | Install grunt-cli globally
+  npm:
+    name: grunt-cli
+    state: present
+    global: true
+    version: "{{ grunt_cli_version }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: npm | Install bower globally
+  npm:
+    name: bower
+    state: present
+    global: true
+    version: "{{ bower_version }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled
+  tags: nodejs
+
+- name: bower | Clean cache
+  command: bower cache clean
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled and
+    bower_clean_cache_enabled
+  changed_when: false
+  tags: nodejs

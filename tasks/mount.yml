@@ -1,0 +1,28 @@
+---
+# NFS4 mount points (nabla server).
+# Matches /etc/fstab: nabla:/mnt/cpool/... with defaults,user,auto,noatime,bg,rsize=16384,wsize=16384.
+# Controlled by: mount_enabled. Override mount_nfs_entries in vars if needed.
+
+- name: mount | Ensure NFS mount point directories exist
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "0755"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    mount_enabled
+  loop: "{{ mount_nfs_entries }}"
+  tags: mount
+
+- name: mount | Mount NFS4 mount points
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: nfs4
+    opts: "{{ mount_nfs_opts }}"
+    state: mounted
+  become: true
+  when: ansible_os_family == 'Debian' and
+    mount_enabled
+  loop: "{{ mount_nfs_entries }}"
+  tags: mount

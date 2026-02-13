@@ -1,0 +1,98 @@
+---
+description: AWS and EKS best practices; IAM, security, cost, networking, IRSA, node groups
+globs: *.tf,*.yaml,*.yml,*Dockerfile*,docker-compose.yml,**/deployment/**,applications/**/*.yaml,charts/**/*
+alwaysApply: false
+---
+
+# Cloud Services - AWS & EKS
+
+**Full guidance:** See `.github/instructions/aws-eks-best-practices.instructions.md` for comprehensive AWS and EKS best practices.
+
+## 01 Platform Selection
+
+- AWS is the primary cloud platform for deployments
+- Design solutions to be platform-agnostic when feasible
+- Document any AWS-specific dependencies that would affect migration
+
+## 02 Infrastructure Management
+
+- 02.01 Terraform
+
+  - Use Terraform for infrastructure-as-code (preferred)
+  - Organize modules logically with clear separation of concerns
+  - Store state files securely in remote backend
+  - Use variables and locals to improve reusability
+
+- 02.02 Configuration Management
+
+  - Use Ansible for configuration management
+  - Avoid AWS-specific tools like CloudFormation when possible
+  - Document deployment steps thoroughly
+
+## 03 Containerization
+
+- 03.01 Docker
+
+  - Implement multi-stage builds for smaller images
+  - Use specific version tags instead of 'latest'
+  - Include health checks in container definitions
+  - Follow principle of one service per container
+
+- 03.02 Orchestration
+
+  - Prefer Kubernetes over ECS when appropriate
+  - Use Helm charts for Kubernetes deployments
+  - Document all environment variables and volume mounts
+
+## 04 Security
+
+- 04.01 Authentication
+
+  - Use IAM roles with least privilege principle
+  - Implement MFA for human access
+  - Rotate access keys regularly
+
+- 04.02 Data Protection
+
+  - Encrypt data at rest and in transit
+  - Implement proper backup strategies
+  - Use Vault as secret management solutions
+
+## 05 Cost Management
+
+- 05.01 Resource Optimization
+
+  - Implement auto-scaling based on actual usage
+  - Schedule non-production resources to shut down during off-hours
+  - Use spot instances for fault-tolerant workloads
+
+- 05.02 Monitoring
+
+  - Set up billing alerts and budgets
+  - Tag resources appropriately for cost allocation
+  - Review unused resources monthly
+
+## 06 Networking
+
+- 06.01 Architecture
+
+  - Implement proper VPC design with public/private subnets
+  - Use **SD-WAN** for site-to-site and cross-datacenter connectivity; prefer **Cloudflare Magic WAN** (and Magic Transit) to connect datacenters across countries
+  - Use Transit Gateway for complex AWS-only hub-and-spoke; combine with SD-WAN for hybrid/multi-cloud
+  - Implement proper security groups and NACLs
+
+- 06.02 Connectivity
+
+  - Configure proper DNS resolution
+  - Document IP address allocations
+  - Use service discovery when appropriate
+  - For multi-site/multi-country: use Cloudflare Magic WAN as the preferred backbone between datacenters and cloud
+
+## 07 Amazon EKS (summary)
+
+- Use **IRSA** (IAM Roles for Service Accounts) for pod-level AWS access; avoid broad node IAM roles.
+- Prefer **Managed Node Groups**; use Karpenter or cluster-autoscaler for scaling; consider Spot for fault-tolerant workloads.
+- Harden pods: **Pod Security Standards**, non-root, drop capabilities; restrict IMDS where not needed.
+- Use **AWS Load Balancer Controller** for ALB/NLB; prefer internal LBs for in-VPC traffic.
+- Pin **EKS and add-on versions** in IaC; plan upgrades and test in non-prod first.
+- For full EKS and AWS guidance, use `.github/instructions/aws-eks-best-practices.instructions.md`.

@@ -1,63 +1,80 @@
 ---
-- name: python | Install pip python package
+# Python 2/3, pip, and Ansible-related tooling.
+# Controlled by: python_enabled, ansigenome_enabled.
+
+- name: python | Install Python dev and pip packages
   apt:
-    pkg: "{{ item }}"
-    #    state: latest
+    name: "{{ item }}"
+    state: present
     update_cache: true
     cache_valid_time: 600
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled
-  with_items:
+  become: true
+  when: ansible_os_family == 'Debian' and
+    python_enabled
+  loop:
     - python-dev
     - python-pip
-  become: true
-
-- name: python | Install python utilities tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and python_enabled
   tags: package
-  with_items:
-    #   flake8 .
+
+- name: python | Install Python utilities (flake8, netaddr)
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version not in ['12.04'] and
+    python_enabled
+  loop:
     - python-flake8
     - python-netaddr
-  become: true
+  tags: package
 
-- name: python | Install Ansible documentation generator prerequisite
-  pip: name={{ item }} executable=pip2
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
+- name: python | Install ansigenome prerequisites (pip2)
+  pip:
+    name: "{{ item }}"
+    executable: pip2
+  become: true
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    ansigenome_enabled
+  loop:
     - paramiko
     - PyYAML
     - jinja2
     - httplib2
-  become: true
+  tags: package
 
-- name: python | Install Ansible documentation generator
-  pip: name={{ item }} executable=pip2
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
+- name: python | Install ansigenome (pip2)
+  pip:
+    name: "{{ item }}"
+    executable: pip2
+  become: true
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    ansigenome_enabled
+  loop:
     - setuptools
     - ansigenome
-  become: true
+  tags: package
 
-- name: python | Install Ansible tools
-  pip: name={{ item }} executable=pip2
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and python_enabled and ansigenome_enabled
-  with_items:
+- name: python | Install Ansible tools (ansible-lint, pre-commit)
+  pip:
+    name: "{{ item }}"
+    executable: pip2
+  become: true
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    ansigenome_enabled
+  loop:
     - ansible-lint
     - ansible-shell
     - pre-commit
-  become: true
+  tags: package
 
-#TODO
-#sudo pip install ansigenome
-#easy_install ansigenome
-#sudo ansigenome config
-#cd ~/env/ansible/roles
-#ansigenome scan
-
-- name: workstation | Install python requirement
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - pylint
+- name: python | Install pylint
+  apt:
+    name: pylint
+    state: "{{ util_pkg_state|default('present') }}"
   become: true
+  when: ansible_os_family == 'Debian'
+  tags: package

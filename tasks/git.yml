@@ -1,59 +1,64 @@
 ---
-#TODO move git to a role
-- name: workstation | Install SCM
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
-  tags: package
-  with_items:
-    #   - cvs
-    #   - mercurial
+# SCM: git, gitg, diff tools, myrepos, GitLab CLI.
+# Controlled by: scm_enabled.
+
+- name: git | Install SCM packages
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    scm_enabled
+  loop:
     - git
     - gitg
-  #   - gitk
-  become: true
-
-- name: workstation | Install git diff tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
   tags: package
-  with_items:
+
+- name: git | Install diff/export tools for git
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    scm_enabled
+  loop:
     - python-excelerator
     - catdoc
     - docx2txt
     - python-pdfminer
     - odt2txt
     - libimage-exiftool-perl
-  become: true
+  tags: package
 
-# See https://myrepos.branchable.com/install/
-
-- name: workstation | Install myrepos tool for git
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
-  with_items:
-    - myrepos
+- name: git | Install myrepos
+  apt:
+    name: myrepos
+    state: "{{ util_pkg_state|default('present') }}"
   become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version not in ['12.04', '14.04']
   ignore_errors: true
+  tags: package
 
-- name: workstation | Initalize myrepos
+- name: git | Initialize myrepos
   shell: for d in $(find /workspace/users/{{ jenkins_user }}{{ shell_default_version }}/ -type d -name .git); do (mr register $d/..); done
   changed_when: false
   become: true
   ignore_errors: true
 
-# See https://github.com/github/hub
-- name: brew | Install hub
+- name: brew | Install hub (GitHub CLI)
   homebrew:
-    name: [hub]
+    name: hub
     state: present
     update_homebrew: true
   ignore_errors: true
   become: true
 
-- name: workstation | Install gitlab CLI
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state|default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and scm_enabled
-  tags: package
-  with_items:
-    - glab
+- name: git | Install GitLab CLI (glab)
+  apt:
+    name: glab
+    state: "{{ util_pkg_state|default('present') }}"
   become: true
+  when: ansible_os_family == 'Debian' and
+    scm_enabled
+  tags: package

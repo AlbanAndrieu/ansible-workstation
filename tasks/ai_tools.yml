@@ -1,0 +1,77 @@
+---
+# AI-assisted dev tools: opencommit, commitlint, gitlint, mcp-cli, mcp-remote, mcp-chat
+
+- name: ai_tools | Install opencommit globally
+  npm:
+    name: opencommit
+    state: present
+    global: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools
+
+- name: ai_tools | Install commitlint and gitmoji npm packages globally
+  npm:
+    name: "{{ item }}"
+    state: present
+    global: true
+  loop:
+    - "@commitlint/cli"
+    - "@commitlint/config-conventional"
+    - "@commitlint/prompt-cli"
+    - commitlint-config-gitmoji
+    - conventional-changelog-gitmoji-config
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools
+
+- name: ai_tools | Install gitlint via pip
+  pip:
+    name: gitlint
+    state: present
+    executable: pip3
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools
+
+- name: ai_tools | Install mcp-cli with cli and dev extras via pip
+  pip:
+    name: "mcp-cli[cli,dev]"
+    state: present
+    executable: pip3
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools
+
+- name: ai_tools | Install mcp-remote globally
+  npm:
+    name: mcp-remote
+    state: present
+    global: true
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools
+
+- name: ai_tools | Install mcp-chat and mcp-server-kubernetes globally
+  npm:
+    name: "{{ item }}"
+    state: present
+    global: true
+  loop:
+    - mcp-chat
+    - mcp-server-kubernetes
+  when: ansible_os_family == 'Debian' and
+    nodejs_enabled and
+    ai_tools_enabled
+  become: true
+  tags: package, ai_tools

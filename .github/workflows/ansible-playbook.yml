@@ -1,0 +1,52 @@
+---
+name: Ansible Playbook
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  playbook:
+    name: Run workstation playbook
+    runs-on: ubuntu-24.04 # Ubuntu 24.04 LTS (Noble)
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Ansible and collections
+        run: |
+          pip install --upgrade pip
+          pip install "ansible-core>=2.15,<2.20"
+          ansible-galaxy collection install ansible.posix
+          ansible-galaxy collection install community.general
+
+      - name: Verify Ansible
+        run: ansible --version
+
+      # Runs in check mode (dry run) so the runner is not modified. Remove --check --diff to apply for real.
+      - name: Run Ansible playbook (check mode)
+        run: |
+          ansible-playbook playbooks/workstation.yml \
+            -i localhost, \
+            --connection=local \
+            --check \
+            --diff \
+            -e "workstation_enabled=true"
+        env:
+          ANSIBLE_FORCE_COLOR: "1"
+          PYTHONUNBUFFERED: "1"

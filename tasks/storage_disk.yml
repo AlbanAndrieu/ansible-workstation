@@ -1,0 +1,57 @@
+---
+# Disk, recovery, and storage management packages.
+
+- name: storage_disk | Install desktop tools (legacy versions)
+  apt:
+    name: software-center
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version in ['12.04', '14.04', '16.04']
+  tags: package
+
+- name: storage_disk | Install disk and recovery tools
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian'
+  loop:
+    - testdisk
+    - gparted
+    - usbmount
+    - remmina
+  tags: package
+
+- name: storage_disk | Install unetbootin (legacy versions)
+  apt:
+    name: unetbootin
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version is version('18.04', '<=')
+  tags: package
+
+- name: storage_disk | Install LVM/storage tools (Debian/Ubuntu 14.04, 16.04)
+  apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state|default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian' and
+    ansible_distribution_version in ['14.04', '16.04']
+  loop:
+    - system-storage-manager
+    - system-config-lvm
+  tags: package
+
+- name: storage_disk | Install LVM/storage tools (Red Hat)
+  package:
+    name: "{{ item }}"
+    state: "{{ jenkins_pkg_state|default('present') }}"
+  become: true
+  when: ansible_distribution in ['Red Hat Enterprise Linux', 'RedHat']
+  loop:
+    - system-storage-manager
+    - system-config-lvm
+  ignore_errors: true
+  tags: cpp
