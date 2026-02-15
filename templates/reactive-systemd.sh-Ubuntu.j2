@@ -1,0 +1,16 @@
+[Unit]
+Description=Reactive Resume
+After=network.target
+
+[Service]
+Type=simple
+User=albandrieu
+EnvironmentFile=/home/albandrieu/.reactive/.env
+WorkingDirectory=/home/albandrieu/w/nabla-compose/reactive
+ExecStart=docker compose up -d
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
