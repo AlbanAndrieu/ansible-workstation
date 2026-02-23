@@ -1,17 +1,26 @@
 [Unit]
-Description=OpenClaw Gateway
-After=network.target litellm.service
+Description=OpenClaw Gateway (v2026.2.1)
+After=network-online.target litellm.service
+Wants=network-online.target
 Requires=litellm.service
 
 [Service]
 Type=simple
 User=albandrieu
-WorkingDirectory=/home/albandrieu/openclaw-workdir
+WorkingDirectory=/home/albandrieu/.openclaw
 EnvironmentFile=/home/albandrieu/.openclaw/.env
-ExecStart=/home/albandrieu/.local/share/pnpm/openclaw gateway \
-    --port 18789
+ExecStart="/home/albandrieu/.local/share/mise/installs/node/25.4.0/bin/node" "/home/albandrieu/.local/share/mise/installs/node/25.4.0/lib/node_modules/openclaw/dist/index.js" gateway --port 18789
 Restart=always
 RestartSec=10
+KillMode=process
+Environment=HOME=/home/albandrieu
+Environment="PATH=/home/albanandrieu/.local/share/pnpm:/home/albandrieu/.bun/bin:/home/albanandrieu/.asdf/shims:/home/albandrieu/.nvm/current/bin:/home/albandrieu/.local/bin:/home/albandrieu/.npm-global/bin:/home/albandrieu/bin:/home/albandrieu/.fnm/current/bin:/home/albandrieu/.volta/bin:/home/albandrieu/.asdf/shims:/home/albandrieu/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+Environment=OPENCLAW_GATEWAY_PORT=18789
+# Environment=OPENCLAW_GATEWAY_TOKEN=XXX
+Environment="OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service"
+Environment=OPENCLAW_SERVICE_MARKER=openclaw
+Environment=OPENCLAW_SERVICE_KIND=gateway
+Environment=OPENCLAW_SERVICE_VERSION=2026.2.1
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

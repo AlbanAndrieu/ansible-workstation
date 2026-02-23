@@ -48,3 +48,17 @@
     - poppler-utils # for pdftotext
     - pdfarranger
     - xournal
+
+- name: workstation | Install Stirling PDF dependencies
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: "{{ util_pkg_state | default('present') }}"
+  become: true
+  when: ansible_os_family == 'Debian'
+  loop:
+    - libreoffice-writer
+    - libreoffice-calc
+    - libreoffice-impress
+    - unpaper
+    - ocrmypdf
+  tags: package
