@@ -63,12 +63,10 @@ repos:
         name: "📁 filesystem/⚙️ exec · Verify end of file"
       - id: check-executables-have-shebangs
         name: "📁 filesystem/⚙️ exec · Verify shebang preset"
-        # exclude: >
-        #   (?x)^(
-        #       .mvn/|
-        #       .venv|
-        #       .direnv|
-        #   )$
+        exclude: >
+          (?x)^(
+              templates/.*-systemd.sh-Ubuntu.j2|
+          )$
       - id: check-shebang-scripts-are-executable
         name: "📁 filesystem/⚙️ exec · Verify script permissions"
       - id: check-symlinks
