@@ -14,7 +14,7 @@
   set_fact:
     net_interface: "wlp0s20f3" # or eno1 or wlp0s20f3 or wlp2s0f3u2
     net_mac: "ac:74:b1:9e:8a:81"
-    dns_default: "172.17.0.33"
+    dns_default: "172.17.0.24"
     # dns_cloudflare: '172.64.36.1 172.64.36.2'
     # dns_opendns: '208.67.222.222 208.67.220.220'
     # dns_quad: '9.9.9.9 149.112.112.112'

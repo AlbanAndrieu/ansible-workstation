@@ -9,4 +9,4 @@ net_interface="${net_interface}"
 echo "sudo macchanger --mac=$mac_new $net_interface"
 sudo macchanger --mac=$mac_new $net_interface || true
 
-sudo ifconfig eno1
+sudo ifconfig "{{ net_interface }}"

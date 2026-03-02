@@ -62,7 +62,8 @@
   when: ansible_os_family == 'Debian'
   loop:
     - ubuntu-restricted-extras
-    - lsb-core
+    # - lsb-core
+    - lsb-release
   tags: package
 
 # =============================================================================

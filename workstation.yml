@@ -56,7 +56,7 @@
 
     - debug: msg="Hostname is {{ ansible_hostname }}"
 
-- name: workstation | Apply security configuration
+- name: workstation | Apply basic ssh security configuration
   hosts: localhost
   become: true
   gather_facts: false
@@ -70,7 +70,11 @@
     restart_ssh_enabled: false
     security_ssh_password_authentication: "no"
     security_ssh_permit_root_login: "no"
-    security_ssh_x11_forwarding: "yes"
+    security_ssh_usedns: "no"
+    security_ssh_permit_empty_password: "no"
+    security_ssh_challenge_response_auth: "no"
+    security_ssh_gss_api_authentication: "no"
+    security_ssh_x11_forwarding: "no"
     security_fail2ban_enabled: true
     # security_autoupdate_enabled: false # make yum to get stuck later
     security_ssh_allowed_users:
@@ -78,6 +82,61 @@
       - albanandrieu
     security_sudoers_passwordless:
       - albandrieu
+
+
+- name: workstation | Test sandbox
+  hosts: localhost
+  gather_facts: yes
+  #become: true
+
+  tasks:
+    - debug:
+        var: ansible_version.full
+    - debug:
+        var: ansible_en.container
+
+- name: workstation | Apply basic more advanced hardening security configuration
+  hosts: localhost
+  #become: true
+
+  collections:
+    - devsec.hardening
+
+  roles:
+    - devsec.hardening.os_hardening
+    - devsec.hardening.ssh_hardening
+
+  vars:
+    os_desktop_enable: true
+    # os_auditd_enabled: false
+    # os_pam_enabled: false
+    os_securetty_enabled: false
+    #os_security_auto_logout: 60
+    os_sysctl_enabled: false
+    sysctl_overwrite:
+      # Enable IPv4 traffic forwarding.
+      net.ipv4.ip_forward: 1
+      # Disable IPv6 traffic forwarding.
+      net.ipv6.conf.all.forwarding: 0
+    sysctl_custom_config:
+      # Mitigation of vulnerability CVE-2021-33909
+      # NOK podman images
+      kernel.unprivileged_userns_clone: 1
+      kernel.unprivileged_bpf_disabled: 0
+    #os_security_suid_sgid_system_whitelist:
+    # - '/usr/bin/ssh-agent'
+    #os_security_suid_sgid_whitelist:
+    #  -
+    os_selinux_enabled: false
+    # ssh_permit_root_login: true
+    ssh_client_hardening: false
+    ssh_server_hardening: false
+    ssh_allow_agent_forwarding: true
+    ssh_x11_forwarding: true
+    ssh_pam_support: false
+    ssh_client_password_login: true
+    ssh_banner: true
+
 
 - name: workstation | Apply configuration
   hosts: localhost # , albandrieu, workstation
@@ -93,10 +152,10 @@
   tasks:
     - name: Run tasks/debug.yml instead of 'main'
       ansible.builtin.include_role:
-        # name: alban.andrieu.workstation
         name: albanandrieu.workstation
-        # NOK name: ./
-        tasks_from: services
+        
+        # Disable nbelow tasks_from to run everythings
+        # tasks_from: services
 
       vars:
         dash_enabled: false

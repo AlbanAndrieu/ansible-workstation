@@ -21,8 +21,8 @@
     - tree
     # midnight commander
     #   - mc
-    - xdg-open # https://doc.ubuntu-fr.org/xdg-open
-    #   - bat  # See run-bat.sh
+    # - xdg-open # https://doc.ubuntu-fr.org/xdg-open
+    # - bat  # See run-bat.sh
     - fd-find
     - less
     - most # for psql
@@ -38,7 +38,7 @@
     - geany
     - geany-plugins
     - gtk2-engines-pixbuf # geany bugfix
-  # # sudo apt-cache search geany
+  # sudo apt-cache search geany
   tags:
     - package
     - geany
@@ -46,15 +46,14 @@
 - name: workstation | Install editor geany configuration
   template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and geany_enabled
   tags: geany
 
 - name: workstation | Install editor gedit tools (1)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and gedit_enabled
   with_items:
-    # sudo apt-cache search geany
     - gedit
     - gedit-plugins
   tags:
@@ -64,12 +63,10 @@
 - name: workstation | Install editor gedit tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04'] and gedit_enabled
   with_items:
     - gconf-editor
-    # gconf-editor
     - dconf-tools
-  # dconf-editor
   tags:
     - package
     - gedit
@@ -91,7 +88,7 @@
 - name: workstation | Install editor gedit-gmate tools PPA
   ansible.builtin.apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gedit_enabled
   tags:
     - package
     - gedit
@@ -99,7 +96,7 @@
 - name: workstation | Install editor gedit-gmate plugin
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gedit_enabled
   with_items:
     - gedit-gmate
   tags:
@@ -129,23 +126,23 @@
     name: atom
     classic: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and atom_enabled
   tags:
     - package
     - atom
 
 - name: workstation | Install prince
   apt:
-    deb: https://www.princexml.com/download/prince_14.2-1_ubuntu20.04_amd64.deb
-    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+    deb: https://www.princexml.com/download/prince_{{ prince_version }}_amd64.deb
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and prince_enabled
   tags:
     - package
     - prince
 
 - name: workstation | Install bat
   apt:
-    deb: https://github.com/sharkdp/bat/releases/download/v0.19.0/bat_0.19.0_amd64.deb
-    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+    deb: https://github.com/sharkdp/bat/releases/download/v{{ bat_version }}/bat_{{ bat_version }}_amd64.deb
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and bat_enabled
   tags:
     - package
     - bat
