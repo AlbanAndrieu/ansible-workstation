@@ -5,6 +5,6 @@
 		"@commitlint/prompt-cli": "^20.3.1",
 		"commitlint-config-gitmoji": "^2.3.1",
 		"conventional-changelog-gitmoji-config": "^1.5.2",
-		"opencommit": "^3.2.12"
+		"opencommit": "^3.2.14"
 	}
 }

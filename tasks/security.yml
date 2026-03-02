@@ -263,11 +263,12 @@
   ignore_errors: true
 
 - name: workstation | Install unattended upgrade
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  with_items:
-    - unattended-upgrades
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - apt-listchanges
+    state: present
   tags:
     - package
     - unattended-upgrades
@@ -279,6 +280,46 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags:
     - package
+    - unattended-upgrades
+    - vm
+
+- name: workstation | Configure automatic security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+  tags:
+    - unattended-upgrades
+    - vm
+
+# https://github.com/openclaw/openclaw-ansible/blob/main/roles/openclaw/tasks/firewall-linux.yml
+
+- name: workstation | Configure unattended-upgrades to only install security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // OpenClaw security hardening - automatic security updates
+      Unattended-Upgrade::Allowed-Origins {
+          "${distro_id}:${distro_codename}-security";
+          "${distro_id}ESMApps:${distro_codename}-apps-security";
+          "${distro_id}ESM:${distro_codename}-infra-security";
+      };
+      Unattended-Upgrade::Package-Blacklist {
+      };
+      Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+      Unattended-Upgrade::MinimalSteps "true";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Automatic-Reboot "false";
+      Unattended-Upgrade::Automatic-Reboot-Time "03:00";
+  tags:
     - unattended-upgrades
     - vm
 
@@ -329,6 +370,150 @@
 # sed -i -e 's/^ChallengeResponseAuthentication .*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
 
 # AllowUsers albandrieu albanandrieu
+
+# Install and configure fail2ban for SSH brute-force protection
+- name: workstation | Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+    update_cache: true
+
+- name: workstation | Configure fail2ban for SSH protection
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # OpenClaw security hardening - SSH protection
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 5
+      backend = systemd
+
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      # logpath not needed - systemd backend reads from journal
+  notify: Restart fail2ban
+
+- name: workstation | Enable and start fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: workstation | Add Tailscale GPG key
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      DIST="{{ ansible_distribution | lower }}"
+      RELEASE="{{ ansible_distribution_release }}"
+      curl -fsSL "https://pkgs.tailscale.com/stable/${DIST}/${RELEASE}.noarmor.gpg" | \
+        tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
+    creates: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    executable: /bin/bash
+
+- name: workstation | Add Tailscale repository
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      DIST="{{ ansible_distribution | lower }}"
+      RELEASE="{{ ansible_distribution_release }}"
+      curl -fsSL "https://pkgs.tailscale.com/stable/${DIST}/${RELEASE}.tailscale-keyring.list" | \
+        tee /etc/apt/sources.list.d/tailscale.list > /dev/null
+    creates: /etc/apt/sources.list.d/tailscale.list
+    executable: /bin/bash
+
+- name: workstation | Update apt cache after adding Tailscale repo
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: workstation | Install Tailscale
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+
+- name: workstation | Enable Tailscale service (Linux)
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: workstation | Check if Tailscale is already connected (Linux)
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status_linux
+  changed_when: false
+  failed_when: false
+
+# UFW Firewall configuration
+- name: workstation | Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+- name: workstation | Set UFW default policies
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: "incoming", policy: "deny" }
+    - { direction: "outgoing", policy: "allow" }
+    - { direction: "routed", policy: "deny" }
+
+# - name: workstation | Allow SSH on port 22
+#   community.general.ufw:
+#     rule: allow
+#     port: '9922' # security_ssh_port
+#     proto: tcp
+#     comment: 'SSH'
+
+- name: workstation | Allow Tailscale UDP port 41641
+  community.general.ufw:
+    rule: allow
+    port: "41641"
+    proto: udp
+    comment: "Tailscale"
+  when: tailscale_enabled | bool
+
+- name: workstation | Get default network interface
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      ip route | grep default | awk '{print $5}' | head -n1
+    executable: /bin/bash
+  register: default_interface
+  changed_when: false
+
+- name: workstation | Validate default network interface was detected
+  ansible.builtin.assert:
+    that:
+      - default_interface.stdout is defined
+      - default_interface.stdout | length > 0
+    fail_msg: "Failed to detect default network interface. Cannot configure firewall rules safely."
+    success_msg: "Default network interface detected: {{ default_interface.stdout }}"
+
+- name: workstation | Create UFW after.rules for Docker isolation
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/after.rules
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - Docker isolation"
+    insertbefore: "^COMMIT$"
+    block: |
+      # Docker port isolation - block all forwarded traffic by default
+      :DOCKER-USER - [0:0]
+
+      # Allow established connections
+      -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+      # Allow localhost
+      -A DOCKER-USER -i lo -j ACCEPT
+
+      # Block all other forwarded traffic to Docker containers from external interface
+      -A DOCKER-USER -i {{ default_interface.stdout }} -j DROP
+    create: false
 
 - name: workstation | Uninstall unsecured applications
   apt: >

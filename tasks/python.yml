@@ -78,3 +78,14 @@
   become: true
   when: ansible_os_family == 'Debian'
   tags: package
+
+- name: python | Install glances via pip (upgrade to latest)
+  ansible.builtin.pip:
+    name: glances
+    state: latest
+    executable: pip3
+  become: true
+  when: ansible_os_family == 'Debian' and
+    python_enabled and
+    glances_enabled
+  tags: package

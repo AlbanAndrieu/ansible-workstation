@@ -65,6 +65,7 @@ webapps_enabled: true
 pidgin_enabled: false
 nodejs_enabled: false
 mount_enabled: false
+postman_enabled: false
 
 # NFS mounts (nabla server). Options match /etc/fstab: nfs4 defaults,user,auto,noatime,bg,rsize=16384,wsize=16384
 mount_nfs_opts: "defaults,user,auto,noatime,bg,rsize=16384,wsize=16384"
@@ -92,6 +93,7 @@ aws_enabled: true
 scons_enabled: true
 python_enabled: true
 ansigenome_enabled: true
+glances_enabled: true
 apache_create_vhosts: true
 webcam_enabled: true
 keepass2_enabled: true
@@ -145,6 +147,7 @@ brew_packages:
   - michaeldfallen/formula/git-radar
   - up # Ultimate Plumber
   - navi
+  - openssl
 
 devops_tools:
   - { name: direnv, version: 2.33.0 }

@@ -25,16 +25,16 @@ ci:
     for more information, see https://pre-commit.ci
   skip:
     # https://github.com/pre-commit-ci/issues/issues/55
-    - pip-compile
-    - pyright
-    - schemas
+  -   pip-compile
+  -   pyright
+  -   schemas
   submodules: true
 default_install_hook_types:
-  - pre-commit # gitleak
+-   pre-commit # gitleak
     # make sure you include `prepare-commit-msg` in `default_install_hook_types`
     # prepare-commit-msg made by oco
     # - prepare-commit-msg
-  - commit-msg
+-   commit-msg
 repos:
   # ---------------------------------------------------------------------------- #
   #                              🔄 Pre-Commit Hooks                             #
@@ -42,77 +42,77 @@ repos:
   #- repo: meta
   #  hooks:
   #    - id: check-useless-excludes
-  - repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+-   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
     rev: v0.9.0
     hooks:
-      - id: pre-commit-update
+    -   id: pre-commit-update
 
     # ---------------------------- 📁 Filesystem Tools --------------------------- #
-  - repo: https://github.com/pre-commit/pre-commit-hooks.git
+-   repo: https://github.com/pre-commit/pre-commit-hooks.git
     rev: v6.0.0
     hooks:
-      - id: trailing-whitespace
+    -   id: trailing-whitespace
         name: "📁 filesystem/⚙️ exec · Remove trailing whitespace"
         args: [--markdown-linebreak-ext=md]
-      - id: fix-byte-order-marker
+    -   id: fix-byte-order-marker
         name: "📁 filesystem/⚙️ exec · Verify byte order"
-      - id: mixed-line-ending
+    -   id: mixed-line-ending
         name: "📁 filesystem/⚙️ exec · Verify mixed line ending"
         args: [--fix=lf]
-      - id: end-of-file-fixer
+    -   id: end-of-file-fixer
         name: "📁 filesystem/⚙️ exec · Verify end of file"
-      - id: check-executables-have-shebangs
+    -   id: check-executables-have-shebangs
         name: "📁 filesystem/⚙️ exec · Verify shebang preset"
         exclude: >
           (?x)^(
               templates/.*-systemd.sh-Ubuntu.j2|
           )$
-      - id: check-shebang-scripts-are-executable
+    -   id: check-shebang-scripts-are-executable
         name: "📁 filesystem/⚙️ exec · Verify script permissions"
-      - id: check-symlinks
+    -   id: check-symlinks
         name: "📁 filesystem/🔗 symlink · Check symlink validity"
-      - id: destroyed-symlinks
+    -   id: destroyed-symlinks
         name: "📁 filesystem/🔗 symlink · Detect broken symlinks"
-      - id: debug-statements
+    -   id: debug-statements
         name: "📁 filesystem/📝 debug · Check debug statements"
-      - id: check-ast
+    -   id: check-ast
         name: "📁 filesystem/📝 ast · Check ast"
-      - id: check-builtin-literals
+    -   id: check-builtin-literals
         name: "📁 filesystem/📝 literals · Check builtin literals"
-      - id: check-case-conflict
+    -   id: check-case-conflict
         name: "📁 filesystem/📝 names · Check case sensitivity"
-      - id: check-illegal-windows-names
+    -   id: check-illegal-windows-names
         name: "📁 filesystem/📝 names · Validate Windows filenames"
-      - id: check-docstring-first
+    -   id: check-docstring-first
         name: "📁 filesystem/📝 docstring · Validate docstring first"
-      - id: name-tests-test
+    -   id: name-tests-test
         name: "📁 filesystem/📝 names · Check tests names"
 
         # --------------------------- 🔍 Code Quality Tools -------------------------- #
-      - id: check-json
+    -   id: check-json
         name: "📁 filesystem/📝 json · Check json"
-      - id: check-toml
+    -   id: check-toml
         name: "📁 filesystem/📜 toml - Check toml"
-      - id: check-xml
+    -   id: check-xml
         name: "📁 filesystem/📜 xml - Check xml"
-      - id: check-yaml
+    -   id: check-yaml
         name: "📁 filesystem/📜 yaml - Check yaml"
         args: [--allow-multiple-documents]
-      - id: sort-simple-yaml
+    -   id: sort-simple-yaml
         name: "🔀 sort/📜 yaml - Sort yaml"
-      - id: file-contents-sorter
+    -   id: file-contents-sorter
         name: "🔀 sort/📜 file · Sort contents"
-      - id: requirements-txt-fixer
+    -   id: requirements-txt-fixer
         name: "🔀 sort/🐍 json · Sort requirements"
         # ------------------------------- 🌳 Git Tools ------------------------------- #
-      - id: check-merge-conflict
+    -   id: check-merge-conflict
         name: "🌳 git · Detect conflict markers"
-      - id: forbid-new-submodules
+    -   id: forbid-new-submodules
         name: "🌳 git · Prevent submodule creation"
         # - id: no-commit-to-branch
         #   name: "🌳 git · Protect main branches"
         #   args: [--branch, main, --branch, master, --branch, release/*]
-      - id: check-added-large-files
+    -   id: check-added-large-files
         name: "🌳 git · Block large file commits"
         args: [--maxkb=123]
         exclude: >
@@ -126,46 +126,46 @@ repos:
             sbom.json|
           )$
         # ----------------------------- 🔒 Security Tools ---------------------------- #
-      - id: detect-private-key
+    -   id: detect-private-key
         name: "🔒 security · Detect private keys"
 
-  - repo: https://github.com/pre-commit/pre-commit.git
+-   repo: https://github.com/pre-commit/pre-commit.git
     rev: v4.5.1
     hooks:
-      - id: validate_manifest
+    -   id: validate_manifest
         name: "🤖 manifest · Validate manifest scripts"
 
-  - repo: https://github.com/doublify/pre-commit-hindent.git
+-   repo: https://github.com/doublify/pre-commit-hindent.git
     rev: b3680b6ebf9f7cf29b19307f246adef66756feef
     hooks:
-      - id: hindent
+    -   id: hindent
         name: "🤖 hindent · Format scripts"
 
-  - repo: https://github.com/asottile/add-trailing-comma
+-   repo: https://github.com/asottile/add-trailing-comma
     rev: v4.0.0
     hooks:
-      - id: add-trailing-comma
+    -   id: add-trailing-comma
         name: "🤖 comma · Add trailing comma"
 
     # --------------------------- 🔍 Code Quality Tools -------------------------- #
 
     ### Python Tools ###
-  - repo: https://github.com/asottile/pyupgrade
+-   repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:
-      - id: pyupgrade
+    -   id: pyupgrade
         name: "🐍 python · Py Upgrade"
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.2
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.4
     hooks:
-      - id: ruff-format
+    -   id: ruff-format
         name: "🐍 python · Format with Ruff"
 
-      - id: ruff
+    -   id: ruff
         name: "🐍 python · Lint and perform unsafe auto-fixes with Ruff"
         args: [--unsafe-fixes]
 
-      - id: ruff-check
+    -   id: ruff-check
         name: "🐍 python · Check with Ruff"
         args: [--fix]
 
@@ -175,59 +175,59 @@ repos:
     #     - id: pyright
     #       name: "🐍 python · Check types"
 
-  - repo: https://github.com/abravalheri/validate-pyproject
+-   repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.25
     hooks:
-      - id: validate-pyproject
+    -   id: validate-pyproject
         name: "🐍 python · Validate pyproject.toml"
         additional_dependencies: ["validate-pyproject-schema-store[all]"]
 
     # ----------------------------- ⚡️ uv Build Tools ---------------------------- #
     # This helps ensure cross-compatibility with people who don't wish to use uv
-  - repo: https://github.com/astral-sh/uv-pre-commit
+-   repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.10.4
+    rev: 0.10.7
     hooks:
-      - id: uv-sync
+    -   id: uv-sync
         name: "⚡️ uv · Sync dependencies with uv"
-      - id: uv-lock
+    -   id: uv-lock
         name: "⚡️ uv · Update dependency lockfile"
-      - id: uv-lock
+    -   id: uv-lock
         name: "⚡️ uv · Upgrade via uv sync --upgrade"
         alias: deps
         args: ["--upgrade"]
         stages: [manual]
-      - id: uv-export
+    -   id: uv-export
         name: "⚡️ uv · Export dependencies to requirements.txt"
         args:
-          - "--no-dev"
-          - "--no-emit-package"
-          - ansible-core
-          - "--no-emit-package"
-          - resolvelib
-          - "--no-emit-package"
-          - ruamel-yaml-clib
-          - "--no-emit-package"
-          - tomli
-          - "--no-emit-package"
-          - typing-extensions
-          - "--no-emit-project"
-          - "--no-hashes"
-          - "-o"
-          - ".config/requirements-lock.txt"
+        -   "--no-dev"
+        -   "--no-emit-package"
+        -   ansible-core
+        -   "--no-emit-package"
+        -   resolvelib
+        -   "--no-emit-package"
+        -   ruamel-yaml-clib
+        -   "--no-emit-package"
+        -   tomli
+        -   "--no-emit-package"
+        -   typing-extensions
+        -   "--no-emit-project"
+        -   "--no-hashes"
+        -   "-o"
+        -   ".config/requirements-lock.txt"
 
     ### Shell ###
-  - repo: https://github.com/scop/pre-commit-shfmt
+-   repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.12.0-2
     hooks:
       # Choose one of:
       # - id: shfmt         # native (requires Go to build)
-      - id: shfmt-docker # Docker image (requires Docker to run)
+    -   id: shfmt-docker # Docker image (requires Docker to run)
         name: "🐚 🐳 shell · Format shell scripts"
-  - repo: https://github.com/detailyang/pre-commit-shell
-    rev: v1.0.6
+-   repo: https://github.com/detailyang/pre-commit-shell
+    rev: 1.0.5
     hooks:
-      - id: shell-lint
+    -   id: shell-lint
         name: "🐚 shell · Lint shell scripts"
         args: [-x]
         exclude: >
@@ -237,10 +237,10 @@ repos:
             .envrc|
           )$
 
-  - repo: https://github.com/openstack/bashate
+-   repo: https://github.com/openstack/bashate
     rev: 2.1.1
     hooks:
-      - id: bashate
+    -   id: bashate
         name: "🐚 shell · Check shell script code style"
         args: [-i, "E003,E006"]
         exclude: >
@@ -251,36 +251,36 @@ repos:
           )$
 
     ### Makefile ###
-  - repo: https://github.com/mrtazz/checkmake.git
-    rev: v0.3.2
+-   repo: https://github.com/mrtazz/checkmake.git
+    rev: v0.3.0
     hooks:
-      - id: checkmake
+    -   id: checkmake
         name: "🐮 Makefile · Lint Makefile"
 
     ### SQL ###
-  - repo: https://github.com/sqlfluff/sqlfluff
+-   repo: https://github.com/sqlfluff/sqlfluff
     rev: 4.0.4
     hooks:
-      - id: sqlfluff-fix
+    -   id: sqlfluff-fix
         name: "📊 SQL · Attempts to fix rule violations."
-      - id: sqlfluff-lint
+    -   id: sqlfluff-lint
         name: "📊 SQL · Lint SQL code files"
 
     ### Notebooks ###
-  - repo: https://github.com/nbQA-dev/nbQA
+-   repo: https://github.com/nbQA-dev/nbQA
     rev: 1.9.1
     hooks:
-      - id: nbqa
+    -   id: nbqa
         entry: nbqa mdformat
         name: "📓 notebook · Format markdown cells"
         args: ["--nbqa-md"]
         types: [jupyter]
         additional_dependencies:
-          - mdformat
-          - mdformat-gfm
-          - mdformat-ruff
-          - mdformat-frontmatter
-          - ruff
+        -   mdformat
+        -   mdformat-gfm
+        -   mdformat-ruff
+        -   mdformat-frontmatter
+        -   ruff
         # - id: nbqa-mypy
         #   name: "📓 notebook · Type-check cells"
 
@@ -310,10 +310,10 @@ repos:
     #         )$
 
     ### Javascript & Web Tools ###
-  - repo: https://github.com/biomejs/pre-commit
+-   repo: https://github.com/biomejs/pre-commit
     rev: "v2.4.4"
     hooks:
-      - id: biome-check
+    -   id: biome-check
         name: "🟨 javascript · Lint, format, and safe fixes with Biome"
         additional_dependencies: ["@biomejs/biome@1.9.4"]
         exclude: >
@@ -322,17 +322,17 @@ repos:
               my-app/public/.*|
           )$
 
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
+-   repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2
     hooks:
-      - id: htmllint
+    -   id: htmllint
         name: "📝 html · Lint html"
         args: [--config, .eslintrc.json]
         files: ^src/
-      - id: htmlhint
+    -   id: htmlhint
         name: "📝 html · Hint html"
         args: [--config, .htmlhintrc]
-      - id: markdown-toc
+    -   id: markdown-toc
         name: "📝 markdown · Toc markdown"
         args: [--maxdepth, "3", -i]
 
@@ -345,14 +345,14 @@ repos:
     #       args: ["-o", "4", "--strip", "safe", "--alpha"]
 
     ### Additional File Types ###
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+-   repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
     hooks:
-      - id: prettier
+    -   id: prettier
         name: "✨ misc-files · Format misc web files"
         types_or: [yaml, html, scss]
         additional_dependencies:
-          - prettier@3.4.2
+        -   prettier@3.4.2
         exclude: >
           (?x)^(
               trivy-sbom.json|
@@ -360,27 +360,27 @@ repos:
           )$
 
     ### Data & Config Validation ###
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.36.2
+-   repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.0
     hooks:
-      - id: check-github-workflows
+    -   id: check-github-workflows
         name: "🧩 github-actions · Validate gh workflow files"
         args: ["--verbose"]
-      - id: check-taskfile
+    -   id: check-taskfile
         name: "✅ taskfile · Validate Task configuration"
 
-  - repo: https://github.com/hadolint/hadolint
+-   repo: https://github.com/hadolint/hadolint
     rev: v2.14.0
     hooks:
-      - id: hadolint-docker
+    -   id: hadolint-docker
         name: "🐳 hadolint · Validate Dockerfile"
 
     # ----------------------------- 🔒 Security Tools ---------------------------- #
 
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.3
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
     hooks:
-      - id: bandit
+    -   id: bandit
         name: "🔒 security · Detect security issues"
         args: [-c, .bandit.yml]
         exclude: >
@@ -389,23 +389,23 @@ repos:
             versioneer.py|
           )$
 
-  - repo: https://github.com/IamTheFij/ansible-pre-commit
+-   repo: https://github.com/IamTheFij/ansible-pre-commit
     rev: v1.0.1
     hooks:
-      - id: encryption-check
+    -   id: encryption-check
         name: "🔒 security · Detect encryption"
-  - repo: https://github.com/zricethezav/gitleaks
+-   repo: https://github.com/zricethezav/gitleaks
     rev: v8.30.0
     hooks:
-      - id: gitleaks-docker
+    -   id: gitleaks-docker
         name: "🔒 🐳 security · Detect hardcoded secrets"
         entry: zricethezav/gitleaks protect --verbose --redact --staged
 
     ### Ansible ###
-  - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v26.1.1
+-   repo: https://github.com/ansible-community/ansible-lint.git
+    rev: v26.2.0
     hooks:
-      - id: ansible-lint
+    -   id: ansible-lint
         name: "📜 ansible - Lint Ansible"
         # args: [--verbose]
         files: \.(yaml|yml)$
@@ -417,10 +417,10 @@ repos:
             playbooks/group_vars/all/vault.yml|
             .gitlab-ci.yml|
           )$
-  - repo: https://github.com/adrienverge/yamllint.git
+-   repo: https://github.com/adrienverge/yamllint.git
     rev: v1.38.0
     hooks:
-      - id: yamllint
+    -   id: yamllint
         name: "📜 yamllint - Lint Yaml"
         args: [--format, parsable, --strict]
 
@@ -431,30 +431,30 @@ repos:
     # --------------------------- ✍️ Git Commit Quality -------------------------- #
 
     ### Commit Message Standards ###
-  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+-   repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.24.0
     hooks:
-      - id: commitlint
+    -   id: commitlint
         stages: [commit-msg]
         additional_dependencies:
-          - "@commitlint/config-conventional"
-          - conventional-changelog-conventionalcommits
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.13.8
+        -   "@commitlint/config-conventional"
+        -   conventional-changelog-conventionalcommits
+-   repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.9
     hooks:
-      - id: commitizen
+    -   id: commitizen
         name: "🌳 git · Validate commit message"
         stages: [commit-msg]
         additional_dependencies: [cz-conventional-gitmoji]
-      - id: commitizen-branch
+    -   id: commitizen-branch
         stages: [pre-push]
 
-  - repo: https://github.com/jorisroovers/gitlint
+-   repo: https://github.com/jorisroovers/gitlint
     rev: v0.19.1
     hooks:
-      - id: gitlint
+    -   id: gitlint
         name: "🌳 git · Lint"
-      - id: gitlint-ci
+    -   id: gitlint-ci
         name: "🌳 git · Lint in CI"
         args: [--debug, --commits, mybranch] # enable debug mode, lint all commits in mybranch
 
