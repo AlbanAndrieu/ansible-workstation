@@ -1,0 +1,31 @@
+[Unit]
+Description=OpenClaw Gateway (v2026.3.24)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/albandrieu/.local/share/mise/installs/node/25.4.0/bin/node /home/albandrieu/.local/share/mise/installs/node/25.4.0/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+TimeoutStartSec=30
+SuccessExitStatus=0 143
+KillMode=control-group
+Environment=OPENAI_API_KEY=sk-proj-XXX
+Environment=OPENCLAW_GATEWAY_PASSWORD=tskey-auth-XXX
+Environment=DATABASE_URL=postgresql://nabla:XXX@172.17.0.24:5432/postgres
+Environment=TELEGRAM_BOT_TOKEN=875XXX:XXX
+Environment=HOME=/home/albandrieu
+Environment=TMPDIR=/tmp/user/1000
+Environment=NO_PROXY=localhost,127.0.0.1,.azurecr.io,verdaccio,alm-npmjs,selenium-server,registry.bower.io,.github.com,.docker.io,nodesource.com,.jenkins-ci.org
+Environment=NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+Environment=PATH=/home/albandrieu/.local/share/mise/installs/node/25.4.0/bin:/home/albanandrieu/.local/share/pnpm:/home/albandrieu/.bun/bin:/home/albanandrieu/.asdf/shims:/home/albandrieu/.nvm/current/bin:/home/albandrieu/.local/bin:/home/albandrieu/.npm-global/bin:/home/albandrieu/bin:/home/albandrieu/.volta/bin:/home/albandrieu/.asdf/shims:/home/albandrieu/.fnm/current/bin:/home/albandrieu/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin
+Environment=OPENCLAW_GATEWAY_PORT=18789
+Environment=OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service
+Environment="OPENCLAW_WINDOWS_TASK_NAME=OpenClaw Gateway"
+Environment=OPENCLAW_SERVICE_MARKER=openclaw
+Environment=OPENCLAW_SERVICE_KIND=gateway
+Environment=OPENCLAW_SERVICE_VERSION=2026.3.24
+
+[Install]
+WantedBy=default.target
