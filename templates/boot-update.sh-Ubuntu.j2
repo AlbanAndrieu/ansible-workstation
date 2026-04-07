@@ -3,9 +3,11 @@
 
 /bin/bash -c 'zenity --info --text="`hostname -I` Update started" --title="Update started"'
 
-sudo systemd-analyze time
-sudo systemd-analyze plot >/home/albandrieu/Downloads/file.svg
-sudo systemd-analyze blame
+sudo killall -KILL  whatsie
+
+# sudo systemd-analyze time
+# sudo systemd-analyze plot >/home/albandrieu/Downloads/file.svg
+# sudo systemd-analyze blame
 
 cd /home/albandrieu/w && mr update || true
 cd /home/albandrieu/w/jm && mr update || true
@@ -20,19 +22,35 @@ echo "brew upgrade asdf"
 brew cleanup || true
 pip cache purge || true
 pipenv --clear || true
-sudo docker system prune || true
+# sudo docker system prune || true
 
 sudo rm -f /workspace/Dropbox/motion/*.jpg
 sudo rm -f /workspace/Dropbox/motion/*.mkv
 
-# sudo service docker restart
+cd /home/albandrieu/.config/Code/User/workspaceStorage
+./clean_old_folders.py
+
+cd /home/albandrieu/.config/Cursor/User/workspaceStorage
+./clean_old_folders.py
 
 /workspace/users/albandrieu30/nabla/env/linux/cleanup-snap.sh || true
 
-cd /workspace/users/albandrieu30/nabla/infra/docker-compose
-docker compose --env-file .env --env-file .env.secrets -f  docker-compose.yml up -d
-
 /bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Update completed"'
+
+# sudo service docker restart
+sudo systemctl restart docker
+
+cd /workspace/users/albandrieu30/nabla/infra/docker-compose
+docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --pull=never --no-build postgres -d
+docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --no-build redis-server -d
+
+docker pull zricethezav/gitleaks:latest || true
+
+docker compose pull --ignore-pull-failures || true
+
+echo "docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --pull=never --no-build -d"
+
+/home/albandrieu/.conky/startconky.sh 
 
 # sudo systemctl status boot-update.service
 

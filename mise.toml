@@ -1,2 +1,5 @@
+min_version = "2024.9.5"
+
 [tools]
+python = "{{ get_env(name='PYTHON_VERSION', default='3.12') }}"
 node = "latest"

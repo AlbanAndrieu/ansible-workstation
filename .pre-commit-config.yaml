@@ -156,7 +156,7 @@ repos:
     -   id: pyupgrade
         name: "🐍 python · Py Upgrade"
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.4
+    rev: v0.15.9
     hooks:
     -   id: ruff-format
         name: "🐍 python · Format with Ruff"
@@ -186,7 +186,7 @@ repos:
     # This helps ensure cross-compatibility with people who don't wish to use uv
 -   repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.10.7
+    rev: 0.11.3
     hooks:
     -   id: uv-sync
         name: "⚡️ uv · Sync dependencies with uv"
@@ -218,7 +218,7 @@ repos:
 
     ### Shell ###
 -   repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.12.0-2
+    rev: v3.13.0-1
     hooks:
       # Choose one of:
       # - id: shfmt         # native (requires Go to build)
@@ -259,7 +259,7 @@ repos:
 
     ### SQL ###
 -   repo: https://github.com/sqlfluff/sqlfluff
-    rev: 4.0.4
+    rev: 4.1.0
     hooks:
     -   id: sqlfluff-fix
         name: "📊 SQL · Attempts to fix rule violations."
@@ -311,7 +311,7 @@ repos:
 
     ### Javascript & Web Tools ###
 -   repo: https://github.com/biomejs/pre-commit
-    rev: "v2.4.4"
+    rev: "v2.4.10"
     hooks:
     -   id: biome-check
         name: "🟨 javascript · Lint, format, and safe fixes with Biome"
@@ -361,7 +361,7 @@ repos:
 
     ### Data & Config Validation ###
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.0
+    rev: 0.37.1
     hooks:
     -   id: check-github-workflows
         name: "🧩 github-actions · Validate gh workflow files"
@@ -403,7 +403,7 @@ repos:
 
     ### Ansible ###
 -   repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v26.2.0
+    rev: v26.4.0
     hooks:
     -   id: ansible-lint
         name: "📜 ansible - Lint Ansible"
