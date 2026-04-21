@@ -1,20 +1,20 @@
 [Unit]
-Description=OpenClaw Gateway (v2026.3.24)
+Description=OpenClaw Gateway (v2026.4.15)
 After=network-online.target
 Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=60
 
 [Service]
 ExecStart=/home/albandrieu/.local/share/mise/installs/node/25.4.0/bin/node /home/albandrieu/.local/share/mise/installs/node/25.4.0/lib/node_modules/openclaw/dist/index.js gateway --port 18789
 Restart=always
 RestartSec=5
+RestartPreventExitStatus=78
 TimeoutStopSec=30
 TimeoutStartSec=30
 SuccessExitStatus=0 143
 KillMode=control-group
-Environment=OPENAI_API_KEY=sk-proj-XXX
-Environment=OPENCLAW_GATEWAY_PASSWORD=tskey-auth-XXX
-Environment=DATABASE_URL=postgresql://nabla:XXX@172.17.0.24:5432/postgres
-Environment=TELEGRAM_BOT_TOKEN=875XXX:XXX
+EnvironmentFile=-/home/albandrieu/.openclaw/gateway.systemd.env
 Environment=HOME=/home/albandrieu
 Environment=TMPDIR=/tmp/user/1000
 Environment=NO_PROXY=localhost,127.0.0.1,.azurecr.io,verdaccio,alm-npmjs,selenium-server,registry.bower.io,.github.com,.docker.io,nodesource.com,.jenkins-ci.org
@@ -25,7 +25,8 @@ Environment=OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service
 Environment="OPENCLAW_WINDOWS_TASK_NAME=OpenClaw Gateway"
 Environment=OPENCLAW_SERVICE_MARKER=openclaw
 Environment=OPENCLAW_SERVICE_KIND=gateway
-Environment=OPENCLAW_SERVICE_VERSION=2026.3.24
+Environment=OPENCLAW_SERVICE_VERSION=2026.4.15
+Environment=OPENCLAW_SERVICE_MANAGED_ENV_KEYS=BRAVE_API_KEY,BRAVE_PLAN,DISCORD_BOT_TOKEN,DISCORD_CHANNEL_ID,DISCORD_OPENCLAW_SERVER_ID,LITELLM_API_KEY,MOLTBOOK_API_KEY,OPENAI_API_KEY,OPENCLAW_GATEWAY_PASSWORD,OPENCLAW_GATEWAY_TOKEN,TAVILY_API_KEY,TELEGRAM_BOT_TOKEN,TWITTER_API_BACKEND,WEB_SEARCH_BACKEND,X_BEARER_TOKEN
 
 [Install]
 WantedBy=default.target

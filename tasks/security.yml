@@ -515,6 +515,12 @@
       -A DOCKER-USER -i {{ default_interface.stdout }} -j DROP
     create: false
 
+# Block usb key usage
+# - name: workstation | Install usbguard
+#   ansible.builtin.apt:
+#     name: usbguard
+#     state: present
+
 - name: workstation | Uninstall unsecured applications
   apt: >
     pkg={{ item }}
