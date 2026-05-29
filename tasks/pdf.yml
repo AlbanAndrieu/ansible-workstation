@@ -6,6 +6,7 @@
   with_items:
     - texlive-full
     - fonts-font-awesome
+    - pandoc
   tags:
     - package
     - latex

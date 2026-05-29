@@ -179,3 +179,17 @@
   with_items:
     - libssl3
     - package
+
+- name: workstation | Install dev utilities tools for VSCode
+  vars:
+    pipx_packages:
+      - black
+      - tox
+      - sqlfluff
+  community.general.pipx:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ pipx_packages }}"
+  tags:
+    - pipx
+    - vm # do not install on docker image
