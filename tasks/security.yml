@@ -240,6 +240,7 @@
     - gpg
     - vm
 
+# sudo apt-get install gnome-keyring
 - name: workstation | Install keychain for passphrase tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
