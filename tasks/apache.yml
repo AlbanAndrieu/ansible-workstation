@@ -1,34 +1,33 @@
 ---
 - name: Web | Create directory
-  file: dest="{{ web_base_dir }}/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
+  ansible.builtin.file: dest="{{ web_base_dir }}/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create jenkins directory
-  file: dest="/var/www/jenkins/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
+  ansible.builtin.file: dest="/var/www/jenkins/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create nabla directory
-  file: dest="/var/www/nabla/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
+  ansible.builtin.file: dest="/var/www/nabla/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Create bababou directory
-  file: dest="/var/www/bababou/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
+  ansible.builtin.file: dest="/var/www/bababou/" state=directory owner="{{ apache_owner }}" group="{{ apache_group }}"
   ignore_errors: true
   become: true
 
 - name: Web | Enable some required modules proxy
-  command: a2enmod proxy
-  # proxy proxy_ajp proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
+  ansible.builtin.command: a2enmod proxy
   become: true
   ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable some required configuration remoteip
-  command: a2enconf remoteip
+  ansible.builtin.command: a2enconf remoteip
   become: true
   ignore_errors: true
   tags: apache
@@ -36,7 +35,7 @@
 
 # See https://developers.cloudflare.com/support/troubleshooting/restoring-visitor-ips/restoring-original-visitor-ips/
 - name: Web | Add apache nabla remoteip configuration.
-  template:
+  ansible.builtin.template:
     src: remoteip.conf.j2
     dest: "{{ apache_conf_path }}/conf-available/remoteip.conf"
     owner: root
@@ -47,7 +46,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Add apache jenkins vhosts configuration.
-  template:
+  ansible.builtin.template:
     src: apache-jenkins.conf.j2
     dest: "{{ apache_conf_path }}/sites-available/jenkins.conf"
     owner: root
@@ -58,14 +57,14 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the jenkins site
-  command: a2ensite jenkins
+  ansible.builtin.command: a2ensite jenkins
   become: true
   ignore_errors: true
   tags: apache
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Add apache nabla vhosts configuration.
-  template:
+  ansible.builtin.template:
     src: apache-nabla.conf.j2
     dest: "{{ apache_conf_path }}/sites-available/nabla.conf"
     owner: root
@@ -76,7 +75,7 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the nabla site
-  command: a2ensite nabla
+  ansible.builtin.command: a2ensite nabla
   become: true
   ignore_errors: true
   tags: apache
@@ -100,7 +99,7 @@
 #  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and apache_create_vhosts
 
 - name: Web | Enable the apache mod headers
-  command: a2enmod headers
+  ansible.builtin.command: a2enmod headers
   become: true
   ignore_errors: true
   tags: apache
@@ -110,7 +109,7 @@
 # X-Content-Type-Options: nosniff
 # WARNING this is a whole file overwrite
 - name: Web | Add apache main configuration (ports.conf).
-  template:
+  ansible.builtin.template:
     src: ports.conf.j2
     dest: "{{ apache_conf_path }}/ports.conf"
     owner: root

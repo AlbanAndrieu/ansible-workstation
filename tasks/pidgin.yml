@@ -28,7 +28,11 @@
 # sudo apt install purple-hangouts pidgin-hangouts
 
 - name: workstation | Add pidgin repo for pidgin-hangouts and pidgin-indicatorpackages
-  ansible.builtin.apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:nilarimogard/webupd8"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
 
@@ -49,7 +53,11 @@
     - pidgin-indicator
 
 - name: dash | Add dash repo for unity-lens pidgin packages
-  ansible.builtin.apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:scopes-packagers/ppa"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
@@ -64,7 +72,11 @@
 
 # http://www.florian-diesch.de/software/classicmenu-indicator/
 - name: indicator classicmenu | Add dash repo for classicmenu-indicator packages
-  ansible.builtin.apt_repository: repo="ppa:diesch/testing" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:diesch/testing"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and classicmenu_indicator_enabled
   tags: classicmenu_indicator_setup

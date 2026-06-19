@@ -51,8 +51,7 @@
     - system
 
 - name: workstation | Add linux header for debuging system
-  shell: apt-get install linux-headers-$(uname -r)
-  #  changed_when: false
+  ansible.builtin.shell: apt-get install linux-headers-$(uname -r)
   become: true
   #  ignore_errors: true
   tags:

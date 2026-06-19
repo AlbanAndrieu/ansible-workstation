@@ -44,7 +44,7 @@
     - geany
 
 - name: workstation | Install editor geany configuration
-  template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
+  ansible.builtin.template: src=geany.conf.j2 dest={{ home }}/.config/geany/geany.conf mode=0755
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and geany_enabled
   tags: geany
@@ -63,7 +63,9 @@
 - name: workstation | Install editor gedit tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04'] and gedit_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04'] and
+    gedit_enabled
   with_items:
     - gconf-editor
     - dconf-tools
@@ -86,7 +88,9 @@
 # sudo cp imitation.plugin /usr/lib/gedit/plugins/
 
 - name: workstation | Install editor gedit-gmate tools PPA
-  ansible.builtin.apt_repository: repo='ppa:ubuntu-on-rails/ppa' update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:ubuntu-on-rails/ppa"
+    update_cache: "yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gedit_enabled
   tags:
@@ -104,7 +108,9 @@
     - gedit
 
 - name: workstation | Install editor atom tools PPA
-  ansible.builtin.apt_repository: repo='ppa:webupd8team/atom' update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:webupd8team/atom"
+    update_cache: "yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags:
@@ -132,17 +138,21 @@
     - atom
 
 - name: workstation | Install prince
-  apt:
+  ansible.builtin.apt:
     deb: https://www.princexml.com/download/prince_{{ prince_version }}_amd64.deb
-    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and prince_enabled
+    when:
+      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and
+      prince_enabled
   tags:
     - package
     - prince
 
 - name: workstation | Install bat
-  apt:
+  ansible.builtin.apt:
     deb: https://github.com/sharkdp/bat/releases/download/v{{ bat_version }}/bat_{{ bat_version }}_amd64.deb
-    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and bat_enabled
+    when:
+      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and
+      bat_enabled
   tags:
     - package
     - bat
@@ -152,7 +162,7 @@
 
 # See https://www.linuxuprising.com/2019/07/how-to-change-snap-refresh-update.html
 - name: workstation | Refresh snap once a week
-  command: snap set system refresh.timer=sat,10:00~12:00
+  ansible.builtin.command: snap set system refresh.timer=sat,10:00~12:00
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags:

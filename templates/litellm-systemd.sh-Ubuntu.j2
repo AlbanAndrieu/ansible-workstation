@@ -1,9 +1,11 @@
 [Unit]
 Description=LiteLLM Proxy for Azure OpenAI
-After=network.target
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
+Type=oneshot
 User=albandrieu
 # source ~/litellm-venv/bin/activate
 # prisma generate --schema ~/litellm-venv/lib/python3.12/site-packages/litellm/proxy/schema.prisma
@@ -13,10 +15,10 @@ User=albandrieu
 #     --config /home/albandrieu/.litellm/litellm_config.yaml \
 #     --port 4100
 WorkingDirectory=/home/albandrieu/w/nabla-compose/litellm
-ExecStart=docker-compose up -d
-    
-Restart=always
-RestartSec=10
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+RemainAfterExit=yes
+TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target

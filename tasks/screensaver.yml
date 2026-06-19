@@ -2,7 +2,7 @@
 # http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
 # Uninstall default black screensaver
 - name: workstation | Uninstall default black screensaver
-  apt: >
+  ansible.builtin.apt: >
     pkg={{ item }}
     state=absent
     purge=yes

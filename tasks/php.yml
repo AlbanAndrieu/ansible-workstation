@@ -1,6 +1,7 @@
 ---
 - name: php | Install ppa:ondrej/php tools PPA
-  ansible.builtin.apt_repository: repo='ppa:ondrej/php'
+  ansible.builtin.apt_repository:
+    repo: "ppa:ondrej/php"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and php_enabled
   become: true
   tags: uai
@@ -36,6 +37,7 @@
     - php7.4-cgi
 
 - name: php -fpm | Ensure npm settings
-  command: wget -O /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/v0.5.0/php-fpm-healthcheck && chmod +x /usr/local/bin/php-fpm-healthcheck
+  ansible.builtin.command: wget -O /usr/local/bin/php-fpm-healthcheck
+    https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/v0.5.0/php-fpm-healthcheck && chmod +x /usr/local/bin/php-fpm-healthcheck
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and php_fpm_healthcheck_enabled

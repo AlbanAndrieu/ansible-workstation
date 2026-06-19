@@ -8,7 +8,7 @@
   become: true
 
 - name: brew | Install apt dependencies for brew requirement
-  apt:
+  ansible.builtin.apt:
     pkg: [build-essential, python-setuptools, ruby]
     state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
@@ -16,7 +16,7 @@
   become: true
 
 - name: brew | Install yum dependencies for brew requirement
-  yum:
+  ansible.builtin.dnf:
     pkg: [irb, python-setuptools, ruby]
     state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
@@ -26,26 +26,26 @@
   ignore_errors: true
 
 - name: brew | Uninstall homebrew on Ubuntu
-  apt: pkg={{ item }} state=absent
+  ansible.builtin.apt: pkg={{ item }} state=absent
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04']
   with_items:
     - linuxbrew-wrapper
   become: true
 
 - name: brew | Check Homebrew is installed
-  stat:
+  ansible.builtin.stat:
     path: "{{ homebrew_check_path }}"
   register: homebrew_check
 
 - name: brew | Fail if homebrew is not installed and install_homebrew_if_missing is false
-  fail:
+  ansible.builtin.fail:
     msg: Homebrew is missing...Install from http://brew.sh/
   when: >
     not homebrew_check.stat.exists and
     not install_homebrew_if_missing
 
 - name: brew | Installing homebrew to custom directory
-  git:
+  ansible.builtin.git:
     repo: "{{ homebrew_repository }}"
     dest: "{{ home }}/.linuxbrew"
     accept_hostkey: true
@@ -65,7 +65,7 @@
 #        install_homebrew_if_missing
 
 - name: brew | Ensuring Homebrew bin is installed
-  stat:
+  ansible.builtin.stat:
     path: "{{ homebrew_check_path }}"
   register: homebrew_check_path
 
@@ -73,7 +73,7 @@
 # test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 - name: brew | Fail if Homebrew bin does not exist
-  fail:
+  ansible.builtin.fail:
     msg: Homebrew bin is missing... {{ homebrew_check_path }}
   when: >
     not homebrew_check_path.stat.exists
@@ -97,7 +97,7 @@
   become_user: "{{ jenkins_user }}"
 
 - name: brew | Install brew requirements using python
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip{{ python_version }}
     state: forcereinstall
@@ -155,7 +155,7 @@
 
 # brew update && brew upgrade; brew cleanup
 - name: brew | Homebrew Cleaning
-  command: "{{ homebrew_check_path }} cleanup"
+  ansible.builtin.command: "{{ homebrew_check_path }} cleanup"
   when: homebrew_check_path.stat.exists
   become: true
   ignore_errors: true

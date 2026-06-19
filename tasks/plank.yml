@@ -1,12 +1,15 @@
 ---
 - name: plank | Configure plank startup launcher from command line
-  template: src=plank.desktop.j2 dest={{ home }}/.config/autostart/plank.desktop mode=0755
+  ansible.builtin.template: src=plank.desktop.j2 dest={{ home }}/.config/autostart/plank.desktop mode=0755
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: configure
 
 - name: workstation | Add repo for plank packages
-  ansible.builtin.apt_repository: repo="ppa:ricotz/docky" state={{ util_repository_state | default('present') }}
+  ansible.builtin.apt_repository:
+    repo: "ppa:ricotz/docky"
+    state: "{{"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
   tags: plank

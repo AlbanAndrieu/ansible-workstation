@@ -21,8 +21,8 @@
   become: true
   ignore_errors: true
 
-- name: workstation  | Install thefuck
-  pip:
+- name: workstation | Install thefuck
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip3
   with_items:
@@ -60,7 +60,7 @@
 # See https://www.gnome-look.org/p/1368915/#files-panel
 
 - name: jenkins-slave | Get Adwaita themes
-  get_url:
+  ansible.builtin.get_url:
     url: https://www.gnome-look.org/p/1368915/startdownload?file_id=1585605568&file_name=Adwaita-all.tar.gz&file_type=application/x-gzip&file_size=8619948
     dest: "{{ home }}/.themes/"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))

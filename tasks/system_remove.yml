@@ -2,7 +2,7 @@
 # Remove or purge packages not wanted on the workstation.
 
 - name: system_remove | Purge avahi-daemon
-  apt:
+  ansible.builtin.apt:
     name: avahi-daemon
     state: absent
     purge: true
@@ -11,7 +11,7 @@
   tags: package
 
 - name: system_remove | Purge whoopsie
-  apt:
+  ansible.builtin.apt:
     name: whoopsie
     state: absent
     purge: true
@@ -20,7 +20,7 @@
   tags: package
 
 - name: system_remove | Purge zeitgeist packages
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: absent
     purge: true
@@ -33,33 +33,30 @@
   tags: zeitgeist_setup
 
 - name: system_remove | Purge cinnamon (when disabled)
-  apt:
+  ansible.builtin.apt:
     name: cinnamon
     state: absent
     purge: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    not cinnamon_enabled
+  when: ansible_os_family == 'Debian' and not cinnamon_enabled
   tags: desktop_setup
 
 - name: system_remove | Purge plasma-desktop (when disabled)
-  apt:
+  ansible.builtin.apt:
     name: plasma-desktop
     state: absent
     purge: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    not plasma_enabled
+  when: ansible_os_family == 'Debian' and not plasma_enabled
   tags: desktop_setup
 
 - name: system_remove | Purge xfce (when disabled)
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: absent
     purge: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    not xfce_enabled
+  when: ansible_os_family == 'Debian' and not xfce_enabled
   loop:
     - xfce4
     - xfce4-goodies
@@ -67,7 +64,7 @@
   tags: desktop_setup
 
 - name: system_remove | Purge unused applications
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: absent
     purge: true

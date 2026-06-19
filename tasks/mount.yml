@@ -4,13 +4,12 @@
 # Controlled by: mount_enabled. Override mount_nfs_entries in vars if needed.
 
 - name: mount | Ensure NFS mount point directories exist
-  file:
+  ansible.builtin.file:
     path: "{{ item.path }}"
     state: directory
     mode: "0755"
   become: true
-  when: ansible_os_family == 'Debian' and
-    mount_enabled
+  when: ansible_os_family == 'Debian' and mount_enabled
   loop: "{{ mount_nfs_entries }}"
   tags: mount
 
@@ -22,7 +21,6 @@
     opts: "{{ mount_nfs_opts }}"
     state: mounted
   become: true
-  when: ansible_os_family == 'Debian' and
-    mount_enabled
+  when: ansible_os_family == 'Debian' and mount_enabled
   loop: "{{ mount_nfs_entries }}"
   tags: mount

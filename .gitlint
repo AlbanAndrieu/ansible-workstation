@@ -1,0 +1,21 @@
+[general]
+# Ignore certain rules (comma-separated list), you can reference them by
+# their id or by their full name
+ignore=body-is-missing,T1,T3,B4
+regex-style-search=true
+fail-without-commits=true
+
+# Ignore any data send to gitlint via stdin
+ignore-stdin=true
+
+# Configure title-max-length rule, set title length to 120 (80 = default) plus emoji
+# [title-max-length]
+# line-length=180
+
+# You can also reference rules by their id (B1 = body-max-line-length)
+[B1]
+line-length=666
+
+[ignore-by-author-name]
+regex=(.*)dependabot(.*) #
+ignore=T1,body-min-length

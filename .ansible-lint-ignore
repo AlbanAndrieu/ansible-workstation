@@ -3,3 +3,5 @@ roles/albanandrieu.ansible_common/tasks/main.yml warning[outdated-tag]
 roles/albanandrieu.shell/vars/custom-Windows.yml load-failure[runtimeerror]
 roles/chrome/.travis.yml load-failure[runtimeerror]
 roles/chrome/tasks/main.yml warning[outdated-tag]
+tasks/ name[casing]
+tasks/ no-free-form

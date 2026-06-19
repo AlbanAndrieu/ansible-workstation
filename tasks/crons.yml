@@ -27,8 +27,7 @@
     day: "*"
     month: "*"
     weekday: "0"
-    job: sudo /usr/local/lynis/lynis audit system > /var/log/cron-lynis.log 2>&1
-      2>&1
+    job: sudo /usr/local/lynis/lynis audit system > /var/log/cron-lynis.log 2>&1 2>&1
   tags:
     - cron
     - lynis
@@ -47,9 +46,7 @@
     day: "*"
     month: "*"
     weekday: "1"
-    job:
-      sudo docker system prune -a -f --volumes && sudo docker volume prune --all
-      --force > /var/log/cron-docker-cleaning.log 2>&1
+    job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/cron-docker-cleaning.log 2>&1
   tags: [cron, docker, cleaning]
 
 - name: Clamscan check
@@ -64,11 +61,9 @@
     month: "*"
     weekday: "0"
     job:
-      sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k
-      --exclude-dir=/run/user/albandrieu/gvfs --exclude-dir=/home/albandrieu/.gvfs
-      --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution
-      --exclude-dir=Mail --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date
-      +\%b-\%d-\%Y).log" 2>/dev/null
+      sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs
+      --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail
+      --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null
   tags: [cron, clamscan, security]
 
 - name: Speedtest check
@@ -82,9 +77,7 @@
     day: "*"
     month: "*"
     weekday: "0"
-    job:
-      sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log
-      2>&1
+    job: sudo /usr/bin/speedtest --accept-license --accept-gdpr > /var/log/cron-speedtest.log 2>&1
   tags: [cron, speedtest]
 
 # Clear logs every month
@@ -100,8 +93,7 @@
     day: "1"
     month: "*"
     weekday: "*"
-    job: rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log
-      2>&1
+    job: rm -f /var/log/audit/audit.log.* > /var/log/cron-auditd.log 2>&1
   tags: [cron, auditd]
 
 # Archive Logs
@@ -117,9 +109,7 @@
     day: "*"
     month: "*"
     weekday: "*"
-    job:
-      /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-archiving.log
-      2>&1
+    job: /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup.sh > /var/log/cron-auditd-archiving.log 2>&1
   tags: [cron, auditd]
 
 # 0 * * * * /home/albandrieu/w/nabla/env/linux/run-perf-monitoring.sh >> /var/log/system_monitor.log

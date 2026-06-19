@@ -6,7 +6,9 @@
     name: postman
     classic: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=') and postman_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=') and
+    postman_enabled
   tags: package
 
 - name: workstation | Install insomnia
@@ -38,7 +40,7 @@
     - direnv
 
 - name: workstation | Install nvm nodejs tools
-  shell: >
+  ansible.builtin.shell: >
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
   args:
     creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
@@ -125,20 +127,24 @@
 # NOK sudo gdebi peazip_6.4.0.LINUX.GTK2-2_all.deb
 
 - name: workstation | Install peazip tools (1)
-  get_url:
+  ansible.builtin.get_url:
     url: http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
     dest: "{{ home }}/Downloads/"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and peazip_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    peazip_enabled
   become: true
   changed_when: false
   tags:
     - peazip
     - vm # do not install on docker image
 
-- name: workstation |Install githubdesktop tools (2)
-  command: gdebi {{ home }}/Downloads/peazip_5.3.1.LINUX.Qt-2_i386.deb
+- name: workstation | Install githubdesktop tools (2)
+  ansible.builtin.command: gdebi {{ home }}/Downloads/peazip_5.3.1.LINUX.Qt-2_i386.deb
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    githubdesktop_enabled
   tags:
     - peazip
     - vm # do not install on docker image
@@ -148,20 +154,24 @@
 # sudo gdebi GitHubDesktop-linux-2.9.3-linux3.deb
 
 - name: workstation | Install githubdesktop tools (1)
-  get_url:
+  ansible.builtin.get_url:
     url: https://github.com/shiftkey/desktop/releases/download/release-2.9.3-linux3/GitHubDesktop-linux-2.9.3-linux3.deb
     dest: "{{ home }}/Downloads/"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    githubdesktop_enabled
   become: true
   changed_when: false
   tags:
     - githubdesktop
     - vm # do not install on docker image
 
-- name: workstation |Install githubdesktop tools (2)
-  command: gdebi {{ home }}/Downloads/GitHubDesktop-linux-2.9.3-linux3.deb
+- name: workstation | Install githubdesktop tools (2)
+  ansible.builtin.command: gdebi {{ home }}/Downloads/GitHubDesktop-linux-2.9.3-linux3.deb
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and githubdesktop_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    githubdesktop_enabled
 
 - name: workstation | Install python utilities tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"

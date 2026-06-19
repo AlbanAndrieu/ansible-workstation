@@ -3,40 +3,35 @@
 # Controlled by: python_enabled, ansigenome_enabled.
 
 - name: python | Install Python dev and pip packages
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: present
     update_cache: true
     cache_valid_time: 600
   become: true
-  when: ansible_os_family == 'Debian' and
-    python_enabled
+  when: ansible_os_family == 'Debian' and python_enabled
   loop:
     - python-dev
     - python-pip
   tags: package
 
 - name: python | Install Python utilities (flake8, netaddr)
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04'] and
-    python_enabled
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and python_enabled
   loop:
     - python-flake8
     - python-netaddr
   tags: package
 
 - name: python | Install ansigenome prerequisites (pip2)
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip2
   become: true
-  when: ansible_os_family == 'Debian' and
-    python_enabled and
-    ansigenome_enabled
+  when: ansible_os_family == 'Debian' and python_enabled and ansigenome_enabled
   loop:
     - paramiko
     - PyYAML
@@ -45,26 +40,22 @@
   tags: package
 
 - name: python | Install ansigenome (pip2)
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip2
   become: true
-  when: ansible_os_family == 'Debian' and
-    python_enabled and
-    ansigenome_enabled
+  when: ansible_os_family == 'Debian' and python_enabled and ansigenome_enabled
   loop:
     - setuptools
     - ansigenome
   tags: package
 
 - name: python | Install Ansible tools (ansible-lint, pre-commit)
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip2
   become: true
-  when: ansible_os_family == 'Debian' and
-    python_enabled and
-    ansigenome_enabled
+  when: ansible_os_family == 'Debian' and python_enabled and ansigenome_enabled
   loop:
     - ansible-lint
     - ansible-shell
@@ -72,7 +63,7 @@
   tags: package
 
 - name: python | Install pylint
-  apt:
+  ansible.builtin.apt:
     name: pylint
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -85,7 +76,5 @@
     state: latest
     executable: pip3
   become: true
-  when: ansible_os_family == 'Debian' and
-    python_enabled and
-    glances_enabled
+  when: ansible_os_family == 'Debian' and python_enabled and glances_enabled
   tags: package

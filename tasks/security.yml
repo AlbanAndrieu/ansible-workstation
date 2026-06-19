@@ -109,7 +109,11 @@
 # sudo gem cleanup
 # sudo rm -rf /var/lib/gems/1.*
 - name: video | Add repo for security pentest packages
-  ansible.builtin.apt_repository: repo="ppa:backbox/four" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:backbox/four"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
   tags: gstreamer_setup
@@ -254,7 +258,7 @@
 
 # sudo systemctl disable apport
 - name: workstation | Disable apport
-  systemd:
+  ansible.builtin.systemd:
     name: apport
     state: stopped
     enabled: false
@@ -276,7 +280,7 @@
     - vm
 
 - name: workstation | Enable unattended upgrade
-  command: dpkg-reconfigure --priority=low unattended-upgrades
+  ansible.builtin.command: dpkg-reconfigure --priority=low unattended-upgrades
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
   tags:
@@ -523,7 +527,7 @@
 #     state: present
 
 - name: workstation | Uninstall unsecured applications
-  apt: >
+  ansible.builtin.apt: >
     pkg={{ item }}
     state=absent
     purge=yes

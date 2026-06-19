@@ -10,7 +10,7 @@
   become: true
 
 - name: workstation | Cron | Purge kernel images @reboot special time
-  cron:
+  ansible.builtin.cron:
     name: Purge kernel images
     special_time: reboot
     job: apt-get -y autoremove ; purge-old-kernels -y --keep 3 -q

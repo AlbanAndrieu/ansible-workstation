@@ -7,20 +7,19 @@
 # =============================================================================
 
 - name: workstation | Update apt cache
-  apt:
+  ansible.builtin.apt:
     update_cache: true
   become: true
   when: ansible_os_family == 'Debian'
   tags: package
 
 - name: workstation | Install apt utilities
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04']
   loop:
     - apt-show-versions
     - apt-listchanges
@@ -28,7 +27,7 @@
   tags: package
 
 - name: workstation | Install software-properties-common (for add-apt-repository)
-  apt:
+  ansible.builtin.apt:
     name: software-properties-common
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -40,22 +39,20 @@
     repo: "ppa:thefanclub/ubuntu-after-install"
     state: "{{ util_repository_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version in ['16.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['16.04']
   tags: uai
 
 - name: workstation | Install ubuntu-after-install
-  apt:
+  ansible.builtin.apt:
     name: ubuntu-after-install
     state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version in ['16.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['16.04']
   tags: package
 
 - name: workstation | Install extra base packages
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -81,7 +78,7 @@
   ansible.builtin.import_tasks: screenshot.yml
 
 - name: workstation | Install synergy QML prerequisites
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -105,7 +102,7 @@
   ansible.builtin.import_tasks: docs.yml
 
 - name: workstation | Install memory utilities (edac-utils)
-  apt:
+  ansible.builtin.apt:
     name: edac-utils
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -149,19 +146,16 @@
     repo: "ppa:awstools-dev/awstools"
     state: "{{ util_repository_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version in ['16.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['16.04']
   tags: package
 
 - name: workstation | Install AWS tools
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
     update_cache: true
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04'] and
-    aws_enabled
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and aws_enabled
   loop:
     - ec2-api-tools
     - s3cmd
@@ -169,12 +163,11 @@
   tags: package
 
 - name: workstation | Install Samba tools
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    smb_enabled
+  when: ansible_os_family == 'Debian' and smb_enabled
   loop:
     - samba
     - samba-common
@@ -220,7 +213,7 @@
   ansible.builtin.import_tasks: laptop.yml
 
 - name: workstation | Install cleaning tools (bleachbit)
-  apt:
+  ansible.builtin.apt:
     name: bleachbit
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -235,12 +228,11 @@
   ansible.builtin.import_tasks: apache.yml
 
 - name: workstation | Install WebDAV tools (Nextcloud)
-  apt:
+  ansible.builtin.apt:
     name: davfs2
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04']
   tags: webdav
 
 - name: workstation | Load python tasks
@@ -257,12 +249,11 @@
 # =============================================================================
 
 - name: workstation | Install font and Unicode tools
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04']
   loop:
     - fontforge
     - fontforge-extras
@@ -270,40 +261,37 @@
   tags: fonts
 
 - name: workstation | Install Eclipse JavaHL dependency
-  apt:
+  ansible.builtin.apt:
     name: libsvn-java
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04']
   tags: eclipse
 
 - name: workstation | Install Wine (legacy versions)
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version in ['12.04', '14.04', '16.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['12.04', '14.04', '16.04']
   loop:
     - wine
     - winetricks
   tags: wine
 
 - name: workstation | Install Wine stable (17.04)
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version in ['17.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['17.04']
   loop:
     - wine-stable
     - winetricks
   tags: wine
 
 - name: workstation | Install X11 server utilities (xhost)
-  apt:
+  ansible.builtin.apt:
     name: x11-xserver-utils
     state: "{{ util_pkg_state | default('present') }}"
   become: true
@@ -311,7 +299,7 @@
   tags: x11
 
 - name: workstation | Install shellcheck
-  apt:
+  ansible.builtin.apt:
     name: shellcheck
     state: "{{ util_pkg_state | default('present') }}"
   become: true

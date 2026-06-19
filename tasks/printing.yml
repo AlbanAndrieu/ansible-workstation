@@ -83,7 +83,7 @@
     - lang-en-gb
 
 - name: workstation | Install multi key right ctrl
-  shell: >
+  ansible.builtin.shell: >
     echo "keycode 115 = Multi_key" | xmodmap -
   tags:
     - accent

@@ -29,10 +29,9 @@
   gather_facts: false
   tasks:
     - name: fail for unsupported distribution
-      fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
-        is not a supported OS for a Tower installation.  Supported
-        OSes include Red Hat Enterprise Linux 6/7, CentOS 6/7, or
-        Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04/25.04"
+      fail:
+        msg="{{ ansible_distribution }} {{ ansible_distribution_version }} is not a supported OS for a Tower installation.  Supported OSes include Red Hat
+        Enterprise Linux 6/7, CentOS 6/7, or Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04/25.04"
     - debug: msg="Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
 
 - hosts: all
@@ -83,11 +82,9 @@
     security_sudoers_passwordless:
       - albandrieu
 
-
 - name: workstation | Test sandbox
   hosts: localhost
-  gather_facts: yes
-  #become: true
+  gather_facts: true
 
   tasks:
     - debug:
@@ -97,7 +94,6 @@
 
 - name: workstation | Apply basic more advanced hardening security configuration
   hosts: localhost
-  #become: true
 
   collections:
     - devsec.hardening
@@ -111,7 +107,7 @@
     # os_auditd_enabled: false
     # os_pam_enabled: false
     os_securetty_enabled: false
-    #os_security_auto_logout: 60
+    # os_security_auto_logout: 60
     os_sysctl_enabled: false
     sysctl_overwrite:
       # Enable IPv4 traffic forwarding.
@@ -123,10 +119,10 @@
       # NOK podman images
       kernel.unprivileged_userns_clone: 1
       kernel.unprivileged_bpf_disabled: 0
-    #os_security_suid_sgid_system_whitelist:
-    # - '/usr/bin/ssh-agent'
-    #os_security_suid_sgid_whitelist:
-    #  -
+    # os_security_suid_sgid_system_whitelist:
+    #  - '/usr/bin/ssh-agent'
+    # os_security_suid_sgid_whitelist:
+    #   -
     os_selinux_enabled: false
     # ssh_permit_root_login: true
     ssh_client_hardening: false
@@ -136,7 +132,6 @@
     ssh_pam_support: false
     ssh_client_password_login: true
     ssh_banner: true
-
 
 - name: workstation | Apply configuration
   hosts: localhost # , albandrieu, workstation
@@ -153,7 +148,7 @@
     - name: Run tasks/debug.yml instead of 'main'
       ansible.builtin.include_role:
         name: albanandrieu.workstation
-        
+
         # Disable nbelow tasks_from to run everythings
         # tasks_from: services
 

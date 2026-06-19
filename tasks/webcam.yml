@@ -29,13 +29,18 @@
 - name: webcam | Install webcam tools (2)
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and webcam_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04', '18.04'] and
+    webcam_enabled
   tags: package
   with_items:
     - camorama
 
 - name: video | Add repo for gstreamer packages
-  ansible.builtin.apt_repository: repo="ppa:mc3man/trusty-media" state={{ util_repository_state | default('present') }}
+  ansible.builtin.apt_repository:
+    repo: "ppa:mc3man/trusty-media"
+    state: "{{"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04'] and gstreamer_enabled
   tags: gstreamer_setup
@@ -72,7 +77,9 @@
 
 # See https://www.freeyourdesktop.com/2018/07/howdy-unlock-your-desktop-with-face-recognition/
 - name: webcam | Install howdy tools PPA
-  ansible.builtin.apt_repository: repo='ppa:boltgolt/howdy' update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:boltgolt/howdy"
+    update_cache: "yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
   tags: howdy
@@ -83,14 +90,15 @@
 - name: webcam | Install howdy tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and howdy_enabled
+  when:
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and
+    howdy_enabled
   tags: howdy
   with_items:
     - howdy
 
 - name: webcam | Copy the howdy config
-  template: src=howdy.conf.j2 dest=/etc/howdy/config.ini
-    mode=0644
+  ansible.builtin.template: src=howdy.conf.j2 dest=/etc/howdy/config.ini mode=0644
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and howdy_enabled
   tags: howdy

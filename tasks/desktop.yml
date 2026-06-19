@@ -1,6 +1,8 @@
 ---
 - name: workstation | Install nemo tools PPA
-  ansible.builtin.apt_repository: repo='ppa:webupd8team/nemo' update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:webupd8team/nemo"
+    update_cache: "yes"
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
   tags: nemo
@@ -54,7 +56,7 @@
 # http://doc.ubuntu-fr.org/unity-lens
 #
 - name: dash | Uninstall unity-lens and unity-scope packages
-  apt: >
+  ansible.builtin.apt: >
     pkg={{ item }}
     state=absent
     purge=yes
@@ -94,7 +96,11 @@
 
 # http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
 - name: webapps | Add webapps repo for unity-webapps-preview packages
-  ansible.builtin.apt_repository: repo="ppa:webapps/preview" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:webapps/preview"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
   tags: webapps_setup
@@ -117,7 +123,11 @@
     - xul-ext-unity
 
 - name: dash | Add dash repo for unity-lens history packages
-  ansible.builtin.apt_repository: repo="ppa:markjtully/ppa" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:markjtully/ppa"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
@@ -146,7 +156,11 @@
 #   - unity-scope-grooveshark
 
 - name: dash | Add dash repo for unity-lens google docs packages
-  ansible.builtin.apt_repository: repo="ppa:nilarimogard/webupd8" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:nilarimogard/webupd8"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
   tags: dash_setup
@@ -170,7 +184,11 @@
 # TODO
 # Ubuntu 14.04
 - name: indicator calendar | Add repo for calendar-indicator packages
-  ansible.builtin.apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:atareao/atareao"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
   tags: calendar_indicator_setup
@@ -184,7 +202,11 @@
     - calendar-indicator
 
 - name: indicator weather | Add repo for my-weather-indicator packages
-  ansible.builtin.apt_repository: repo="ppa:atareao/atareao" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:atareao/atareao"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
   tags: weather_indicator_setup
@@ -235,7 +257,7 @@
 
 # Uninstall nautilus file manager
 - name: workstation | Uninstall nautilus file manager
-  apt: >
+  ansible.builtin.apt: >
     pkg={{ item }}
     state=absent
     purge=yes
@@ -263,7 +285,10 @@
 # See https://tic-et-net.org/2018/05/10/comment-installer-gksu-sur-ubuntu-bionic-18-04-lts/
 
 - name: workstation | Make sure artful is enabled for gksudo tools
-  ansible.builtin.apt_repository: repo="deb http://archive.ubuntu.com/ubuntu/ artful universe" state=present update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "deb http://archive.ubuntu.com/ubuntu/ artful universe"
+    state: present
+    update_cache: "yes"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
   become: true
   ignore_errors: true
@@ -277,7 +302,7 @@
     - gksu
 
 - name: workstation | Enable lock-screen
-  command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'
+  ansible.builtin.command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package

@@ -3,70 +3,62 @@
 # Controlled by: docker_enabled, podman_enabled.
 
 - name: container | Install Docker host tools
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04'] and
-    docker_enabled
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and docker_enabled
   loop:
     - auditd
     - cpuset
   tags: docker
 
 - name: container | Install ubuntu-scap prerequisites
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04'] and
-    docker_enabled
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and docker_enabled
   loop:
     - libopenscap8
     - lynx
   tags: docker
 
 - name: container | Install Docker requirements (cgroups, apparmor)
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04', '14.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04', '14.04']
   loop:
     - apparmor-utils
     - cgroup-tools
   tags: docker
 
 - name: container | Install Docker credential helpers
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    ansible_distribution_version not in ['12.04', '14.04']
+  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04', '14.04']
   loop:
     - amazon-ecr-credential-helper
     - golang-docker-credential-helpers
   tags: docker
 
 - name: container | Install Podman
-  apt:
+  ansible.builtin.apt:
     name: podman
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and
-    podman_enabled
+  when: ansible_os_family == 'Debian' and podman_enabled
   tags: docker
 
 - name: container | Configure Podman unqualified search registries
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/containers/registries.conf
     regexp: "^# unqualified-search-registries.*"
     line: 'unqualified-search-registries = ["docker.io"]'
   become: true
-  when: ansible_os_family == 'Debian' and
-    podman_enabled
+  when: ansible_os_family == 'Debian' and podman_enabled
   tags: podman

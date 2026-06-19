@@ -8,7 +8,11 @@
     - steam-installers
 
 - name: workstation | Add lutris repo
-  ansible.builtin.apt_repository: repo="ppa:lutris-team/lutris" state={{ util_repository_state | default('present') }} update_cache=yes
+  ansible.builtin.apt_repository:
+    repo: "ppa:lutris-team/lutris"
+    state: "{{"
+    update_cache: "yes"
+    cmd: util_repository_state | default('present') }}
   become: true
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
 
