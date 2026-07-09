@@ -12,7 +12,6 @@
         webapps_enabled: false,
         apache_create_vhosts: false,
       }
-      
 # - name: Increase SWAP
 #   hosts: localhost
 #   connection: local

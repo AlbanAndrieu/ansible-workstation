@@ -1,3 +1,4 @@
+---
 # fail_fast: true
 minimum_pre_commit_version: 4.5.0
 exclude: |
@@ -156,7 +157,7 @@ repos:
       - id: pyupgrade
         name: "🐍 python · Py Upgrade"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.18
+    rev: v0.15.20
     hooks:
       - id: ruff-format
         name: "🐍 python · Format with Ruff"
@@ -186,7 +187,7 @@ repos:
     # This helps ensure cross-compatibility with people who don't wish to use uv
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.11.22
+    rev: 0.11.28
     hooks:
       - id: uv-sync
         name: "⚡️ uv · Sync dependencies with uv"
@@ -311,7 +312,7 @@ repos:
 
     ### Javascript & Web Tools ###
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v2.5.0"
+    rev: "v2.5.3"
     hooks:
       - id: biome-check
         name: "🟨 javascript · Lint, format, and safe fixes with Biome"
@@ -357,11 +358,12 @@ repos:
           (?x)^(
               trivy-sbom.json|
               my-app/public/.*|
+              playbooks/workstation.yml|
           )$
 
     ### Data & Config Validation ###
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.3
+    rev: 0.37.4
     hooks:
       - id: check-github-workflows
         name: "🧩 github-actions · Validate gh workflow files"
@@ -401,23 +403,23 @@ repos:
         name: "🔒 🐳 security · Detect hardcoded secrets"
         entry: zricethezav/gitleaks protect --verbose --redact --staged
 
-  ### Ansible ###
-  # Disable, too many issues, no time to fix them
-  # - repo: https://github.com/ansible-community/ansible-lint.git
-  #   rev: v26.4.0
-  #   hooks:
-  #     - id: ansible-lint
-  #       name: "📜 ansible - Lint Ansible"
-  #       # args: [--verbose]
-  #       files: \.(yaml|yml)$
-  #       exclude: >
-  #         (?x)^(
-  #           .travis.yml|
-  #           docker/|
-  #           requirements.yml|
-  #           playbooks/group_vars/all/vault.yml|
-  #           .gitlab-ci.yml|
-  #         )$
+    ### Ansible ###
+    # Disable, too many issues, no time to fix them
+    # - repo: https://github.com/ansible-community/ansible-lint.git
+    #   rev: v26.4.0
+    #   hooks:
+    #     - id: ansible-lint
+    #       name: "📜 ansible - Lint Ansible"
+    #       # args: [--verbose]
+    #       files: \.(yaml|yml)$
+    #       exclude: >
+    #         (?x)^(
+    #           .travis.yml|
+    #           docker/|
+    #           requirements.yml|
+    #           playbooks/group_vars/all/vault.yml|
+    #           .gitlab-ci.yml|
+    #         )$
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.38.0
     hooks:
@@ -433,7 +435,7 @@ repos:
 
     ### Commit Message Standards ###
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.25.0
+    rev: v9.26.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
@@ -442,7 +444,7 @@ repos:
           - conventional-changelog-conventionalcommits
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.16.3
+    rev: v4.16.4
     hooks:
       - id: commitizen
         name: "🌳 git · Validate commit message"

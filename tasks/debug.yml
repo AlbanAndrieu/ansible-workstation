@@ -145,3 +145,20 @@
     - lens
   with_items:
     - lens
+
+# CPU
+# stress-ng --cpu 8 --cpu-method matrixprod --timeout 1h
+# RAM
+# stress-ng --vm 8 --vm-bytes 80% --timeout 1h
+# IO
+# stress-ng --hdd 4 --timeout 1h
+
+- name: workstation | Install overclock stress tools
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  tags:
+    - package
+    - stress
+  with_items:
+    - stress-ng
