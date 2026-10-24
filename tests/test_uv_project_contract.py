@@ -55,6 +55,29 @@ class UvAndAnsibleContract(unittest.TestCase):
             self.assertEqual(len(section), 2, hook)
             self.assertIn("stages: [manual]", section[1].split("\n      - id:", 1)[0])
 
+    def test_precommit_repair_is_explicit_and_worktree_scoped(self):
+        wrapper = ROOT / "scripts/repair-pre-commit.sh"
+        contents = wrapper.read_text()
+        self.assertIn('PYTHON="$ROOT/.venv/bin/python"', contents)
+        self.assertIn('if [ ! -x "$PYTHON" ]', contents)
+        self.assertIn('pathlib.Path(sys.prefix).resolve() != venv', contents)
+        self.assertIn('"pre-commit==$PIN"', contents)
+        self.assertIn('uv pip install --python "$PYTHON"', contents)
+        self.assertNotIn("uv sync", contents.split("uv pip install")[1])
+        self.assertIn('"$PYTHON" -m pre_commit install', contents)
+        with (ROOT / "mise.toml").open("rb") as source:
+            config = tomllib.load(source)
+        self.assertIn(
+            "scripts/repair-pre-commit.sh",
+            config["tasks"]["hooks-repair"]["run"],
+        )
+
+    def test_ruff_precommit_does_not_use_nonexistent_hook_or_unsafe_fixes(self):
+        hooks = (ROOT / ".pre-commit-config.yaml").read_text()
+        self.assertNotIn("      - id: ruff-check", hooks)
+        self.assertNotIn("args: [--unsafe-fixes]", hooks)
+        self.assertIn("args: [--no-fix]", hooks)
+
     def test_mise_uses_immutable_safe_sync_command(self):
         with (ROOT / "mise.toml").open("rb") as source:
             config = tomllib.load(source)
