@@ -33,23 +33,44 @@
     name: myrepos
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04', '14.04']
-  ignore_errors: true
+  when:
+    - ansible_os_family == 'Debian'
+    - scm_enabled | bool
+    - ansible_distribution_version not in ['12.04', '14.04']
   tags: package
 
-- name: git | Initialize myrepos
-  ansible.builtin.shell: for d in $(find /workspace/users/{{ jenkins_user }}{{ shell_default_version }}/ -type d -name .git); do (mr register $d/..); done
+# Provisioning must not unexpectedly enumerate and register every repository,
+# or write configuration as root. Registration is explicitly opt-in.
+- name: git | Register myrepos for the current user (explicit opt-in)
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      root={{ workstation_myrepos_root | quote }}
+      test -d "$root" || exit 0
+      command -v mr >/dev/null 2>&1 || exit 0
+      while IFS= read -r -d '' git_dir; do
+        mr register "$(dirname "$git_dir")"
+      done < <(find "$root" -type d -name .git -prune -print0)
+    executable: /bin/bash
+  become: false
   changed_when: false
-  become: true
-  ignore_errors: true
+  when:
+    - ansible_os_family == 'Debian'
+    - scm_enabled | bool
+    - workstation_myrepos_autoregister_enabled | bool
+  tags:
+    - git
+    - myrepos
 
 - name: brew | Install hub (GitHub CLI)
   homebrew:
     name: hub
     state: present
     update_homebrew: true
-  ignore_errors: true
-  become: true
+  when:
+    - ansible_system == 'Darwin'
+    - scm_enabled | bool
+  become: false
 
 - name: git | Install GitLab CLI (glab)
   ansible.builtin.apt:
