@@ -426,6 +426,7 @@
   when:
     - ansible_os_family == 'Debian'
     - workstation_tailscale_disable_existing | bool
+    - not (tailscale_enabled | bool)
     - "'tailscaled.service' in ansible_facts.services"
   tags: [security, vpn]
 
