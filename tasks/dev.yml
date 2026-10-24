@@ -39,14 +39,15 @@
     - package
     - direnv
 
-- name: workstation | Install nvm nodejs tools
-  ansible.builtin.shell: >
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-  args:
-    creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
-  tags:
-    - nodejs
-    - nvm
+# Legacy nvm installation was previously curl | bash on every role execution.
+# Never execute a remote installer from this workstation playbook.
+- name: workstation | Explain legacy nvm migration
+  ansible.builtin.debug:
+    msg: >-
+      nvm installation is not automated. Prefer mise install in this role,
+      or provision nvm separately with a reviewed pinned artifact.
+  when: workstation_legacy_nvm_enabled | bool
+  tags: [nodejs, nvm]
 
 # See https://skofgar.ch/dev/2020/08/how-to-quickly-replace-environment-variables-in-a-file/
 - name: workstation | Install bash envsubst tool
