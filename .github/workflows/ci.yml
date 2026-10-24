@@ -26,13 +26,13 @@ jobs:
         with:
           enable-cache: false
       - name: Sync ephemeral CI venv
-        run: uv sync --group dev
+        run: uv sync --project . --locked --group dev
       - name: Offline contracts
-        run: uv run --no-sync python -m unittest discover -s tests -p 'test_*contract.py' -v
+        run: .venv/bin/python -m unittest discover -s tests -p 'test_*contract.py' -v
       - name: Ruff
-        run: uv run --no-sync ruff check tests
+        run: .venv/bin/ruff check tests
       - name: YAML lint
-        run: uv run --no-sync yamllint -d relaxed tasks/network_split_dns.yml tasks/runtime_mise_uv.yml
+        run: .venv/bin/yamllint -d relaxed tasks/network_split_dns.yml tasks/runtime_mise_uv.yml
 
   molecule:
     # Docker-heavy Molecule validation is manual to limit Actions usage.
@@ -49,9 +49,9 @@ jobs:
         with:
           enable-cache: false
       - name: Prepare Molecule environment
-        run: uv sync --group dev && uv pip install --python .venv/bin/python 'molecule' 'molecule-plugins[docker]' docker
+        run: uv sync --project . --locked --group dev && uv pip install --python .venv/bin/python 'molecule' 'molecule-plugins[docker]' docker
       - name: Run Molecule
-        run: uv run --no-sync molecule test
+        run: .venv/bin/molecule test
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
