@@ -59,6 +59,7 @@ class UvAndAnsibleContract(unittest.TestCase):
         wrapper = ROOT / "scripts/repair-pre-commit.sh"
         contents = wrapper.read_text()
         self.assertIn('PYTHON="$ROOT/.venv/bin/python"', contents)
+        self.assertIn("linked worktree shares hooks", contents)
         self.assertIn('if [ ! -x "$PYTHON" ]', contents)
         self.assertIn('pathlib.Path(sys.prefix).resolve() != venv', contents)
         self.assertIn('"pre-commit==$PIN"', contents)
