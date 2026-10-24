@@ -1,28 +1,37 @@
-# Declarative developer runtimes. No background installation in Bash/direnv.
+# Declarative runtimes. Downloads run only on explicit "mise install".
 min_version = "2026.7.0"
 
 [tools]
 python = "3.12"
 node = "24"
-uv = "latest"
+uv = "0.13.5"
 
 [settings]
-# Never install tools implicitly when a task runs; use "mise install" deliberately.
+# Avoid automatic tool installation and auto-activation from invalid locks.
+auto_install = false
 task.run_auto_install = false
-python.uv_venv_auto = "source"
+python.uv_venv_auto = false
+
+[tasks.lock]
+description = "Resolve a verified project and inspect its lockfile"
+run = "bash scripts/uv-project.sh lock"
 
 [tasks.sync]
-description = "Install project dependencies in its own .venv (generates uv.lock if absent)"
-run = "uv sync"
+description = "Sync only a verified lock into a project-owned venv"
+run = "bash scripts/uv-project.sh sync"
+
+[tasks.check-venv]
+description = "Verify the selected Ansible comes from this project's .venv"
+run = "bash scripts/uv-project.sh check"
 
 [tasks.test-offline]
-description = "Execute safe provisioning contract tests without running Ansible"
+description = "Run static offline contracts (no network or Ansible apply)"
 run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
 
 [tasks.lint]
-description = "Lint Ansible and Python after explicitly running mise install and uv sync"
-run = "uv run --no-sync ruff check tests"
+description = "Run Ruff in the existing, verified project environment"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check tests"
 
 [tasks.syntax]
-description = "Check Ansible playbook syntax; may need local Ansible collections"
-run = "uv run --no-sync ansible-playbook --syntax-check playbooks/workstation.yml"
+description = "Use only project Ansible for syntax checking"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook --syntax-check playbooks/workstation.yml"
