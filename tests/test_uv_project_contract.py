@@ -18,7 +18,10 @@ class UvAndAnsibleContract(unittest.TestCase):
         self.assertEqual(project["name"], "ansible-workstation")
         self.assertEqual(project["requires-python"], ">=3.12,<3.15")
         self.assertTrue(
-            any(name.startswith("ansible-core>=2.21") for name in project["dependencies"])
+            any(
+                name.startswith("ansible-core>=2.21")
+                for name in project["dependencies"]
+            )
         )
 
     def test_no_empty_lockfile_can_be_committed(self):
