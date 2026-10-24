@@ -164,12 +164,8 @@ repos:
         name: "🐍 python · Format with Ruff"
 
       - id: ruff
-        name: "🐍 python · Lint and perform unsafe auto-fixes with Ruff"
-        args: [--unsafe-fixes]
-
-      - id: ruff-check
-        name: "🐍 python · Check with Ruff"
-        args: [--fix]
+        name: "🐍 python · Lint with Ruff (read only)"
+        args: [--no-fix]
 
     # - repo: https://github.com/RobertCraigie/pyright-python
     #   rev: v1.1.406
