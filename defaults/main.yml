@@ -48,6 +48,24 @@ util_repository_state: present
 
 stats_enabled: true # Turn it to false in order to be uninstall in security role
 scm_enabled: false
+# Modern workstation runtimes: opt in to installations after reviewing versions.
+workstation_mise_uv_provision_enabled: false
+workstation_legacy_asdf_enabled: false
+workstation_legacy_python_enabled: false
+workstation_legacy_nvm_enabled: false
+
+# Tailscale stays installed for rollback but is stopped and disabled when present.
+tailscale_enabled: false
+workstation_tailscale_install_enabled: false
+workstation_tailscale_disable_existing: true
+
+# Cloudflare Tunnel is the chosen network access path; do not touch existing
+# credentials or install a second tunnel. Opt in to managing an installed unit.
+workstation_cloudflared_manage_existing: false
+
+# Never reconfigure UFW/DOCKER-USER implicitly during a general role application.
+workstation_firewall_manage_enabled: false
+
 # Bulk myrepos registration must be explicitly requested, never run as root.
 workstation_myrepos_autoregister_enabled: false
 workstation_myrepos_root: "/workspace/users/{{ user }}{{ shell_default_version }}"
