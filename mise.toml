@@ -24,6 +24,10 @@ run = "bash scripts/uv-project.sh sync"
 description = "Verify the selected Ansible comes from this project's .venv"
 run = "bash scripts/uv-project.sh check"
 
+[tasks.hooks-repair]
+description = "Explicitly repair pre-commit in this worktree's existing venv"
+run = "bash scripts/repair-pre-commit.sh"
+
 [tasks.test-offline]
 description = "Run static offline contracts (no network or Ansible apply)"
 run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
