@@ -2,77 +2,58 @@
 name: CI
 "on":
   pull_request:
+    types: [ready_for_review, reopened, synchronize]
+    branches: [master]
   push:
-    branches:
-      - master
-  schedule:
-    - cron: "30 5 * * 0"
+    branches: [master]
+  workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: "alban.andrieu.workstation"
+permissions:
+  contents: read
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+  quality:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    name: Offline contracts, Python and YAML lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
     steps:
-      - name: Check out the codebase.
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
         with:
-          path: "alban.andrieu.workstation"
-
-      - name: Set up Python 3.
-        uses: actions/setup-python@v5
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          python-version: "3.x"
-          cache: "pip"
-          # cache-dependency-path: '**/requirements-dev.txt'
-          check-latest: true
-
-      # - name: Install dependencies
-      #   run: pip install -r requirements-dev.txt
-
-      - name: Install test dependencies.
-        run: pip3 install yamllint
-
-      - name: Lint code.
-        run: |
-          yamllint .
+          enable-cache: false
+      - name: Sync ephemeral CI venv
+        run: uv sync --group dev
+      - name: Offline contracts
+        run: uv run --no-sync python -m unittest discover -s tests -p 'test_*contract.py' -v
+      - name: Ruff
+        run: uv run --no-sync ruff check tests
+      - name: YAML lint
+        run: uv run --no-sync yamllint tasks defaults
 
   molecule:
-    name: Molecule
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - distro: ubuntu2404
-            playbook: converge.yml
-          # - distro: debian12
-          #   playbook: converge.yml
-
+    # Docker-heavy Molecule validation is manual to limit Actions usage.
+    if: github.event_name == 'workflow_dispatch'
+    name: Molecule manual integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - name: Check out the codebase.
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
         with:
-          path: "alban.andrieu.workstation"
-
-      - name: Set up Python 3.
-        uses: actions/setup-python@v5
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          python-version: "3.x"
-          cache: "pip"
-          # cache-dependency-path: '**/requirements-dev.txt'
-          check-latest: true
-
-      - name: Install test dependencies.
-        run: pip3 install ansible molecule molecule-plugins[docker] docker
-
-      - name: Run Molecule tests.
-        run: molecule test
+          enable-cache: false
+      - name: Prepare Molecule environment
+        run: uv sync --group dev && uv pip install --python .venv/bin/python 'molecule' 'molecule-plugins[docker]' docker
+      - name: Run Molecule
+        run: uv run --no-sync molecule test
         env:
-          ANSIBLE_PYTHON_INTERPRETER: "/usr/bin/python"
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
-          MOLECULE_DISTRO: ${{ matrix.distro }}
-          MOLECULE_PLAYBOOK: ${{ matrix.playbook }}
+          MOLECULE_DISTRO: ubuntu2404
+          MOLECULE_PLAYBOOK: converge.yml
