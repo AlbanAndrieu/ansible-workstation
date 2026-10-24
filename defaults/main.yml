@@ -48,6 +48,9 @@ util_repository_state: present
 
 stats_enabled: true # Turn it to false in order to be uninstall in security role
 scm_enabled: false
+# Bulk myrepos registration must be explicitly requested, never run as root.
+workstation_myrepos_autoregister_enabled: false
+workstation_myrepos_root: "/workspace/users/{{ user }}{{ shell_default_version }}"
 screensaver_enabled: true
 dash_enabled: true
 classicmenu_indicator_enabled: true
