@@ -7,6 +7,17 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PYTHON="$ROOT/.venv/bin/python"
 LOCK="$ROOT/uv.lock"
 
+# Git normally shares hook storage across linked worktrees. Installing a
+# worktree-specific Python entrypoint there can break other worktrees.
+# Repair the hooks from the primary checkout only.
+GIT_DIR="$(git -C "$ROOT" rev-parse --path-format=absolute --git-dir)"
+COMMON_DIR="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir)"
+if [ "$(cd -- "$GIT_DIR" && pwd -P)" != "$(cd -- "$COMMON_DIR" && pwd -P)" ]; then
+  echo "REFUSED: linked worktree shares hooks; run repair from primary checkout." >&2
+  exit 2
+fi
+
+
 if [ ! -x "$PYTHON" ] || [ ! -f "$ROOT/.venv/pyvenv.cfg" ]; then
   echo "REFUSED: missing project .venv. Create a reviewed, isolated venv first." >&2
   exit 2
