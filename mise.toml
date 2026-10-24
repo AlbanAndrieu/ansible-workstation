@@ -1,5 +1,28 @@
-min_version = "2024.9.5"
+# Declarative developer runtimes. No background installation in Bash/direnv.
+min_version = "2026.7.0"
 
 [tools]
-python = "{{ get_env(name='PYTHON_VERSION', default='3.12') }}"
-node = "latest"
+python = "3.12"
+node = "24"
+uv = "latest"
+
+[settings]
+# Never install tools implicitly when a task runs; use "mise install" deliberately.
+task.run_auto_install = false
+python.uv_venv_auto = "source"
+
+[tasks.sync]
+description = "Install project dependencies in its own .venv (generates uv.lock if absent)"
+run = "uv sync"
+
+[tasks.test-offline]
+description = "Execute safe provisioning contract tests without running Ansible"
+run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
+
+[tasks.lint]
+description = "Lint Ansible and Python after explicitly running mise install and uv sync"
+run = "uv run --no-sync ruff check tests"
+
+[tasks.syntax]
+description = "Check Ansible playbook syntax; may need local Ansible collections"
+run = "uv run --no-sync ansible-playbook --syntax-check playbooks/workstation.yml"
