@@ -130,6 +130,11 @@ environment. The Git hook still points to that worktree-local Python.
 This is an environment issue, **not a failing quality gate**.
 
 Use a **trusted** working checkout that already contains its own `.venv`.
+This must be the **primary checkout**, not a linked Git worktree:
+the Git hook directory is shared in normal multi-worktree setups. Running
+the repair from a secondary worktree fails closed instead of rewriting the
+shared hook's Python interpreter. Worktree tests remain supported.
+
 Run the repair explicitly, not from Bash startup or a Git hook:
 
 ```bash
