@@ -17,11 +17,19 @@ class ModernRuntimeSecurityContract(unittest.TestCase):
         self.assertFalse(cfg["settings"]["task"]["run_auto_install"])
         self.assertTrue(project["tool"]["uv"]["package"] is False)
         self.assertTrue(project["project"]["requires-python"].startswith(">=3.12"))
-        self.assertTrue(any(d.startswith("ansible-core>=2.21") for d in project["project"]["dependencies"]))
+        self.assertTrue(
+            any(
+                d.startswith("ansible-core>=2.21")
+                for d in project["project"]["dependencies"]
+            )
+        )
 
     def test_no_direnv_downloads(self):
         envrc = (ROOT / ".envrc").read_text()
-        for forbidden in ("curl ", "pip install", "pyenv install", "source .env.secrets", "unset PS1", "nvm install"):
+        for forbidden in (
+            "curl ", "pip install", "pyenv install",
+            "source .env.secrets", "unset PS1", "nvm install",
+        ):
             self.assertNotIn(forbidden, envrc)
 
     def test_ansible_defaults_fail_safe(self):
@@ -45,7 +53,9 @@ class ModernRuntimeSecurityContract(unittest.TestCase):
         self.assertIn("enabled: false", security)
         self.assertIn("not (tailscale_enabled | bool)", security)
         self.assertIn("'tailscaled.service' in ansible_facts.services", security)
-        self.assertNotIn("state: absent", security[security.index("# Tailscale is retained"):])
+        self.assertNotIn(
+            "state: absent", security[security.index("# Tailscale is retained"):]
+        )
         self.assertIn("workstation_firewall_manage_enabled | bool", security)
         self.assertIn("workstation_cloudflared_manage_existing | bool", security)
         self.assertNotIn("cloudflared service install", security)
