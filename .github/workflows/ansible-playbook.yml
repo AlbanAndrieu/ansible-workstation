@@ -1,52 +1,41 @@
 ---
-name: Ansible Playbook
-
-on:
-  push:
-    branches: [master, main]
+name: Ansible Syntax
+"on":
   pull_request:
-    branches: [master, main]
+    branches: [master]
+    types: [ready_for_review, reopened, synchronize]
+    paths:
+      - "tasks/**"
+      - "defaults/**"
+      - "playbooks/**"
+      - "requirements.yml"
+      - "pyproject.toml"
+  push:
+    branches: [master]
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: bash
+permissions:
+  contents: read
 
 jobs:
-  playbook:
-    name: Run workstation playbook
-    runs-on: ubuntu-24.04 # Ubuntu 24.04 LTS (Noble)
-    timeout-minutes: 30
-
+  syntax:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: "pip"
-
-      - name: Install Ansible and collections
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: false
+      - name: Set up project environment
+        run: uv sync --group dev
+      - name: Install Ansible collections
         run: |
-          pip install --upgrade pip
-          pip install "ansible-core>=2.15,<2.20"
-          ansible-galaxy collection install ansible.posix
-          ansible-galaxy collection install community.general
-
-      - name: Verify Ansible
-        run: ansible --version
-
-      # Runs in check mode (dry run) so the runner is not modified. Remove --check --diff to apply for real.
-      - name: Run Ansible playbook (check mode)
-        run: |
-          ansible-playbook playbooks/workstation.yml \
-            -i localhost, \
-            --connection=local \
-            --check \
-            --diff \
-            -e "workstation_enabled=true"
+          uv run --no-sync ansible-galaxy collection install ansible.posix community.general
+      - name: Check syntax only
+        run: uv run --no-sync ansible-playbook --syntax-check playbooks/workstation.yml
         env:
           ANSIBLE_FORCE_COLOR: "1"
-          PYTHONUNBUFFERED: "1"
