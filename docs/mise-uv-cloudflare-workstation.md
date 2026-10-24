@@ -116,6 +116,57 @@ git diff --stat HEAD..origin/fix/workstation-pfsense-split-dns-20261024
 If the local index and the remote branch conflict, review them in an
 isolated Git worktree before choosing which local changes to keep.
 
+### Git pre-commit repair on an existing workstation (25 October)
+
+The 20 offline static tests passed in a detached worktree, but the regular
+checkout's `git commit` failed before hook execution with:
+
+```text
+.venv/bin/python: No module named pre_commit
+```
+
+The previously executed exact uv sync removed packages from the existing
+environment. The Git hook still points to that worktree-local Python.
+This is an environment issue, **not a failing quality gate**.
+
+Use a **trusted** working checkout that already contains its own `.venv`.
+Run the repair explicitly, not from Bash startup or a Git hook:
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+mise run hooks-repair
+.venv/bin/python -m pre_commit --version
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+```
+
+`hooks-repair` verifies the interpreter's `sys.prefix` is the current
+worktree's `.venv`. It reads the `pre-commit` version from `uv.lock`,
+installs **only that package and its requirements** with
+`uv pip install --python .venv/bin/python` when missing or mismatched, and
+installs the pre-commit / commit-msg Git hooks. It never performs an exact
+`uv sync`, never installs into the system Python, and never runs implicitly
+at `git commit` time. The first actual hook execution may fetch and build
+the configured isolated hook environments; audit network access before
+running it offline.
+
+If the checkout has not yet received the new branch (staged changes prevent
+a fast-forward), restore just the missing module by running:
+
+```bash
+uv pip install --python "$PWD/.venv/bin/python" "pre-commit==4.7.0"
+"$PWD/.venv/bin/python" -m pre_commit install \
+  --hook-type pre-commit --hook-type commit-msg
+```
+
+Then review the Git index with `git diff --cached --stat` before committing.
+Never use `git reset --hard`, `git commit --no-verify`, or an exact
+`uv sync` to work around this error. `git commit -am` does not include
+untracked files, including new files from a local installation.
+
+The old duplicate Ruff entry `ruff-check` (not a valid hook ID in
+ruff-pre-commit) and unsafe automatic Ruff fixes were also removed. Ruff
+lint remains enabled as a read-only check.
+
 ### Pre-commit, Ansible config and CI safety
 
 - `uv-sync` is removed from automatic pre-commit execution: it may uninstall
