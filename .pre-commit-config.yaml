@@ -46,6 +46,8 @@ repos:
     rev: v0.10.0
     hooks:
       - id: pre-commit-update
+        # Explicit maintenance only; never rewrite configuration during a commit.
+        stages: [manual]
 
     # ---------------------------- 📁 Filesystem Tools --------------------------- #
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
@@ -188,17 +190,19 @@ repos:
     # uv version.
     rev: 0.13.5
     hooks:
-      - id: uv-sync
-        name: "⚡️ uv · Sync dependencies with uv"
+      # Do not run uv-sync from a git hook: exact sync may REMOVE packages
+      # from an existing development environment during a commit.
       - id: uv-lock
-        name: "⚡️ uv · Update dependency lockfile"
+        name: "⚡️ uv · Update dependency lockfile (manual)"
+        stages: [manual]
       - id: uv-lock
         name: "⚡️ uv · Upgrade via uv sync --upgrade"
         alias: deps
         args: ["--upgrade"]
         stages: [manual]
       - id: uv-export
-        name: "⚡️ uv · Export dependencies to requirements.txt"
+        name: "⚡️ uv · Export dependencies to requirements.txt (manual)"
+        stages: [manual]
         args:
           - "--no-dev"
           - "--no-emit-package"
