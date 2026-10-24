@@ -18,26 +18,88 @@ or cloudflared secrets.
 A `.venv` is kept in each worktree. uv's download cache can be shared across
 worktrees; do not share an editable global Python environment.
 
-### Operator workflow
+### Operator workflow (safe against empty uv.lock)
 
-Before running mise tasks, review `mise.toml`; mise config is executable
-input and requires trust. Use only from a trusted workstation checkout.
+Previous workstation output (24 October): `uv lock` warned that the workspace
+had no `requires-python`, produced a **three-line** `uv.lock`, and
+`uv sync --locked` removed 71 existing packages. Subsequently `ansible`
+resolved to `~/.local/bin/ansible` (system Python 3.14), **not the project's
+toolchain**. The Ansible playbook syntax check was valid only for that system
+Ansible. This was an accidental wrong-project resolution, not proof that
+Ansible dependencies were successfully migrated.
+
+Root cause of project-selection drift has **not yet been confirmed**.
+The new wrapper explicitly selects the `pyproject.toml` in this checkout,
+checks project metadata and the complete lock contents, and refuses external uv
+environment overrides. Plain `mise exec -- uv sync` bypasses this protection:
+**do not use it** for this project.
+
+Review `mise.toml` in a trusted checkout before running mise tasks.
 
 ```bash
-cd ~/w/ansible-workstation
-mise --version
+cd /workspace/users/albandrieu30/ansible-workstation
+
+# Show your active branch and any local changes before fetching.
+git status --short
+git branch --show-current
+
+# Update the tracked PR branch without rewriting local work:
+git fetch origin fix/workstation-pfsense-split-dns-20261024
+git merge --ff-only origin/fix/workstation-pfsense-split-dns-20261024
+
+# No root privileges, network or package modification:
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+bash -n scripts/uv-project.sh
+bash -n .envrc
+
+# Inspect possible external uv overrides (names only, never print tokens):
+for key in UV_PROJECT UV_PROJECT_ENVIRONMENT UV_NO_PROJECT UV_NO_WORKSPACE; do
+  if [ -n "${!key:-}" ]; then printf 'Review configured variable: %s\n' "$key"; fi
+done
+
+# Explicit toolchain setup; shared download cache, no global .venv:
 mise install
-mise exec -- uv --version
-mise exec -- uv lock           # create/review uv.lock; commit after resolution
-mise exec -- uv sync --locked  # creates a per-worktree .venv
-mise run test-offline
-mise run syntax                # only once dependencies/roles are available
+mise run lock                  # explicit --project and verify dependencies
+# Review uv.lock with git diff before staging or committing.
+mise run sync                  # refuses existing unmanaged .venv
+mise run check-venv            # must show .venv/bin/ansible, Python 3.12
+mise run syntax                # only after project Ansible was verified
 ```
 
-No `uv.lock` is included yet because external dependency resolution has not
-been validated on the workstation. **Do not use `uv sync --frozen` until
-a reviewed lockfile is committed.** Prior `poetry.lock` and `Pipfile.lock`
-remain for audit/rollback but are no longer the primary installation path.
+If the earlier `.venv` exists, **do not delete it**. Back it up manually
+only after you have confirmed its path and any project-local dependencies:
+
+```bash
+# Example ONLY. Run once in the intended checkout after inspection:
+mv .venv ".venv.before-uv-$(date +%Y%m%d-%H%M%S)"
+mise run sync
+```
+
+The new `uv.lock` must contain resolved packages including `ansible-core`,
+`pytest`, `ruff`, and their dependencies. It should never consist of only
+`version`, `revision`, and `requires-python`. Once reviewed, commit the lock
+in the same PR. The incomplete three-line lock was removed from GitHub.
+
+Note that Ansible 2.21 supports controller Python 3.12–3.14, while the project
+chooses Python 3.12 for consistent local development. The mere output of
+`ansible --version` does not establish that it came from the local .venv.
+
+### Pre-commit, Ansible config and CI safety
+
+- `uv-sync` is removed from automatic pre-commit execution: it may uninstall
+  dependencies on each commit. `uv-lock`, `uv-export` and
+  `pre-commit-update` are manual-only, to avoid unrelated Git mutations.
+- The Ansible and Python CI jobs use `.venv/bin/` directly and require an
+  existing, valid lock. CI will not be release-ready until a reviewed lock is
+  committed; the PR stays Draft.
+- `ansible.cfg` now enables SSH host key verification, stops ignoring TLS
+  certificates, removes automatic root login, plaintext repository logging,
+  automatic Vault password lookup, invalid jsonfile caching and unsafe SSH
+  known_hosts overrides. A new host must first be enrolled with a **verified**
+  SSH host key.
+- `--syntax-check` never applies system configuration; avoid running the
+  entire playbook until UFW, DNS, Tailscale and existing services have been
+  separately approved.
 
 Optional feature groups from the old Poetry configuration were rationalized:
 API, deployment, encryption, telemetry, InfluxDB, notebook. Legacy Python 2,
