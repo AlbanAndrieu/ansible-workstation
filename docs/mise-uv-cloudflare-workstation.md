@@ -84,6 +84,38 @@ Note that Ansible 2.21 supports controller Python 3.12–3.14, while the project
 chooses Python 3.12 for consistent local development. The mere output of
 `ansible --version` does not establish that it came from the local .venv.
 
+### Tracked lockfiles and generated cache (25 October 2026)
+
+The workstation's current staging status included:
+`A mise.lock`, `M package-lock.json`, `M package.json`,
+`M uv.lock`, `?? .config/`, `?? .node_cache/`.
+
+**The three lockfiles are intentional and must be versioned.**
+The latest PR branch now includes a resolved `uv.lock` with the Ansible
+toolchain and a `mise.lock` matching Python 3.12, Node 24, uv 0.13.5.
+`package.json` and `package-lock.json` are also committed together.
+The offline `tests/test_lockfiles_contract.py` checks these invariants.
+
+`.node_cache/` and the manually generated
+`.config/requirements-lock.txt` are ignored. **Do not ignore the entire
+`.config/` directory**: first inspect the exact untracked filenames.
+Do not stage private credentials or accidentally commit a generated cache.
+These ignores do not remove files already tracked by Git.
+
+Before updating a workstation checkout with **staged local changes**, do
+not run `git reset --hard` or a blind `git pull`:
+
+```bash
+git status --short --untracked-files=all
+git diff --cached --stat
+git diff --cached -- package.json package-lock.json uv.lock mise.lock
+git fetch origin fix/workstation-pfsense-split-dns-20261024
+git diff --stat HEAD..origin/fix/workstation-pfsense-split-dns-20261024
+```
+
+If the local index and the remote branch conflict, review them in an
+isolated Git worktree before choosing which local changes to keep.
+
 ### Pre-commit, Ansible config and CI safety
 
 - `uv-sync` is removed from automatic pre-commit execution: it may uninstall
