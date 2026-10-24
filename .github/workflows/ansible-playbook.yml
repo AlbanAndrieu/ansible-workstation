@@ -31,11 +31,11 @@ jobs:
         with:
           enable-cache: false
       - name: Set up project environment
-        run: uv sync --group dev
+        run: uv sync --project . --locked --group dev
       - name: Install Ansible collections
         run: |
-          uv run --no-sync ansible-galaxy collection install ansible.posix community.general
+          .venv/bin/ansible-galaxy collection install ansible.posix community.general
       - name: Check syntax only
-        run: uv run --no-sync ansible-playbook --syntax-check playbooks/workstation.yml
+        run: .venv/bin/ansible-playbook --syntax-check playbooks/workstation.yml
         env:
           ANSIBLE_FORCE_COLOR: "1"
