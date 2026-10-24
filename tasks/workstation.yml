@@ -109,8 +109,14 @@
   when: ansible_os_family == 'Debian'
   tags: package
 
-- name: workstation | Load asdf tasks
+- name: workstation | Provision mise-managed runtimes (explicit opt-in)
+  ansible.builtin.import_tasks: runtime_mise_uv.yml
+  when: workstation_mise_uv_provision_enabled | bool
+
+# Legacy installers remain available only when explicitly requested.
+- name: workstation | Load legacy asdf tasks
   ansible.builtin.import_tasks: asdf.yml
+  when: workstation_legacy_asdf_enabled | bool
 - name: workstation | Load desktop tasks
   ansible.builtin.import_tasks: desktop.yml
 - name: workstation | Load time tasks
@@ -235,8 +241,9 @@
   when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04']
   tags: webdav
 
-- name: workstation | Load python tasks
+- name: workstation | Load legacy system Python installer tasks
   ansible.builtin.import_tasks: python.yml
+  when: workstation_legacy_python_enabled | bool
 - name: workstation | Load plank tasks
   ansible.builtin.import_tasks: plank.yml
 - name: workstation | Load container tasks
