@@ -18,6 +18,70 @@ or cloudflared secrets.
 A `.venv` is kept in each worktree. uv's download cache can be shared across
 worktrees; do not share an editable global Python environment.
 
+### direnv, mise and uv: first-time venv lifecycle
+
+This repository has been compared with `fastapi-sample`. The other project's
+`.envrc` explicitly creates and activates an environment, but also performs
+various unrelated network/bootstrap tasks. Only the safe parts are reused.
+
+In `ansible-workstation`, `direnv allow` now:
+1. loads the **already installed** mise toolchain;
+2. if `.venv` is absent, creates an **empty** local Python 3.12 venv using
+   `uv venv --offline --no-python-downloads`;
+3. activates a complete existing venv by setting `VIRTUAL_ENV` and prepending
+   its `bin` directory;
+4. never runs `uv sync`, downloads Python, installs packages, loads secrets
+   or changes Git hooks.
+
+If `mise`, uv or Python 3.12 are unavailable, first execute `mise install`
+**explicitly** and then `direnv reload`. An existing incomplete venv is
+**not modified**; its previous contents are preserved.
+
+To recover the broken venv observed on the workstation
+(`~/.venv/bin/python` missing in the project):
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+
+# Update the PR in the primary checkout, without discarding local edits.
+git fetch origin fix/workstation-pfsense-split-dns-20261024
+git merge --ff-only origin/fix/workstation-pfsense-split-dns-20261024
+
+# Offline checks; safe before any runtime installation.
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+bash -n .envrc
+bash -n scripts/ensure-direnv-venv.sh
+bash -n scripts/recover-workstation-venv.sh
+bash -n scripts/bootstrap-workstation.sh
+
+# Installs tools explicitly, not through direnv.
+mise install
+
+# Existing broken .venv? This archives it; NO deletion or sync.
+mise run recover-venv
+
+# Empty Python 3.12 venv creation, offline and without package installs.
+direnv reload
+test -x .venv/bin/python && .venv/bin/python --version
+
+# Explicitly sync locked project dependencies and repair primary Git hooks.
+mise run init
+
+# Verify that these commands do not fall back to the system Ansible.
+.venv/bin/python -m pre_commit --version
+.venv/bin/ansible --version
+mise run check-venv
+```
+
+Do not run `mise run recover-venv` if an existing venv is healthy. It refuses
+to archive a complete, executable environment. The command preserves an
+incomplete venv as `.venv.incomplete-YYYYMMDD-HHMMSS-PID` (ignored by Git)
+and never deletes any file. Review or retain that archive as needed.
+
+A newly created empty `.venv` is deliberately **not commit-ready**:
+`pre-commit` is installed later by `mise run init`. This separation keeps
+`direnv allow` fast, offline, and free of hidden package mutations.
+
 ### Operator workflow (safe against empty uv.lock)
 
 Previous workstation output (24 October): `uv lock` warned that the workspace
