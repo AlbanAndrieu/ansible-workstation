@@ -128,6 +128,55 @@ class DirenvVenvContract(unittest.TestCase):
             self.assertEqual((invalid / "keep").read_text(), "unaltered")
             self.assertFalse((invalid / ".ansible-workstation-uv-managed").exists())
 
+    def test_first_allow_creates_empty_venv_only_once(self):
+        # Fake binaries: neither Python installation nor network is required.
+        with tempfile.TemporaryDirectory(prefix="ansible-first-direnv-") as tmp:
+            root = Path(tmp)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            helper = scripts / "ensure-direnv-venv.sh"
+            shutil.copyfile(ROOT / "scripts/ensure-direnv-venv.sh", helper)
+            tools = root / "fake-bin"
+            tools.mkdir()
+            python = tools / "python"
+            python.write_text("#!/bin/sh\\nexit 0\\n")
+            python.chmod(0o755)
+            fake_uv = tools / "uv"
+            fake_uv.write_text(
+                "#!/bin/sh\\n"
+                'echo "$@" >> "$UV_TEST_LOG"\\n'
+                'for arg in "$@"; do path="$arg"; done\\n'
+                'mkdir -p "$path/bin"\\n'
+                'echo "home = /fake/python" > "$path/pyvenv.cfg"\\n'
+                'printf "#!/bin/sh\\nexit 0\\n" > "$path/bin/python"\\n'
+                'chmod 700 "$path/bin/python"\\n'
+            )
+            fake_uv.chmod(0o755)
+            log = root / "uv-called"
+            env = os.environ.copy()
+            env["PATH"] = str(tools) + os.pathsep + env.get("PATH", "")
+            env["UV_TEST_LOG"] = str(log)
+            for iteration in range(2):
+                result = subprocess.run(
+                    ["/bin/bash", str(helper)],
+                    cwd=root,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=5,
+                )
+                self.assertEqual(
+                    result.returncode, 0, f"pass {iteration}: {result.stderr}"
+                )
+            self.assertTrue((root / ".venv/bin/python").exists())
+            self.assertTrue(
+                (root / ".venv/.ansible-workstation-uv-managed").exists()
+            )
+            calls = log.read_text().splitlines()
+            self.assertEqual(len(calls), 1)
+            self.assertIn("venv --offline --no-python-downloads", calls[0])
+
     def test_ignore_archived_environments(self):
         gitignore = (ROOT / ".gitignore").read_text()
         self.assertIn(".venv.incomplete-*/", gitignore)
