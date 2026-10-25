@@ -40,6 +40,25 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertIn('if [ -e "$VENV" ]; then', helper)
         self.assertIn('if [ -L "$VENV" ]; then', helper)
 
+    def test_direnv_shell_diagnostic_inspects_parent_prompt_read_only(self):
+        script = ROOT / "scripts/diagnose-direnv-shell.sh"
+        source = script.read_text()
+        self.assertIn("declare -p PROMPT_COMMAND", source)
+        self.assertIn("declare -F _direnv_hook", source)
+        self.assertNotIn("eval \"$(direnv hook bash)\"", source)
+        self.assertNotIn("uv sync --locked", source)
+        self.assertNotIn("git config --global", source)
+        result = subprocess.run(
+            ["/bin/bash", "-c", "source \"$1\"", "_", str(script)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Direnv: current Bash hook diagnosis", result.stdout)
+
     def test_explicit_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as source:
             cfg = tomllib.load(source)
