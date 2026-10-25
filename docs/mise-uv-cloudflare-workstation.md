@@ -38,7 +38,7 @@ If `mise`, uv or Python 3.12 are unavailable, first execute `mise install`
 **not modified**; its previous contents are preserved.
 
 To recover the broken venv observed on the workstation
-(`~/.venv/bin/python` missing in the project):
+(`.venv/bin/python` missing in the project):
 
 ```bash
 cd /workspace/users/albandrieu30/ansible-workstation
