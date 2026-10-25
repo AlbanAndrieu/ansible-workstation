@@ -63,6 +63,7 @@ class UvAndAnsibleContract(unittest.TestCase):
         self.assertIn("git check-ignore --no-index -v", source)
         self.assertNotIn("uv pip install", source)
         self.assertNotIn("pre_commit install", source)
+        self.assertNotIn("`", source)
         with (ROOT / "mise.toml").open("rb") as stream:
             config = tomllib.load(stream)
         self.assertEqual(
