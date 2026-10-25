@@ -99,6 +99,12 @@ if [ "$ACTION" = check ]; then
   exit 0
 fi
 
+# Never follow a symlink to an environment outside the selected checkout.
+if [ -L "$ROOT/.venv" ]; then
+  echo "REFUSED: symlinked .venv; refuse to sync an external environment." >&2
+  exit 2
+fi
+
 # Exact sync removes unlisted packages. Never alter an existing venv we did
 # not create. Rename/archive it manually if it was made by pipenv/Poetry/uv.
 marker="$ROOT/.venv/.ansible-workstation-uv-managed"
