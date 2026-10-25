@@ -66,6 +66,10 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertIn('$_prompt_declaration', diag)
         self.assertNotIn('echo "$PROMPT_COMMAND"', diag)
         self.assertNotIn('eval "$PROMPT_COMMAND"', diag)
+        self.assertIn('PS1: INVALID _mise_hookhistory', diag)
+        self.assertIn('declare -f "$_prompt_hook_function"', diag)
+        self.assertIn('Prompt function %s: INVALID _mise_hookhistory', diag)
+        self.assertNotIn('echo "$_prompt_hook_body"', diag)
 
     def test_explicit_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as source:
