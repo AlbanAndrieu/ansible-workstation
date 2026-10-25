@@ -24,6 +24,10 @@ run = "bash scripts/uv-project.sh sync"
 description = "Verify the selected Ansible comes from this project's .venv"
 run = "bash scripts/uv-project.sh check"
 
+[tasks.hooks-diagnose]
+description = "Read-only Git hook / local venv / Git ignore troubleshooting"
+run = "bash scripts/diagnose-pre-commit.sh"
+
 [tasks.hooks-repair]
 description = "Explicitly repair pre-commit in this worktree's existing venv"
 run = "bash scripts/repair-pre-commit.sh"
