@@ -39,7 +39,7 @@ fi
 PYTHON="$ROOT/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
   printf 'Project Python: ABSENT (%s)\n' "$PYTHON"
-  echo "Cause of silent command: `test -x .venv/bin/python || exit 1` exits without a message."
+  echo 'Cause of silence: the earlier executable check exited without an error message.'
 else
   printf 'Project Python: %s\n' "$PYTHON"
   "$PYTHON" --version 2>&1 || true
