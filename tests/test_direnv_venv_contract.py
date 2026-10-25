@@ -59,6 +59,16 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Direnv: current Bash hook diagnosis", result.stdout)
 
+    def test_diagnostic_identifies_malformed_mise_history_without_leaking_prompt(self):
+        diag = (ROOT / "scripts/diagnose-direnv-shell.sh").read_text()
+        self.assertIn('INVALID _mise_hookhistory token detected', diag)
+        self.assertIn('After the preceding', diag.lower().replace(
+            "after the preceding", "After the preceding"
+        ))
+        self.assertIn('$_prompt_declaration', diag)
+        self.assertNotIn('echo "$PROMPT_COMMAND"', diag)
+        self.assertNotIn('eval "$PROMPT_COMMAND"', diag)
+
     def test_explicit_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as source:
             cfg = tomllib.load(source)
