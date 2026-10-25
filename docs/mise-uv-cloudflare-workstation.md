@@ -116,6 +116,50 @@ git diff --stat HEAD..origin/fix/workstation-pfsense-split-dns-20261024
 If the local index and the remote branch conflict, review them in an
 isolated Git worktree before choosing which local changes to keep.
 
+### Empty output and stale Git ignores (25 October)
+
+The attempted manual pre-commit recovery printed **nothing**, followed by
+`git status --short` showing only `?? .config/` and `?? .node_cache/`.
+
+The old procedure included `test -x .venv/bin/python || exit 1` in
+a subshell; a missing/non-executable interpreter causes an **entirely silent
+exit**. Other possibilities remain (output not captured, shell flags, changed
+current directory). Do not assume installation succeeded without checking
+`python -m pre_commit --version`.
+
+Run the read-only diagnostic **from any checkout**:
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+printf 'PWD: '; pwd -P
+bash scripts/diagnose-pre-commit.sh
+# After obtaining the updated version of the PR:
+mise run hooks-diagnose
+```
+
+It displays the working directory, branch, primary-vs-linked worktree,
+effective hook path, Python availability, installed pre-commit version and
+the active Git ignore rules. It never downloads or installs anything.
+`mise run hooks-repair` is only applicable to a primary checkout where the
+project `.venv` exists.
+
+The remote PR's `.gitignore` includes `.node_cache/` and
+`.config/requirements-lock.txt`. These rules do **not** become effective
+in the local checkout until the updated `.gitignore` is incorporated.
+Do not add either directory to Git. Check with:
+
+```bash
+git status --short --untracked-files=normal
+git check-ignore --no-index -v .node_cache/ .config/requirements-lock.txt
+git fetch origin fix/workstation-pfsense-split-dns-20261024
+git diff --name-status HEAD..origin/fix/workstation-pfsense-split-dns-20261024
+```
+
+Never run a destructive reset to clear generated cache. If there are no local
+tracked modifications and the branch can fast-forward, then use
+`git merge --ff-only origin/fix/workstation-pfsense-split-dns-20261024`.
+The previous output contained no proof of a successful local Git commit.
+
 ### Git pre-commit repair on an existing workstation (25 October)
 
 The 20 offline static tests passed in a detached worktree, but the regular
