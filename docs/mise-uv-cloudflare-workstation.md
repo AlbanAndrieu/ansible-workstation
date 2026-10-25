@@ -284,6 +284,50 @@ The old duplicate Ruff entry `ruff-check` (not a valid hook ID in
 ruff-pre-commit) and unsafe automatic Ruff fixes were also removed. Ruff
 lint remains enabled as a read-only check.
 
+### Interactive Bash: Direnv hook lost after prompt initialization
+
+Later workstation validation established that `mise run syntax` passes with
+the **project-local** Ansible, while `direnv status` still shows
+`No .envrc or .env loaded`, `VIRTUAL_ENV` is unset and ordinary
+`command -v ansible` resolves to the global binary in
+`~/.local/bin/ansible`. Approving/reloading `.envrc` did not fix the
+**interactive shell's** environment.
+
+The Bash config is owned by the `dotfiles` repository. Inspection found
+that Direnv was hooked **before** Nabla/mise/Starship prompt setup. The
+`dotfiles` PR #1 now checks `PROMPT_COMMAND` and reinstalls the Direnv Bash
+hook **at the end of `.bashrc`** if prompt initialization dropped it.
+This is a likely cause, not yet confirmed by an in-shell PROMPT_COMMAND dump.
+According to Direnv's upstream hook documentation, the Bash hook must appear
+after other prompt extensions.
+
+To inspect the **current interactive Bash**, run `source`, **not**
+`bash scripts/diagnose-direnv-shell.sh` or `mise run`: a subprocess
+cannot read the parent shell's `PROMPT_COMMAND`.
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+source scripts/diagnose-direnv-shell.sh
+
+# Temporary one-shell recovery, only after reviewing/allowing trusted .envrc:
+eval "$(direnv hook bash)"
+_direnv_hook
+
+printf 'VIRTUAL_ENV=%s\n' "${VIRTUAL_ENV:-unset}"
+type -P python
+type -P ansible
+```
+
+Expected paths in this directory:
+`/workspace/users/albandrieu30/ansible-workstation/.venv/bin/python`
+and `.../.venv/bin/ansible`. This does not require rebuilding `.venv`
+and does not change global Python or Git configuration.
+
+After the `dotfiles` PR #1 is incorporated into the actual home checkout,
+open a new terminal to confirm that the Bash prompt hook persists, then run
+the diagnostic again. Do not replace `PROMPT_COMMAND` manually or install
+a second Direnv hook on every prompt.
+
 ### Verified workstation bootstrap (25 October 2026)
 
 Operator executed the PR branch with these results:
