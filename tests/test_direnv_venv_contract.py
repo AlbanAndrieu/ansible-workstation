@@ -18,6 +18,7 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertIn('bash "$PWD/scripts/ensure-direnv-venv.sh"', text)
         self.assertIn('export VIRTUAL_ENV="$PWD/.venv"', text)
         self.assertIn('PATH_add "$VIRTUAL_ENV/bin"', text)
+        self.assertIn('[ ! -L "$PWD/.venv" ]', text)
         for forbidden in ("uv sync", "pip install", "curl ", "wget ",
                           "source .env.secrets", "pre-commit install"):
             with self.subTest(forbidden=forbidden):
