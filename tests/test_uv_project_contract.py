@@ -55,6 +55,21 @@ class UvAndAnsibleContract(unittest.TestCase):
             self.assertEqual(len(section), 2, hook)
             self.assertIn("stages: [manual]", section[1].split("\n      - id:", 1)[0])
 
+    def test_precommit_diagnose_is_read_only_and_reports_missing_python(self):
+        script = ROOT / "scripts/diagnose-pre-commit.sh"
+        source = script.read_text()
+        self.assertIn("pre-commit installed: NO", source)
+        self.assertIn("Project Python: ABSENT", source)
+        self.assertIn("git check-ignore --no-index -v", source)
+        self.assertNotIn("uv pip install", source)
+        self.assertNotIn("pre_commit install", source)
+        with (ROOT / "mise.toml").open("rb") as stream:
+            config = tomllib.load(stream)
+        self.assertEqual(
+            config["tasks"]["hooks-diagnose"]["run"],
+            "bash scripts/diagnose-pre-commit.sh",
+        )
+
     def test_precommit_repair_is_explicit_and_worktree_scoped(self):
         wrapper = ROOT / "scripts/repair-pre-commit.sh"
         contents = wrapper.read_text()
