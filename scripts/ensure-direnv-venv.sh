@@ -7,7 +7,11 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)" || exit 2
 VENV="$ROOT/.venv"
 MARKER="$VENV/.ansible-workstation-uv-managed"
 
-if [ -e "$VENV" ] || [ -L "$VENV" ]; then
+if [ -L "$VENV" ]; then
+  echo "ansible-workstation: symlinked .venv is not allowed; refusing activation." >&2
+  exit 1
+fi
+if [ -e "$VENV" ]; then
   if [ ! -f "$VENV/pyvenv.cfg" ] || [ ! -x "$VENV/bin/python" ]; then
     echo "ansible-workstation: existing .venv is incomplete; preserved unchanged." >&2
     echo "Run 'mise run recover-venv' explicitly after reviewing its contents." >&2
