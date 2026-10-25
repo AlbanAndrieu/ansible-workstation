@@ -284,6 +284,38 @@ The old duplicate Ruff entry `ruff-check` (not a valid hook ID in
 ruff-pre-commit) and unsafe automatic Ruff fixes were also removed. Ruff
 lint remains enabled as a read-only check.
 
+### Mise prompt regression after Direnv activation (26 October 2026)
+
+Latest workstation evidence after the prior Direnv hook fix:
+
+- The interactive shell **has** `_direnv_hook` in `PROMPT_COMMAND`.
+- Diagnostics printed `VIRTUAL_ENV` unset and system-global Ansible **before**
+  Bash executed its next prompt.
+- The following prompt printed `direnv: loading .../.envrc` and
+  `direnv: export +VIRTUAL_ENV ... ~PATH`, then failed with
+  `_mise_hookhistory: command not found`.
+- The exact original `PROMPT_COMMAND` text is unknown. An invalid token is
+  present; concatenation of a mise hook and Bash `history` is suspected but
+  not conclusively proven from the logs.
+
+Three coordinated fixes (no new PRs):
+
+- `dotfiles` PR #1: restore only the known malformed token in Bash, and ask
+  already-active mise to restore its **own** hook if needed; Direnv stays last.
+  Preserve legitimate history, Starship and arrays. Do not modify quoted
+  prompt text or reset the user's custom `.bashrc`.
+- `nabla` PR #68: remove only whole obsolete prompt commands, never substrings
+  inside names or quoted commands.
+- `ansible-workstation` PR #13: display a privacy-preserving diagnostic of
+  the known invalid token, without dumping arbitrary prompt contents.
+
+After fast-forwarding all applicable branches, open a **new Bash terminal**.
+Run the read-only diagnostic; then, after the prompt has returned, check
+`VIRTUAL_ENV` and `type -P python` / `type -P ansible` on **a new command**.
+This timing matters because Direnv performs its export at the prompt boundary.
+
+No `uv sync`, Ansible apply or service restarts are needed for this issue.
+
 ### Interactive Bash: Direnv hook lost after prompt initialization
 
 Later workstation validation established that `mise run syntax` passes with
