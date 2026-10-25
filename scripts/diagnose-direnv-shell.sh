@@ -29,6 +29,12 @@ elif [[ "$_prompt_declaration" == *"_direnv_hook"* ]]; then
 else
   echo "PROMPT_COMMAND: Direnv hook MISSING (other prompt init may have overwritten it)"
 fi
+# Detect the known malformed token without exposing full PROMPT_COMMAND:
+# it may contain user-specific paths or shell commands.
+if [[ "$_prompt_declaration" == *"_mise_hookhistory"* ]]; then
+  echo "PROMPT_COMMAND: INVALID _mise_hookhistory token detected"
+  echo "Expected current mise hook: _mise_hook_prompt_command (if enabled)"
+fi
 unset _prompt_declaration
 
 if [[ -n "${DIRENV_DIR:-}" ]]; then
@@ -61,6 +67,8 @@ else
   echo "Direnv binary: available"
 fi
 
+echo "Direnv exports are applied at the prompt, AFTER the preceding command's output."
+echo "If hook is present but VIRTUAL_ENV is absent, check again at the next prompt."
 echo "Check this shell's _direnv_hook and PROMPT_COMMAND before modifying it."
 echo "For temporary recovery in this shell: eval \"\$(direnv hook bash)\""
 echo "Then run _direnv_hook and recheck VIRTUAL_ENV (trusted .envrc only)."
