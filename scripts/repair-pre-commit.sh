@@ -21,6 +21,10 @@ if [ "$(cd -- "$GIT_DIR" && pwd -P)" != "$(cd -- "$COMMON_DIR" && pwd -P)" ]; th
 fi
 
 
+if [ -L "$ROOT/.venv" ]; then
+  echo "REFUSED: symlinked .venv; hooks must use a worktree-local Python." >&2
+  exit 2
+fi
 if [ ! -x "$PYTHON" ] || [ ! -f "$ROOT/.venv/pyvenv.cfg" ]; then
   echo "REFUSED: no executable Python at $PYTHON or missing .venv/pyvenv.cfg." >&2
   echo "Run: bash scripts/diagnose-pre-commit.sh" >&2
