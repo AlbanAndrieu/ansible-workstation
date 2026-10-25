@@ -12,6 +12,14 @@ auto_install = false
 task.run_auto_install = false
 python.uv_venv_auto = false
 
+[tasks.init]
+description = "Explicit locked bootstrap: sync .venv and install safe Git hooks"
+run = "bash scripts/bootstrap-workstation.sh"
+
+[tasks.recover-venv]
+description = "Explicitly archive a broken .venv without deleting it"
+run = "bash scripts/recover-workstation-venv.sh"
+
 [tasks.lock]
 description = "Resolve a verified project and inspect its lockfile"
 run = "bash scripts/uv-project.sh lock"
