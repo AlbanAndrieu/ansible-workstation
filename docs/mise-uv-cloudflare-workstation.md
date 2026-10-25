@@ -34,8 +34,10 @@ In `ansible-workstation`, `direnv allow` now:
    or changes Git hooks.
 
 If `mise`, uv or Python 3.12 are unavailable, first execute `mise install`
-**explicitly** and then `direnv reload`. An existing incomplete venv is
-**not modified**; its previous contents are preserved.
+**explicitly**. After `.envrc` changes, run `direnv allow .` to authorize
+the **new file contents**, then `direnv reload`. A reload alone does not
+approve a changed `.envrc`. An existing incomplete venv is **not modified**;
+its previous contents are preserved.
 
 To recover the broken venv observed on the workstation
 (`.venv/bin/python` missing in the project):
@@ -60,7 +62,9 @@ mise install
 # Existing broken .venv? This archives it; NO deletion or sync.
 mise run recover-venv
 
-# Empty Python 3.12 venv creation, offline and without package installs.
+# Authorize the reviewed .envrc changed by Git before reloading it.
+direnv status
+direnv allow .
 direnv reload
 test -x .venv/bin/python && .venv/bin/python --version
 
@@ -279,6 +283,40 @@ untracked files, including new files from a local installation.
 The old duplicate Ruff entry `ruff-check` (not a valid hook ID in
 ruff-pre-commit) and unsafe automatic Ruff fixes were also removed. Ruff
 lint remains enabled as a read-only check.
+
+### Verified workstation bootstrap (25 October 2026)
+
+Operator executed the PR branch with these results:
+
+- **30/30 offline contract tests passed** before this documentation update.
+- `mise install` reported all declared tools installed.
+- `mise run recover-venv` correctly reported no `.venv` existed.
+- `direnv reload` left `.venv` missing. A possible explanation is that
+  Git had changed `.envrc` and the new content had not been authorized with
+  `direnv allow .`. **This was not confirmed by `direnv status`.**
+- `mise run init` succeeded: uv resolved **166** lockfile packages and
+  installed **48** packages into `.venv`.
+- The verified project binary is `.venv/bin/ansible` (**Ansible 2.21.5**
+  and **Python 3.12.10**), not system Ansible.
+- `pre-commit 4.7.0` was installed and both `pre-commit` and `commit-msg`
+  hooks were installed successfully.
+- `mise run check-venv` succeeded after initialization.
+
+A uv warning about **hardlink fallback to copy** is nonfatal and can arise
+when the uv cache and checkout are on different filesystems. uv can be
+explicitly told to use `UV_LINK_MODE=copy` if this remains the desired
+installation strategy; do not set it globally without evaluating other
+projects.
+
+Do **not** delete or recreate the now-healthy `.venv` just to reproduce
+the direnv authorization issue. Instead, run `direnv status`, review and
+authorize `.envrc` with `direnv allow .`, then inspect `VIRTUAL_ENV`
+and `command -v python` / `command -v ansible`.
+
+Remaining integration evidence: `mise run syntax`, `pre-commit validate-config`,
+and a normal commit to verify the installed hooks. Applying the full
+workstation playbook and changing DNS, Tailscale or firewall remain out of
+scope of this local runtime validation.
 
 ### Pre-commit, Ansible config and CI safety
 
