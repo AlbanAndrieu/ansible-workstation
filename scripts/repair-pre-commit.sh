@@ -7,6 +7,9 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PYTHON="$ROOT/.venv/bin/python"
 LOCK="$ROOT/uv.lock"
 
+printf 'Repair target: %s\n' "$ROOT"
+printf 'Python interpreter: %s\n' "$PYTHON"
+
 # Git normally shares hook storage across linked worktrees. Installing a
 # worktree-specific Python entrypoint there can break other worktrees.
 # Repair the hooks from the primary checkout only.
@@ -19,7 +22,9 @@ fi
 
 
 if [ ! -x "$PYTHON" ] || [ ! -f "$ROOT/.venv/pyvenv.cfg" ]; then
-  echo "REFUSED: missing project .venv. Create a reviewed, isolated venv first." >&2
+  echo "REFUSED: no executable Python at $PYTHON or missing .venv/pyvenv.cfg." >&2
+  echo "Run: bash scripts/diagnose-pre-commit.sh" >&2
+  echo "Preserve the existing venv before creating another one." >&2
   exit 2
 fi
 
