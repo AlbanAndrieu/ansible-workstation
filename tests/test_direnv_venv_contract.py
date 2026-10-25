@@ -36,7 +36,8 @@ class DirenvVenvContract(unittest.TestCase):
             "",
         ))
         self.assertIn('touch "$MARKER"', helper)
-        self.assertIn('if [ -e "$VENV" ] || [ -L "$VENV" ]; then', helper)
+        self.assertIn('if [ -e "$VENV" ]; then', helper)
+        self.assertIn('if [ -L "$VENV" ]; then', helper)
 
     def test_explicit_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as source:
