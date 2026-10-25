@@ -102,6 +102,11 @@ fi
 # Exact sync removes unlisted packages. Never alter an existing venv we did
 # not create. Rename/archive it manually if it was made by pipenv/Poetry/uv.
 marker="$ROOT/.venv/.ansible-workstation-uv-managed"
+if { [ -e "$ROOT/.venv" ] || [ -L "$ROOT/.venv" ]; } &&
+   { [ ! -f "$ROOT/.venv/pyvenv.cfg" ] || [ ! -x "$ROOT/.venv/bin/python" ]; }; then
+  echo "REFUSED: incomplete .venv; run 'mise run recover-venv' to archive it." >&2
+  exit 2
+fi
 if [ -e "$ROOT/.venv" ] && [ ! -f "$marker" ]; then
   echo "REFUSED: existing unmanaged .venv; archive it before explicit sync" >&2
   exit 2
