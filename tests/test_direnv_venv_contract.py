@@ -141,17 +141,17 @@ class DirenvVenvContract(unittest.TestCase):
             tools = root / "fake-bin"
             tools.mkdir()
             python = tools / "python"
-            python.write_text("#!/bin/sh\\nexit 0\\n")
+            python.write_text("#!/bin/sh\nexit 0\n")
             python.chmod(0o755)
             fake_uv = tools / "uv"
             fake_uv.write_text(
-                "#!/bin/sh\\n"
-                'echo "$@" >> "$UV_TEST_LOG"\\n'
-                'for arg in "$@"; do path="$arg"; done\\n'
-                'mkdir -p "$path/bin"\\n'
-                'echo "home = /fake/python" > "$path/pyvenv.cfg"\\n'
-                'printf "#!/bin/sh\\nexit 0\\n" > "$path/bin/python"\\n'
-                'chmod 700 "$path/bin/python"\\n'
+                "#!/bin/sh\n"
+                'echo "$@" >> "$UV_TEST_LOG"\n'
+                'for arg in "$@"; do path="$arg"; done\n'
+                'mkdir -p "$path/bin"\n'
+                'echo "home = /fake/python" > "$path/pyvenv.cfg"\n'
+                'printf "#!/bin/sh\nexit 0\n" > "$path/bin/python"\n'
+                'chmod 700 "$path/bin/python"\n'
             )
             fake_uv.chmod(0o755)
             log = root / "uv-called"
