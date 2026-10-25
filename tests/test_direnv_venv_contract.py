@@ -62,9 +62,7 @@ class DirenvVenvContract(unittest.TestCase):
     def test_diagnostic_identifies_malformed_mise_history_without_leaking_prompt(self):
         diag = (ROOT / "scripts/diagnose-direnv-shell.sh").read_text()
         self.assertIn('INVALID _mise_hookhistory token detected', diag)
-        self.assertIn('After the preceding', diag.lower().replace(
-            "after the preceding", "After the preceding"
-        ))
+        self.assertIn("AFTER the preceding", diag)
         self.assertIn('$_prompt_declaration', diag)
         self.assertNotIn('echo "$PROMPT_COMMAND"', diag)
         self.assertNotIn('eval "$PROMPT_COMMAND"', diag)
