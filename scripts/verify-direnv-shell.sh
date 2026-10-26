@@ -57,7 +57,10 @@ _nabla_verify_direnv_shell() {
   echo "PASS: interactive Direnv prompt and isolated Python/Ansible environment"
   return 0
 }
-_nabla_verify_direnv_shell
-_nabla_verify_status=$?
-unset -f _nabla_verify_direnv_shell
-return "$_nabla_verify_status"
+if _nabla_verify_direnv_shell; then
+  unset -f _nabla_verify_direnv_shell
+  return 0
+else
+  unset -f _nabla_verify_direnv_shell
+  return 1
+fi
