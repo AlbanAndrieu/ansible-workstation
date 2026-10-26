@@ -284,6 +284,44 @@ The old duplicate Ruff entry `ruff-check` (not a valid hook ID in
 ruff-pre-commit) and unsafe automatic Ruff fixes were also removed. Ruff
 lint remains enabled as a read-only check.
 
+### Strict local shell acceptance (read-only)
+
+After Direnv and the project `.venv` are set up, check the actual Bash
+environment rather than assuming a successful installation implies activation.
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+
+# Run as a NEW command AFTER this directory's prompt has returned.
+if source scripts/verify-direnv-shell.sh; then
+  echo "PASS: shell has the reviewed Python/Ansible toolchain"
+else
+  echo "FAIL: run 'source scripts/diagnose-direnv-shell.sh' locally"
+fi
+
+python3 -m unittest discover -s tests \
+  -p 'test_*contract.py' -v
+```
+
+`verify-direnv-shell.sh` must be **sourced**, not run under `bash` or
+`mise run`, because a child cannot inspect its parent's Bash functions.
+It returns nonzero when Direnv is missing from `PROMPT_COMMAND`, the known
+invalid `_mise_hookhistory` token appears in `PS1` or
+`PROMPT_COMMAND`, `VIRTUAL_ENV` does not match this project or
+`python`/`ansible` resolve outside its local `.venv/bin`. It never
+starts Ansible, downloads tools, installs dependencies or reads secrets.
+
+No `uv sync` or venv rebuild is needed for shell-hook problems.
+
+**Upstream compatibility debt:** mise explicitly treats simultaneous use of
+its environment shell hooks and Direnv as unsupported. The workstation
+configuration currently works, but a future standalone ADR should choose a
+single environment owner. Do not remove either hook in this incident fix.
+
+References:
+- https://mise.jdx.dev/direnv.html
+- https://direnv.net/docs/hook.html
+
 ### Mise prompt regression after Direnv activation (26 October 2026)
 
 Latest workstation evidence after the prior Direnv hook fix:
