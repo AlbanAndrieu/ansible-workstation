@@ -67,3 +67,7 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-network]
 description = "Read only packet-filter visibility; no sudo or Docker socket"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-network.yml"
+
+[tasks.audit-network-privileged]
+description = "Explicit optional privileged READ ONLY firewall metadata; user Python stays unprivileged; no automatic authentication"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-network-privileged.py --ack-privileged-readonly"
