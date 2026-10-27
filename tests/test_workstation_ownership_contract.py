@@ -15,6 +15,7 @@ class WorkstationOwnershipContract(unittest.TestCase):
         self.assertNotIn("include_tasks: yubikey.yml", role)
         self.assertFalse((ROOT / "tasks/yubikey.yml").exists())
         self.assertFalse((ROOT / "templates/pamd-common-auth.conf.j2").exists())
+        self.assertFalse((ROOT / "templates/pamd-login.conf.j2").exists())
 
     def test_owner_docs_and_roadmap(self):
         policy = (ROOT / "docs/workstation-ownership-option-a.md").read_text()
