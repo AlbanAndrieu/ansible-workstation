@@ -42,7 +42,7 @@ class DNSGateTests(unittest.TestCase):
                 self.assertFalse(gate.run_suite("test_homelab_dns_guard_contract.py", 8))
 
     def test_wrong_role_checkout_must_be_rejected(self):
-        with mock.patch.object(gate.PLAYBOOK, "is_file", return_value=False):
+        with mock.patch.object(Path, "is_file", return_value=False):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertFalse(gate.verify_workspace())
 
