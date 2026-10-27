@@ -123,3 +123,10 @@
       Do not disable DNS security or rewrite /etc/resolv.conf blindly.
   when: not ansible_check_mode
   tags: [dns]
+
+# Never install a persistent NTA in normal workstation provisioning.
+# Explicit opt-in only after runtime NTA validation in nabla-compose.
+- name: workstation | Load approved private DNSSEC negative trust anchor
+  ansible.builtin.import_tasks: network_dnssec_nta.yml
+  when: workstation_split_dns_persistent_nta_enabled | bool
+  tags: [dns]
