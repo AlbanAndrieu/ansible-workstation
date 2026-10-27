@@ -89,6 +89,40 @@ class ListenerAuditContract(unittest.TestCase):
         self.assertEqual(data["bind_scopes"]["unknown"], 1)
         self.assertEqual(data["bind_scopes"]["wildcard"], 0)
 
+    def test_aggregate_unknown_reasons_no_local_metadata(self):
+        # This fixture intentionally includes an unparseable local token that
+        # looks like a private hostname, and a malformed short ss record.
+        fixture = (
+            "UNCONN 0 0 private-host.example:5353 0.0.0.0:*\n"
+            "UNCONN 0 0 127.0.0.1:5353 0.0.0.0:*\n"
+            "broken row\n"
+        )
+        data = AUDIT.summarize_ss(fixture)
+        self.assertEqual(data["count"], 3)
+        self.assertEqual(data["bind_scopes"]["unknown"], 2)
+        self.assertEqual(data["bind_scopes"]["loopback"], 1)
+        self.assertEqual(data["unknown_reasons"], {
+            "malformed_row": 1,
+            "unparsed_local_endpoint": 1,
+        })
+        self.assertEqual(
+            sum(data["unknown_reasons"].values()),
+            data["bind_scopes"]["unknown"],
+        )
+        self.assertNotIn("private-host.example", json.dumps(data))
+        self.assertNotIn("5353", json.dumps(data))
+
+    def test_no_unknown_reasons_when_all_local_fields_are_valid(self):
+        data = AUDIT.summarize_ss(
+            "LISTEN 0 128 0.0.0.0:80 0.0.0.0:*\n"
+            "UNCONN 0 0 [::1]:53 [::]:*\n"
+        )
+        self.assertEqual(data["unknown_reasons"], {
+            "malformed_row": 0,
+            "unparsed_local_endpoint": 0,
+        })
+        self.assertEqual(data["bind_scopes"]["unknown"], 0)
+
     def test_fixed_local_ss_args_no_privileges_or_docker(self):
         self.assertEqual(
             AUDIT.COMMANDS,
