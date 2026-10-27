@@ -94,6 +94,19 @@ class HomelabDNSGuardContract(unittest.TestCase):
         self.run_hook(nm_dns="9.9.9.9", domain="example.org",
                       link_dns="9.9.9.9", expected_override=False)
 
+    def test_legacy_hide_location_disabled_by_default(self):
+        defaults = (ROOT / "defaults/main.yml").read_text(encoding="utf-8")
+        tasks = (ROOT / "tasks/services.yml").read_text(encoding="utf-8")
+        self.assertIn("workstation_hide_location_dns_override_enabled: false", defaults)
+        self.assertIn("and workstation_hide_location_dns_override_enabled | bool", tasks)
+        self.assertIn("name: hide-location.timer", tasks)
+        self.assertIn("name: hide-location.service", tasks)
+        self.assertIn("state: stopped", tasks)
+        self.assertIn("enabled: false", tasks)
+        self.assertGreaterEqual(
+            tasks.count("not (workstation_hide_location_dns_override_enabled | bool)"), 2
+        )
+
     def test_ansible_reapplies_resolved_if_profile_already_correct(self):
         contents = SPLIT.read_text(encoding="utf-8")
         self.assertIn("workstation_dns_effective_before", contents)
