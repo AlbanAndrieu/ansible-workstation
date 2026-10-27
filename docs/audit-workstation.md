@@ -104,10 +104,22 @@ attendus, mais faisait apparaître **AppArmor stopped** et **3 timers
 unknown**, sans raison de conclure à une désactivation réelle.
 L'interpréteur Ansible local était découvert dans Homebrew Python 3.14.
 
+**Nouvelle preuve opérateur**, après fast-forward `8663408..da296ad` :
+`60/60` contrats PASS, `mise run audit-syntax` PASS, et
+`mise run audit-workstation` **`ok=14 changed=0 failed=0`**.
+Horodatage de l'observation : `2026-10-27T21:37:57Z`.
+
+Le rapport confirme `apparmor_kernel=enabled` et les timers
+`apt-daily.timer`, `apt-daily-upgrade.timer` et `fstrim.timer`
+**actifs/activés**. Il ne contient plus l'avertissement
+d'interpréteur Homebrew Python. La lecture de `apparmor.service=stopped`
+dans `service_facts` demeure une donnée distincte, non suffisante pour
+prouver la politique d'enforcement des profils.
+
 Cette correction ajoute : `ansible_python_interpreter:
 "{{ ansible_playbook_python }}"` (Python du contrôleur), signal noyau
 AppArmor et lecture séparée des trois timers via `/usr/bin/systemctl show`.
-**Le nouvel état runtime n'est pas encore vérifié.** Aucune réparation
+**La nouvelle collecte est vérifiée en runtime** ; aucune réparation
 du noyau ou des services n'a été effectuée.
 
 ## Gates d'acceptation
@@ -123,7 +135,7 @@ du noyau ou des services n'a été effectuée.
    `observed`, `unknown` ou `needs-review`. Pas de statut `secure`
    inventé par un résultat de commande.
 
-Statut : **audit initial ACCEPTED (runtime)** ; **correctifs
-AppArmor/timers/Python CODE ADDED / RUNTIME NOT VERIFIED**. Une nouvelle
-exécution doit afficher `changed=0`, trois timers classés et un signal
-AppArmor distinct. `unknown` reste permis en cas de lecture indisponible.
+Statut : **audit P0 système ACCEPTED (runtime), commit `da296ad`**.
+La lecture des timers et du bit AppArmor est validée ; l'application des
+profils AppArmor et le filtrage réseau restent **NOT VERIFIED**.
+Continuer avec le [contrôle P0 réseau](audit-workstation-network.md), sans sudo.
