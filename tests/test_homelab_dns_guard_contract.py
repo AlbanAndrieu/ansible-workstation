@@ -107,6 +107,29 @@ class HomelabDNSGuardContract(unittest.TestCase):
             tasks.count("not (workstation_hide_location_dns_override_enabled | bool)"), 2
         )
 
+    def test_scoped_dnssec_nta_is_opt_in_and_domain_only(self):
+        defaults = (ROOT / "defaults/main.yml").read_text(encoding="utf-8")
+        networking = (ROOT / "tasks/network_split_dns.yml").read_text(encoding="utf-8")
+        nta = (ROOT / "tasks/network_dnssec_nta.yml").read_text(encoding="utf-8")
+        handlers = (ROOT / "handlers/main.yml").read_text(encoding="utf-8")
+        self.assertIn("workstation_split_dns_persistent_nta_enabled: false", defaults)
+        self.assertIn("workstation_split_dns_enabled: false", defaults)
+        self.assertIn(
+            "when: workstation_split_dns_persistent_nta_enabled | bool", networking
+        )
+        self.assertIn("import_tasks: network_dnssec_nta.yml", networking)
+        self.assertIn(
+            "/etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative", nta
+        )
+        self.assertIn('content: "{{ workstation_split_dns_domain }}\\n"', nta)
+        self.assertIn("workstation_split_dns_domain == 'int.albandrieu.com'", nta)
+        self.assertIn("Restart resolved after approved NTA change", handlers)
+        self.assertIn("state: restarted", handlers)
+        self.assertNotIn("DNSSEC=no", nta)
+        self.assertNotIn("DNSSEC=false", nta)
+        self.assertNotIn("/etc/resolv.conf", nta)
+        self.assertNotIn("9.9.9.9", nta)
+
     def test_ansible_reapplies_resolved_if_profile_already_correct(self):
         contents = SPLIT.read_text(encoding="utf-8")
         self.assertIn("workstation_dns_effective_before", contents)
