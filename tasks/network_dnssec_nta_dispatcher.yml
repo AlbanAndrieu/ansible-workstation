@@ -30,7 +30,7 @@
 # On 'down', clear the runtime anchor only when it is exactly ours.
 - name: workstation | Install LAN-only DNSSEC NTA NetworkManager dispatcher
   ansible.builtin.copy:
-    src: networkmanager-homelab-nta-dispatcher.sh
+    src: "{{ role_path | default(playbook_dir ~ '/..') }}/files/networkmanager-homelab-nta-dispatcher.sh"
     dest: /etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta
     owner: root
     group: root
