@@ -228,11 +228,25 @@ Les 32 résultats UDP `unknown` ne sont pas classables à partir de la
 seule sortie agrégée ; ils ne doivent pas être transformés en
 `wildcard` ni interprétés comme une panne ou une exposition.
 
-**Statut :** collecteur des portées TCP/UDP **ACCEPTED runtime** pour
-le schéma courant ; sémantique des 32 `unknown` à qualifier.
-`effective_reachability=not_verified` reste inchangé. Une nouvelle
-analyse des formats `ss` doit rester purement agrégée, sans divulgation
-d'adresses IP, ports, PID ni chemins de sockets.
+**Statut :** collecteur des portées TCP/UDP **ACCEPTED runtime**
+pour la révision `713d95c` ; sémantique des 32 `unknown` encore
+indéterminée. `effective_reachability=not_verified` reste inchangé.
+
+**Extension ajoutée après cette preuve, non encore validée localement :**
+`unknown_reasons` répartit les sockets `unknown` entre deux catégories
+fermées, `malformed_row` (format `ss` inattendu) et
+`unparsed_local_endpoint` (adresse locale impossible à classifier).
+Ce comptage ne contient ni adresse, ni port, ni nom de périphérique.
+Deux tests synthétiques vérifient la confidentialité et que la somme des
+motifs égale le nombre de sockets `unknown`.
+Le total attendu est désormais **92 tests** et les 32 UDP devraient être
+réparties entre ces deux catégories après un nouvel audit sans sudo.
+**Ne pas inférer de défaut ou d'exposition avant cette nouvelle preuve.**
+
+```bash
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+mise run audit-listeners
+```
 
 **Validation obtenue :** 90 tests, classification des portées et
 `changed=0 failed=0`. **À approfondir :** 32 sockets UDP `unknown`
