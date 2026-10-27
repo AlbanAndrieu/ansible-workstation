@@ -111,7 +111,6 @@
           - "{{ item }}"
       loop: "{{ audit_timer_allowlist }}"
       register: audit_timer_probes
-      # Read-only command; allow it to run during --check as well.
       check_mode: false
       failed_when: false
       changed_when: false
@@ -135,168 +134,12 @@
               item.item: {
                 'state': (
                   item.stdout | default('')
-                  | regex_findall('(?m)^ActiveState=(active|inactive|failed|activating|deactivating)      ansible.builtin.set_fact:
-        audit_services: >-
-          {{
-            audit_services | default({}) | combine({
-              item: {
-                'state': (ansible_facts.get('services', {}).get(item, {}).get('state', 'unknown')),
-                'startup': (ansible_facts.get('services', {}).get(item, {}).get('status', 'unknown'))
-              }
-            })
-          }}
-      loop: "{{ audit_service_allowlist }}"
-      no_log: true
-
-    - name: Build allowlisted installed package version summary
-      ansible.builtin.set_fact:
-        audit_packages: >-
-          {{
-            audit_packages | default({}) | combine({
-              item: (
-                ansible_facts.get('packages', {}).get(item, [])
-                | map(attribute='version') | first | default('not_installed')
-              )
-            })
-          }}
-      loop: "{{ audit_package_allowlist }}"
-      no_log: true
-
-    - name: Build allowlisted sysctl summary
-      ansible.builtin.set_fact:
-        audit_sysctls: >-
-          {{
-            audit_sysctls | default({}) | combine({
-              item.item: (
-                (item.content | default('') | b64decode | trim)
-                | regex_search('^[0-9]{1,3}$') | default('unknown', true)
-              )
-            })
-          }}
-      loop: "{{ audit_sysctl_values.results }}"
-      no_log: true
-
-    - name: Build allowlisted mount presence summary
-      ansible.builtin.set_fact:
-        audit_mounts: >-
-          {{
-            audit_mounts | default({}) | combine({
-              item: (
-                item in (
-                  ansible_facts.get('mounts', [])
-                  | map(attribute='mount') | list
-                )
-              )
-            })
-          }}
-      loop: "{{ audit_mount_allowlist }}"
-      no_log: true
-
-    - name: Report only explicitly approved metadata to terminal
-      ansible.builtin.debug:
-        msg:
-          schema: workstation-ansible-audit/v1
-          observed_at_utc: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
-          system:
-            distribution: "{{ ansible_facts.get('distribution', 'unknown') }}"
-            version: "{{ ansible_facts.get('distribution_version', 'unknown') }}"
-            kernel: "{{ ansible_facts.get('kernel', 'unknown') }}"
-            architecture: "{{ ansible_facts.get('architecture', 'unknown') }}"
-            memory_mb: "{{ ansible_facts.get('memtotal_mb', 'unknown') }}"
-          selected_services: "{{ audit_services }}"
-          selected_packages: "{{ audit_packages }}"
-          selected_sysctls: "{{ audit_sysctls }}"
-          selected_mounts_present: "{{ audit_mounts }}"
-          limitations:
-            - "Read-only local audit, not an OS compliance certification."
-            - "No hostname, IP address, serial, UUID, user ID or secret is output."
-            - "Service state does not prove the effective firewall or SSH policy."
-            - "Missing mount and sysctl observations need manual verification."
-            - "No private snapshot or Restic backup was created."
-)
+                  | regex_findall('(?m)^ActiveState=(active|inactive|failed|activating|deactivating)$')
                   | first | default('unknown', true)
                 ),
                 'startup': (
                   item.stdout | default('')
-                  | regex_findall('(?m)^UnitFileState=(enabled|disabled|static|masked|indirect|generated|linked|alias|enabled-runtime|linked-runtime)      ansible.builtin.set_fact:
-        audit_services: >-
-          {{
-            audit_services | default({}) | combine({
-              item: {
-                'state': (ansible_facts.get('services', {}).get(item, {}).get('state', 'unknown')),
-                'startup': (ansible_facts.get('services', {}).get(item, {}).get('status', 'unknown'))
-              }
-            })
-          }}
-      loop: "{{ audit_service_allowlist }}"
-      no_log: true
-
-    - name: Build allowlisted installed package version summary
-      ansible.builtin.set_fact:
-        audit_packages: >-
-          {{
-            audit_packages | default({}) | combine({
-              item: (
-                ansible_facts.get('packages', {}).get(item, [])
-                | map(attribute='version') | first | default('not_installed')
-              )
-            })
-          }}
-      loop: "{{ audit_package_allowlist }}"
-      no_log: true
-
-    - name: Build allowlisted sysctl summary
-      ansible.builtin.set_fact:
-        audit_sysctls: >-
-          {{
-            audit_sysctls | default({}) | combine({
-              item.item: (
-                (item.content | default('') | b64decode | trim)
-                | regex_search('^[0-9]{1,3}$') | default('unknown', true)
-              )
-            })
-          }}
-      loop: "{{ audit_sysctl_values.results }}"
-      no_log: true
-
-    - name: Build allowlisted mount presence summary
-      ansible.builtin.set_fact:
-        audit_mounts: >-
-          {{
-            audit_mounts | default({}) | combine({
-              item: (
-                item in (
-                  ansible_facts.get('mounts', [])
-                  | map(attribute='mount') | list
-                )
-              )
-            })
-          }}
-      loop: "{{ audit_mount_allowlist }}"
-      no_log: true
-
-    - name: Report only explicitly approved metadata to terminal
-      ansible.builtin.debug:
-        msg:
-          schema: workstation-ansible-audit/v1
-          observed_at_utc: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
-          system:
-            distribution: "{{ ansible_facts.get('distribution', 'unknown') }}"
-            version: "{{ ansible_facts.get('distribution_version', 'unknown') }}"
-            kernel: "{{ ansible_facts.get('kernel', 'unknown') }}"
-            architecture: "{{ ansible_facts.get('architecture', 'unknown') }}"
-            memory_mb: "{{ ansible_facts.get('memtotal_mb', 'unknown') }}"
-          selected_services: "{{ audit_services }}"
-          selected_packages: "{{ audit_packages }}"
-          selected_sysctls: "{{ audit_sysctls }}"
-          selected_mounts_present: "{{ audit_mounts }}"
-          limitations:
-            - "Read-only local audit, not an OS compliance certification."
-            - "No hostname, IP address, serial, UUID, user ID or secret is output."
-            - "Service state does not prove the effective firewall or SSH policy."
-            - "Missing mount and sysctl observations need manual verification."
-            - "No private snapshot or Restic backup was created."
-)
+                  | regex_findall('(?m)^UnitFileState=(enabled|disabled|static|masked|indirect|generated|linked|alias|enabled-runtime|linked-runtime)$')
                   | first | default('unknown', true)
                 )
               }
@@ -375,6 +218,8 @@
             architecture: "{{ ansible_facts.get('architecture', 'unknown') }}"
             memory_mb: "{{ ansible_facts.get('memtotal_mb', 'unknown') }}"
           selected_services: "{{ audit_services }}"
+          selected_timers: "{{ audit_timers }}"
+          apparmor_kernel: "{{ audit_apparmor_kernel }}"
           selected_packages: "{{ audit_packages }}"
           selected_sysctls: "{{ audit_sysctls }}"
           selected_mounts_present: "{{ audit_mounts }}"
@@ -382,5 +227,7 @@
             - "Read-only local audit, not an OS compliance certification."
             - "No hostname, IP address, serial, UUID, user ID or secret is output."
             - "Service state does not prove the effective firewall or SSH policy."
+            - "AppArmor kernel availability is not a claim that profiles enforce policy."
+            - "Timers are read separately from service_facts, without changing units."
             - "Missing mount and sysctl observations need manual verification."
             - "No private snapshot or Restic backup was created."
