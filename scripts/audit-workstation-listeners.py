@@ -24,9 +24,22 @@ def binding_scope(address):
     if not isinstance(address, str) or ":" not in address:
         return "unknown"
     host, _, port = address.rpartition(":")
-    if not port or not host:
+    if not port or not host or not (port.isascii() and (port.isdigit() or port == "*")):
         return "unknown"
-    host = host.removeprefix("[").removesuffix("]").split("%", 1)[0]
+    # iproute2 ss may put an interface zone INSIDE the IPv6 brackets
+    # ([fe80::1%eth0]:5353) or AFTER the brackets ([fe80::1]%eth0:5353).
+    # Strip the zone and brackets in the correct order, never echo either.
+    if host.startswith("["):
+        end = host.find("]")
+        if end == -1:
+            return "unknown"
+        suffix = host[end + 1:]
+        if suffix and (not suffix.startswith("%") or len(suffix) == 1):
+            return "unknown"
+        host = host[1:end]
+    elif "[" in host or "]" in host:
+        return "unknown"
+    host = host.split("%", 1)[0]
     if host == "*":
         return "wildcard"
     try:
