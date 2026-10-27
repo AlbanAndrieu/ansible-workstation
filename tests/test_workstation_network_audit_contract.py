@@ -118,13 +118,14 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
             {"rule": {"expr": [{"reject": {"type": "icmpx"}}]}},
             {"rule": {"expr": [{"accept": None}]}},
             {"rule": {"expr": [{"verdict": {"kind": "drop"}}]}},
+            {"rule": {"expr": [{"verdict": {"kind": []}}]}},
         ]})
         result = AUDIT.parse_nft(raw)
         self.assertEqual(
             result["explicit_terminal_verdict_rules"],
             {"accept": 1, "drop": 2, "reject": 1},
         )
-        self.assertEqual(result["total_rules_seen"], 4)
+        self.assertEqual(result["total_rules_seen"], 5)
         self.assertNotIn("SECRET_REMARK", json.dumps(result))
         self.assertNotIn("192.0.2.101", json.dumps(result))
 
