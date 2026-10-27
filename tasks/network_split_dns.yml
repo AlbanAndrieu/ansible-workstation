@@ -50,6 +50,14 @@
   check_mode: false
   tags: [dns]
 
+- name: workstation | Inspect effective DNS before profile reconciliation
+  ansible.builtin.command:
+    argv: [resolvectl, dns, "{{ workstation_split_dns_interface }}"]
+  register: workstation_dns_effective_before
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
 - name: workstation | Configure pfSense as the sole profile DNS
   ansible.builtin.command:
     argv:
@@ -62,20 +70,24 @@
       - ipv4.dns
       - "{{ workstation_split_dns_resolver }}"
       - ipv4.dns-search
-      - "{{ workstation_split_dns_domain }}"
+      - "~{{ workstation_split_dns_domain }}"
   become: true
   register: workstation_dns_update
   when: >-
     (workstation_dns_servers.stdout | trim) != workstation_split_dns_resolver
     or (workstation_dns_auto.stdout | trim | lower) not in ['yes', 'true']
-    or workstation_split_dns_domain not in workstation_dns_search.stdout
+    or ('~' ~ workstation_split_dns_domain) not in workstation_dns_search.stdout
   tags: [dns]
 
 - name: workstation | Reapply active link DNS only when modified
   ansible.builtin.command:
     argv: [nmcli, device, reapply, "{{ workstation_split_dns_interface }}"]
   become: true
-  when: workstation_dns_update is changed
+  when: >-
+    workstation_dns_update is changed
+    or workstation_split_dns_resolver not in workstation_dns_effective_before.stdout
+    or '9.9.9.9' in workstation_dns_effective_before.stdout
+    or '149.112.112.112' in workstation_dns_effective_before.stdout
   tags: [dns]
 
 - name: workstation | Read effective link DNS after reconciliation
