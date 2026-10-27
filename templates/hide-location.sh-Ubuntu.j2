@@ -1,15 +1,54 @@
 #!/bin/bash
+# Privacy DNS override: never replace DNS owned by the trusted homelab LAN.
+# The service/timer may re-run this script. Do not undo split-DNS on eno1.
+set -euo pipefail
 
-dns_default="{{ dns_default }}" # 172.17.0.33 127.0.0.53 192.168.0.1
-dns_cloudflare="172.64.36.1 172.64.36.2"
-dns_quad="9.9.9.9 149.112.112.112"
-# dns_opendns="208.67.222.222 208.67.220.220"
-# dns_new=${dns_cloudflare}
+dns_default="{{ dns_default }}"
 dns_new="{{ dns_new }}"
 net_interface="{{ net_interface }}"
-# net_interface_home="eno1"
-# net_interface="${net_interface_wifi}"
+private_dns="{{ workstation_split_dns_resolver | default('172.17.0.1') }}"
+private_domain="{{ workstation_split_dns_domain | default('int.albandrieu.com') }}"
 
-if sudo resolvectl status | grep -q $dns_default; then
-  sudo resolvectl dns $net_interface $dns_new
+# This hook is optional. A missing network manager/resolved must not
+# trigger fallback to public DNS or modify /etc/resolv.conf.
+if ! command -v resolvectl >/dev/null 2>&1; then
+  exit 0
 fi
+
+# The active NetworkManager device DNS is the authoritative indication
+# that this interface belongs to the homelab, even if resolved is already
+# in drift and only returns public DNS.
+if command -v nmcli >/dev/null 2>&1; then
+  nm_dns="$(nmcli -g IP4.DNS device show "$net_interface" 2>/dev/null || true)"
+  if printf '%s\n' "$nm_dns" | grep -Fxq -- "$private_dns"; then
+    echo "SKIP: preserve NetworkManager homelab DNS" >&2
+    exit 0
+  fi
+fi
+
+# Additional protection when NetworkManager metadata is unavailable.
+# A search domain or a route-only domain is sufficient to preserve the
+# private DNS policy; neither should be sent to Quad9.
+link_domains="$(resolvectl domain "$net_interface" 2>/dev/null || true)"
+for domain in $link_domains; do
+  case "$domain" in
+    "$private_domain"|"~$private_domain")
+      echo "SKIP: preserve homelab private DNS domain" >&2
+      exit 0
+      ;;
+  esac
+done
+
+# Match ONLY the target interface, never any other link's DNS.
+link_dns="$(resolvectl dns "$net_interface" 2>/dev/null || true)"
+case " $link_dns " in
+  *" $dns_default "*) ;;
+  *) exit 0 ;;
+esac
+
+# An empty or malformed override is not a reason to clear the link DNS.
+read -r -a desired_dns <<< "$dns_new"
+if (( ${#desired_dns[@]} == 0 )); then
+  exit 0
+fi
+sudo resolvectl dns "$net_interface" "${desired_dns[@]}"
