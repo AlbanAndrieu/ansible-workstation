@@ -59,3 +59,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-workstation]
 description = "Explicit read-only Ubuntu audit; no sudo and no persistent snapshot"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml"
+ 
+[tasks.audit-network-syntax]
+description = "Verify the unprivileged network visibility playbook without running it"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation-network.yml"
+
+[tasks.audit-network]
+description = "Read only packet-filter visibility; no sudo or Docker socket"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-network.yml"
