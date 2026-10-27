@@ -1,5 +1,64 @@
 # LAN split-DNS sur la workstation — reprise du 27 octobre 2026
 
+## Réception NetworkManager reapply — 28 octobre : événement confirmé
+
+**Preuve opérateur après installation du dispatcher :**
+
+- `just workstation-dnssec-dispatcher-test` :
+  **17/17 tests PASS** (0,016 s) ;
+- `just workstation-dnssec-dispatcher-check` :
+  `lan_profile=MATCH`,
+  `dispatcher=ROOT_EXECUTABLE`,
+  `link_nta=EXPECTED_ONLY`,
+  `private_dns=PASS`,
+  `public_dnssec=AUTHENTICATED` ;
+- `just workstation-dnssec-dispatcher-exercise` :
+  **NTA privée initiale effacée temporairement et
+  suppression attestée** ;
+  `nm_reapply=PASS`,
+  **`nta_restored_by_event=PASS`**,
+  `private_dns=PASS`,
+  `public_dnssec=AUTHENTICATED`,
+  `diagnosis=PASS_REAPPLY_PERSISTENCE` ;
+- nouvelle exécution read-only après exercice, puis
+  seconde vérification : mêmes contrôles **PASS**.
+
+**Conclusion technique :** l'installation via
+`playbooks/homelab-dns.yml` et la restauration par
+l'événement NetworkManager `reapply` sont maintenant
+**reçues sur le poste réel**, au-delà des contrats
+hors ligne. La NTA privée reste limitée au
+lien `eno1` : aucun désarmement global DNSSEC.
+La validation DNSSEC du domaine public
+`cloudflare.com` reste authentifiée.
+
+**P0 restant — persistance après reboot :**
+lors du **prochain redémarrage planifié**
+(pas de reboot anticipé), exécuter :
+
+```bash
+cd ~/w/nabla-compose
+just workstation-dnssec-dispatcher-check
+```
+
+Attendu : `lan_profile=MATCH`,
+`dispatcher=ROOT_EXECUTABLE`,
+`link_nta=EXPECTED_ONLY`,
+`private_dns=PASS`,
+`public_dnssec=AUTHENTICATED`.
+Aucune nouvelle exécution `-exercise`
+n'est nécessaire pour prouver le boot.
+**Ne pas déclarer la persistance post-reboot DONE**
+avant cette mesure réelle.
+
+Le `nss_default=A_CONFIRMED (4,8s)` mesuré avant
+l'installation et les erreurs historiques
+`no-signature` sur d'autres domaines publics
+restent des sujets indépendants, non clos
+par la NTA privée.
+
+
+
 ## Réception installation effective — 28 octobre 2026, 00:38 CET
 
 **Preuve opérateur après application ciblée** depuis le worktree
