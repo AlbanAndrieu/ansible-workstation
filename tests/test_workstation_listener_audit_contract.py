@@ -53,6 +53,37 @@ class ListenerAuditContract(unittest.TestCase):
         for secret in ("2200", "8000", "5353", "9999", "2001:db8"):
             self.assertNotIn(secret, json.dumps(data))
 
+    def test_ss_peer_wildcards_must_not_override_local_binding(self):
+        # In ss -H, the Peer Address:Port field is index 4 and is commonly
+        # 0.0.0.0:* even when the LOCAL bind is strictly loopback.
+        fixture = (
+            "LISTEN 0 128 127.0.0.1:8080 0.0.0.0:*\n"
+            "LISTEN 0 128 [::1]:8443 [::]:*\n"
+            "UNCONN 0 0 192.0.2.42:5353 0.0.0.0:*\n"
+            "LISTEN 0 128 0.0.0.0:1234 127.0.0.1:*\n"
+        )
+        summary = AUDIT.summarize_ss(fixture)
+        self.assertEqual(summary["count"], 4)
+        self.assertEqual(summary["bind_scopes"], {
+            "wildcard": 1,
+            "loopback": 2,
+            "interface_specific": 1,
+            "unknown": 0,
+        })
+        self.assertNotIn("192.0.2.42", json.dumps(summary))
+        self.assertNotIn("8443", json.dumps(summary))
+
+    def test_local_field_malformed_stays_unknown_even_if_peer_is_wildcard(self):
+        summary = AUDIT.summarize_ss(
+            "LISTEN 0 128 not-an-address 0.0.0.0:*\n"
+        )
+        self.assertEqual(summary["bind_scopes"], {
+            "wildcard": 0,
+            "loopback": 0,
+            "interface_specific": 0,
+            "unknown": 1,
+        })
+
     def test_unknown_malformed_line_never_defaults_to_wildcard(self):
         data = AUDIT.summarize_ss("unexpected malformed row\n")
         self.assertEqual(data["bind_scopes"]["unknown"], 1)
