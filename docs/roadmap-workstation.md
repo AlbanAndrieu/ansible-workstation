@@ -5,8 +5,9 @@
 | Priorité | Livrable | Gate de validation | Statut |
 | --- | --- | --- | --- |
 | P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | Code retiré en PR #16 ; 52/52 contrats locaux PASS le 27/10 ; aucun apply |
-| P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **Baseline runtime ACCEPTED** (58/58, `changed=0`) ; correctifs AppArmor/timers/Python à revalider ; [runbook](audit-workstation.md) |
-| P0 | Audit effectif Docker/nft/iptables, SSH, fail2ban et sysctl | Rapports redigés ; comportement des interfaces et ports vérifié sans changement | À faire |
+| P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **ACCEPTED runtime** : 60/60, `ok=14 changed=0`, noyau AppArmor enabled, 3 timers actifs ; [preuves](audit-workstation.md) |
+| P0 | [Visibilité Docker/nftables/iptables sans privilèges](audit-workstation-network.md) | 8 tests ciblés, lecture locale, résultat `not_verified` si accès refusé, aucune donnée brute | **CODE ADDED / RUNTIME NOT VERIFIED** |
+| P0 | Audit **effectif** des règles firewall, des ports publiés, de SSH et de Fail2ban | Inventaire autorisé, politiques et chemins entrants vérifiés avec preuves expurgées | À faire ; exige une procédure de lecture privilégiée explicite |
 | P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
 | P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
 | P1 | Comparer état observé et politique `policies/home-desktop.yml` | Drift classé attendu/inconnu/non conforme, sans secrets | À faire |
@@ -21,4 +22,4 @@
 
 **Déjà livré :** PR #13 fusionnée (mise/uv/Direnv, DNS opt-in, règles fail-safe), 49/49 contrats locaux PASS. Ces preuves ne démontrent pas le playbook d'installation complet.
 
-**Pas de CI payante ni de fusion automatique.** Le 27/10, l'opérateur a validé `58/58` contrats et l'audit initial `changed=0`. Prochaine preuve finissable : vérifier le correctif Python/AppArmor/timers avec `mise run audit-syntax` puis `mise run audit-workstation`, sans sudo. Les contrôles du pare-feu effectif restent séparés.
+**Pas de CI payante ni de fusion automatique.** Preuve du 27 octobre : `60/60` contrats, `mise run audit-syntax` PASS, `mise run audit-workstation` `ok=14 changed=0 failed=0`. Prochaine preuve finissable : `mise run audit-network-syntax` puis `mise run audit-network`, sans sudo. Les politiques effectives restent séparées et `not_verified` jusqu'à preuve explicite.
