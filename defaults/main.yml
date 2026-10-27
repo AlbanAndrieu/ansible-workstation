@@ -202,3 +202,8 @@ workstation_split_dns_enabled: false
 workstation_split_dns_interface: eno1
 workstation_split_dns_resolver: 172.17.0.1
 workstation_split_dns_domain: int.albandrieu.com
+
+# Opt-in only after runtime per-link NTA reception. This installs a scoped
+# .negative trust-anchor file, read at systemd-resolved startup; not a global
+# DNSSEC disable. File-level NTA is zone-scoped across all workstation links.
+workstation_split_dns_persistent_nta_enabled: false
