@@ -42,19 +42,29 @@ def binding_scope(address):
 
 def summarize_ss(output):
     counts = {scope: 0 for scope in SCOPES}
+    # Only these two fixed categories are exposed; NEVER expose raw endpoints.
+    unknown_reasons = {"malformed_row": 0, "unparsed_local_endpoint": 0}
     total = 0
     for line in output.splitlines():
         values = line.split()
         if len(values) < 5 or values[0] not in ("LISTEN", "UNCONN"):
             counts["unknown"] += 1
+            unknown_reasons["malformed_row"] += 1
             total += 1
             continue
         # ss -H -ln[t|u]: State Recv-Q Send-Q Local:Port Peer:Port.
         # Index 3 is LOCAL; index 4 is PEER (often 0.0.0.0:*).
-        # Reading the peer would falsely classify almost everything wildcard.
-        counts[binding_scope(values[3])] += 1
+        # Never infer wildcard from the peer address.
+        scope = binding_scope(values[3])
+        counts[scope] += 1
+        if scope == "unknown":
+            unknown_reasons["unparsed_local_endpoint"] += 1
         total += 1
-    return {"count": total, "bind_scopes": counts}
+    return {
+        "count": total,
+        "bind_scopes": counts,
+        "unknown_reasons": unknown_reasons,
+    }
 
 
 def probe(protocol, executor=None):
