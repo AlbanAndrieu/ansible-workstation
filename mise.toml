@@ -41,8 +41,8 @@ description = "Explicitly repair pre-commit in this worktree's existing venv"
 run = "bash scripts/repair-pre-commit.sh"
 
 [tasks.test-offline]
-description = "Run static offline contracts (no network or Ansible apply)"
-run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
+description = "Run offline contracts only with verified project .venv (including PyYAML); no CI or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m unittest discover -s tests -p 'test_*contract.py' -v"
 
 [tasks.lint]
 description = "Run Ruff in the existing, verified project environment"
