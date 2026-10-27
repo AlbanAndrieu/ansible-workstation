@@ -24,7 +24,7 @@ class DockerPublicationsContract(unittest.TestCase):
         source = SOURCE.read_text()
         for forbidden in ("sudo -", "shell=True", "write_text(",
                           "chmod(", "chown(", "groupadd", "usermod",
-                          "docker.sock\", \"r", "subprocess.Popen"):
+                          "subprocess.Popen", "os.system("):
             self.assertNotIn(forbidden, source)
 
     def test_published_bind_scope_aggregates_only(self):
