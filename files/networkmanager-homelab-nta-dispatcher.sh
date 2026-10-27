@@ -17,7 +17,7 @@ existing="${existing#"${existing%%[![:space:]]*}"}"
 existing="${existing%"${existing##*[![:space:]]}"}"
 
 case "$action" in
-  up|dhcp4-change)
+  up|dhcp4-change|reapply)
     # Fail closed unless the link still routes the private namespace to pfSense.
     # Do not invoke nmcli from within a NetworkManager dispatcher.
     dns="$("$resolved" dns eno1 2>/dev/null)" || exit 0
