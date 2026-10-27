@@ -58,6 +58,70 @@ La commande peut afficher `access_denied` pour les deux backends : **ce n'est ni
 4. Les politiques effectives restent **non attestées** quand la lecture n'est pas autorisée.
 5. Aucun socket Docker, aucune configuration ou règle système n'a été modifié.
 
+## Relevé workstation validé (27 octobre 2026)
+
+La branche de la PR #16 jusqu'au commit `43bed04` a été validée par
+l'opérateur : **68/68 contrats PASS**, `mise run audit-network-syntax`
+PASS et `mise run audit-network` **`ok=2 changed=0 failed=0`**.
+Le rapport `workstation-network-filter-audit/v1` classe les trois
+sondes nftables, iptables et ip6tables `access_denied`.
+Le forwarding **IPv4 et IPv6** est `enabled`.
+L'état du filtrage reste `not_verified` ; ni un pare-feu absent ni une
+exposition de service n'est prouvé par cet audit sans privilèges.
+
+## Étape facultative : lecture privilégiée, sans exécuter le collecteur comme root
+
+`scripts/audit-workstation-network-privileged.py` est un **autre programme
+Python, exécuté par l'utilisateur normal**. Il réutilise les parseurs qui
+retirent les détails sensibles. Seules trois commandes système fixes
+(`/usr/sbin/nft -j list ruleset`, `/usr/sbin/iptables-save -t filter` et
+`/usr/sbin/ip6tables-save -t filter`) utilisent `/usr/bin/sudo -n --`.
+Les arguments sont fixés par le code, sans entrée utilisateur et sans shell.
+Le Python dans le checkout Git n'est **jamais élevé**.
+
+**Ne pas activer cette étape si tu ne souhaites pas autoriser une lecture
+privilégiée.** La commande ne configure pas sudoers, ne demande pas de mot
+de passe et ne s'authentifie pas à Docker. `sudo -n` échoue sans
+autorisation déjà active. Pour cette session seulement, l'opérateur peut
+facultativement valider l'authentification via `sudo -v` dans son terminal,
+puis appeler la tâche. Ne jamais mettre de mot de passe en argument ou en
+fichier. Cela utilise les privilèges déjà attribués, sans en octroyer
+de nouveaux.
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+
+# Étape manuelle et facultative, avec accord explicite :
+sudo -v
+mise run audit-network-privileged
+```
+
+**Ne jamais** lancer `sudo python3 scripts/audit-workstation-network-privileged.py`
+ou `sudo ansible-playbook`. Le programme refuse une exécution root.
+En cas de refus de droits, le rapport retourne `access_denied` et garde
+`effective_filtering=not_verified`. Ne pas modifier sudoers pour
+faire passer ce contrôle.
+
+Même en cas de lecture autorisée, la sortie ne contient que des politiques
+de chaînes de base, des comptages bornés et des indicateurs Docker.
+Les adresses, ports, noms de chaînes privées, règles brutes, stdout/stderr
+privilégiés et secrets ne sont jamais émis ni enregistrés.
+Le rapport doit **toujours** indiquer `effective_filtering=not_verified` :
+la présence d'une politique DROP/ACCEPT ne prouve pas l'accessibilité
+WAN/LAN, les règles NAT ni leur ordre d'application.
+
+Les commandes priviligiées sont limitées à **5 secondes chacune** et à
+**1 Mio maximum** de résultat utile ; au-delà, le statut devient
+`error` sans rendre les données. Cela n'est pas une garantie de
+limitation mémoire stricte pendant la capture, mais borne les données
+acceptées par le parseur.
+
+Pour confirmer un filtrage effectif, il faudra un contrôle séparé des
+ports exposés et des flux LAN/WAN (sans publication d'adresses),
+après revue des politiques observées. **Aucun changement des règles
+n'est autorisé par ce runbook.**
+
 ## P0 suivant — audit approfondi sur autorisation
 
 Préparer un chemin **séparé** de lecture privilégiée des politiques effectives et des publications de ports, avec identité contrôlée, commande exacte et filtre de sortie prouvé. Ne pas exécuter `nft list ruleset` ou `iptables-save` en root et publier la sortie brute ; elle peut contenir des adresses et des informations internes. Ne jamais activer UFW ni désactiver IPv4 forwarding avant de caractériser les chaînes Docker et le chemin de retour.
