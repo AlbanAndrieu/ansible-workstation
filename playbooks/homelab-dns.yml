@@ -1,0 +1,15 @@
+---
+# Scoped entrypoint. Unlike the generic workstation playbook, imports only
+# the role's split-DNS task file. Never use this for broad workstation setup.
+- name: Inspect approved workstation LAN DNS only
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  tasks:
+    - name: workstation | Import opted-in LAN split-DNS tasks only
+      ansible.builtin.import_role:
+        name: ../
+        tasks_from: network_split_dns
+      when: workstation_split_dns_enabled | bool
+      tags: [dns]
