@@ -19,14 +19,22 @@ spec.loader.exec_module(gate)
 
 
 class DNSGateTests(unittest.TestCase):
-    def test_targets_dns_only_role_entrypoint(self):
+    def test_targets_dns_only_task_entrypoint(self):
         content = (ROOT / "playbooks/homelab-dns.yml").read_text()
-        self.assertIn("tasks_from: network_split_dns", content)
-        self.assertIn("import_role:", content)
+        self.assertIn("ansible.builtin.import_tasks: ../tasks/network_split_dns.yml", content)
+        self.assertIn("vars_files:", content)
+        self.assertIn("../defaults/main.yml", content)
         self.assertIn("workstation_split_dns_enabled | bool", content)
         self.assertIn("tags: [dns]", content)
+        self.assertIn("gather_facts: false", content)
+        self.assertNotIn("import_role:", content)
         self.assertNotIn("tasks_from: workstation", content)
-        self.assertNotIn("gather_facts: true", content)
+
+    def test_dispatcher_source_resolves_in_role_or_standalone_play(self):
+        task = (ROOT / "tasks/network_dnssec_nta_dispatcher.yml").read_text()
+        self.assertIn("role_path | default(playbook_dir ~ '/..')", task)
+        self.assertIn("/files/networkmanager-homelab-nta-dispatcher.sh", task)
+        self.assertNotIn("src: networkmanager-homelab-nta-dispatcher.sh", task)
 
     def test_test_suite_minima(self):
         self.assertEqual(gate.TEST_SUITES, (
