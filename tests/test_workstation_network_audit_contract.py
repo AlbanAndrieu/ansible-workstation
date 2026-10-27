@@ -70,6 +70,64 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
         self.assertNotIn("192.0.2.33", json.dumps(result))
         self.assertNotIn("9999", json.dumps(result))
 
+    def test_explicit_verdict_counts_and_forward_docker_user_jump(self):
+        raw = (
+            "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n"
+            ":OUTPUT ACCEPT [0:0]\n:DOCKER-USER - [0:0]\n"
+            "-A FORWARD -j DOCKER-USER\n"
+            "-A DOCKER-USER -s 192.0.2.42 -j DROP\n"
+            "-A DOCKER-USER -j RETURN\n"
+            '-A INPUT -m comment --comment "-j ACCEPT" -j REJECT\n'
+            "COMMIT\n"
+        )
+        result = AUDIT.parse_iptables(raw)
+        self.assertTrue(result["docker_user_chain_present"])
+        self.assertTrue(result["docker_user_jump_in_forward"])
+        self.assertEqual(result["filter_rules_seen"], 4)
+        self.assertEqual(
+            result["explicit_terminal_verdict_rules"],
+            {"accept": 0, "drop": 1, "reject": 1},
+        )
+        self.assertEqual(
+            result["docker_user_explicit_verdict_rules"],
+            {"accept": 0, "drop": 1, "reject": 0},
+        )
+        self.assertNotIn("192.0.2.42", json.dumps(result))
+        self.assertNotIn("-j ACCEPT", json.dumps(result))
+
+    def test_defined_docker_user_chain_does_not_prove_jump(self):
+        raw = (
+            "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n"
+            ":OUTPUT ACCEPT [0:0]\n:DOCKER-USER - [0:0]\n"
+            "-A FORWARD -j DOCKER\nCOMMIT\n"
+        )
+        summary = AUDIT.parse_iptables(raw)
+        self.assertTrue(summary["docker_user_chain_present"])
+        self.assertFalse(summary["docker_user_jump_in_forward"])
+        self.assertEqual(
+            summary["docker_user_explicit_verdict_rules"],
+            {"accept": 0, "drop": 0, "reject": 0},
+        )
+
+    def test_nft_direct_verdicts_do_not_disclose_rule_data(self):
+        raw = json.dumps({"nftables": [
+            {"rule": {"expr": [
+                {"match": {"right": "192.0.2.101"}},
+                {"drop": None},
+            ], "comment": "SECRET_REMARK"}},
+            {"rule": {"expr": [{"reject": {"type": "icmpx"}}]}},
+            {"rule": {"expr": [{"accept": None}]}},
+            {"rule": {"expr": [{"verdict": {"kind": "drop"}}]}},
+        ]})
+        result = AUDIT.parse_nft(raw)
+        self.assertEqual(
+            result["explicit_terminal_verdict_rules"],
+            {"accept": 1, "drop": 2, "reject": 1},
+        )
+        self.assertEqual(result["total_rules_seen"], 4)
+        self.assertNotIn("SECRET_REMARK", json.dumps(result))
+        self.assertNotIn("192.0.2.101", json.dumps(result))
+
     def test_access_denied_does_not_mean_empty_firewall(self):
         with mock.patch.object(
             AUDIT, "forwarding_state", return_value="unknown"
