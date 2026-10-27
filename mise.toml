@@ -71,3 +71,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-network-privileged]
 description = "Explicit optional privileged READ ONLY firewall metadata; user Python stays unprivileged; no automatic authentication"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-network-privileged.py --ack-privileged-readonly"
+
+[tasks.audit-listeners-syntax]
+description = "Syntax-check the nonprivileged local TCP/UDP listener scope audit"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation-listeners.yml"
+
+[tasks.audit-listeners]
+description = "Observe anonymous TCP/UDP listener bind scope; no sudo or socket names"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-listeners.yml"
