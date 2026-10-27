@@ -114,9 +114,11 @@ class HomelabDNSGuardContract(unittest.TestCase):
         handlers = (ROOT / "handlers/main.yml").read_text(encoding="utf-8")
         self.assertIn("workstation_split_dns_persistent_nta_enabled: false", defaults)
         self.assertIn("workstation_split_dns_enabled: false", defaults)
-        self.assertIn(
-            "when: workstation_split_dns_persistent_nta_enabled | bool", networking
-        )
+        self.assertIn("workstation_split_dns_persistent_nta_enabled | bool", networking)
+        self.assertIn("workstation_split_dns_persistent_nta_remove_enabled | bool", networking)
+        self.assertIn("workstation_split_dns_persistent_nta_remove_enabled: false", defaults)
+        self.assertIn("state: absent", nta)
+        self.assertIn("Reject contradictory NTA apply and removal flags", nta)
         self.assertIn("import_tasks: network_dnssec_nta.yml", networking)
         self.assertIn(
             "/etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative", nta
@@ -127,7 +129,7 @@ class HomelabDNSGuardContract(unittest.TestCase):
         self.assertIn("state: restarted", handlers)
         self.assertNotIn("DNSSEC=no", nta)
         self.assertNotIn("DNSSEC=false", nta)
-        self.assertNotIn("/etc/resolv.conf", nta)
+        self.assertNotIn("dest: /etc/resolv.conf", nta)
         self.assertNotIn("9.9.9.9", nta)
 
     def test_ansible_reapplies_resolved_if_profile_already_correct(self):
