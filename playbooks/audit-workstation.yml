@@ -8,6 +8,8 @@
   gather_facts: false
   become: false
   vars:
+    # Pin modules to the Python running ansible-playbook, not Homebrew/global.
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
     audit_service_allowlist:
       - apparmor.service
       - auditd.service
@@ -16,6 +18,8 @@
       - ufw.service
       - nftables.service
       - unattended-upgrades.service
+    # Timers must be queried separately; service_facts can omit .timer units.
+    audit_timer_allowlist:
       - fstrim.timer
       - apt-daily.timer
       - apt-daily-upgrade.timer
