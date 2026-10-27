@@ -106,6 +106,93 @@ ou usage hors LAN opt-in.
 par défaut a été ajouté : les tests du HEAD actuel
 restent à rejouer. Aucun redéploiement TrueNAS nécessaire.
 
+## Réception du 27 octobre — DNS restauré, DefectDojo accessible depuis Chrome
+
+L'opérateur a désactivé les deux unités utilisateur avec
+`systemctl --user disable --now hide-location.timer hide-location.service`.
+Leurs statuts `is-enabled` retournent `disabled` et
+`list-timers --all hide-location.timer` retourne **0 timers**.
+Le message systemd concernant le timer « still active » apparaît
+durant la désactivation simultanée ; le résultat final confirme
+qu'aucun timer n'est resté programmé.
+
+Après restauration de l'état DNS actif par `resolvectl` :
+
+- `resolvectl dns eno1` = `172.17.0.1` ;
+- `resolvectl domain eno1` = `~int.albandrieu.com` ;
+- `resolvectl query` et `getent ahostsv4` retournent
+  `172.17.0.24` ;
+- `just defectdojo-workstation-dns-check` : **PASS** sur DNS,
+  HTTPS 302, certificat TLS et redirection même origine ;
+- l'opérateur a confirmé **DefectDojo opérationnel dans Chrome** ;
+- `tests/test_homelab_dns_guard_contract.py` : **7/7 PASS**
+  sur la PR à HEAD `d17154e` au moment de la validation.
+
+**Persistance :** la désactivation `systemctl --user disable` est
+enregistrée dans l'état d'activation systemd utilisateur, mais les
+commandes `sudo resolvectl dns/domain` n'écrivent **pas** dans
+un profil NetworkManager. La source permanente doit être le profil
+NetworkManager associé à `eno1`, nommé `Wired eno1` dans la preuve.
+
+Le lien `/etc/resolv.conf` pointe vers
+`/run/systemd/resolve/stub-resolv.conf`. Les fichiers
+`/etc/resolvconf/resolv.conf.d/head` et `base` montrent des
+commentaires de configuration ancienne, mais ne définissent pas
+le DNS effectif de `eno1`. Ne pas les modifier pour résoudre
+ce problème de split-DNS.
+
+### Réception de la persistance du profil (workstation)
+
+```bash
+# Observer la configuration enregistrée, sans modification.
+nmcli -f ipv4.dns,ipv4.ignore-auto-dns,ipv4.dns-search \
+  connection show 'Wired eno1'
+
+# Uniquement si ~int.albandrieu.com est absent :
+sudo nmcli connection modify 'Wired eno1' \
+  +ipv4.dns-search '~int.albandrieu.com'
+
+# Recharger le profil sur le device actif sans reconnecter la liaison :
+sudo nmcli device reapply eno1
+
+nmcli -f ipv4.dns,ipv4.ignore-auto-dns,ipv4.dns-search \
+  connection show 'Wired eno1'
+resolvectl dns eno1
+resolvectl domain eno1
+getent ahostsv4 defectdojo.int.albandrieu.com
+```
+
+NetworkManager conserve ces propriétés dans le profil de connexion
+(généralement sous `/etc/NetworkManager/system-connections/` avec des
+permissions restreintes). Le préfixe `~` indique un **domaine de
+routage uniquement** : il n'est pas ajouté comme suffixe aux noms
+non qualifiés. `+ipv4.dns-search` ajoute le domaine privé sans
+effacer d'autres domaines existants.
+
+Le DNS `172.17.0.1` et `ignore-auto-dns=yes` étaient déjà
+confirmés dans le profil NetworkManager ; leur réécriture n'est
+pas nécessaire ici. L'Ansible `tasks/network_split_dns.yml`
+propose la même réconciliation, mais son activation reste opt-in.
+
+**Point à surveiller séparément :** la résolution de ce FQDN par
+`resolvectl query` a pris 22,4659 s, puis 10,7058 s dans les
+preuves opérateur malgré une réponse correcte. Cela ne bloque pas
+la réception fonctionnelle, mais exige une comparaison de la
+latence DNS directe pfSense vs `systemd-resolved` avant de
+conclure à une autre panne :
+
+```bash
+dig +time=3 +tries=1 @172.17.0.1 \
+  defectdojo.int.albandrieu.com A +stats
+time resolvectl query -4 defectdojo.int.albandrieu.com
+```
+
+**DONE actuel :** service web accessible dans Chrome, TLS vérifié,
+conflit `hide-location` désactivé et 7/7 tests PASS.
+**À vérifier :** route `~int.albandrieu.com` enregistrée dans
+NetworkManager, reapply, maintien après redémarrage, temps de
+résolution, parité des secrets Django/runtime/Vaultwarden.
+
 ## Diagnostic non mutateur (workstation)
 
 ```bash
