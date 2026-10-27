@@ -1,6 +1,6 @@
 # P0 — Visibilité du filtrage réseau (lecture seule)
 
-**Statut : CODE ADDED / RUNTIME NOT VERIFIED** (27 octobre 2026).
+**Statut : collecte hôte TCP/UDP ACCEPTED RUNTIME (95/95 tests, 27 octobre 2026)** ; accessibilité LAN/WAN et efficacité du filtrage **NOT VERIFIED**. Voir [prochaine gate réseau](workstation-network-exposure-plan.md).
 Ce contrôle complète l'[audit système P0](audit-workstation.md) et l'architecture [Option A](workstation-ownership-option-a.md). Il n'est **pas** une certification d'exposition réseau et ne crée pas de sauvegarde.
 
 ## Situation observée
@@ -286,6 +286,34 @@ répartition `unknown_reasons` après `mise run audit-listeners`.
 Si les 32 restent inconnus, conserver `unknown` et diagnostiquer
 uniquement par catégories anonymisées, jamais par publication du
 contenu de `ss`. `effective_reachability=not_verified` ne change pas.
+
+### Acceptation du correctif IPv6 zoné — 27 octobre 2026
+
+La workstation a exécuté le code à la révision `05ace176` :
+**95/95 tests PASS**, `mise run audit-listeners` :
+`localhost ok=2 changed=0 unreachable=0 failed=0`.
+
+| Protocole | Total | Wildcard | Loopback | Spécifique | Unknown |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| TCP | 54 | 34 | 16 | 4 | **0** |
+| UDP | 135 | 51 | 5 | **79** | **0** |
+
+`unknown_reasons` = `malformed_row: 0`,
+`unparsed_local_endpoint: 0` pour TCP et UDP. L'ajout du traitement
+des adresses IPv6 avec zone a **reclassé les 32 UDP** antérieurement
+inconnues, sans exposer les adresses ni interfaces. Cette évolution est
+compatible avec l'hypothèse du format IPv6 zoné ; les métadonnées seules
+ne permettent pas d'établir la forme exacte des 32 endpoints concernés.
+
+Le parseur et le périmètre de collecte sont désormais **validés**.
+Ce résultat **n'atteste pas** l'accessibilité LAN/WAN ou l'effet des
+règles du pare-feu. Les nombres de ports Docker publiés sont inconnus.
+
+**Prochain chantier, distinct du parseur :**
+[validation de l'exposition LAN/WAN et Docker](workstation-network-exposure-plan.md),
+en conservant les conditions d'autorisation et de rollback avant
+tout changement système. Les anciens relevés 88/90/92 contrats sont
+conservés uniquement comme historique de l'incident de parsing.
 
 ## P0 suivant — audit approfondi sur autorisation
 
