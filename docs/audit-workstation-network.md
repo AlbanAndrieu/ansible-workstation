@@ -207,11 +207,37 @@ locale loopback/interface-specific. Un local malformé demeure `unknown`.
 accepté qu'après 0 échec et une répartition plausible. Ne pas relancer
 de collecte privilégiée pour ce défaut.
 
-**Validation en attente :** tests du parseur et du nouveau playbook,
-comptages runtime, protection des métadonnées et `changed=0 failed=0`.
-La présence de protections réellement efficaces reste `not_verified`
-jusqu'à une analyse du chemin de paquets et à un test de connectivité
-autorisé depuis un autre segment réseau.
+### Revalidation runtime du collecteur corrigé — 27 octobre 2026
+
+L'opérateur a récupéré le commit `713d95c` et exécuté
+`python3 -m unittest discover -s tests -p 'test_*contract.py' -v` :
+**90/90 PASS**. `mise run audit-listeners` a terminé avec
+`localhost ok=2 changed=0 unreachable=0 failed=0`, sans sudo.
+
+Le rapport corrigé `workstation-listener-visibility/v1` donne :
+
+| Famille | Total | Wildcard | Loopback | Adresse spécifique | Unknown |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| TCP | 54 | 34 | 16 | 4 | 0 |
+| UDP | 135 | 51 | 5 | 47 | 32 |
+
+**Les colonnes `Local Address` et `Peer Address` sont maintenant
+distinguées correctement.** Les comptes précédents classant
+l'intégralité de TCP/UDP en wildcard restent **invalidés**.
+Les 32 résultats UDP `unknown` ne sont pas classables à partir de la
+seule sortie agrégée ; ils ne doivent pas être transformés en
+`wildcard` ni interprétés comme une panne ou une exposition.
+
+**Statut :** collecteur des portées TCP/UDP **ACCEPTED runtime** pour
+le schéma courant ; sémantique des 32 `unknown` à qualifier.
+`effective_reachability=not_verified` reste inchangé. Une nouvelle
+analyse des formats `ss` doit rester purement agrégée, sans divulgation
+d'adresses IP, ports, PID ni chemins de sockets.
+
+**Validation obtenue :** 90 tests, classification des portées et
+`changed=0 failed=0`. **À approfondir :** 32 sockets UDP `unknown`
+et la portée effective des flux depuis d'autres segments du réseau.
+Le statut de protection et d'accessibilité reste `not_verified`.
 
 ## P0 suivant — audit approfondi sur autorisation
 
