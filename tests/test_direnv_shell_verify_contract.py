@@ -120,6 +120,23 @@ class DirenvShellVerifyContracts(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Direnv is not registered", result.stderr)
 
+    def test_symlinked_venv_is_rejected(self):
+        real_venv = self.root / "real-venv"
+        self.venv.rename(real_venv)
+        self.venv.symlink_to(real_venv, target_is_directory=True)
+        result = self.run_shell()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("symlinked project .venv", result.stderr)
+
+    def test_prompt_commands_are_never_executed_by_verifier(self):
+        marker = self.root / "prompt-was-run"
+        statement = (
+            "PROMPT_COMMAND='touch " + str(marker) + "; _direnv_hook'"
+        )
+        result = self.run_shell(prompt_statement=statement)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(marker.exists())
+
     def test_noninteractive_shell_fails(self):
         result = self.run_shell(interactive=False)
         self.assertEqual(result.returncode, 1)
