@@ -108,6 +108,23 @@ class UvAndAnsibleContract(unittest.TestCase):
         self.assertIn('uv --project "$ROOT" sync --locked --python 3.12', script)
         self.assertIn('"$ROOT/.venv/bin/ansible" --version', script)
 
+    def test_offline_contract_runner_uses_verified_venv_yaml(self):
+        # Some audit contracts use PyYAML. A mise/system python3 may not
+        # contain it even when the project lock and .venv are correct.
+        with (ROOT / "mise.toml").open("rb") as source:
+            config = tomllib.load(source)
+        command = config["tasks"]["test-offline"]["run"]
+        self.assertTrue(
+            command.startswith("bash scripts/uv-project.sh check >/dev/null && "),
+            command,
+        )
+        self.assertIn(".venv/bin/python -B -m unittest discover", command)
+        self.assertIn("-p 'test_*contract.py'", command)
+        self.assertNotIn("&& python3 -m unittest", command)
+        with (ROOT / "pyproject.toml").open("rb") as source:
+            deps = tomllib.load(source)["project"]["dependencies"]
+        self.assertTrue(any(dep.startswith("PyYAML>=") for dep in deps))
+
     def test_workflows_do_not_use_system_ansible_fallback(self):
         for filename in ("ci.yml", "ansible-playbook.yml"):
             source = (ROOT / ".github/workflows" / filename).read_text()
