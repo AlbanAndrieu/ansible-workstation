@@ -1,6 +1,6 @@
 # Workstation Ubuntu — plan P0 de validation de l'exposition réseau
 
-**Statut : PLAN UNIQUEMENT — aucune sonde LAN/WAN et aucune règle de sécurité appliquée.**
+**Statut : collecteurs de mesure ajoutés — aucune sonde TCP LAN/WAN effectivement exécutée.** Aucun changement de règle réseau n'est appliqué. Le protocole opérateur se trouve dans [le runbook de mesure](workstation-network-measurement.md).
 Décision Option A : [contrat](workstation-ownership-option-a.md). État observé :
 [audit réseau](audit-workstation-network.md). Cette page est propriétaire de
 la prochaine gate **d'accessibilité réelle**, pas des sauvegardes ni de la
@@ -37,6 +37,15 @@ base en « ouvert sur Internet ».
 | 4. LAN | Probes depuis **une autre machine LAN autorisée**, uniquement sur une allowlist privée de cibles/ports définis par l'opérateur | Comptage `expected_allowed`, `unexpected_open`, `expected_denied`, `inconclusive` ; aucun endpoint | Comparaison avec intention de service, IPv4 et IPv6 séparés |
 | 5. WAN | Probes depuis une machine explicitement hors LAN, sur **la même allowlist**, avec accord opérateur | Les mêmes quatre états ; aucune adresse ni identité | Aucune exposition imprévue ; preuves de blocage ou échec documenté |
 | 6. Décision | Confronter écoute + publication + règles + observation LAN/WAN | `conformant`, `drift`, `unknown` par classe d'usage, sans détails privés | Décision sur politique OS uniquement si preuves suffisantes |
+
+Les collecteurs des étapes 2 (Docker, facultatif) et 4–5 (TCP allowlist
+depuis observateurs indépendants) sont désormais **codés, mais pas exécutés
+en runtime**. Le protocole d'exécution est documenté
+[dans le runbook de mesure](workstation-network-measurement.md).
+Le fichier des cibles demeure privé, hors Git, avec permissions `0600`.
+Les tests TCP ne démontrent ni UDP, ni TLS/applicatif, ni le chemin
+réel derrière un proxy. La collecte Docker exige une autorisation
+spécifique à cause des privilèges équivalents à root du daemon.
 
 Les étapes 2 à 6 **ne sont pas exécutées** par cette PR. Ne pas créer de
 sonde réseau opportuniste vers des IP ou ports devinés, ni déployer une
