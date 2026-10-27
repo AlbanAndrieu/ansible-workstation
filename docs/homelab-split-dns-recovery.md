@@ -39,6 +39,73 @@ la causalité. Une autre source peut être NetworkManager dispatcher,
 VPN, script de confidentialité, un service systemd ou configuration
 globale de resolved.
 
+## Cause racine définitivement attestée par les logs système
+
+**Preuve opérateur du 27 octobre à 21:48 CET** : le journal
+`journalctl --user -u hide-location.service` montre une suite
+d'exécutions du service. Les écritures sont journalisées par
+`sudo` avec la commande exacte
+`/usr/bin/resolvectl dns eno1 9.9.9.9 149.112.112.112`
+notamment à 21:21:00, 21:22:07, 21:24:07, 21:25:36,
+21:27:01, 21:28:07, 21:29:52, 21:31:07, 21:33:05 et 21:34:07
+(CET). Le timer apparaît activé jusqu'à 21:48:39. Ce sont
+des **écritures DNS effectivement exécutées**, plus seulement
+la présence du hook. L'ancienne inférence `sets_quad9=False`
+ne peut pas réfuter les appels `sudo` enregistrés :
+ce contrôle statique de l'ancien diagnostic était incomplet
+pour identifier les paramètres du script déployé.
+
+**Reprise autorisée par l'opérateur :** désactiver à la fois
+l'unité et son timer, puis restaurer la configuration DNS du
+LAN. L'ancienne unité `hide-location.service` est `oneshot` ;
+`inactive` ne prouve pas qu'elle ne s'exécute plus, car le
+timer peut la réactiver.
+
+```bash
+# Sur la workstation, opération explicite de désactivation :
+systemctl --user disable --now \
+  hide-location.timer hide-location.service
+
+# Ne doit plus afficher le timer comme actif.
+systemctl --user is-enabled hide-location.timer
+systemctl --user is-enabled hide-location.service
+systemctl --user list-timers --all hide-location.timer
+
+sudo resolvectl dns eno1 172.17.0.1
+sudo resolvectl domain eno1 '~int.albandrieu.com'
+sudo resolvectl flush-caches
+
+resolvectl dns eno1
+resolvectl domain eno1
+resolvectl query defectdojo.int.albandrieu.com
+getent ahostsv4 defectdojo.int.albandrieu.com
+```
+
+La commande d'interface `resolvectl domain` doit recevoir
+**`~int.albandrieu.com` sans antislash devant le tilde**.
+Le succès de `resolvectl dns` seul ne prouve pas la
+résolution NSS ou DNS Chrome. Si `resolvectl query` échoue
+toujours, vérifier `resolvectl status`; si `resolvectl query`
+réussit mais `getent` échoue, contrôler séparément
+`/etc/nsswitch.conf` et la cible `/etc/resolv.conf`.
+Si `getent` fonctionne mais Chrome reste en `NXDOMAIN`,
+contrôler Chrome Secure DNS / DoH et vider son cache DNS.
+
+**Code Ansible corrigé en complément :** nouveau défaut
+`workstation_hide_location_dns_override_enabled: false`.
+Lorsque le rôle est exécuté avec `macchanger_enabled`,
+les tâches de gestion de service arrêtent/désactivent
+**les deux unités** sauf si l'opérateur choisit explicitement
+`workstation_hide_location_dns_override_enabled=true`.
+Les templates historiques restent présents pour inspection
+ou usage hors LAN opt-in.
+
+**Tests :** l'opérateur avait validé les **6/6** tests
+`test_homelab_dns_guard_contract.py` sur le commit initial
+`1b0b5dd`. Depuis, un septième test de désactivation
+par défaut a été ajouté : les tests du HEAD actuel
+restent à rejouer. Aucun redéploiement TrueNAS nécessaire.
+
 ## Diagnostic non mutateur (workstation)
 
 ```bash
