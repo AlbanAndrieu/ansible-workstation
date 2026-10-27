@@ -11,6 +11,13 @@
     fail_msg: 'NTA change refused outside the approved LAN zone'
   tags: [dns]
 
+- name: workstation | Reject contradictory NTA apply and removal flags
+  ansible.builtin.assert:
+    that:
+      - not ((workstation_split_dns_persistent_nta_enabled | bool) and (workstation_split_dns_persistent_nta_remove_enabled | bool))
+    fail_msg: 'Choose either private NTA apply or rollback, never both'
+  tags: [dns]
+
 - name: workstation | Ensure scoped DNSSEC trust anchors directory
   ansible.builtin.file:
     path: /etc/dnssec-trust-anchors.d
@@ -19,6 +26,7 @@
     group: root
     mode: '0755'
   become: true
+  when: workstation_split_dns_persistent_nta_enabled | bool
   tags: [dns]
 
 # Negative anchor: an unsigned private DNS subtree under a public domain.
@@ -32,5 +40,16 @@
     group: root
     mode: '0644'
   become: true
+  when: workstation_split_dns_persistent_nta_enabled | bool
+  notify: workstation | Restart resolved after approved NTA change
+  tags: [dns]
+
+# The explicit rollback removes only our own file and preserves all other trust anchors.
+- name: workstation | Remove opt-in private DNSSEC negative trust anchor
+  ansible.builtin.file:
+    path: /etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative
+    state: absent
+  become: true
+  when: workstation_split_dns_persistent_nta_remove_enabled | bool
   notify: workstation | Restart resolved after approved NTA change
   tags: [dns]
