@@ -9,6 +9,7 @@ politique de sauvegarde chiffrée Restic.
 - [Audit local Ubuntu P0, sans sudo ni mutation](docs/audit-workstation.md)
 - [Audit P0 réseau : visibilité sans privilèges, données expurgées](docs/audit-workstation-network.md)
 - [Plan P0 : validation des flux LAN/WAN et des publications Docker](docs/workstation-network-exposure-plan.md)
+- [Mesures P0 : tests TCP privés depuis local/LAN/WAN et publications Docker (opt-in)](docs/workstation-network-measurement.md)
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
 
