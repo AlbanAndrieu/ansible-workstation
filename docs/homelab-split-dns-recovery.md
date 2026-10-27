@@ -208,6 +208,68 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Correction du point d'entrée Ansible — 28 octobre 2026
+
+**Preuve opérateur sur le worktree exact de la PR à `f71c2f9` :**
+
+- Nouvelle suite `test_homelab_dns_gate.py` : **13/13 PASS**.
+- Garde split-DNS `test_homelab_dns_guard_contract.py` :
+  **8/8 PASS**.
+- Dispatcher `test_homelab_dns_nta_dispatcher.py` :
+  **17/17 PASS**.
+- La sélection Ansible a échoué avec
+  `Could not find specified file in role, its 'tasks/' is not usable`.
+  Les 3 marqueurs attendus dans `--list-tasks` sont absents.
+  **La gate a donc correctement bloqué le déploiement.**
+- `direnv` a signalé que le nouveau worktree contenait un
+  `.envrc` non approuvé. C'est un avertissement distinct,
+  **pas l'explication de l'erreur Ansible**. Ne pas exécuter
+  `direnv allow` automatiquement.
+
+**Cause confirmée dans le code :**
+`playbooks/homelab-dns.yml` utilisait
+`ansible.builtin.import_role: name: ../`, chemin interprété
+comme un rôle introuvable ou inutilisable par Ansible.
+Il n'était pas correct de relancer le playbook générique.
+
+**Correction [skip ci] :**
+
+- `playbooks/homelab-dns.yml` utilise désormais
+  `ansible.builtin.import_tasks: ../tasks/network_split_dns.yml`
+  depuis `playbooks/` et `vars_files: ../defaults/main.yml`.
+  Il ne charge aucun installateur général `tasks/workstation.yml`.
+- `tasks/network_dnssec_nta_dispatcher.yml` résout le
+  fichier `src` via `role_path` ou le parent du
+  `playbook_dir`, afin de fonctionner dans le rôle
+  complet **et** le playbook DNS ciblé.
+- `tests/test_homelab_dns_gate.py` contient désormais
+  **14 tests**, dont un contrat sur le chemin du
+  dispatcher et le nouvel import. **Ces changements
+  ne sont pas encore exécutés sur la workstation.**
+
+### Relancer depuis le worktree Ansible existant
+
+```bash
+# Depuis /tmp/ansible-dns-gate.xLS990 ou le worktree
+# détaché précédemment créé (pas nabla-compose) :
+git fetch origin fix/preserve-homelab-split-dns-20261027
+git merge --ff-only origin/fix/preserve-homelab-split-dns-20261027
+
+python3 -m unittest discover -s tests \
+  -p 'test_homelab_dns_gate.py' -v
+
+python3 scripts/check_homelab_dns_gate.py --dry-run
+```
+
+Le script réexécute automatiquement 8 tests du garde
+split-DNS, 17 tests dispatcher, vérifie la sélection
+Ansible des tâches DNS et effectue un `--check --diff`
+**sans application réelle**.
+Si le `--list-tasks` ou le `--check` échoue,
+**ne pas passer en mode application**.
+La NTA runtime sur `eno1` reste opérationnelle ;
+la persistance du dispatcher n'est pas encore appliquée.
+
 ## Gate Ansible corrigée — 28 octobre : zéro test / zéro tâche n'est pas PASS
 
 **Dernière preuve opérateur :**
