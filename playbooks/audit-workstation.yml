@@ -1,5 +1,5 @@
 ---
-# P0 workstation state audit: local, unprivileged, read-only and no files written.
+# P0 workstation audit: local, unprivileged, no persistent output or OS changes.
 # This is NOT tasks/workstation.yml and never runs the legacy provisioning role.
 # Execute: .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml
 - name: Audit the local Ubuntu workstation without changing configuration
