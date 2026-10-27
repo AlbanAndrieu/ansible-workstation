@@ -37,6 +37,57 @@ class ListenerAuditContract(unittest.TestCase):
             with self.subTest(endpoint=value):
                 self.assertEqual(AUDIT.binding_scope(value), expected)
 
+    def test_ipv6_interface_zone_after_closing_bracket(self):
+        # A common ss UDP pattern leaves the %interface AFTER ']', so
+        # remove the closing bracket before handling the interface scope.
+        samples = {
+            "[fe80::23]%wlp3s0:5353": "interface_specific",
+            "[ff02::fb]%wlp3s0:5353": "interface_specific",
+            "[::1]%lo:5353": "loopback",
+            "[::]%eth0:5353": "wildcard",
+            "[::ffff:127.0.0.1]%lo:8000": "loopback",
+            "[fe80::23%eth0]:5353": "interface_specific",
+            "0.0.0.0%docker0:5353": "wildcard",
+        }
+        for endpoint, scope in samples.items():
+            with self.subTest(endpoint=endpoint):
+                self.assertEqual(AUDIT.binding_scope(endpoint), scope)
+
+    def test_scoped_udp_rows_are_anonymized_and_classified(self):
+        fixture = (
+            "UNCONN 0 0 [fe80::23]%wlx0:5353 [::]:*\n"
+            "UNCONN 0 0 [ff02::fb]%wlx0:5353 [::]:*\n"
+            "UNCONN 0 0 [::1]%lo:5353 [::]:*\n"
+            "UNCONN 0 0 [::]%wlx0:5353 [::]:*\n"
+        )
+        report = AUDIT.summarize_ss(fixture)
+        self.assertEqual(report["count"], 4)
+        self.assertEqual(report["bind_scopes"], {
+            "wildcard": 1, "loopback": 1,
+            "interface_specific": 2, "unknown": 0,
+        })
+        self.assertEqual(report["unknown_reasons"], {
+            "malformed_row": 0, "unparsed_local_endpoint": 0,
+        })
+        for forbidden in ("5353", "fe80", "ff02", "wlx0", "lo"):
+            # Check only the source endpoint values, not generic words
+            # such as loopback which are approved schema vocabulary.
+            if forbidden == "lo":
+                continue
+            self.assertNotIn(forbidden, json.dumps(report))
+
+    def test_unbalanced_ipv6_brackets_fail_closed(self):
+        samples = (
+            "[fe80::23]%:5353",
+            "[fe80::23]garbage:5353",
+            "[fe80::23:5353",
+            "fe80::23]:5353",
+            "127.0.0.1:noport",
+        )
+        for endpoint in samples:
+            with self.subTest(endpoint=endpoint):
+                self.assertEqual(AUDIT.binding_scope(endpoint), "unknown")
+
     def test_tcp_and_udp_counts_are_anonymized(self):
         fixture = (
             "LISTEN 0 128 0.0.0.0:2200 0.0.0.0:*\n"
