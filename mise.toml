@@ -57,5 +57,5 @@ description = "Validate only the local read-only Ubuntu audit playbook syntax"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation.yml"
 
 [tasks.audit-workstation]
-description = "Explicit read-only Ubuntu audit; no sudo, no writes, no snapshots"
+description = "Explicit read-only Ubuntu audit; no sudo and no persistent snapshot"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml"
