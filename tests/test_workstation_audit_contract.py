@@ -28,6 +28,10 @@ class WorkstationAuditContract(unittest.TestCase):
         self.assertNotIn("roles", self.play)
         self.assertNotIn("pre_tasks", self.play)
         self.assertNotIn("handlers", self.play)
+        self.assertEqual(
+            self.play["vars"]["ansible_python_interpreter"],
+            "{{ ansible_playbook_python }}",
+        )
 
     def test_modules_are_read_only_or_memory_only(self):
         allowed = {
@@ -36,6 +40,7 @@ class WorkstationAuditContract(unittest.TestCase):
             "ansible.builtin.service_facts",
             "ansible.builtin.package_facts",
             "ansible.builtin.slurp",
+            "ansible.builtin.command",
             "ansible.builtin.set_fact",
             "ansible.builtin.debug",
         }
@@ -46,10 +51,28 @@ class WorkstationAuditContract(unittest.TestCase):
                 self.assertTrue(modules <= allowed, modules)
                 self.assertNotEqual(task.get("become"), True)
                 self.assertNotIn("delegate_to", task)
-                self.assertNotIn("check_mode", task)
+                if "ansible.builtin.command" in modules:
+                    self.assertEqual(
+                        task["name"],
+                        "Read allowlisted systemd timer states without changing units",
+                    )
+                    self.assertEqual(
+                        task["ansible.builtin.command"]["argv"],
+                        [
+                            "/usr/bin/systemctl", "show", "--no-pager",
+                            "--property=ActiveState", "--property=UnitFileState",
+                            "{{ item }}",
+                        ],
+                    )
+                    self.assertEqual(task["loop"], "{{ audit_timer_allowlist }}")
+                    self.assertIs(task.get("check_mode"), False)
+                    self.assertIs(task.get("changed_when"), False)
+                    self.assertIs(task.get("failed_when"), False)
+                else:
+                    self.assertNotIn("check_mode", task)
                 self.assertNotIn("notify", task)
         for forbidden in (
-            "ansible.builtin.shell", "ansible.builtin.command",
+            "ansible.builtin.shell",
             "ansible.builtin.copy", "ansible.builtin.template",
             "ansible.builtin.apt", "ansible.builtin.systemd_service",
             "ansible.builtin.uri", "ansible.builtin.fetch",
@@ -69,11 +92,14 @@ class WorkstationAuditContract(unittest.TestCase):
             {
                 "schema", "observed_at_utc", "system", "selected_services",
                 "selected_packages", "selected_sysctls",
-                "selected_mounts_present", "limitations",
+                "selected_mounts_present", "selected_timers",
+                "apparmor_kernel", "limitations",
             },
         )
         self.assertEqual(report["schema"], "workstation-ansible-audit/v1")
         self.assertNotIn("ansible_facts", str(report["selected_services"]))
+        self.assertNotIn("ansible_facts", str(report["selected_timers"]))
+        self.assertNotIn("ansible_facts", str(report["apparmor_kernel"]))
         self.assertNotIn("ansible_facts", str(report["selected_packages"]))
         self.assertNotIn("ansible_facts", str(report["selected_sysctls"]))
         for forbidden in ("hostname", "ip_address", "username", "mac_address",
@@ -93,11 +119,13 @@ class WorkstationAuditContract(unittest.TestCase):
     def test_whitelists_are_explicit_and_small(self):
         allowlists = self.play["vars"]
         expected = {
-            "audit_service_allowlist", "audit_package_allowlist",
-            "audit_sysctl_allowlist", "audit_mount_allowlist",
+            "audit_service_allowlist", "audit_timer_allowlist",
+            "audit_package_allowlist", "audit_sysctl_allowlist",
+            "audit_mount_allowlist",
         }
-        self.assertEqual(set(allowlists), expected)
-        for key, values in allowlists.items():
+        self.assertEqual(set(allowlists), expected | {"ansible_python_interpreter"})
+        for key in expected:
+            values = allowlists[key]
             with self.subTest(allowlist=key):
                 self.assertEqual(len(values), len(set(values)))
                 self.assertTrue(0 < len(values) <= 15)
@@ -106,6 +134,36 @@ class WorkstationAuditContract(unittest.TestCase):
                       allowlists["audit_sysctl_allowlist"])
         self.assertIn("ufw.service", allowlists["audit_service_allowlist"])
         self.assertIn("/", allowlists["audit_mount_allowlist"])
+
+    def test_apparmor_kernel_status_is_distinct_from_service_facts(self):
+        probe = next(
+            task for task in self.tasks
+            if task["name"] == "Read AppArmor kernel switch without inspecting profiles"
+        )
+        self.assertEqual(
+            probe["ansible.builtin.slurp"]["src"],
+            "/sys/module/apparmor/parameters/enabled",
+        )
+        self.assertIs(probe["no_log"], True)
+        self.assertIs(probe["failed_when"], False)
+        self.assertIs(probe["changed_when"], False)
+        report = self.tasks[-1]["ansible.builtin.debug"]["msg"]
+        self.assertEqual(report["apparmor_kernel"], "{{ audit_apparmor_kernel }}")
+        self.assertIn("without assuming enforcement", self.source)
+
+    def test_only_real_services_use_service_facts(self):
+        self.assertEqual(
+            set(self.play["vars"]["audit_timer_allowlist"]),
+            {"apt-daily.timer", "apt-daily-upgrade.timer", "fstrim.timer"},
+        )
+        self.assertFalse(any(
+            item.endswith(".timer")
+            for item in self.play["vars"]["audit_service_allowlist"]
+        ))
+        self.assertTrue(all(
+            item.endswith(".service")
+            for item in self.play["vars"]["audit_service_allowlist"]
+        ))
 
     def test_no_file_output_or_secret_material(self):
         for token in (
