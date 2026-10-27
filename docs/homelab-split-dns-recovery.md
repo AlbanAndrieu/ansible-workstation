@@ -208,6 +208,28 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Mise à jour 22:51 — ne pas appliquer de correctif NSS prématuré
+
+La nouvelle comparaison multi-chemin depuis la workstation
+révèle désormais `resolved_native=TIMEOUT (6,0s)`
+**en même temps** que `nss_default=TIMEOUT (6,0s)`.
+La sonde `stub_udp` v1 retournait
+`NO_ANSWER (2,0s)` sans préciser SERVFAIL,
+NODATA ou non-réponse ; le module NSS `dns` forcé
+a répondu en **3,4 s**. Cela réfute l'hypothèse
+d'une panne exclusivement liée à l'ordre `hosts:`.
+
+La source d'autorité de la politique DNS persistante reste
+ce dépôt Ansible, mais **aucune modification DNSSEC,
+DNS-over-TLS, `/etc/nsswitch.conf` ou module `nss-resolve`
+ne doit être appliquée sans preuve**. Le code
+[Compose PR #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289)
+contient désormais le diagnostic v2 du stub (RCODE) et
+des sondes séquentielles :
+`just workstation-nss-path-test`,
+`just workstation-nss-path-samples`.
+Les tests complémentaires v2 sont **à recevoir localement**.
+
 ## Régression NSS indépendante (27 octobre)
 
 Le split-DNS NetworkManager `Wired eno1` reste
