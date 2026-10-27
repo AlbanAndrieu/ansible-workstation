@@ -90,6 +90,38 @@ class NetworkManagerNTADispatcherTests(unittest.TestCase):
     def test_unknown_event_no_op(self):
         self.assertEqual(self.execute(action="hostname"), [])
 
+    def test_profile_switch_clears_only_our_stale_anchor(self):
+        self.assertEqual(
+            self.execute(connection="VPN", existing="int.albandrieu.com"),
+            ["nta eno1 "],
+        )
+        self.assertEqual(
+            self.execute(connection="VPN", existing="other.example"),
+            [],
+        )
+
+    def test_dns_change_clears_only_our_stale_anchor(self):
+        self.assertEqual(
+            self.execute(link_dns="9.9.9.9", existing="int.albandrieu.com"),
+            ["nta eno1 "],
+        )
+        self.assertEqual(
+            self.execute(link_dns="9.9.9.9", existing="int.albandrieu.com other.example"),
+            [],
+        )
+
+    def test_route_change_clears_only_our_stale_anchor(self):
+        self.assertEqual(
+            self.execute(link_domain="example.org", existing="int.albandrieu.com"),
+            ["nta eno1 "],
+        )
+
+    def test_down_on_other_profile_does_not_leave_our_nta(self):
+        self.assertEqual(
+            self.execute(action="down", connection="Other", existing="int.albandrieu.com"),
+            ["nta eno1 "],
+        )
+
     def test_opt_in_and_rollback_tasks(self):
         text = TASKS.read_text()
         defaults = (ROOT / "defaults/main.yml").read_text()
