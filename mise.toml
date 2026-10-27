@@ -51,3 +51,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check tests
 [tasks.syntax]
 description = "Use only project Ansible for syntax checking"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook --syntax-check playbooks/workstation.yml"
+
+[tasks.audit-syntax]
+description = "Validate only the local read-only Ubuntu audit playbook syntax"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation.yml"
+
+[tasks.audit-workstation]
+description = "Explicit read-only Ubuntu audit; no sudo, no writes, no snapshots"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml"
