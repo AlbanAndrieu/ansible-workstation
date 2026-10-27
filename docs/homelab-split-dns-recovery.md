@@ -208,6 +208,37 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Régression NSS indépendante (27 octobre)
+
+Le split-DNS NetworkManager `Wired eno1` reste
+`MATCH / PERSISTED` et Unbound pfSense UDP/TCP
+`A_CONFIRMED`. La résolution via `resolvectl query -4`
+a répondu en **0,149 s**, tandis que `getent ahostsv4`
+a pris **25,030 s sans sortie** ; le contrôle automatisé
+précédent avait confirmé A, mais en **12,4 s**.
+Ces preuves distinguent une latence **glibc/NSS**
+de la précédente écriture Quad9 par `hide-location`.
+
+**Propriétaire du diagnostic :** nabla-compose,
+[runbook NSS / split-DNS](https://github.com/AlbanAndrieu/nabla-compose/blob/fix/nexus-wan-haproxy-acl-evidence-20261027/docs/runbooks/workstation-split-dns-recovery.md)
+et [PR #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289).
+Lancer sur la workstation, depuis `~/w/nabla-compose` :
+
+```bash
+just workstation-nss-path-test
+just workstation-nss-path
+```
+
+L'outil teste en lecture seule cinq chemins :
+`resolvectl -4`, stub UDP `127.0.0.53`,
+`getent -s hosts:dns`, `getent -s hosts:resolve`
+(module optionnel) et `getent` normal.
+**Aucune mutation de `/etc/nsswitch.conf` ou installation
+de nss-resolve n'est approuvée à ce stade**. Si la source
+de la latence est identifiée, préparer un correctif
+déclaratif réversible dans ce dépôt Ansible et ses tests,
+sans remplacer à l'aveugle `hosts:` ou l'état systemd.
+
 ## Diagnostic non mutateur (workstation)
 
 ```bash
