@@ -108,9 +108,9 @@ def task_list() -> bool:
 def dry_run() -> bool:
     rc, output = execute(command("check"), timeout=120)
     # Even when exit=0, require evidence that at least one real DNS task ran.
-    markers = ("TASK [workstation | Validate opt-in split DNS parameters]",
-               "TASK [workstation | Read active NetworkManager profile]")
-    if rc or not any(m in output for m in markers):
+    markers = ("Validate opt-in split DNS parameters",
+               "Read active NetworkManager profile")
+    if rc or "TASK [" not in output or not all(m in output for m in markers):
         print("FAIL: Ansible check-mode did not execute expected DNS tasks")
         print(output[-5000:])
         return False
