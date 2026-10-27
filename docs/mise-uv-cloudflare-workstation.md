@@ -313,6 +313,22 @@ starts Ansible, downloads tools, installs dependencies or reads secrets.
 
 No `uv sync` or venv rebuild is needed for shell-hook problems.
 
+The strict check recognizes only a **standalone `_direnv_hook` command** in
+scalar or indexed-array `PROMPT_COMMAND` values. It does not evaluate commands
+and intentionally rejects a matching name inside quotes, echoed text, or a
+longer function identifier. Complex Bash command expressions that cannot be
+recognized conservatively must be reviewed, not automatically approved.
+
+The informational `diagnose-direnv-shell.sh` executes inside an isolated
+subshell. Sourcing it **cannot overwrite temporary variables in the parent**
+interactive session. It does not mutate `PATH`, the shell hooks or the
+`.venv`; do not dump full `PROMPT_COMMAND` values into public logs.
+
+Offline regression coverage now includes valid scalar/array prompt hooks,
+spoofed hook names in quoted text, symlinked `.venv`, and a prompt command
+with a side-effect marker that must never execute during verification.
+
+
 **Upstream compatibility debt:** mise explicitly treats simultaneous use of
 its environment shell hooks and Direnv as unsupported. The workstation
 configuration currently works, but a future standalone ADR should choose a
