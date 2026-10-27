@@ -79,3 +79,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-listeners]
 description = "Observe anonymous TCP/UDP listener bind scope; no sudo or socket names"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-listeners.yml"
+
+[tasks.measure-network-local]
+description = "Explicit bounded TCP local-loopback measurement from PRIVATE home allowlist (outside Git)"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/measure-workstation-reachability.py --observer local --allowlist \"$HOME/.config/workstation-audit/targets.json\" --confirm-connect"
+
+[tasks.measure-docker-publishing]
+description = "Explicit local Docker daemon metadata read; Docker socket can grant root-equivalent privileges"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/measure-workstation-docker-publishing.py --ack-docker-socket-read"
