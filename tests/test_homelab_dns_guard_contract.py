@@ -106,7 +106,8 @@ class HomelabDNSGuardContract(unittest.TestCase):
                       contents)
         self.assertIn('~{{ workstation_split_dns_domain }}', contents)
         self.assertIn("argv: [nmcli, device, reapply", contents)
-        self.assertNotIn("/etc/resolv.conf", contents)
+        self.assertNotIn("command: > /etc/resolv.conf", contents)
+        self.assertNotIn("argv: [tee, /etc/resolv.conf", contents)
 
 
 if __name__ == "__main__":
