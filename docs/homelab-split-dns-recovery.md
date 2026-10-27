@@ -208,6 +208,94 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Gate Ansible corrigée — 28 octobre : zéro test / zéro tâche n'est pas PASS
+
+**Dernière preuve opérateur :**
+`python3 -m unittest discover -s tests -p test_homelab_dns_guard_contract.py -v`
+a renvoyé `Ran 0 tests` ; le playbook général
+`playbooks/workstation.yml --list-tasks --tags dns`
+ne listait aucune tâche, et `--check` n'exécutait
+que `Gathering Facts` (`ok=1`).
+**Ces commandes n'ont rien validé**. La cause
+exacte du chemin courant n'a pas été mesurée ;
+mauvais dépôt, worktree obsolète et filtrage de
+tâches sont les premières hypothèses.
+Ne pas utiliser ce résultat pour autoriser l'application.
+
+**Correctif versionné :**
+
+- `playbooks/homelab-dns.yml` est un point
+  d'entrée Ansible **ciblé** :
+  `import_role: name: ../, tasks_from: network_split_dns`,
+  `tags: [dns]`, `gather_facts: false`,
+  `connection: local`, et
+  `when: workstation_split_dns_enabled | bool`.
+  Contrairement au playbook workstation générique,
+  il n'importe pas l'ensemble du rôle.
+- `scripts/check_homelab_dns_gate.py` vérifie d'abord
+  la racine du dépôt (origin Ansible attendu) et
+  l'existence des fichiers ; exécute les suites
+  `test_homelab_dns_guard_contract.py` (minimum 8)
+  et `test_homelab_dns_nta_dispatcher.py` (minimum 17)
+  en échouant si aucun test n'est découvert ;
+  puis exige dans le `--list-tasks` du playbook ciblé
+  les marqueurs des tâches DNS et du dispatcher.
+  L'option `--dry-run` ajoute une exécution
+  `ansible-playbook --check --diff`, sans apply,
+  et refuse un succès limité à Gathering Facts.
+- `tests/test_homelab_dns_gate.py` :
+  **13 tests hors ligne supplémentaires**, à exécuter
+  avant de déclarer la nouvelle gate valide.
+
+### Exécution sur la branche exacte, sans écraser le checkout courant
+
+Depuis un checkout existant de `ansible-workstation`,
+utiliser un worktree indépendant de la PR (aucun
+`git switch` du poste courant) :
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+git fetch origin fix/preserve-homelab-split-dns-20261027
+
+WT="$(mktemp -d /tmp/ansible-dns-gate.XXXXXX)"
+rmdir "$WT"
+git -c submodule.recurse=false worktree add --detach \
+  "$WT" origin/fix/preserve-homelab-split-dns-20261027
+cd "$WT"
+
+git remote get-url origin
+git rev-parse --show-toplevel
+git rev-parse --short HEAD
+
+# Interdit zéro tests et zéro tâches DNS :
+python3 scripts/check_homelab_dns_gate.py
+
+# Contrôle Ansible sans mutation, seulement APRÈS gate normale :
+python3 scripts/check_homelab_dns_gate.py --dry-run
+```
+
+Cette entrée est **plus fiable** que les trois
+anciennes commandes lorsque l'utilisateur se trouve
+dans `nabla-compose` ou dans une ancienne branche
+`ansible-workstation` : la vérification du dépôt
+et des nombres de tests est bloquante.
+
+**Le paramètre d'opt-in dans la gate est fourni
+uniquement via `-e`** pendant le listing et le
+dry-run ; `workstation_split_dns_enabled=false`
+et `workstation_split_dns_nta_dispatcher_enabled=false`
+restent les valeurs du dépôt par défaut.
+La NTA globale par fichier `.negative` reste
+également désactivée.
+
+**Avant tout déploiement réel :** examiner le
+`--check --diff` et refuser toute tâche non DNS,
+erreur d'élévation, mutation de sécurité hors NTA,
+ou autre profil que `Wired eno1`. Aucune commande
+`--apply` n'est encapsulée par la gate.
+Si la gate échoue, ne pas interpréter
+`changed=0` comme une confirmation de convergence.
+
 ## Réception tests dispatcher — 28 octobre 2026 à 00:06 CET
 
 **Preuve exécutée par l'opérateur sur sa workstation :**
