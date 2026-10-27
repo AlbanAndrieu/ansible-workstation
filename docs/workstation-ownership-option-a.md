@@ -33,7 +33,7 @@ Le prototype `dotfiles/bin/inspect-workstation-system.py` est conservé comme co
 
 **La configuration matérielle et les credentials YubiKey appartiennent exclusivement à `nabla-compose`.** Cela comprend OTP2/HMAC-SHA1, FIDO2/WebAuthn/SSH-sk, OpenPGP, PIV (9A, 82, AES256), age, escorte/escrow, attestations et diagnostics matériels. Ne jamais changer PIN, PUK, OTP, slots PIV ou clés sans approbation et contrôle local.
 
-Le bundle historique `tasks/yubikey.yml` est **retiré du rôle général** et supprimé : il couplait installation de paquets à l'ajout du PPA Yubico et à la copie de `/etc/pam.d/common-auth` lorsque `pam_enabled: true`. Le template PAM qui n'avait plus d'autre appel est également supprimé. La suppression concerne le **code Ansible**, pas la machine : aucune désinstallation de paquet, aucune modification de PAM, aucun changement de YubiKey.
+Le bundle historique `tasks/yubikey.yml` est **retiré du rôle général** et supprimé : il couplait installation de paquets à l'ajout du PPA Yubico et à la copie de `/etc/pam.d/common-auth` lorsque `pam_enabled: true`. Les deux templates PAM historiques, sans autre appel actif, sont également supprimés. La suppression concerne le **code Ansible**, pas la machine : aucune désinstallation de paquet, aucune modification de PAM, aucun changement de YubiKey.
 
 En cas de besoin de `libfido2`, `pcscd`, `ykman` ou `opensc`, créer plus tard un rôle **OS prerequisites uniquement**, explicitement activable ; il ne touche pas PAM et ne manipule jamais les applets. L'authentification Ubuntu/PAM peut être audité séparément, mais tout changement nécessite secours local, backup validé et phase opt-in dédiée.
 
