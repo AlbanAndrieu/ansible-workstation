@@ -6,6 +6,7 @@ politique de sauvegarde chiffrée Restic.
 
 - [Contrat de responsabilités et séparation YubiKey/PAM](docs/workstation-ownership-option-a.md)
 - [Roadmap de ce dépôt](docs/roadmap-workstation.md)
+- [Audit local Ubuntu P0, sans sudo ni mutation](docs/audit-workstation.md)
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
 
