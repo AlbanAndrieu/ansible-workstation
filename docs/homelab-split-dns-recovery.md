@@ -208,6 +208,125 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Résolution DNSSEC de la zone privée — NTA scoped, opt-in (27 octobre)
+
+**Preuve décisive utilisateur :** les **13 tests locaux DNSSEC passent**.
+Sur deux cycles : la requête **validée** pour
+`defectdojo.int.albandrieu.com` a expiré **4,0 s**,
+tandis que `resolvectl query -4 --validate=no`
+a immédiatement résolu `172.17.0.24`.
+Un domaine public DNSSEC signé a été résolu avec et sans
+validation, et Unbound pfSense `172.17.0.1`
+a renvoyé `RRSIG=yes, AD=yes` pour des enregistrements
+publics signés ; `dnssec-failed.org` a reçu `SERVFAIL`.
+
+**Diagnostic :** le chemin de **validation DNSSEC du sous-arbre
+privé `int.albandrieu.com`** est maintenant le défaut
+reproduit. L'absence réelle des RRSIG dans la zone privée
+n'a pas encore été directement vérifiée ; la cause
+architecturale probable est une zone interne non signée
+sous le domaine public.
+
+**Règle :** ne pas désactiver `DNSSEC=yes` à l'échelle du
+poste et ne pas dégrader DoT ou les autres zones.
+Systemd offre des *Negative Trust Anchors* ciblées,
+prévues pour les DNS privés non signés :
+[per-link `resolvectl nta`](https://www.freedesktop.org/software/systemd/man/latest/resolvectl.html),
+[fichier `.negative`](https://www.freedesktop.org/software/systemd/man/latest/dnssec-trust-anchors.d.html).
+
+### 1. Réception d'abord en mode runtime, réversible
+
+Depuis la workstation, dans **nabla-compose** :
+
+```bash
+cd ~/w/nabla-compose
+git pull --ff-only
+just workstation-dnssec-nta-test
+just workstation-dnssec-nta-check || true   # TIMEOUT attendu avant correction
+
+# Opération explicite, limitée au lien eno1 et à la zone privée :
+just workstation-dnssec-nta-try
+
+# Vérifier désormais une requête VALIDÉE sans --validate=no :
+resolvectl query -4 defectdojo.int.albandrieu.com
+getent ahostsv4 defectdojo.int.albandrieu.com
+resolvectl query -4 cloudflare.com
+just workstation-nss-path
+```
+
+`recover-split-dns-nta.py` refuse l'opération si le lien
+n'est pas `eno1` avec `Wired eno1`, DNS pfSense
+`172.17.0.1`, routage `~int.albandrieu.com`,
+ou si des ancres NTA supplémentaires seraient remplacées.
+**Cette NTA par lien est runtime et n'est pas persistante.**
+
+Revenir en arrière **si la NTA de lien était initialement
+vide et qu'aucun autre service n'en a ajouté** :
+
+```bash
+cd ~/w/nabla-compose
+just workstation-dnssec-nta-rollback
+```
+
+La commande de retour en arrière efface uniquement la
+liste NTA du lien si elle contient exactement le domaine
+attendu ; elle refuse si des domaines supplémentaires sont
+déclarés. Elle n'est **pas** une suppression globale de
+trust anchors DNSSEC.
+
+### 2. Persistance Ansible facultative après confirmation
+
+Variables dans `defaults/main.yml`, toutes désactivées
+par défaut :
+
+```yaml
+workstation_split_dns_enabled: false
+workstation_split_dns_persistent_nta_enabled: false
+workstation_split_dns_persistent_nta_remove_enabled: false
+```
+
+Après la preuve **runtime PASS**, l'opérateur peut
+explicitement activer le rôle split-DNS et
+`workstation_split_dns_persistent_nta_enabled=true`.
+Les tâches `network_dnssec_nta.yml` écrivent uniquement
+`/etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative`
+avec `int.albandrieu.com`.
+**Attention :** contrairement à l'essai NTA par lien,
+le fichier `.negative` s'applique à ce domaine privé sur
+**tous les liens DNS du poste**. Il ne désactive pas
+la validation DNSSEC d'autres domaines mais il faut
+vérifier que ce périmètre est acceptable (VPN inclus).
+Ne pas déployer à l'aveugle si l'utilisateur veut
+une portée strictement `eno1`.
+
+Le handler `systemd-resolved` ne redémarre le service
+que si le fichier est réellement créé/modifié/supprimé,
+à la suite de cet opt-in ; il ne s'exécute pas au
+provisionnement courant. Ne pas déclencher le rôle
+complet sans revoir ses autres tâches : prévoir
+`--tags dns`, `--check` puis une exécution ciblée
+hors CI et contrôler le résultat.
+
+Rollback déclaratif explicite : activer
+`workstation_split_dns_persistent_nta_remove_enabled=true`
+avec `workstation_split_dns_persistent_nta_enabled=false`
+(et `workstation_split_dns_enabled=true`) puis
+exécuter **uniquement les tâches DNS**. Le rôle supprime
+uniquement son fichier `.negative`, préserve les autres
+ancres et ne redémarre resolved que si le fichier change.
+Mettre les deux flags à `true` est refusé.
+
+La documentation de
+[nabla-compose PR #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289)
+recueille le diagnostic et la réception ; **le code
+Ansible n'a pas été appliqué**, PR toujours Draft.
+
+**Point indépendant à surveiller :** les échecs
+`DNSSEC validation failed: no-signature` sur certains
+domaines publics sont également visibles dans les
+journaux et ne doivent pas être considérés réparés
+par cette NTA exclusivement privée.
+
 ## Nouvelle preuve DNSSEC (27 octobre vers 23:01 CET)
 
 L'opérateur a transmis le journal de
