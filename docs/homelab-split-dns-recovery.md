@@ -1,5 +1,20 @@
 # LAN split-DNS sur la workstation — reprise du 27 octobre 2026
 
+**Diagnostic d'exploitation et runbook consommateur :**
+[nabla-compose / docs/runbooks/workstation-split-dns-recovery.md](https://github.com/AlbanAndrieu/nabla-compose/blob/fix/nexus-wan-haproxy-acl-evidence-20261027/docs/runbooks/workstation-split-dns-recovery.md),
+[PR Compose #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289).
+Responsabilités : **ansible-workstation** gère la persistance de
+NetworkManager et des unités systemd ; **nabla-compose** fournit les
+recettes Just et le diagnostic des réponses DNS (UDP/TCP pfSense,
+`systemd-resolved`, NSS et services HTTPS). Lancer les recettes
+Just depuis le checkout nabla-compose, pas depuis ce worktree.
+Le 27/10, `nmcli device reapply eno1` a fonctionné, mais
+`dig @172.17.0.1` UDP a expiré alors que `resolvectl query`
+a répondu en 11,5 s : le diagnostic pfSense DNS/transport
+est **distinct** du précédent override Quad9.
+
+
+
 ## Faits observés (pas une hypothèse de panne pfSense)
 
 La workstation Linux sur `eno1` a un serveur DNS **correct**
