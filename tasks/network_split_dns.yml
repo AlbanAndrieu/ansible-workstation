@@ -132,3 +132,13 @@
     workstation_split_dns_persistent_nta_enabled | bool
     or workstation_split_dns_persistent_nta_remove_enabled | bool
   tags: [dns]
+
+# NetworkManager owns eno1, so a systemd.network file would not persist this
+# NTA. Dispatcher applies it per LINK after NM activation/reapply, unlike
+# system-wide .negative trust anchor files.
+- name: workstation | Load scoped NetworkManager DNSSEC NTA dispatcher
+  ansible.builtin.import_tasks: network_dnssec_nta_dispatcher.yml
+  when: >-
+    workstation_split_dns_nta_dispatcher_enabled | bool
+    or workstation_split_dns_nta_dispatcher_remove_enabled | bool
+  tags: [dns]
