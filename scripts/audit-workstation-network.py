@@ -113,7 +113,7 @@ def parse_nft(raw):
                     verdict = operation.get("verdict")
                     if isinstance(verdict, dict):
                         kind = verdict.get("kind")
-                        if kind in direct_verdicts:
+                        if isinstance(kind, str) and kind in direct_verdicts:
                             kinds.add(kind)
                 for kind in kinds:
                     direct_verdicts[kind] += 1
