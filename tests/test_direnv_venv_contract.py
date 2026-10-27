@@ -59,6 +59,23 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Direnv: current Bash hook diagnosis", result.stdout)
 
+    def test_sourced_diagnostic_cannot_overwrite_caller_variables(self):
+        script = ROOT / "scripts/diagnose-direnv-shell.sh"
+        command = (
+            'target=original; binary=original; '
+            '_prompt_declaration=original; _prompt_bad_source=original; '
+            'source "$1" >/dev/null; '
+            '[[ "$target" == original ]] && '
+            '[[ "$binary" == original ]] && '
+            '[[ "$_prompt_declaration" == original ]] && '
+            '[[ "$_prompt_bad_source" == original ]]'
+        )
+        result = subprocess.run(
+            ["/bin/bash", "--noprofile", "--norc", "-c", command, "_", str(script)],
+            cwd=ROOT, capture_output=True, text=True, check=False, timeout=5,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_diagnostic_identifies_malformed_mise_history_without_leaking_prompt(self):
         diag = (ROOT / "scripts/diagnose-direnv-shell.sh").read_text()
         self.assertIn('INVALID _mise_hookhistory token detected', diag)
