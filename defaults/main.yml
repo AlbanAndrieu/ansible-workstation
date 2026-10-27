@@ -209,3 +209,9 @@ workstation_split_dns_domain: int.albandrieu.com
 workstation_split_dns_persistent_nta_enabled: false
 # Separate explicit rollback; setting enabled=false alone does not remove a file.
 workstation_split_dns_persistent_nta_remove_enabled: false
+
+# Preferred over the system-wide .negative fallback: restore the private NTA
+# ONLY on the vetted eno1/Wired eno1 link through NetworkManager dispatcher.
+# Explicit opt-in, including separate rollback; never both flags true.
+workstation_split_dns_nta_dispatcher_enabled: false
+workstation_split_dns_nta_dispatcher_remove_enabled: false
