@@ -49,8 +49,10 @@ def summarize_ss(output):
             counts["unknown"] += 1
             total += 1
             continue
-        # ss without --processes reports Local Address:Port in column 5.
-        counts[binding_scope(values[4])] += 1
+        # ss -H -ln[t|u]: State Recv-Q Send-Q Local:Port Peer:Port.
+        # Index 3 is LOCAL; index 4 is PEER (often 0.0.0.0:*).
+        # Reading the peer would falsely classify almost everything wildcard.
+        counts[binding_scope(values[3])] += 1
         total += 1
     return {"count": total, "bind_scopes": counts}
 
