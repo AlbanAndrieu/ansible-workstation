@@ -1,0 +1,26 @@
+---
+# Packet-filter visibility gate only. Does not change the network configuration.
+# Requires no sudo and never connects to the privileged Docker socket.
+- name: Audit local firewall visibility without changing rules
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  tasks:
+    - name: Read filtered local packet-filter metadata
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -B
+          - "{{ playbook_dir }}/../scripts/audit-workstation-network.py"
+          - --format
+          - json
+      register: audit_network_result
+      changed_when: false
+      no_log: true
+
+    - name: Report only filtered policy metadata
+      ansible.builtin.debug:
+        msg: "{{ audit_network_result.stdout | from_json }}"
