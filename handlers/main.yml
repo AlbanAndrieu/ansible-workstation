@@ -1,3 +1,12 @@
 ---
 # Handler to handle common notifications. Handlers are called by other plays.
 # See http://ansible.cc/docs/playbooks.html for more information about handlers.
+
+# Restart only when explicitly opted-in NTA content was actually changed.
+# Do not restart on ordinary split-DNS or unrelated workstation role runs.
+- name: workstation | Restart resolved after approved NTA change
+  ansible.builtin.systemd_service:
+    name: systemd-resolved
+    state: restarted
+  become: true
+  listen: workstation | Restart resolved after approved NTA change
