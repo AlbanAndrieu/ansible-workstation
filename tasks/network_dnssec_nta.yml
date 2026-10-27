@@ -1,0 +1,36 @@
+---
+# OPT-IN after a proven runtime resolvectl NTA experiment.
+# Scoped to int.albandrieu.com only. Does not disable public DNSSEC/DoT.
+# The .negative file is a system-wide NTA for this subtree, not per-link.
+- name: workstation | Verify narrowly scoped private DNSSEC NTA contract
+  ansible.builtin.assert:
+    that:
+      - workstation_split_dns_interface == 'eno1'
+      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_domain == 'int.albandrieu.com'
+    fail_msg: 'NTA change refused outside the approved LAN zone'
+  tags: [dns]
+
+- name: workstation | Ensure scoped DNSSEC trust anchors directory
+  ansible.builtin.file:
+    path: /etc/dnssec-trust-anchors.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  tags: [dns]
+
+# Negative anchor: an unsigned private DNS subtree under a public domain.
+# Do not edit /etc/resolv.conf, DNSSEC=yes, DoT, or public DNS trust anchors.
+# Keep all other .negative/.positive files intact.
+- name: workstation | Persist ONLY the private DNSSEC negative trust anchor
+  ansible.builtin.copy:
+    dest: /etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative
+    content: "{{ workstation_split_dns_domain }}\n"
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: workstation | Restart resolved after approved NTA change
+  tags: [dns]
