@@ -1,0 +1,169 @@
+---
+# P0 workstation state audit: local, unprivileged, read-only and no files written.
+# This is NOT tasks/workstation.yml and never runs the legacy provisioning role.
+# Execute: .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml
+- name: Audit the local Ubuntu workstation without changing configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    audit_service_allowlist:
+      - apparmor.service
+      - auditd.service
+      - fail2ban.service
+      - ssh.service
+      - ufw.service
+      - nftables.service
+      - unattended-upgrades.service
+      - fstrim.timer
+      - apt-daily.timer
+      - apt-daily-upgrade.timer
+    audit_package_allowlist:
+      - apparmor
+      - auditd
+      - fail2ban
+      - openssh-server
+      - ufw
+      - nftables
+      - unattended-upgrades
+      - cryptsetup
+      - fwupd
+      - intel-microcode
+    audit_sysctl_allowlist:
+      - kernel.dmesg_restrict
+      - kernel.kptr_restrict
+      - kernel.yama.ptrace_scope
+      - kernel.unprivileged_bpf_disabled
+      - kernel.unprivileged_userns_clone
+      - fs.protected_hardlinks
+      - fs.protected_symlinks
+      - net.ipv4.ip_forward
+      - net.ipv4.conf.all.rp_filter
+    audit_mount_allowlist:
+      - /
+      - /boot
+      - /boot/efi
+      - /data
+      - /workspace
+
+  tasks:
+    - name: Gather only operating system, kernel, hardware and mount facts
+      ansible.builtin.setup:
+        gather_subset:
+          - "!all"
+          - "!min"
+          - distribution
+          - kernel
+          - architecture
+          - processor
+          - hardware
+          - mounts
+        gather_timeout: 10
+      no_log: true
+
+    - name: Restrict this audit to local Ubuntu
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.get('distribution', '') == 'Ubuntu'
+        fail_msg: "This read-only audit supports Ubuntu only."
+        quiet: true
+      no_log: true
+
+    - name: Read service status without starting or enabling any service
+      ansible.builtin.service_facts:
+      no_log: true
+
+    - name: Read installed package metadata without changing package sources
+      ansible.builtin.package_facts:
+        manager: auto
+      no_log: true
+
+    - name: Read only the selected kernel parameters
+      ansible.builtin.slurp:
+        src: "{{ '/proc/sys/' ~ (item | replace('.', '/')) }}"
+      loop: "{{ audit_sysctl_allowlist }}"
+      register: audit_sysctl_values
+      failed_when: false
+      changed_when: false
+      no_log: true
+
+    - name: Build a small service summary from allowlisted fields
+      ansible.builtin.set_fact:
+        audit_services: >-
+          {{
+            audit_services | default({}) | combine({
+              item: {
+                'state': (ansible_facts.get('services', {}).get(item, {}).get('state', 'unknown')),
+                'startup': (ansible_facts.get('services', {}).get(item, {}).get('status', 'unknown'))
+              }
+            })
+          }}
+      loop: "{{ audit_service_allowlist }}"
+      no_log: true
+
+    - name: Build allowlisted installed package version summary
+      ansible.builtin.set_fact:
+        audit_packages: >-
+          {{
+            audit_packages | default({}) | combine({
+              item: (
+                ansible_facts.get('packages', {}).get(item, [])
+                | map(attribute='version') | first | default('not_installed')
+              )
+            })
+          }}
+      loop: "{{ audit_package_allowlist }}"
+      no_log: true
+
+    - name: Build allowlisted sysctl summary
+      ansible.builtin.set_fact:
+        audit_sysctls: >-
+          {{
+            audit_sysctls | default({}) | combine({
+              item.item: (
+                (item.content | default('') | b64decode | trim)
+                | regex_search('^[0-9]{1,3}$') | default('unknown', true)
+              )
+            })
+          }}
+      loop: "{{ audit_sysctl_values.results }}"
+      no_log: true
+
+    - name: Build allowlisted mount presence summary
+      ansible.builtin.set_fact:
+        audit_mounts: >-
+          {{
+            audit_mounts | default({}) | combine({
+              item: (
+                item in (
+                  ansible_facts.get('mounts', [])
+                  | map(attribute='mount') | list
+                )
+              )
+            })
+          }}
+      loop: "{{ audit_mount_allowlist }}"
+      no_log: true
+
+    - name: Report only explicitly approved metadata to terminal
+      ansible.builtin.debug:
+        msg:
+          schema: workstation-ansible-audit/v1
+          observed_at_utc: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+          system:
+            distribution: "{{ ansible_facts.get('distribution', 'unknown') }}"
+            version: "{{ ansible_facts.get('distribution_version', 'unknown') }}"
+            kernel: "{{ ansible_facts.get('kernel', 'unknown') }}"
+            architecture: "{{ ansible_facts.get('architecture', 'unknown') }}"
+            memory_mb: "{{ ansible_facts.get('memtotal_mb', 'unknown') }}"
+          selected_services: "{{ audit_services }}"
+          selected_packages: "{{ audit_packages }}"
+          selected_sysctls: "{{ audit_sysctls }}"
+          selected_mounts_present: "{{ audit_mounts }}"
+          limitations:
+            - "Read-only local audit, not an OS compliance certification."
+            - "No hostname, IP address, serial, UUID, user ID or secret is output."
+            - "Service state does not prove the effective firewall or SSH policy."
+            - "Missing mount and sysctl observations need manual verification."
+            - "No private snapshot or Restic backup was created."
