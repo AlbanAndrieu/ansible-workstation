@@ -39,8 +39,11 @@ et des opérations en mémoire `set_fact`/`assert`. Seule la dernière
 tâche `debug` affiche une structure réduite. Tous les faits bruts et les
 résultats intermédiaires utilisent `no_log: true`.
 
-Les faits sont consultés en mémoire le temps du playbook. Rien n'est écrit
-sur disque ou dans Git ; ne pas rediriger la sortie brute de la commande
+Les faits sont utilisés en mémoire dans le playbook et ne sont pas archivés
+par ce projet. **Ansible peut créer ses fichiers de modules temporaires sous
+`~/.ansible/tmp`**, puis les nettoyer ; cela ne constitue pas un snapshot ni
+une sauvegarde. Aucune configuration système ni rapport persistant n'est écrit
+par les tâches de ce playbook. Ne pas rediriger la sortie de la commande
 Ansible vers le dépôt. Les paramètres noyau sont lus dans une **liste
 fermée** de chemins sous `/proc/sys`. Le contrôle `failed_when: false`
 ne masque que les lectures manquantes de ces paramètres : les valeurs
