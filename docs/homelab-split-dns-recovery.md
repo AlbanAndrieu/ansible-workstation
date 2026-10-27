@@ -245,14 +245,15 @@ Préférer l'implémentation **opt-in** ci-dessous à la NTA
   avec `CONNECTION_ID=Wired eno1` et confirme
   `DNS 172.17.0.1` et `~int.albandrieu.com`.
   Il applique `resolvectl nta eno1 int.albandrieu.com`
-  sans écraser une NTA étrangère. Lors d'un `down`
+  sans écraser une NTA étrangère et retire uniquement sa NTA
+  si le profil ou le DNS privé change. Lors d'un `down`
   propre, il efface uniquement cette NTA **si elle est seule**.
   Il ne modifie ni DNSSEC, ni DoT, ni le résolveur global ;
 - [tasks/network_dnssec_nta_dispatcher.yml](../tasks/network_dnssec_nta_dispatcher.yml)
   — install/removal idempotent, fichier root:root mode `0700`,
   sans redémarrer NetworkManager ni `systemd-resolved` ;
 - [tests/test_homelab_dns_nta_dispatcher.py](../tests/test_homelab_dns_nta_dispatcher.py)
-  — **13 tests hors ligne**, ajoutés mais pas encore
+  — **17 tests hors ligne**, ajoutés mais pas encore
   exécutés sur la workstation.
 
 Les options sont **false par défaut** :
