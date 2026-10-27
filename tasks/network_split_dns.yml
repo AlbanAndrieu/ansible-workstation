@@ -1,0 +1,99 @@
+---
+# Manage exactly the active NetworkManager connection. No DNS-over-TLS
+# downgrade, VPN resolver replacement, or global resolv.conf writes.
+- name: workstation | Validate opt-in split DNS parameters
+  ansible.builtin.assert:
+    that:
+      - workstation_split_dns_interface == 'eno1'
+      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_domain == 'int.albandrieu.com'
+    fail_msg: 'Refusing DNS changes outside the approved workstation LAN contract'
+  tags: [dns]
+
+- name: workstation | Read active NetworkManager profile
+  ansible.builtin.command:
+    argv: [nmcli, -g, GENERAL.CONNECTION, device, show, "{{ workstation_split_dns_interface }}"]
+  register: workstation_dns_profile
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Refuse missing or disconnected profile
+  ansible.builtin.assert:
+    that:
+      - workstation_dns_profile.stdout | trim | length > 0
+      - workstation_dns_profile.stdout | trim != '--'
+    fail_msg: 'NetworkManager profile not found: no changes applied'
+  tags: [dns]
+
+- name: workstation | Read configured profile DNS server
+  ansible.builtin.command:
+    argv: [nmcli, -g, ipv4.dns, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+  register: workstation_dns_servers
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Read configured DHCP DNS override
+  ansible.builtin.command:
+    argv: [nmcli, -g, ipv4.ignore-auto-dns, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+  register: workstation_dns_auto
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Read configured search domain
+  ansible.builtin.command:
+    argv: [nmcli, -g, ipv4.dns-search, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+  register: workstation_dns_search
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Configure pfSense as the sole profile DNS
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ workstation_dns_profile.stdout | trim }}"
+      - ipv4.ignore-auto-dns
+      - 'yes'
+      - ipv4.dns
+      - "{{ workstation_split_dns_resolver }}"
+      - ipv4.dns-search
+      - "{{ workstation_split_dns_domain }}"
+  become: true
+  register: workstation_dns_update
+  when: >-
+    (workstation_dns_servers.stdout | trim) != workstation_split_dns_resolver
+    or (workstation_dns_auto.stdout | trim | lower) not in ['yes', 'true']
+    or workstation_split_dns_domain not in workstation_dns_search.stdout
+  tags: [dns]
+
+- name: workstation | Reapply active link DNS only when modified
+  ansible.builtin.command:
+    argv: [nmcli, device, reapply, "{{ workstation_split_dns_interface }}"]
+  become: true
+  when: workstation_dns_update is changed
+  tags: [dns]
+
+- name: workstation | Read effective link DNS after reconciliation
+  ansible.builtin.command:
+    argv: [resolvectl, dns, "{{ workstation_split_dns_interface }}"]
+  register: workstation_dns_effective
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Fail if effective resolver is still inconsistent
+  ansible.builtin.assert:
+    that:
+      - workstation_split_dns_resolver in workstation_dns_effective.stdout
+      - "'9.9.9.9' not in workstation_dns_effective.stdout"
+      - "'149.112.112.112' not in workstation_dns_effective.stdout"
+    fail_msg: >-
+      Effective systemd-resolved link DNS is still overridden.
+      Check global resolved.conf, NetworkManager dispatcher, VPN and DHCP.
+      Do not disable DNS security or rewrite /etc/resolv.conf blindly.
+  tags: [dns]

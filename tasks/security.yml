@@ -410,115 +410,148 @@
     state: started
     enabled: true
 
-- name: workstation | Add Tailscale GPG key
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      DIST="{{ ansible_distribution | lower }}"
-      RELEASE="{{ ansible_distribution_release }}"
-      curl -fsSL "https://pkgs.tailscale.com/stable/${DIST}/${RELEASE}.noarmor.gpg" | \
-        tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
-    creates: /usr/share/keyrings/tailscale-archive-keyring.gpg
-    executable: /bin/bash
+# Tailscale is retained as an optional legacy VPN, never uninstalled here.
+# Explicit management of an existing service can safely disable it without purge.
+- name: workstation | Inspect installed VPN and tunnel units
+  ansible.builtin.service_facts:
+  when: ansible_os_family == 'Debian'
+  tags: [security, vpn, tunnel]
 
-- name: workstation | Add Tailscale repository
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      DIST="{{ ansible_distribution | lower }}"
-      RELEASE="{{ ansible_distribution_release }}"
-      curl -fsSL "https://pkgs.tailscale.com/stable/${DIST}/${RELEASE}.tailscale-keyring.list" | \
-        tee /etc/apt/sources.list.d/tailscale.list > /dev/null
-    creates: /etc/apt/sources.list.d/tailscale.list
-    executable: /bin/bash
+- name: workstation | Disable existing Tailscale without uninstalling it
+  ansible.builtin.systemd_service:
+    name: tailscaled.service
+    state: stopped
+    enabled: false
+  become: true
+  when:
+    - ansible_os_family == 'Debian'
+    - workstation_tailscale_disable_existing | bool
+    - not (tailscale_enabled | bool)
+    - "'tailscaled.service' in ansible_facts.services"
+  tags: [security, vpn]
 
-- name: workstation | Update apt cache after adding Tailscale repo
-  ansible.builtin.apt:
-    update_cache: true
-
-- name: workstation | Install Tailscale
+# A legacy Tailscale installation must require explicit opt-in.
+# Do not use curl | shell or modify package sources at each workstation run.
+- name: workstation | Install Tailscale only when explicitly enabled
   ansible.builtin.apt:
     name: tailscale
     state: present
+  become: true
+  when:
+    - ansible_os_family == 'Debian'
+    - tailscale_enabled | bool
+    - workstation_tailscale_install_enabled | bool
+  tags: [security, vpn]
 
-- name: workstation | Enable Tailscale service (Linux)
-  ansible.builtin.systemd:
-    name: tailscaled
-    enabled: true
+- name: workstation | Enable a previously installed Tailscale service
+  ansible.builtin.systemd_service:
+    name: tailscaled.service
     state: started
+    enabled: true
+  become: true
+  when:
+    - ansible_os_family == 'Debian'
+    - tailscale_enabled | bool
+    - "'tailscaled.service' in ansible_facts.services"
+  tags: [security, vpn]
 
-- name: workstation | Check if Tailscale is already connected (Linux)
-  ansible.builtin.command: tailscale status --json
-  register: tailscale_status_linux
-  changed_when: false
-  failed_when: false
+# Cloudflare Tunnel deployment and tokens are managed outside this role.
+# Never create a new connector, log tokens or overwrite tunnel config here.
+- name: workstation | Manage existing cloudflared service (opt-in)
+  ansible.builtin.systemd_service:
+    name: cloudflared.service
+    state: started
+    enabled: true
+  become: true
+  when:
+    - ansible_os_family == 'Debian'
+    - workstation_cloudflared_manage_existing | bool
+    - "'cloudflared.service' in ansible_facts.services"
+  tags: [security, tunnel]
 
-# UFW Firewall configuration
-- name: workstation | Install UFW
-  ansible.builtin.apt:
-    name: ufw
-    state: present
-    update_cache: true
-
-- name: workstation | Set UFW default policies
-  community.general.ufw:
-    direction: "{{ item.direction }}"
-    policy: "{{ item.policy }}"
-  loop:
-    - { direction: "incoming", policy: "deny" }
-    - { direction: "outgoing", policy: "allow" }
-    - { direction: "routed", policy: "deny" }
-
-# - name: workstation | Allow SSH on port 22
-#   community.general.ufw:
-#     rule: allow
-#     port: '9922' # security_ssh_port
-#     proto: tcp
-#     comment: 'SSH'
-
-- name: workstation | Allow Tailscale UDP port 41641
-  community.general.ufw:
-    rule: allow
-    port: "41641"
-    proto: udp
-    comment: "Tailscale"
-  when: tailscale_enabled | bool
-
-- name: workstation | Get default network interface
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      ip route | grep default | awk '{print $5}' | head -n1
-    executable: /bin/bash
-  register: default_interface
-  changed_when: false
-
-- name: workstation | Validate default network interface was detected
+- name: workstation | Require existing cloudflared unit when management is enabled
   ansible.builtin.assert:
     that:
-      - default_interface.stdout is defined
-      - default_interface.stdout | length > 0
-    fail_msg: "Failed to detect default network interface. Cannot configure firewall rules safely."
-    success_msg: "Default network interface detected: {{ default_interface.stdout }}"
+      - "'cloudflared.service' in ansible_facts.services"
+    fail_msg: >-
+      cloudflared systemd unit is missing. Provision an authorized tunnel
+      with its credentials outside this role; no token is generated here.
+  when:
+    - ansible_os_family == 'Debian'
+    - workstation_cloudflared_manage_existing | bool
+  tags: [security, tunnel]
 
-- name: workstation | Create UFW after.rules for Docker isolation
-  ansible.builtin.blockinfile:
-    path: /etc/ufw/after.rules
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - Docker isolation"
-    insertbefore: "^COMMIT$"
-    block: |
-      # Docker port isolation - block all forwarded traffic by default
-      :DOCKER-USER - [0:0]
+# Firewall management is opt-in: Docker bridge/SSH routes must be audited first.
+- name: workstation | Apply approved firewall configuration
+  when: workstation_firewall_manage_enabled | bool
+  tags: [security, firewall]
+  block:
+  # UFW Firewall configuration
+  - name: workstation | Install UFW
+    ansible.builtin.apt:
+      name: ufw
+      state: present
+      update_cache: true
 
-      # Allow established connections
-      -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  - name: workstation | Set UFW default policies
+    community.general.ufw:
+      direction: "{{ item.direction }}"
+      policy: "{{ item.policy }}"
+    loop:
+      - { direction: "incoming", policy: "deny" }
+      - { direction: "outgoing", policy: "allow" }
+      - { direction: "routed", policy: "deny" }
 
-      # Allow localhost
-      -A DOCKER-USER -i lo -j ACCEPT
+  # - name: workstation | Allow SSH on port 22
+  #   community.general.ufw:
+  #     rule: allow
+  #     port: '9922' # security_ssh_port
+  #     proto: tcp
+  #     comment: 'SSH'
 
-      # Block all other forwarded traffic to Docker containers from external interface
-      -A DOCKER-USER -i {{ default_interface.stdout }} -j DROP
-    create: false
+  - name: workstation | Allow Tailscale UDP port 41641
+    community.general.ufw:
+      rule: allow
+      port: "41641"
+      proto: udp
+      comment: "Tailscale"
+    when: tailscale_enabled | bool
+
+  - name: workstation | Get default network interface
+    ansible.builtin.shell:
+      cmd: |
+        set -o pipefail
+        ip route | grep default | awk '{print $5}' | head -n1
+      executable: /bin/bash
+    register: default_interface
+    changed_when: false
+
+  - name: workstation | Validate default network interface was detected
+    ansible.builtin.assert:
+      that:
+        - default_interface.stdout is defined
+        - default_interface.stdout | length > 0
+      fail_msg: "Failed to detect default network interface. Cannot configure firewall rules safely."
+      success_msg: "Default network interface detected: {{ default_interface.stdout }}"
+
+  - name: workstation | Create UFW after.rules for Docker isolation
+    ansible.builtin.blockinfile:
+      path: /etc/ufw/after.rules
+      marker: "# {mark} ANSIBLE MANAGED BLOCK - Docker isolation"
+      insertbefore: "^COMMIT$"
+      block: |
+        # Docker port isolation - block all forwarded traffic by default
+        :DOCKER-USER - [0:0]
+
+        # Allow established connections
+        -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+        # Allow localhost
+        -A DOCKER-USER -i lo -j ACCEPT
+
+        # Block all other forwarded traffic to Docker containers from external interface
+        -A DOCKER-USER -i {{ default_interface.stdout }} -j DROP
+      create: false
 
 # Block usb key usage
 # - name: workstation | Install usbguard

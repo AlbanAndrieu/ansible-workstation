@@ -38,3 +38,9 @@
     - ethtool
     - iputils-ping
     - inetutils-traceroute
+
+# Keep host-specific DNS changes opt-in, never change the active profile silently.
+- name: workstation | Load optional split DNS reconciliation
+  ansible.builtin.import_tasks: network_split_dns.yml
+  when: workstation_split_dns_enabled | bool
+  tags: [dns]

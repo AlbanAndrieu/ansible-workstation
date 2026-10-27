@@ -1,0 +1,32 @@
+---
+# Provision only with workstation_mise_uv_provision_enabled=true.
+# Running this role must never implicitly install runtimes in check mode.
+- name: runtime | Check mise executable
+  ansible.builtin.command:
+    argv: [mise, --version]
+  register: workstation_mise_version
+  changed_when: false
+  become: false
+  tags: [mise, uv, runtime]
+
+- name: runtime | Install pinned project runtimes with mise
+  ansible.builtin.command:
+    argv: [mise, install]
+    chdir: "{{ role_path }}"
+  register: workstation_mise_install
+  changed_when: "'installed' in workstation_mise_install.stdout | lower"
+  become: false
+  when: not ansible_check_mode
+  tags: [mise, uv, runtime]
+
+- name: runtime | Verify uv is available via mise
+  ansible.builtin.command:
+    argv: [mise, exec, --, uv, --version]
+    chdir: "{{ role_path }}"
+  changed_when: false
+  become: false
+  when: not ansible_check_mode
+  tags: [mise, uv, runtime]
+
+# Creating uv.lock and .venv remains a deliberate developer command:
+# mise exec -- uv lock && mise exec -- uv sync --locked

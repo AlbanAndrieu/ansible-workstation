@@ -1,5 +1,53 @@
-min_version = "2024.9.5"
+# Declarative runtimes. Downloads run only on explicit "mise install".
+min_version = "2026.7.0"
 
 [tools]
-python = "{{ get_env(name='PYTHON_VERSION', default='3.12') }}"
-node = "latest"
+python = "3.12"
+node = "24"
+uv = "0.13.5"
+
+[settings]
+# Avoid automatic tool installation and auto-activation from invalid locks.
+auto_install = false
+task.run_auto_install = false
+python.uv_venv_auto = false
+
+[tasks.init]
+description = "Explicit locked bootstrap: sync .venv and install safe Git hooks"
+run = "bash scripts/bootstrap-workstation.sh"
+
+[tasks.recover-venv]
+description = "Explicitly archive a broken .venv without deleting it"
+run = "bash scripts/recover-workstation-venv.sh"
+
+[tasks.lock]
+description = "Resolve a verified project and inspect its lockfile"
+run = "bash scripts/uv-project.sh lock"
+
+[tasks.sync]
+description = "Sync only a verified lock into a project-owned venv"
+run = "bash scripts/uv-project.sh sync"
+
+[tasks.check-venv]
+description = "Verify the selected Ansible comes from this project's .venv"
+run = "bash scripts/uv-project.sh check"
+
+[tasks.hooks-diagnose]
+description = "Read-only Git hook / local venv / Git ignore troubleshooting"
+run = "bash scripts/diagnose-pre-commit.sh"
+
+[tasks.hooks-repair]
+description = "Explicitly repair pre-commit in this worktree's existing venv"
+run = "bash scripts/repair-pre-commit.sh"
+
+[tasks.test-offline]
+description = "Run static offline contracts (no network or Ansible apply)"
+run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
+
+[tasks.lint]
+description = "Run Ruff in the existing, verified project environment"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check tests"
+
+[tasks.syntax]
+description = "Use only project Ansible for syntax checking"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook --syntax-check playbooks/workstation.yml"
