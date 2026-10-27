@@ -6,7 +6,8 @@
 | --- | --- | --- | --- |
 | P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | Code retiré en PR #16 ; 52/52 contrats locaux PASS le 27/10 ; aucun apply |
 | P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **ACCEPTED runtime** : 60/60, `ok=14 changed=0`, noyau AppArmor enabled, 3 timers actifs ; [preuves](audit-workstation.md) |
-| P0 | [Visibilité Docker/nftables/iptables sans privilèges](audit-workstation-network.md) | 8 tests ciblés, lecture locale, résultat `not_verified` si accès refusé, aucune donnée brute | **CODE ADDED / RUNTIME NOT VERIFIED** |
+| P0 | [Visibilité Docker/nftables/iptables sans privilèges](audit-workstation-network.md) | 8 tests ciblés, lecture locale, résultat `not_verified` si accès refusé, aucune donnée brute | **ACCEPTED runtime** : 68/68 tests, 3 sondes `access_denied`, forwarding IPv4/IPv6 activé, filtrage `not_verified` |
+| P0 | [Lecture privilégiée **optionnelle** des métadonnées réseau](audit-workstation-network.md) | Aucun script Python root ; commandes fixes `sudo -n`, données brutes non publiées ; tests locaux | **CODE ADDED / RUNTIME NOT VERIFIED** |
 | P0 | Audit **effectif** des règles firewall, des ports publiés, de SSH et de Fail2ban | Inventaire autorisé, politiques et chemins entrants vérifiés avec preuves expurgées | À faire ; exige une procédure de lecture privilégiée explicite |
 | P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
 | P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
@@ -22,4 +23,4 @@
 
 **Déjà livré :** PR #13 fusionnée (mise/uv/Direnv, DNS opt-in, règles fail-safe), 49/49 contrats locaux PASS. Ces preuves ne démontrent pas le playbook d'installation complet.
 
-**Pas de CI payante ni de fusion automatique.** Preuve du 27 octobre : `60/60` contrats, `mise run audit-syntax` PASS, `mise run audit-workstation` `ok=14 changed=0 failed=0`. Prochaine preuve finissable : `mise run audit-network-syntax` puis `mise run audit-network`, sans sudo. Les politiques effectives restent séparées et `not_verified` jusqu'à preuve explicite.
+**Pas de CI payante ni de fusion automatique.** Preuves du 27 octobre : audit système `60/60`, `ok=14 changed=0` ; audit réseau sans privilèges `68/68`, `ok=2 changed=0`, trois sondes `access_denied`, forwarding IPv4/IPv6 activé. Prochaine validation : contrats du collecteur optionnel. L'authentification `sudo` et la lecture privilégiée sont toujours **facultatives** et nécessitent une action explicite de l'opérateur ; la politique effective reste `not_verified`.
