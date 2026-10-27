@@ -1,5 +1,92 @@
 # LAN split-DNS sur la workstation — reprise du 27 octobre 2026
 
+## Réception installation effective — 28 octobre 2026, 00:38 CET
+
+**Preuve opérateur après application ciblée** depuis le worktree
+`/tmp/ansible-dns-gate.xLS990` à `d0b93e8` :
+le playbook `playbooks/homelab-dns.yml` a terminé avec
+`ok=12 changed=1 unreachable=0 failed=0 skipped=9`.
+La seule modification rapportée est
+`Install LAN-only DNSSEC NTA NetworkManager dispatcher`.
+Le test `sudo test -x` confirme l'installation réelle de
+`/etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta`.
+
+Après application :
+
+- `resolvectl nta eno1` → `int.albandrieu.com` ;
+- `defectdojo.int.albandrieu.com` → `172.17.0.24` en
+  **25,3 ms**, réponse privée normalement
+  **non authentifiée DNSSEC** ;
+- `cloudflare.com` → A publics en **56,2 ms**,
+  `Data is authenticated: yes` : validation DNSSEC
+  publique confirmée sur ce domaine ;
+- warning découverte Python 3.14 sans échec de tâche ;
+- `direnv allow` a été exécuté par l'opérateur
+  dans le worktree isolé et n'a créé qu'un environnement
+  virtuel Python vide. Cet événement n'est pas une
+  preuve de dysfonctionnement DNS.
+
+**Statut :** dispatcher **INSTALLÉ ET FONCTIONNEL**
+pour la résolution courante, mais la NTA peut encore être
+celle de l'application manuelle antérieure. L'exécution
+du gestionnaire d'événements NetworkManager n'a pas
+encore été démontrée : **persistance après `reapply`
+et après reboot `NOT_VERIFIED`**.
+
+### Réception événementielle (sans redémarrage)
+
+La [PR Compose #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289)
+contient `scripts/workstation/accept-private-nta-dispatcher.py`
+et les recettes Just :
+
+```bash
+cd ~/w/nabla-compose
+git pull --ff-only
+
+# Contrats offline, aucun changement réseau.
+just workstation-dnssec-dispatcher-test
+
+# Confirme NTA / DNS privé / DNSSEC public sans mutation.
+just workstation-dnssec-dispatcher-check
+
+# Test explicite de reapply, avec garde et réparation bornée
+# si l'événement ne réinstalle pas l'ancre privée.
+just workstation-dnssec-dispatcher-exercise
+
+# Vérification après exercice.
+just workstation-dnssec-dispatcher-check
+```
+
+`workstation-dnssec-dispatcher-exercise` est une **action
+réseau réelle**. Elle exige un privilège administrateur,
+un profil `Wired eno1`, le DNS `172.17.0.1`,
+le domaine `~int.albandrieu.com`, un dispatcher
+root:root exécutable, et une **unique** NTA
+`int.albandrieu.com`. Elle retire brièvement
+cette seule NTA, utilise `nmcli device reapply eno1`,
+puis attend que NetworkManager la recrée.
+Si la réapplication échoue et que le LAN est toujours
+conforme, elle tente de restaurer **uniquement
+la NTA initiale**, sans toucher aux NTA étrangères.
+Une brève perturbation DNS est possible ; éviter
+de lancer ce test pendant une opération réseau critique.
+
+**Résultats encore attendus :** tests offline du script,
+`nta_restored_by_event=PASS`,
+`private_dns=PASS`, `public_dnssec=AUTHENTICATED`
+et `diagnosis=PASS_REAPPLY_PERSISTENCE`.
+Les logs réels ne sont pas encore reçus.
+Après un **prochain reboot contrôlé**, relancer
+seulement `just workstation-dnssec-dispatcher-check`
+pour attester la persistance après démarrage, sans
+forcer un reboot pour cette seule preuve.
+
+Référence :
+[NetworkManager-dispatcher](https://networkmanager.pages.freedesktop.org/NetworkManager/NetworkManager/NetworkManager-dispatcher.html),
+[resolvectl NTA](https://www.freedesktop.org/software/systemd/man/latest/resolvectl.html).
+
+
+
 ## Réception finale du preflight Ansible — 28 octobre 2026
 
 **Exécution réelle opérateur sur le worktree `ansible-workstation` à `d0b93e8` :**
