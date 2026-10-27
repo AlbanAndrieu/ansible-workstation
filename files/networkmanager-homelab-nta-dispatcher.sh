@@ -8,7 +8,7 @@ action="${2:-}"
 [[ "$iface" == "eno1" ]] || exit 0
 [[ "${CONNECTION_ID:-}" == "Wired eno1" ]] || exit 0
 
-resolved="${NABLA_RESOLVECTL:-/usr/bin/resolvectl}"
+resolved="/usr/bin/resolvectl"
 [[ -x "$resolved" ]] || exit 0
 nta="$("$resolved" nta eno1 2>/dev/null)" || exit 0
 [[ "$nta" == *":"* ]] || exit 0
