@@ -182,6 +182,31 @@ Pour actualiser les nouveaux compteurs de verdicts du collecteur déjà
 approuvé, `mise run audit-network-privileged` demeure **optionnel** ;
 ne relance pas `sudo -v` sans besoin explicite.
 
+### Correction du décodage des écoutes `ss` (27 octobre 2026)
+
+L'opérateur a exécuté le commit `d22a5cf`. Le contrôle Ansible a terminé
+avec `ok=2 changed=0 failed=0`, mais la suite des **88 contrats a échoué
+sur 1 test** (`test_tcp_and_udp_counts_are_anonymized`).
+Le parseur utilisait `values[4]` (colonne **Peer Address:Port**) au
+lieu de `values[3]` (**Local Address:Port**) de la commande
+`ss -H -ln[t|u]`. Les pairs étant fréquemment `0.0.0.0:*`,
+il a attribué à tort `wildcard` aux **54 TCP et 135 UDP** observés.
+
+**Données invalidées :** la répartition TCP/UDP entre `wildcard`,
+`loopback`, `interface_specific` et `unknown` du relevé `d22a5cf`.
+Les totaux 54 TCP et 135 UDP restent des observations valides, mais ne
+permettent **pas** d'affirmer que ces sockets écoutent sur toutes les
+interfaces. Aucun niveau d'exposition réseau ne doit être déduit de ce
+rapport.
+
+Le correctif utilise exclusivement `values[3]`, et les contrats
+vérifient maintenant que des pairs wildcard ne masquent pas une adresse
+locale loopback/interface-specific. Un local malformé demeure `unknown`.
+**Runtime corrigé non encore validé** : refaire les contrats puis
+`mise run audit-listeners` sans sudo ; n'enregistrer l'état comme
+accepté qu'après 0 échec et une répartition plausible. Ne pas relancer
+de collecte privilégiée pour ce défaut.
+
 **Validation en attente :** tests du parseur et du nouveau playbook,
 comptages runtime, protection des métadonnées et `changed=0 failed=0`.
 La présence de protections réellement efficaces reste `not_verified`
