@@ -208,6 +208,51 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Nouvelle preuve DNSSEC (27 octobre vers 23:01 CET)
+
+L'opérateur a transmis le journal de
+`systemd-resolved` : **1 141 erreurs
+`DNSSEC validation failed: no-signature`**
+dans l'extrait, sur de nombreux domaines publics.
+Les statistiques cumulées depuis le 24/10
+montrent **46 468 verdicts DNSSEC `Bogus`**
+et **5 077 timeouts**.
+L'interface `eno1` utilise toujours pfSense
+`172.17.0.1` et la route privée
+`~int.albandrieu.com`, avec
+`DNSSEC=yes/supported` et
+`DNSOverTLS=opportunistic`.
+Ces faits expliquent pourquoi limiter
+l'investigation au module NSS est insuffisant ;
+ils ne démontrent pas encore si pfSense/Unbound
+transmet ou retire les signatures attendues.
+
+**Diagnostic propriétaire Compose :**
+[PR #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289)
+et [runbook](https://github.com/AlbanAndrieu/nabla-compose/blob/fix/nexus-wan-haproxy-acl-evidence-20261027/docs/runbooks/workstation-split-dns-recovery.md).
+Lancer depuis `~/w/nabla-compose` :
+
+```bash
+just workstation-dnssec-test
+just workstation-dnssec-check
+```
+
+Le script compare `resolvectl query` avec
+`--validate=no` **sur une seule requête**, et vérifie
+les `RRSIG` via `dig +dnssec @172.17.0.1`,
+sans écrire ni redémarrer quoi que ce soit.
+La suite ajoutée comprend 13 tests
+**pas encore exécutés** par l'opérateur.
+
+**Politique Ansible :** ne pas supprimer la protection
+DNSSEC globalement par défaut. Une fois les preuves
+comparées reçues, corriger au niveau le plus
+précis possible (réponse/signatures côté Unbound
+ou politique scoped de liaison avec rollback).
+Ne pas réactiver `hide-location` ni remplacer
+pfSense par un DNS public. Une désactivation
+DNSSEC à l'aveugle n'est pas autorisée.
+
 ## Mise à jour 22:51 — ne pas appliquer de correctif NSS prématuré
 
 La nouvelle comparaison multi-chemin depuis la workstation
