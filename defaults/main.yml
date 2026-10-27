@@ -195,6 +195,9 @@ devops_tools:
 #  - { name: packer, version: 1.10.1 }
 
 # Opt-in; this role may run against hosts outside the home LAN.
+# Legacy hide-location can overwrite LAN split-DNS every minute.
+# Preserve its files for auditing, but stop/disable the service and timer by default.
+workstation_hide_location_dns_override_enabled: false
 workstation_split_dns_enabled: false
 workstation_split_dns_interface: eno1
 workstation_split_dns_resolver: 172.17.0.1
