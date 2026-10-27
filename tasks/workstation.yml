@@ -360,5 +360,8 @@
   ansible.builtin.import_tasks: php.yml
 - name: workstation | Load services tasks
   ansible.builtin.import_tasks: services.yml
-- name: workstation | Load yubikey tasks
-  ansible.builtin.import_tasks: yubikey.yml
+# The legacy YubiKey task bundle has been retired. It mixed package setup
+# with an unsafe unconditional Yubico PPA declaration and a PAM common-auth
+# template overwrite. Hardware and credential operations belong exclusively
+# to nabla-compose; OS prerequisites require a separate explicit Ansible role.
+# Do not reintroduce an unconditional PAM mutation.
