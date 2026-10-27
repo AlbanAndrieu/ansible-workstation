@@ -207,3 +207,5 @@ workstation_split_dns_domain: int.albandrieu.com
 # .negative trust-anchor file, read at systemd-resolved startup; not a global
 # DNSSEC disable. File-level NTA is zone-scoped across all workstation links.
 workstation_split_dns_persistent_nta_enabled: false
+# Separate explicit rollback; setting enabled=false alone does not remove a file.
+workstation_split_dns_persistent_nta_remove_enabled: false
