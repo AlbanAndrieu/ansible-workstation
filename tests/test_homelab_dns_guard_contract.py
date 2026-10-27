@@ -98,6 +98,9 @@ class HomelabDNSGuardContract(unittest.TestCase):
         contents = SPLIT.read_text(encoding="utf-8")
         self.assertIn("workstation_dns_effective_before", contents)
         self.assertIn("workstation_dns_update is changed", contents)
+        self.assertIn("workstation_dns_domain_update is changed", contents)
+        self.assertIn("+ipv4.dns-search", contents)
+        self.assertIn("when: not ansible_check_mode", contents)
         self.assertIn("workstation_split_dns_resolver not in", contents)
         self.assertIn('or \'9.9.9.9\' in workstation_dns_effective_before.stdout',
                       contents)
