@@ -7,6 +7,9 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   exit 2
 fi
 
+# Run all diagnostics in a subshell. No temporary variables/functions leak
+# into the actual interactive Bash that we are inspecting.
+(
 echo "=== Direnv: current Bash hook diagnosis (read only) ==="
 case $- in
   *i*) echo "Shell: interactive Bash" ;;
@@ -102,3 +105,4 @@ echo "Check this shell's _direnv_hook and PROMPT_COMMAND before modifying it."
 echo "For temporary recovery in this shell: eval \"\$(direnv hook bash)\""
 echo "Then run _direnv_hook and recheck VIRTUAL_ENV (trusted .envrc only)."
 echo "=== End of Direnv hook diagnosis ==="
+)
