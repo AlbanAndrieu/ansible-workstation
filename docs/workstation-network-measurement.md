@@ -1,11 +1,40 @@
 # P0 — Mesurer la joignabilité TCP depuis localhost, LAN et WAN
 
-**Statut : CODE AJOUTÉ / MESURES RUNTIME NON ENCORE EFFECTUÉES.**
+**Statut : mesures localhost et inventaire Docker exécutés le 27 octobre 2026 ; preuves LAN/WAN indépendantes non encore effectuées.**
 L'[audit d'écoute](audit-workstation-network.md) est accepté (95/95 tests),
 mais `ss` et les politiques firewall ne prouvent pas qu'un port soit
 accessible. Ce protocole implémente la
 [gate de mesure réseau](workstation-network-exposure-plan.md) sans
 modifier Docker, le pare-feu ou la workstation.
+
+## Preuves opérateur et correction du runner — 27 octobre 2026
+
+- `mise run measure-network-local` : exécution répétée avec résultat
+  identique, **2/2 connexions conformes aux attentes** ; 1 TCP
+  `connected` (`expected_allowed`) et 1 `refused`
+  (`expected_denied`). Aucun timeout, résultat `unexpected_open=0`.
+  Cette preuve est **uniquement locale**.
+- `mise run measure-docker-publishing` : **`status=ok`**,
+  **12 conteneurs recensés** et **9 segments TCP IPv4 publiés en
+  `wildcard`**, 0 IPv6/UDP dans ce résumé et 3 segments uniquement
+  exposés dans les conteneurs. Un segment Docker ne signifie pas
+  nécessairement un port unique, ni une ouverture réellement joignable
+  depuis le LAN/WAN.
+- Nouveau module de tests : l'opérateur a exécuté
+  `python3 -m unittest discover ...` et obtenu **84 tests lancés,
+  3 erreurs d'import de `yaml`**, car l'interpréteur global de
+  `mise` ne contient pas PyYAML ; les autres **81 cas exécutés
+  passent**. Ce n'est pas un échec du collecteur réseau.
+- `PyYAML` figure déjà dans `pyproject.toml`. Le runner canonique
+  `mise run test-offline` a été corrigé pour vérifier
+  `scripts/uv-project.sh check` puis utiliser **`.venv/bin/python`**
+  sans installer de paquets globalement.
+
+**État de la dernière correction : CODE ADDED / RUNTIME NOT VERIFIED.**
+Attendu après validation : **116 tests** (95 tests système/réseau,
+20 contrats reachability/Docker, 1 contrat de runner). Si la `.venv`
+est absente ou incomplète, le runner doit échouer explicitement, sans
+installer automatiquement une autre version de Python.
 
 ## Trois origines d'observation
 
@@ -61,7 +90,7 @@ n'est appelé par le collecteur.
 
 ```bash
 cd /workspace/users/albandrieu30/ansible-workstation
-python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+mise run test-offline
 
 # Dry-run : lit seulement le manifest, 0 connexion TCP
 .venv/bin/python -B scripts/measure-workstation-reachability.py \
