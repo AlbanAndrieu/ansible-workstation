@@ -5,7 +5,7 @@
 | Priorité | Livrable | Gate de validation | Statut |
 | --- | --- | --- | --- |
 | P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | Code retiré en PR #16 ; 52/52 contrats locaux PASS le 27/10 ; aucun apply |
-| P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **CODE ADDED / RUNTIME NOT_VERIFIED** ; consulter [runbook](audit-workstation.md) |
+| P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **Baseline runtime ACCEPTED** (58/58, `changed=0`) ; correctifs AppArmor/timers/Python à revalider ; [runbook](audit-workstation.md) |
 | P0 | Audit effectif Docker/nft/iptables, SSH, fail2ban et sysctl | Rapports redigés ; comportement des interfaces et ports vérifié sans changement | À faire |
 | P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
 | P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
@@ -21,4 +21,4 @@
 
 **Déjà livré :** PR #13 fusionnée (mise/uv/Direnv, DNS opt-in, règles fail-safe), 49/49 contrats locaux PASS. Ces preuves ne démontrent pas le playbook d'installation complet.
 
-**Pas de CI payante ni de fusion automatique.** Prochaine preuve finissable : exécuter localement `mise run audit-syntax`, puis `mise run audit-workstation` sans sudo, confirmer un rapport expurgé et `changed=0`. Les contrôles de pare-feu effectif restent séparés.
+**Pas de CI payante ni de fusion automatique.** Le 27/10, l'opérateur a validé `58/58` contrats et l'audit initial `changed=0`. Prochaine preuve finissable : vérifier le correctif Python/AppArmor/timers avec `mise run audit-syntax` puis `mise run audit-workstation`, sans sudo. Les contrôles du pare-feu effectif restent séparés.
