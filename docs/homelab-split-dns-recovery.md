@@ -208,6 +208,91 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Réception 27/10 — NTA privée runtime PASS et persistance LAN par interface
+
+**Preuve opérateur :** `just workstation-dnssec-nta-test` **10/10 PASS**.
+Avant application : `nta_state=EMPTY` et requête validée privée
+`UNVERIFIED` après 5,0 s. Ensuite l'utilisateur a exécuté
+`just workstation-dnssec-nta-try` ; le script a répondu
+`runtime_applied=true` puis `validated_private=A_CONFIRMED (0.2s)`.
+Une requête DNS normale **sans `--validate=no`** a ensuite confirmé :
+
+- `defectdojo.int.albandrieu.com → 172.17.0.24` en **33,4 ms** ;
+- `getent ahostsv4` résout de nouveau le même nom ;
+- `cloudflare.com` répond en **43,1 ms**, avec
+  `Data is authenticated: yes` : DNSSEC public reste actif
+  pour **ce domaine testé** ;
+- `just workstation-nss-path` retourne `diagnosis=PASS`,
+  mais `nss_default=A_CONFIRMED (4.8s)` :
+  la lenteur NSS **n'est pas entièrement résolue**.
+  Le module `nss-resolve` forcé reste sans réponse,
+  ce qui ne prouve pas sa présence sur le poste.
+
+L'expérience NTA *sur le seul lien eno1* est donc validée.
+**Elle n'est pas persistante.** Le fichier `.negative` déjà
+préparé est désactivé par défaut et a un périmètre plus large :
+toutes les interfaces. Ne pas l'activer automatiquement, notamment
+en présence de VPN.
+
+### Persistance recommandée : NetworkManager dispatcher par lien
+
+Préférer l'implémentation **opt-in** ci-dessous à la NTA
+`.negative` globale pour préserver l'isolation LAN :
+
+- [files/networkmanager-homelab-nta-dispatcher.sh](../files/networkmanager-homelab-nta-dispatcher.sh)
+  — observe uniquement les événements
+  `up`, `dhcp4-change` et `reapply` de `eno1`
+  avec `CONNECTION_ID=Wired eno1` et confirme
+  `DNS 172.17.0.1` et `~int.albandrieu.com`.
+  Il applique `resolvectl nta eno1 int.albandrieu.com`
+  sans écraser une NTA étrangère. Lors d'un `down`
+  propre, il efface uniquement cette NTA **si elle est seule**.
+  Il ne modifie ni DNSSEC, ni DoT, ni le résolveur global ;
+- [tasks/network_dnssec_nta_dispatcher.yml](../tasks/network_dnssec_nta_dispatcher.yml)
+  — install/removal idempotent, fichier root:root mode `0700`,
+  sans redémarrer NetworkManager ni `systemd-resolved` ;
+- [tests/test_homelab_dns_nta_dispatcher.py](../tests/test_homelab_dns_nta_dispatcher.py)
+  — **13 tests hors ligne**, ajoutés mais pas encore
+  exécutés sur la workstation.
+
+Les options sont **false par défaut** :
+
+```yaml
+workstation_split_dns_enabled: false
+workstation_split_dns_nta_dispatcher_enabled: false
+workstation_split_dns_nta_dispatcher_remove_enabled: false
+workstation_split_dns_persistent_nta_enabled: false
+workstation_split_dns_persistent_nta_remove_enabled: false
+```
+
+Pour un futur déploiement explicite :
+activer `workstation_split_dns_enabled=true` et
+`workstation_split_dns_nta_dispatcher_enabled=true`,
+laisser toutes les autres variantes NTA désactivées,
+limiter les tâches Ansible au tag `dns`.
+D'abord inspecter `--list-tasks` puis `--check`.
+Une fois l'application autorisée, exécuter
+`sudo nmcli device reapply eno1`, vérifier
+`resolvectl nta eno1`, la résolution privée
+et le DNSSEC public. NetworkManager déclenche
+un événement `reapply` au dispatcher ;
+[documentation officielle](https://networkmanager.pages.freedesktop.org/NetworkManager/NetworkManager/NetworkManager-dispatcher.html).
+
+**Rollback :** configurer
+`workstation_split_dns_nta_dispatcher_enabled=false`
+et `workstation_split_dns_nta_dispatcher_remove_enabled=true`
+sur un passage limité au tag `dns`, puis utiliser
+`just workstation-dnssec-nta-rollback` dans nabla-compose
+si le runtime contient toujours uniquement
+`int.albandrieu.com`. Aucune désactivation globale DNSSEC.
+
+**DONE à confirmer :** installation du dispatcher
+par Ansible, réapplication `eno1`, restauration de
+la NTA après redémarrage ou réactivation du profil
+et maintien DNSSEC public. Ne pas redémarrer
+inutilement la workstation : un prochain reboot
+contrôlé suffira à la réception finale.
+
 ## Résolution DNSSEC de la zone privée — NTA scoped, opt-in (27 octobre)
 
 **Preuve décisive utilisateur :** les **13 tests locaux DNSSEC passent**.
