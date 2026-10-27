@@ -122,6 +122,72 @@ ports exposés et des flux LAN/WAN (sans publication d'adresses),
 après revue des politiques observées. **Aucun changement des règles
 n'est autorisé par ce runbook.**
 
+## Nouvelle preuve privilégiée reçue le 27 octobre 2026
+
+L'opérateur a exécuté volontairement `sudo -v`, puis
+`mise run audit-network-privileged`, enfin `sudo -k`. Les trois sondes
+(`nft`, `iptables`, `ip6tables`) sont revenues **`ok`**.
+Les politiques de base `INPUT`, `FORWARD`, `OUTPUT` IPv4/IPv6 et les
+huit chaînes de base nftables observées sont toutes `accept`.
+**79** règles `filter` IPv4, **10** règles `filter` IPv6 et **151**
+règles nftables ont été recensées ; des chaînes `DOCKER` et
+`DOCKER-USER` existent dans les deux vues iptables.
+Le forwarding IPv4 **et IPv6** est activé.
+
+**Interprétation prudente :** ces observations ne prouvent pas que le
+trafic passe dans `DOCKER-USER` ou qu'une règle `DROP` existe ou non.
+Le champ nftables `docker_table_present=false` ne peut pas contredire
+la présence des chaînes Docker côté iptables : les noms des tables
+nftables ne sont pas toujours ceux des chaînes Docker. Docker peut
+utiliser iptables ou nftables et les règles par défaut ACCEPT ne
+décrivent pas le filtrage effectif.
+Documentation : [Docker iptables](https://docs.docker.com/engine/network/firewall-iptables),
+[Docker nftables](https://docs.docker.com/engine/network/firewall-nftables).
+
+## Suivi P0 — verdicts explicites et sockets en écoute
+
+La collecte `scripts/audit-workstation-network.py` a été enrichie avec
+des **compteurs syntaxiques** de verdicts terminaux `ACCEPT`, `DROP`,
+`REJECT`, un indicateur `docker_user_jump_in_forward`, et les verdicts
+directement présents dans `DOCKER-USER`. Ils ne reconstituent **pas** le
+chemin d'un paquet et ne confirment pas la présence d'une règle effectivement
+applicable à un flux donné.
+
+En complément, `scripts/audit-workstation-listeners.py` et
+`playbooks/audit-workstation-listeners.yml` exploitent `ss` sans
+privilèges. Les sockets TCP et UDP sont comptées par catégorie :
+
+- `wildcard` : écoute non liée à une adresse précise ;
+- `loopback` : écoute locale ;
+- `interface_specific` : écoute liée à une adresse non-loopback ;
+- `unknown` : adresse ou format impossible à classifier.
+
+**Aucun port, IP, PID, interface, application ni adresse liée n'est affiché.**
+Les sockets `wildcard`/non-loopback ne prouvent pas une accessibilité
+WAN ou LAN. Les ports Docker publiés via DNAT peuvent ne pas apparaître
+comme sockets écoutant sur l'hôte. Aucun appel au socket Docker.
+
+```bash
+cd /workspace/users/albandrieu30/ansible-workstation
+
+# Validations non privilégiées, sans modification du poste :
+python3 -m unittest discover -s tests -p 'test_*contract.py' -v
+mise run audit-network-syntax
+mise run audit-listeners-syntax
+mise run audit-listeners
+```
+
+Le nouvel inventaire des sockets ne nécessite **pas** de `sudo`.
+Pour actualiser les nouveaux compteurs de verdicts du collecteur déjà
+approuvé, `mise run audit-network-privileged` demeure **optionnel** ;
+ne relance pas `sudo -v` sans besoin explicite.
+
+**Validation en attente :** tests du parseur et du nouveau playbook,
+comptages runtime, protection des métadonnées et `changed=0 failed=0`.
+La présence de protections réellement efficaces reste `not_verified`
+jusqu'à une analyse du chemin de paquets et à un test de connectivité
+autorisé depuis un autre segment réseau.
+
 ## P0 suivant — audit approfondi sur autorisation
 
 Préparer un chemin **séparé** de lecture privilégiée des politiques effectives et des publications de ports, avec identité contrôlée, commande exacte et filtre de sortie prouvé. Ne pas exécuter `nft list ruleset` ou `iptables-save` en root et publier la sortie brute ; elle peut contenir des adresses et des informations internes. Ne jamais activer UFW ni désactiver IPv4 forwarding avant de caractériser les chaînes Docker et le chemin de retour.
