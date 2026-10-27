@@ -253,6 +253,40 @@ mise run audit-listeners
 et la portée effective des flux depuis d'autres segments du réseau.
 Le statut de protection et d'accessibilité reste `not_verified`.
 
+### Preuve runtime des motifs UDP — 27 octobre 2026
+
+L'opérateur a validé la révision `4767761` : **92/92 contrats PASS**,
+`mise run audit-listeners` `localhost ok=2 changed=0 failed=0`.
+Le compteur `unknown_reasons` donne :
+
+- TCP : 54 sockets, `malformed_row=0`, `unparsed_local_endpoint=0`.
+- UDP : 135 sockets, `malformed_row=0`,
+  **`unparsed_local_endpoint=32`**.
+
+La capture de la commande système n'est pas conservée dans le dépôt.
+Ces 32 lignes sont donc valides du point de vue des colonnes `ss`,
+mais le champ d'adresse locale n'est pas reconnu par le parseur.
+
+### Correctif de format IPv6 zoné (non encore validé en runtime)
+
+Hypothèse à tester, **non établie par les seules métadonnées** : sur
+certains sockets UDP IPv6, `ss` place la zone d'interface **après**
+le crochet fermant, par exemple `[fe80::... ]%iface:port`, et non à
+l'intérieur. Le parseur antérieur retirait `[` mais laissait `]`
+avant la suppression de `%iface`, rendant l'adresse invalide.
+
+Le nouveau code traite les deux formes
+`[IPv6%zone]:port` et `[IPv6]%zone:port`, ainsi que les IPv4 zonées.
+Les crochets invalides ou les ports non numériques restent `unknown`.
+Les adresses, zones, ports et règles brutes ne sont pas affichés.
+Trois scénarios synthétiques supplémentaires ont été ajoutés.
+
+**Gate locale suivante :** **95/95 contrats attendus** et nouvelle
+répartition `unknown_reasons` après `mise run audit-listeners`.
+Si les 32 restent inconnus, conserver `unknown` et diagnostiquer
+uniquement par catégories anonymisées, jamais par publication du
+contenu de `ss`. `effective_reachability=not_verified` ne change pas.
+
 ## P0 suivant — audit approfondi sur autorisation
 
 Préparer un chemin **séparé** de lecture privilégiée des politiques effectives et des publications de ports, avec identité contrôlée, commande exacte et filtre de sortie prouvé. Ne pas exécuter `nft list ruleset` ou `iptables-save` en root et publier la sortie brute ; elle peut contenir des adresses et des informations internes. Ne jamais activer UFW ni désactiver IPv4 forwarding avant de caractériser les chaînes Docker et le chemin de retour.
