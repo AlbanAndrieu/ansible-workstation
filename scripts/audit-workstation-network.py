@@ -9,6 +9,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import shlex
 import subprocess
 
 SCHEMA = "workstation-network-filter-audit/v1"
@@ -78,6 +79,7 @@ def parse_nft(raw):
     except (ValueError, KeyError, TypeError):
         return None
     chains, rules = [], 0
+    direct_verdicts = {name: 0 for name in ("accept", "drop", "reject")}
     docker_tables = False
     for entry in objects:
         if not isinstance(entry, dict):
@@ -99,40 +101,88 @@ def parse_nft(raw):
                 })
         if isinstance(entry.get("rule"), dict):
             rules += 1
+            # Only count explicit terminal verdict expressions; a count is
+            # not proof that matching traffic actually reaches that rule.
+            expr = entry["rule"].get("expr", [])
+            if isinstance(expr, list):
+                kinds = set()
+                for operation in expr:
+                    if not isinstance(operation, dict):
+                        continue
+                    kinds.update(k for k in direct_verdicts if k in operation)
+                    verdict = operation.get("verdict")
+                    if isinstance(verdict, dict):
+                        kind = verdict.get("kind")
+                        if kind in direct_verdicts:
+                            kinds.add(kind)
+                for kind in kinds:
+                    direct_verdicts[kind] += 1
     return {
         "filter_base_chains": sorted(
             chains, key=lambda x: (x["family"], x["hook"], x["policy"])
         )[:32],
         "total_rules_seen": rules,
+        "explicit_terminal_verdict_rules": direct_verdicts,
         "docker_table_present": docker_tables,
         "truncated_policy_list": len(chains) > 32,
     }
 
 
 def parse_iptables(raw):
-    """Accept only builtin filter policies and Docker-chain presence."""
+    """Count explicit verdicts and DOCKER-USER traversal, never expose rules.
+
+    All counters are syntactic indicators, NOT a packet-path simulation.
+    """
     policies = {name: "unknown" for name in BUILTIN_CHAINS}
-    docker_user = docker_chain = False
+    docker_user = docker_chain = docker_user_jump = False
+    verdicts = {name: 0 for name in ("accept", "drop", "reject")}
+    docker_user_verdicts = {name: 0 for name in ("accept", "drop", "reject")}
     count = 0
     for line in raw.splitlines():
-        match = re.fullmatch(r":(INPUT|FORWARD|OUTPUT) (ACCEPT|DROP|REJECT) \[\d+:\d+\]", line)
+        match = re.fullmatch(
+            r":(INPUT|FORWARD|OUTPUT) (ACCEPT|DROP|REJECT) \[\d+:\d+\]",
+            line,
+        )
         if match:
             policies[match.group(1)] = _policy(match.group(2))
         if line.startswith(":DOCKER-USER ") or line.startswith("-N DOCKER-USER"):
             docker_user = True
         if line.startswith(":DOCKER ") or line.startswith("-N DOCKER"):
             docker_chain = True
-        if line.startswith("-A "):
-            count += 1
+        if not line.startswith("-A "):
+            continue
+        count += 1
+        try:
+            tokens = shlex.split(line, posix=True)
+        except ValueError:
+            # Malformed line: count as observed, but no inferred verdict.
+            continue
+        if len(tokens) < 4 or tokens[0] != "-A":
+            continue
+        chain = tokens[1]
+        for index, token in enumerate(tokens[:-1]):
+            if token not in ("-j", "-g"):
+                continue
+            target = tokens[index + 1]
+            if chain == "FORWARD" and target == "DOCKER-USER":
+                docker_user_jump = True
+            kind = target.lower()
+            if kind in verdicts:
+                verdicts[kind] += 1
+                if chain == "DOCKER-USER":
+                    docker_user_verdicts[kind] += 1
+            break
     if not raw.strip():
         return None
     return {
         "builtin_policies": policies,
         "filter_rules_seen": count,
+        "explicit_terminal_verdict_rules": verdicts,
         "docker_chain_present": docker_chain,
         "docker_user_chain_present": docker_user,
+        "docker_user_jump_in_forward": docker_user_jump,
+        "docker_user_explicit_verdict_rules": docker_user_verdicts,
     }
-
 
 def inspect(probe=run_probe):
     result = {
