@@ -1,5 +1,76 @@
 # LAN split-DNS sur la workstation — reprise du 27 octobre 2026
 
+## Réception finale du preflight Ansible — 28 octobre 2026
+
+**Exécution réelle opérateur sur le worktree `ansible-workstation` à `d0b93e8` :**
+
+- `test_homelab_dns_gate.py` : **14/14 PASS** ;
+- `scripts/check_homelab_dns_gate.py --dry-run` :
+  `repository=ansible-workstation (role-root)`,
+  garde DNS **8/8 PASS**, dispatcher **17/17 PASS** ;
+- `--list-tasks --tags dns` : **PASS**, les trois tâches DNS
+  requises sont trouvées ;
+- `ansible-playbook --check --diff` : **PASS**, les tâches
+  DNS sont exécutées en mode simulation ;
+  `localhost: ok=11 changed=1 failed=0 skipped=10`.
+  `changed=1` correspond **uniquement à la création prévue**
+  de `/etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta`
+  (diff `before -> after`, script 43 lignes) ; aucun fichier
+  n'a été réellement écrit.
+- Avertissement de découverte Python
+  `/home/albandrieu/.linuxbrew/bin/python3.14` : non bloquant
+  dans cette exécution ; pas de migration de Python à faire
+  dans ce chantier.
+
+**Décision :** la gate de qualité locale (39 tests) et le
+précontrôle Ansible sont **validés**. Le dispatcher est
+**PRÊT pour une application ciblée, mais NON INSTALLÉ**.
+L'exception DNSSEC runtime `eno1` reste active d'après
+la précédente réception. Aucun reboot ni test de
+persistance n'a été réalisé.
+
+### Commande d'application ciblée (action explicite, non lancée)
+
+Uniquement depuis ce worktree déjà synchronisé, après revue
+du `--check --diff` et confirmation du profil LAN :
+
+```bash
+ansible-playbook -i 'localhost,' playbooks/homelab-dns.yml \
+  --tags dns \
+  -e workstation_split_dns_enabled=true \
+  -e workstation_split_dns_nta_dispatcher_enabled=true \
+  -e workstation_split_dns_nta_dispatcher_remove_enabled=false \
+  -e workstation_split_dns_persistent_nta_enabled=false \
+  -e workstation_split_dns_persistent_nta_remove_enabled=false
+```
+
+La commande est **mutatrice** et nécessite l'approbation de
+l'opérateur ; elle peut demander le mot de passe sudo.
+Elle conserve la politique DNSSEC globale et n'installe
+pas de fichier `.negative`. Les tâches de réconciliation
+NetworkManager peuvent aussi corriger un *drift*
+apparu depuis le `--check` : si le profil DNS a changé,
+refaire un preflight avant toute application.
+
+### Acceptance après application (lecture seule)
+
+```bash
+test -f /etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta
+resolvectl nta eno1
+resolvectl dns eno1
+resolvectl domain eno1
+resolvectl query -4 defectdojo.int.albandrieu.com
+resolvectl query -4 cloudflare.com
+getent ahostsv4 defectdojo.int.albandrieu.com
+```
+
+La validation de la réinstallation automatique de la NTA
+sur `reapply`, changement de profil et reboot
+reste **à exécuter** ultérieurement, sans forcer de
+redémarrage pour cette seule réception.
+
+
+
 **Diagnostic d'exploitation et runbook consommateur :**
 [nabla-compose / docs/runbooks/workstation-split-dns-recovery.md](https://github.com/AlbanAndrieu/nabla-compose/blob/fix/nexus-wan-haproxy-acl-evidence-20261027/docs/runbooks/workstation-split-dns-recovery.md),
 [PR Compose #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289).
