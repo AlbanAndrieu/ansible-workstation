@@ -208,6 +208,65 @@ conflit `hide-location` désactivé et 7/7 tests PASS.
 NetworkManager, reapply, maintien après redémarrage, temps de
 résolution, parité des secrets Django/runtime/Vaultwarden.
 
+## Réception tests dispatcher — 28 octobre 2026 à 00:06 CET
+
+**Preuve exécutée par l'opérateur sur sa workstation :**
+`python3 -m unittest discover -s tests -p 'test_homelab_dns_nta_dispatcher.py' -v`
+a terminé avec **17 tests / 17 PASS (0,907 s), zéro échec**.
+
+La suite vérifie les événements NetworkManager `up`,
+`dhcp4-change`, `reapply`, `down`, la protection
+d'`eno1` et du profil `Wired eno1`, l'absence d'écriture
+pour un autre DNS ou domaine, la conservation des NTA
+tierces, la suppression limitée à l'ancre attendue en cas de
+changement de profil/DNS/route, et les paramètres
+d'activation/rollback par défaut désactivés.
+
+**Cela atteste les contrats hors ligne, PAS un déploiement
+réel du dispatcher**. La NTA `eno1` a été appliquée
+manuellement et fonctionne en runtime, mais l'installation
+Ansible, la relance automatique et le comportement après
+redémarrage restent `NOT_VERIFIED`. La suite précédente
+`test_homelab_dns_guard_contract.py` (8 tests, dont l'un
+ajouté pour la NTA) n'a pas encore été rejouée sur ce HEAD.
+Ne pas la déclarer PASS.
+
+### Prochain gate Ansible en lecture seule
+
+Dans le checkout de **ansible-workstation**, une fois
+la branche de PR synchronisée :
+
+```bash
+python3 -m unittest discover -s tests \
+  -p 'test_homelab_dns_guard_contract.py' -v
+
+ansible-playbook playbooks/workstation.yml \
+  --list-tasks --tags dns \
+  -e workstation_split_dns_enabled=true \
+  -e workstation_split_dns_nta_dispatcher_enabled=true
+
+ansible-playbook playbooks/workstation.yml \
+  --check --diff --tags dns \
+  -e workstation_split_dns_enabled=true \
+  -e workstation_split_dns_nta_dispatcher_enabled=true
+```
+
+Ces paramètres sont **éphémères pour la commande**
+et ne changent pas les défauts Ansible dans Git.
+En `--check`, Ansible doit montrer le plan de création
+de `/etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta`,
+**sans réellement l'écrire**. Vérifier que le plan ne
+crée aucun fichier `.negative` global et qu'aucune
+autre tâche destructive n'est sélectionnée.
+Ne pas supprimer la NTA runtime qui fonctionne
+avant la réception de la persistance.
+
+**Critère DONE restant :** application ciblée et
+explicitement autorisée du seul dispatcher, vérification
+du profil actif et de l'ancre sur `eno1`, contrôle DNSSEC
+privé/public puis confirmation de réapplication sur
+renouvellement DHCP, reapply et prochain démarrage.
+
 ## Réception 27/10 — NTA privée runtime PASS et persistance LAN par interface
 
 **Preuve opérateur :** `just workstation-dnssec-nta-test` **10/10 PASS**.
