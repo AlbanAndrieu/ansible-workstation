@@ -128,5 +128,7 @@
 # Explicit opt-in only after runtime NTA validation in nabla-compose.
 - name: workstation | Load approved private DNSSEC negative trust anchor
   ansible.builtin.import_tasks: network_dnssec_nta.yml
-  when: workstation_split_dns_persistent_nta_enabled | bool
+  when: >-
+    workstation_split_dns_persistent_nta_enabled | bool
+    or workstation_split_dns_persistent_nta_remove_enabled | bool
   tags: [dns]
