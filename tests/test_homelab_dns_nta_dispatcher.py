@@ -31,9 +31,16 @@ class NetworkManagerNTADispatcherTests(unittest.TestCase):
                 encoding="utf-8",
             )
             stub.chmod(0o700)
+            rendered = base / "dispatcher.sh"
+            rendered.write_text(
+                SOURCE.read_text().replace(
+                    'resolved="/usr/bin/resolvectl"',
+                    'resolved="' + str(stub) + '"',
+                ),
+                encoding="utf-8",
+            )
             env = os.environ.copy()
             env.update({
-                "NABLA_RESOLVECTL": str(stub),
                 "CONNECTION_ID": connection,
                 "MOCK_DNS": link_dns,
                 "MOCK_DOMAIN": link_domain,
@@ -41,7 +48,7 @@ class NetworkManagerNTADispatcherTests(unittest.TestCase):
                 "MOCK_ACTION_LOG": str(log),
             })
             result = subprocess.run(
-                ["bash", str(SOURCE), interface, action],
+                ["bash", str(rendered), interface, action],
                 capture_output=True, text=True, env=env, timeout=3, check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
