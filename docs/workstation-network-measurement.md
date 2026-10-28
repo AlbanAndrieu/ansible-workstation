@@ -1,6 +1,6 @@
 # P0 — Mesurer la joignabilité TCP depuis localhost, LAN et WAN
 
-**Statut : mesures localhost et inventaire Docker exécutés le 27 octobre 2026 ; preuves LAN/WAN indépendantes non encore effectuées.**
+**Statut : localhost et Docker mesurés le 27 octobre 2026 ; mesure LAN ciblée sur deux ports rapportée le 28 octobre ; WAN direct non vérifié.**
 L'[audit d'écoute](audit-workstation-network.md) est accepté (95/95 tests),
 mais `ss` et les politiques firewall ne prouvent pas qu'un port soit
 accessible. Ce protocole implémente la
@@ -38,11 +38,11 @@ Les messages `--ack-* required` pendant deux tests sont attendus : ils
 vérifient le refus d'exécution sans consentement. Statut du runner :
 **ACCEPTED RUNTIME**.
 
-Cette preuve ne valide **aucune mesure depuis un observateur LAN ou WAN**.
-Le prochain jalon prioritaire est la mesure LAN depuis un observateur
-indépendant. Le volet WAN reste **facultatif/différé**, avec statut
-`not_verified` tant qu'aucune origine réellement extérieure n'a mesuré
-une cible autorisée.
+La preuve localhost ci-dessus ne démontre **pas** le chemin LAN.
+Une mesure distincte depuis l'observateur LAN désigné est consignée
+ci-dessous. Le volet WAN reste **facultatif/différé**, avec statut
+`not_verified` tant qu'aucune origine extérieure n'a mesuré une cible
+explicitement autorisée.
 
 ## Contrainte opérateur : aucun ordinateur disponible hors LAN (28 octobre 2026)
 
@@ -52,9 +52,9 @@ Docker peuvent progresser indépendamment d'un scan WAN. En l'absence
 d'une origine externe contrôlée, conserver **`wan_reachability=not_verified`**,
 sans la convertir en `deny`, `secure` ou `passed`.
 
-**Observateur LAN envisagé :** le TrueNAS du homelab, à condition
-qu'il soit bien sur le LAN de la workstation et que l'opérateur
-autorise explicitement les **deux ports ciblés**. Il n'est pas nécessaire
+**Observateur LAN utilisé selon le relevé opérateur :** TrueNAS du
+homelab, ciblant les deux ports TCP explicitement autorisés. La
+provenance de l'exécution reste déclarative et non attestée par le code. Il n'est pas nécessaire
 d'ajouter un VPS ni d'ouvrir un port entrant pour cette mesure.
 Les cibles sont les **adresses LAN de la workstation**, pas les adresses
 loopback ; `--observer lan` doit être exécuté **depuis TrueNAS**,
@@ -82,6 +82,37 @@ les adresses et ports soumis à ce tiers.
 Cette contrainte empêche seulement une **attestation empirique du chemin
 WAN direct**, pas le durcissement réfléchi, à condition de conserver
 l'incertitude et une procédure de rollback avant tout changement.
+
+## Résultat LAN déclaré depuis TrueNAS — 28 octobre 2026
+
+L'opérateur a exécuté le petit script Python recommandé dans un terminal
+destiné au **TrueNAS LAN**, visant uniquement la workstation
+`172.17.0.57`. Le rapport fourni est
+`{'refused': 2}` pour deux cibles TCP **explicitement choisies**
+(services OpenClaw / SSH, ports 18789 et 22). Le script ne publie que
+des compteurs, ne demande aucun privilège et n'échange aucune donnée
+applicative. Résultat : **0 connected, 2 refused, 0 inconclusive**.
+
+**Portée de l'attestation :** l'origine TrueNAS est déclarée par
+l'opérateur sur la base de la procédure, non vérifiée automatiquement
+par ce script. Sous cette hypothèse, les **deux ports précis** n'ont
+pas accepté de connexion TCP depuis cette origine LAN lors du test.
+`ConnectionRefusedError` n'identifie pas la cause : aucun listener
+sur l'adresse LAN, politique REJECT ou intermédiaire réseau sont
+des possibilités. **Ce résultat ne prouve pas** un firewall par défaut,
+la fermeture de tous les ports de la workstation ni la protection
+contre l'accès IPv6/WAN.
+
+**Statut : LAN_TWO_TARGETS_OBSERVED_REFUSED** ; le reste de l'exposition
+LAN est **`not_verified`**, notamment les **9 segments TCP IPv4
+Docker wildcard**, susceptibles d'être atteints par un chemin NAT
+distinct des sockets hôte. Le prochain audit doit porter
+exclusivement sur les publications Docker **validées par l'opérateur**
+au moyen d'une nouvelle allowlist privée, sans automatiser un scan
+de ports ni publier la liste des endpoints dans Git.
+
+**WAN direct : facultatif / `not_verified`.** Aucun accès extérieur
+n'a été mesuré par cette procédure et aucune ouverture NAT n'est requise.
 
 ## Trois origines d'observation
 
