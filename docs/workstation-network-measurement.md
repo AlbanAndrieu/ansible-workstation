@@ -39,8 +39,49 @@ vérifient le refus d'exécution sans consentement. Statut du runner :
 **ACCEPTED RUNTIME**.
 
 Cette preuve ne valide **aucune mesure depuis un observateur LAN ou WAN**.
-Le prochain jalon reste un relevé indépendant depuis chacun de ces
-segments, sur un manifest privé strictement limité aux services autorisés.
+Le prochain jalon prioritaire est la mesure LAN depuis un observateur
+indépendant. Le volet WAN reste **facultatif/différé**, avec statut
+`not_verified` tant qu'aucune origine réellement extérieure n'a mesuré
+une cible autorisée.
+
+## Contrainte opérateur : aucun ordinateur disponible hors LAN (28 octobre 2026)
+
+**Ce n'est pas un bloqueur P0.** Une preuve d'accessibilité depuis le
+LAN, un inventaire du NAT/pare-feu pfSense et la revue des publications
+Docker peuvent progresser indépendamment d'un scan WAN. En l'absence
+d'une origine externe contrôlée, conserver **`wan_reachability=not_verified`**,
+sans la convertir en `deny`, `secure` ou `passed`.
+
+**Observateur LAN envisagé :** le TrueNAS du homelab, à condition
+qu'il soit bien sur le LAN de la workstation et que l'opérateur
+autorise explicitement les **deux ports ciblés**. Il n'est pas nécessaire
+d'ajouter un VPS ni d'ouvrir un port entrant pour cette mesure.
+Les cibles sont les **adresses LAN de la workstation**, pas les adresses
+loopback ; `--observer lan` doit être exécuté **depuis TrueNAS**,
+pas par une simple étiquette `lan` sur la workstation.
+Ne pas installer de packages sur l'OS TrueNAS pour ce diagnostic ;
+utiliser un interpréteur Python déjà disponible ou reporter la mesure.
+
+**Mesure externe facultative :** si un téléphone dispose d'une connexion
+mobile, couper le Wi-Fi et tout VPN/WARP pour utiliser le réseau cellulaire
+comme origine extérieure. Le navigateur peut alors tester **uniquement
+des services HTTP(S)** dont l'URL est déjà autorisée ; cela ne remplace
+pas le collecteur TCP arbitraire et ne justifie pas une ouverture NAT.
+Une URL derrière **Cloudflare Tunnel/Access** atteste au mieux
+l'accessibilité du chemin publié via Cloudflare, **pas** l'atteinte
+directe à un port WAN de la workstation. Un téléphone sur Wi-Fi reste
+un observateur LAN, pas WAN.
+
+**Sans téléphone ou observateur externe :** rester au contrôle documentaire
+des règles NAT/IPv4, du pare-feu IPv6, des tunnels Cloudflare, des
+publications Docker et des ports attendus ; noter `WAN not_verified`.
+Ne pas utiliser un test de hairpin NAT depuis le LAN pour conclure
+sur l'Internet. Ne pas chercher un scanner public sans accord sur
+les adresses et ports soumis à ce tiers.
+
+Cette contrainte empêche seulement une **attestation empirique du chemin
+WAN direct**, pas le durcissement réfléchi, à condition de conserver
+l'incertitude et une procédure de rollback avant tout changement.
 
 ## Trois origines d'observation
 
