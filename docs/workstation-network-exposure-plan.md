@@ -38,16 +38,21 @@ base en « ouvert sur Internet ».
 | 5. WAN | Probes depuis une machine explicitement hors LAN, sur **la même allowlist**, avec accord opérateur | Les mêmes quatre états ; aucune adresse ni identité | Aucune exposition imprévue ; preuves de blocage ou échec documenté |
 | 6. Décision | Confronter écoute + publication + règles + observation LAN/WAN | `conformant`, `drift`, `unknown` par classe d'usage, sans détails privés | Décision sur politique OS uniquement si preuves suffisantes |
 
-Les collecteurs des étapes 2 (Docker, facultatif) et 4–5 (TCP allowlist
-depuis observateurs indépendants) sont désormais **codés, mais pas exécutés
-en runtime**. Le protocole d'exécution est documenté
+L'étape 2 (Docker, facultatif) a été **exécutée localement** : 12
+conteneurs recensés et 9 segments TCP IPv4 wildcard. La mesure localhost
+a confirmé 2/2 attentes. Les collecteurs des étapes 4–5 (LAN/WAN)
+sont codés mais **n'ont pas été exécutés depuis des origines indépendantes**.
+La suite locale de contrats a passé **116/116** avec `.venv/bin/python`.
+Le protocole d'exécution est documenté
 [dans le runbook de mesure](workstation-network-measurement.md).
 Le fichier des cibles demeure privé, hors Git, avec permissions `0600`.
 Les tests TCP ne démontrent ni UDP, ni TLS/applicatif, ni le chemin
 réel derrière un proxy. La collecte Docker exige une autorisation
 spécifique à cause des privilèges équivalents à root du daemon.
 
-Les étapes 2 à 6 **ne sont pas exécutées** par cette PR. Ne pas créer de
+Les étapes 3 à 6 restent **non vérifiées en situation réelle** ;
+le comptage Docker (étape 2) ne prouve ni la publication effective vers
+le LAN ni l'exposition WAN. Aucune sonde WAN n'a été exécutée par cette PR. Ne pas créer de
 sonde réseau opportuniste vers des IP ou ports devinés, ni déployer une
 action permanente sans mandat. Une conclusion `unknown` est valide et
 préférable à un faux `secure`.
