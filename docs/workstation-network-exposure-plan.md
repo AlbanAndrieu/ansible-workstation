@@ -50,6 +50,27 @@ Les tests TCP ne démontrent ni UDP, ni TLS/applicatif, ni le chemin
 réel derrière un proxy. La collecte Docker exige une autorisation
 spécifique à cause des privilèges équivalents à root du daemon.
 
+### Ajustement de séquence — pas d'observateur WAN disponible (28 octobre 2026)
+
+L'opérateur ne dispose d'aucun autre ordinateur hors du LAN.
+La gate P0 LAN reste exécutable avec un **autre hôte du LAN**,
+par exemple TrueNAS, sur une allowlist privée ciblant la workstation.
+L'origine indépendante et les ports testés doivent être attestés
+seulement si le test a réellement été exécuté.
+
+Le contrôle direct WAN ne constitue donc **pas un prérequis** à la
+clôture des tests de connectivité LAN ni à l'étude des règles :
+il reste `not_verified` et **différé**. Ne pas demander un VPS ou
+un service tiers pour compléter artificiellement une case de rapport.
+
+Un téléphone en données cellulaires, Wi-Fi et VPN désactivés,
+peut servir ponctuellement d'observateur externe **HTTP(S)** sur des
+URLs explicitement autorisées ; cela n'est pas un test de connexion
+TCP vers des ports arbitraires. Les accès Cloudflare Tunnel/Access
+valident le chemin via Cloudflare, pas l'exposition directe de l'hôte.
+Sans origine externe, poursuivre la revue NAT pfSense, filtrage IPv6,
+règles Docker et Cloudflare. **Ne pas déclarer une preuve WAN**.
+
 Les étapes 3 à 6 restent **non vérifiées en situation réelle** ;
 le comptage Docker (étape 2) ne prouve ni la publication effective vers
 le LAN ni l'exposition WAN. Aucune sonde WAN n'a été exécutée par cette PR. Ne pas créer de
