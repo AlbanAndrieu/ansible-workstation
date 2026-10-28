@@ -30,11 +30,17 @@ modifier Docker, le pare-feu ou la workstation.
   `scripts/uv-project.sh check` puis utiliser **`.venv/bin/python`**
   sans installer de paquets globalement.
 
-**État de la dernière correction : CODE ADDED / RUNTIME NOT VERIFIED.**
-Attendu après validation : **116 tests** (95 tests système/réseau,
-20 contrats reachability/Docker, 1 contrat de runner). Si la `.venv`
-est absente ou incomplète, le runner doit échouer explicitement, sans
-installer automatiquement une autre version de Python.
+**Dernière preuve locale (révision `23f5628`, 27 octobre 2026) :**
+`mise run test-offline` a exécuté les **116 tests avec succès** en
+1,461 s, sans erreur ni échec. `PyYAML` a été chargé depuis la
+`.venv` vérifiée ; aucune installation de paquet global n'a été nécessaire.
+Les messages `--ack-* required` pendant deux tests sont attendus : ils
+vérifient le refus d'exécution sans consentement. Statut du runner :
+**ACCEPTED RUNTIME**.
+
+Cette preuve ne valide **aucune mesure depuis un observateur LAN ou WAN**.
+Le prochain jalon reste un relevé indépendant depuis chacun de ces
+segments, sur un manifest privé strictement limité aux services autorisés.
 
 ## Trois origines d'observation
 
