@@ -1,6 +1,6 @@
 # Workstation Ubuntu — plan P0 de validation de l'exposition réseau
 
-**Statut : collecteurs de mesure ajoutés — aucune sonde TCP LAN/WAN effectivement exécutée.** Aucun changement de règle réseau n'est appliqué. Le protocole opérateur se trouve dans [le runbook de mesure](workstation-network-measurement.md).
+**Statut : deux tentatives TCP ciblées depuis l'observateur LAN déclaré ont été refusées ; autres expositions LAN et WAN non vérifiées.** Aucun changement de règle réseau n'est appliqué. Le protocole opérateur se trouve dans [le runbook de mesure](workstation-network-measurement.md).
 Décision Option A : [contrat](workstation-ownership-option-a.md). État observé :
 [audit réseau](audit-workstation-network.md). Cette page est propriétaire de
 la prochaine gate **d'accessibilité réelle**, pas des sauvegardes ni de la
@@ -40,8 +40,11 @@ base en « ouvert sur Internet ».
 
 L'étape 2 (Docker, facultatif) a été **exécutée localement** : 12
 conteneurs recensés et 9 segments TCP IPv4 wildcard. La mesure localhost
-a confirmé 2/2 attentes. Les collecteurs des étapes 4–5 (LAN/WAN)
-sont codés mais **n'ont pas été exécutés depuis des origines indépendantes**.
+a confirmé 2/2 attentes. Le contrôle LAN a ensuite mesuré deux ports TCP depuis l'observateur
+TrueNAS **déclaré par l'opérateur** : 2 `refused`, 0 `connected`,
+0 `inconclusive`. Les autres ports et publications Docker n'ont pas
+été mesurés de manière exhaustive depuis le LAN. Le code ne prouve pas
+la provenance du script ; aucun test WAN n'a été exécuté.
 La suite locale de contrats a passé **116/116** avec `.venv/bin/python`.
 Le protocole d'exécution est documenté
 [dans le runbook de mesure](workstation-network-measurement.md).
@@ -49,6 +52,21 @@ Le fichier des cibles demeure privé, hors Git, avec permissions `0600`.
 Les tests TCP ne démontrent ni UDP, ni TLS/applicatif, ni le chemin
 réel derrière un proxy. La collecte Docker exige une autorisation
 spécifique à cause des privilèges équivalents à root du daemon.
+
+### Attestation limitée du chemin LAN — 28 octobre 2026
+
+Le contrôle ponctuel TrueNAS → workstation sur deux ports connus
+(OpenClaw TCP 18789, SSH TCP 22) a donné `{'refused': 2}`.
+Cela atteste **seulement** l'échec de ces deux connexions TCP depuis
+l'observateur indiqué, sous réserve de la provenance déclarée.
+La cause du refus n'est pas caractérisée. Aucun des **9 segments TCP
+IPv4 Docker wildcard** recensés n'a encore été vérifié depuis le LAN.
+
+**Décision de sécurité :** conserver `lan_other_targets=not_verified`
+et `wan_direct=not_verified`. Les refus ne certifient pas l'effet d'une
+politique `DROP`, le routage IPv6, ni l'absence de ports publiés
+accessibles. L'étape suivante est une comparaison contrôlée des
+publications Docker avec les règles et des attentes réseau privées.
 
 ### Ajustement de séquence — pas d'observateur WAN disponible (28 octobre 2026)
 
@@ -71,7 +89,9 @@ valident le chemin via Cloudflare, pas l'exposition directe de l'hôte.
 Sans origine externe, poursuivre la revue NAT pfSense, filtrage IPv6,
 règles Docker et Cloudflare. **Ne pas déclarer une preuve WAN**.
 
-Les étapes 3 à 6 restent **non vérifiées en situation réelle** ;
+L'étape 4 dispose d'une **preuve LAN partielle (2 ports refusés)** ;
+les étapes 3, 5 et 6 restent non vérifiées en situation réelle, et
+l'étape 4 n'est pas complète pour les autres ports ;
 le comptage Docker (étape 2) ne prouve ni la publication effective vers
 le LAN ni l'exposition WAN. Aucune sonde WAN n'a été exécutée par cette PR. Ne pas créer de
 sonde réseau opportuniste vers des IP ou ports devinés, ni déployer une
