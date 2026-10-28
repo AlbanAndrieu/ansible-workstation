@@ -1,5 +1,18 @@
 # LAN split-DNS sur la workstation — reprise du 27 octobre 2026
 
+> **Documentation de référence (architecture + exploitation) :**
+> [Split-DNS, DNSSEC NTA et NetworkManager Dispatcher](homelab-split-dns-architecture.md).
+> Ce fichier conserve les **preuves et étapes chronologiques** de la réparation.
+> En cas de contradiction avec une section datée « non installé » ou « à tester »
+> ci-dessous, retenir **l'état vérifié le 28/10** : dispatcher installé,
+> NTA restaurée sur `reapply`, DNS privé PASS et DNSSEC public authentifié ;
+> **test après reboot encore en attente**. Le dernier
+> `just workstation-dnssec-dispatcher-check` est de nouveau PASS :
+> `lan_profile=MATCH`, `dispatcher=ROOT_EXECUTABLE`,
+> `link_nta=EXPECTED_ONLY`, `private_dns=PASS`,
+> `public_dnssec=AUTHENTICATED`, `mode=READ_ONLY`.
+
+
 ## Réception NetworkManager reapply — 28 octobre : événement confirmé
 
 **Preuve opérateur après installation du dispatcher :**
