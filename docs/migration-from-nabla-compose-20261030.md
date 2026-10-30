@@ -69,9 +69,11 @@ Workstation reste en service tant que les modèles, clés virtuelles,
 stockage et réseau du Gateway cible ne sont pas prouvés.
 
 **P5 — cutover :** tester sur Workstation ET TrueNAS, puis épingler un
-tag/commit du nouveau `nabla-openclaw` comme submodule de Compose sur
-un chemin ne chevauchant pas `apps/openclaw/compose.yml`. Stopper toute
-duplication des crons avant démarrage de production ; rollback local
+tag/commit du nouveau `nabla-openclaw` **directement à `apps/openclaw`**
+comme submodule Compose. Prérequis : ancien sandbox déplacé vers
+`apps/openclaw-sandbox/`, politiques/scripts consommateurs repris et
+18 fichiers historiques retirés de l'index Git après parité. Stopper
+toute duplication des crons avant démarrage de production ; rollback local
 vérifié avant retrait de l'ancien code. Pas de propagation implicite
 de `git pull` entre dépôts.
 
