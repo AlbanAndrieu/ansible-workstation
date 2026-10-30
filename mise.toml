@@ -107,3 +107,7 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-configuration]
 description = "Read-only redacted /etc presence, DNS link and systemd unit status audit; no sudo or apply"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-configuration.py --json"
+
+[tasks.agent-skills-check]
+description = "Offline Ansible skill precedence, provenance and symlink gate; only project Python, no network or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m unittest tests/test_agent_skills_contract.py -v && .venv/bin/python -B scripts/check-agent-skills.py"
