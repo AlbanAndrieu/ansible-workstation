@@ -135,5 +135,3 @@
       when:
         - yubikey_os_apply | bool
         - yubikey_os_apply_approved | bool
-      tags:
-        - yubikey-os-apply
