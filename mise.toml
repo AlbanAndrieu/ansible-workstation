@@ -103,3 +103,7 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-openclaw-source]
 description = "Audit OpenClaw source on Ubuntu; TrueNAS is destination, not managed here"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-openclaw-source.yml"
+
+[tasks.audit-configuration]
+description = "Read-only redacted /etc presence, DNS link and systemd unit status audit; no sudo or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-configuration.py --json"
