@@ -28,7 +28,14 @@ Si les résultats divergent, examiner les overrides `/etc/systemd/resolved.conf.
 
 ## Contrat systemd et OpenClaw
 
-Le rapport renseigne seulement `LoadState`, `ActiveState` et `UnitFileState` pour des unités système explicitement connues et pour `openclaw-gateway.service` en scope utilisateur. Il **ne lit pas** `ExecStart`, `Environment`, `EnvironmentFile`, les drop-ins ou les credentials. Par conséquent, **aucune parité n'est attestée** entre la configuration systemd chargée et les templates Git.
+Le rapport renseigne seulement `LoadState`, `ActiveState` et `UnitFileState` pour des unités système explicitement connues et pour `openclaw-gateway.service` en scope utilisateur. Il demande aussi uniquement `FragmentPath` et `DropInPaths` pour classer
+la provenance des unités (`user_config`, `etc`, `vendor`, `runtime`
+ou `other_review_required`) et la présence de drop-ins. **Aucun chemin brut
+n'est exporté**. Il ne lit pas `ExecStart`, `Environment`,
+`EnvironmentFile`, les contenus des drop-ins ou les credentials. Par
+conséquent, **aucune parité n'est attestée** entre la configuration systemd
+chargée et les templates Git. Les champs `effective_execstart_alignment`
+restent `not_verified` même pour une unité active.
 
 Le template historique `templates/openclaw-gateway-systemd.sh-Ubuntu.j2` contient Node 25.4.0 et OpenClaw 2026.4.15 : **apply interdit**. La référence runtime attendue de la workstation est Node 24 et OpenClaw 2026.10.7. Les éventuelles unités utilisateur appartiennent à `dotfiles` selon l'Option A ; le dépôt Ansible n'en prend que l'inventaire OS/contrat. La migration vers TrueNAS relève de `nabla-openclaw`.
 
