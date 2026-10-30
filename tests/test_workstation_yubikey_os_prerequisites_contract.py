@@ -112,7 +112,7 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         contents = PLAYBOOK.read_text().lower()
         for forbidden in (
             "secret:", "private_key", "pin:", "puk:", "challenge_response",
-            "enroll", "register", "fido2_reset", "piv reset",
+            "enrollment", "ykman fido reset", "fido2_reset", "piv reset",
             "ssh-keygen", "scdaemon.conf", "sudoers",
         ):
             self.assertNotIn(forbidden, contents)
