@@ -5,6 +5,7 @@ paquets, services systemd système, DNS, SSH, pare-feu, sysctl, montages et
 politique de sauvegarde chiffrée Restic.
 
 - [Contrat de responsabilités et séparation YubiKey/PAM](docs/workstation-ownership-option-a.md)
+- [Prérequis YubiKey Ubuntu — audit et installation APT uniquement sur autorisation](docs/yubikey-os-prerequisites.md)
 - [Roadmap de ce dépôt](docs/roadmap-workstation.md)
 - [Audit local Ubuntu P0, sans sudo ni mutation](docs/audit-workstation.md)
 - [Audit P0 réseau : visibilité sans privilèges, données expurgées](docs/audit-workstation-network.md)
