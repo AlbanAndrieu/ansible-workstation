@@ -12,6 +12,7 @@ politique de sauvegarde chiffrée Restic.
 - [Mesures P0 : tests TCP privés depuis local/LAN/WAN et publications Docker (opt-in)](docs/workstation-network-measurement.md)
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
+- [Préparation de l'extraction Workstation depuis nabla-compose](docs/migration-from-nabla-compose-20261030.md)
 
 Les configurations utilisateur relèvent de [dotfiles](https://github.com/AlbanAndrieu/dotfiles)
 et les opérations matérielles YubiKey de [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose).

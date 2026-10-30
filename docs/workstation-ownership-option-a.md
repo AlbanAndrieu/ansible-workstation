@@ -37,6 +37,22 @@ Le bundle historique `tasks/yubikey.yml` est **retiré du rôle général** et s
 
 En cas de besoin de `libfido2`, `pcscd`, `ykman` ou `opensc`, créer plus tard un rôle **OS prerequisites uniquement**, explicitement activable ; il ne touche pas PAM et ne manipule jamais les applets. L'authentification Ubuntu/PAM peut être audité séparément, mais tout changement nécessite secours local, backup validé et phase opt-in dédiée.
 
+## Évolution proposée (30 octobre 2026), sans changer Option A active
+
+Un dépôt YubiKey spécialisé `nabla-yubikey` est **proposé**, mais
+n'existe pas encore. Jusqu'à la création, au contrôle des licences et
+à la validation des tests, `nabla-compose` reste le propriétaire
+effectif des diagnostics matériels. Seules les tâches OS optionnelles
+(`pcscd`, `libfido2`, `ykman`) seraient éventuellement Ansible.
+Les agents/cron/heartbeat OpenClaw publics peuvent ensuite être
+transférés vers le nouveau périmètre Workstation, tandis que
+`~/.openclaw` et les unités utilisateur déjà gérées par dotfiles
+restent privées et ne sont pas automatiquement remplacées.
+
+Voir le [plan d'extraction](migration-from-nabla-compose-20261030.md).
+En particulier, le vieux template systemd OpenClaw (Node 25.4.0,
+version 2026.4.15) reste interdit au déploiement.
+
 ## Première preuve observée, 27 octobre 2026
 
 L'opérateur a exécuté le collecteur dotfiles : Ubuntu 26.04.1, noyau 7.0.0-38, NVIDIA RTX 2060/595.71.05, AppArmor/auditd/fail2ban/unattended-upgrades actifs, Secure Boot désactivé, nftables/ufw services inactifs, `ip_forward=1`. **Aucun état de filtrage réseau n'est déduit des états systemd.** L'ancien inventaire nommait la carte mère Z390-E ; l'observation indique Z390-F : ne pas changer la référence sans preuve matérielle supplémentaire.
