@@ -35,7 +35,7 @@ Le prototype `dotfiles/bin/inspect-workstation-system.py` est conservé comme co
 
 Le bundle historique `tasks/yubikey.yml` est **retiré du rôle général** et supprimé : il couplait installation de paquets à l'ajout du PPA Yubico et à la copie de `/etc/pam.d/common-auth` lorsque `pam_enabled: true`. Les deux templates PAM historiques, sans autre appel actif, sont également supprimés. La suppression concerne le **code Ansible**, pas la machine : aucune désinstallation de paquet, aucune modification de PAM, aucun changement de YubiKey.
 
-En cas de besoin de `libfido2`, `pcscd`, `ykman` ou `opensc`, créer plus tard un rôle **OS prerequisites uniquement**, explicitement activable ; il ne touche pas PAM et ne manipule jamais les applets. L'authentification Ubuntu/PAM peut être audité séparément, mais tout changement nécessite secours local, backup validé et phase opt-in dédiée.
+Les dépendances Ubuntu `libfido2`, `pcscd`, `ykman`, `opensc` et GPG disposent désormais d'un [playbook OS autonome](../playbooks/yubikey-os-prerequisites.yml) avec [runbook](yubikey-os-prerequisites.md), **lecture seule par défaut** et installation APT à double approbation explicite. Ce playbook n'est importé ni par le rôle général ni par Compose ; il ne touche pas PAM et ne manipule jamais les applets. Les dépendances de compilation PC/SC et le module `libpam-u2f` sont des profils optionnels, sans activation PAM. L'authentification Ubuntu/PAM peut être audité séparément, mais tout changement nécessite secours local, backup validé et phase opt-in dédiée.
 
 ## Évolution proposée (30 octobre 2026), sans changer Option A active
 
