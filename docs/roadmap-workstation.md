@@ -20,7 +20,7 @@
 | P0 | Accessibilité WAN **facultative** en l'absence d'observateur extérieur | Téléphone en données cellulaires pour HTTP(S) autorisé, ou origine externe contrôlée ; vérifications NAT/IPv6/Cloudflare en attendant | **DIFFÉRÉ / WAN NOT VERIFIED** : aucun autre ordinateur disponible hors LAN ; ne bloque pas P0 LAN |
 | P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
 | P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
-| P1 | Comparer état observé et politique `policies/home-desktop.yml` | Drift classé attendu/inconnu/non conforme, sans secrets | À faire |
+| P1 | [Comparer état observé et politique `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Drift classé attendu/inconnu/non conforme, sans secrets | **CODE ADDED / RUNTIME NOT VERIFIED** : chemins `/etc`, unités systemd et DNS `eno1` ; sysctl et montages restent dans `audit-workstation.yml`, sans comparaison |
 | P1 | Profil minimal des paquets/services opt-in ; retirer vieilles distributions | `--check` non destructif, tasks idempotentes, rollback | À faire |
 | P1 | Restic : configuration chiffrée hors Git, sauvegarde /etc ciblée + état privé | `restic check` + restauration isolée réussie + copie indépendante | À faire |
 | P1 | Nettoyer `tasks/security.yml` et mises à jour unattended | Pas de `dpkg-reconfigure` non conditionné ni écrasement de config arbitraire | À faire |
