@@ -80,7 +80,7 @@ def inventory(root: Path) -> dict[str, str]:
 
 def _source_category(fragment: str, user: bool) -> str:
     """Allowlist source *categories*, not paths or systemd Environment values."""
-    if not fragment or "\\n" in fragment or "\\r" in fragment:
+    if not fragment or "\n" in fragment or "\r" in fragment:
         return "unknown"
     if user and fragment.startswith(str(Path.home() / ".config/systemd/user") + "/"):
         return "user_config"
