@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
@@ -39,11 +38,13 @@ ETC_PATHS = (
     "docker/daemon.json",
     "containerd/config.toml",
 )
-USER_UNITS = ("openclaw-gateway.service",)
+USER_UNITS = ("openclaw-gateway.service", "litellm.service", "reactive.service")
 SYSTEM_UNITS = (
     "NetworkManager.service", "systemd-resolved.service",
     "ssh.service", "docker.service", "containerd.service",
     "fail2ban.service", "ufw.service",
+    "boot-ip.service", "boot-update.service", "hide-location.service",
+    "hide-mac.service", "conky.service", "maj0.service",
 )
 ALLOWED_SYSTEMD_KEYS = ("LoadState", "ActiveState", "UnitFileState")
 PRIVATE_DOMAIN = "~int.albandrieu.com"
@@ -111,7 +112,6 @@ def audit_dns(interface: str) -> dict[str, object]:
 
 
 def audit() -> dict[str, object]:
-    home = Path.home()
     return {
         "schema": "workstation-configuration-drift/v1",
         "read_only": True,
