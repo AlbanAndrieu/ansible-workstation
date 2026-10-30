@@ -1,0 +1,100 @@
+---
+# Ubuntu OS prerequisites only. No PPA, PAM, YubiKey, secret or user config.
+# Read-only by default. Never imported from playbooks/workstation.yml.
+- name: Audit or explicitly provision Ubuntu YubiKey operating system prerequisites
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    yubikey_os_apply: false
+    yubikey_os_apply_approved: false
+    # Package names only, sourced from the nabla-compose bootstrap and
+    # workstation YubiKey requirements. Installed from configured Ubuntu repos.
+    yubikey_os_runtime_packages:
+      - yubikey-manager
+      - pcscd
+      - libu2f-udev
+      - libfido2-1
+      - opensc
+      - gnupg
+      - scdaemon
+    # Development headers for an OPTIONAL externally managed age-plugin build.
+    yubikey_os_build_packages:
+      - libpcsclite-dev
+      - pkg-config
+    yubikey_os_build_deps_enabled: false
+
+  tasks:
+    - name: Inspect only the operating system distribution
+      ansible.builtin.setup:
+        gather_subset:
+          - "!all"
+          - "!min"
+          - distribution
+      no_log: true
+
+    - name: Reject unsupported or nonlocal operating systems
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.get('distribution', '') == 'Ubuntu'
+          - ansible_facts.get('distribution_version', '') in ['24.04', '26.04']
+        fail_msg: "YubiKey OS package management is limited to Ubuntu 24.04/26.04."
+        quiet: true
+      no_log: true
+
+    - name: Read installed package metadata without changes
+      ansible.builtin.package_facts:
+        manager: auto
+      no_log: true
+
+    - name: Build immutable package selection in memory
+      ansible.builtin.set_fact:
+        yubikey_os_selected_packages: >-
+          {{ yubikey_os_runtime_packages +
+             (yubikey_os_build_packages if (yubikey_os_build_deps_enabled | bool) else []) }}
+      no_log: true
+
+    - name: Report only allowlisted YubiKey prerequisite package presence
+      ansible.builtin.debug:
+        msg:
+          schema: workstation-yubikey-os-prerequisites/v1
+          mode: "{{ 'apply_requested' if yubikey_os_apply | bool else 'audit_only' }}"
+          package_presence: >-
+            {{ dict(yubikey_os_selected_packages | zip(
+              yubikey_os_selected_packages |
+              map('extract', ansible_facts.get('packages', {})) |
+              map('default', []) |
+              map('length') |
+              map('bool') |
+              list)) }}
+          build_dependencies_selected: "{{ yubikey_os_build_deps_enabled | bool }}"
+          hardware_accessed: false
+          pam_configuration_changed: false
+          limitations:
+            - "Installed package presence does not prove YubiKey device readiness."
+            - "No daemon is started and no system security policy changes during audit."
+            - "An approved apt apply can run package maintainer scripts and activate a daemon."
+            - "No YubiKey token, PIN, PUK, PIV, FIDO2, OTP, or escrow transaction."
+
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - yubikey_os_apply_approved | bool
+        fail_msg: "Apply denied: requires both yubikey_os_apply=true and yubikey_os_apply_approved=true."
+        quiet: true
+      when: yubikey_os_apply | bool
+
+    - name: Install Ubuntu repository YubiKey OS prerequisites only
+      ansible.builtin.apt:
+        name: "{{ yubikey_os_selected_packages }}"
+        state: present
+        update_cache: false
+        install_recommends: false
+      become: true
+      when:
+        - yubikey_os_apply | bool
+        - yubikey_os_apply_approved | bool
+      tags:
+        - yubikey-os-apply
