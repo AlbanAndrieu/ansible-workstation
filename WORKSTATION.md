@@ -14,9 +14,10 @@ politique de sauvegarde chiffrée Restic.
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
 - [Préparation de l'extraction Workstation depuis nabla-compose](docs/migration-from-nabla-compose-20261030.md)
+- [Audit de la source OpenClaw Workstation → cible TrueNAS](docs/openclaw-workstation-to-truenas.md)
 
 Les configurations utilisateur relèvent de [dotfiles](https://github.com/AlbanAndrieu/dotfiles)
-et les opérations matérielles YubiKey de [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose).
+et les opérations matérielles YubiKey du nouveau [nabla-yubikey](https://github.com/AlbanAndrieu/nabla-yubikey) (migration en cours). La cible OpenClaw est [TrueNAS via nabla-openclaw](https://github.com/AlbanAndrieu/nabla-openclaw) ; Ansible ne gère que l'audit de l'instance Workstation existante.
 
 **Pas de lancement global du `workstation.yml` historique pour un audit.**
 La sauvegarde n'est validée qu'après `restic check` et restauration de test

@@ -27,15 +27,15 @@ ni de migration à lancer globalement. Utiliser les playbooks
 | Ubuntu/mise/Node et programmes système | **ansible-workstation** | Pinning `mise.toml`, playbooks opt-in |
 | Audits de readiness systemd, DNS, services Workstation | **ansible-workstation** | Observations expurgées ; pas d'écriture de secrets |
 | Configuration shell, starship, Terminator, unités utilisateur existantes | **dotfiles** | Option A, référentiel utilisateur |
-| Code de contrôle local OpenClaw, heartbeat et automations publiques | **ansible-workstation** *candidate* après parité | Runtime et base `~/.openclaw` restent locaux/privés |
-| Images/Compose OpenClaw sur TrueNAS, serveurs LiteLLM, DB, stockage, clés virtuelles, quotas | **nabla-compose** | Contrats inter-hôtes communs, pas de recopie de credentials |
-| Matériel YubiKey, PIV, OTP2, recovery age, escrow client | **futur nabla-yubikey** | Contrôles de sécurité et validation explicite |
+| Gateway cible OpenClaw, heartbeat et automations non secrètes | **nabla-openclaw** (TrueNAS cible) | Instance Workstation conservée comme source/repli ; Ansible n'en fait que l'audit |
+| Compose parent, LiteLLM serveur, datasets, réseau et quotas TrueNAS | **nabla-compose** | Le Gateway Docker cible et ses politiques sont dans **nabla-openclaw**, futur submodule piné |
+| Matériel YubiKey, PIV, OTP2, recovery age, escrow client | **nabla-yubikey** (dépôt créé, transfert progressif) | Aucun secret ni mutation matérielle par import |
 | Packages `pcscd`/`libfido2`/`ykman` | **ansible-workstation** ([playbook OS autonome](../playbooks/yubikey-os-prerequisites.yml), opt-in) | Audit sans privilèges par défaut ; installation doublement autorisée, pas de PAM ni de mutation du token |
 | Serveur d'escrow TrueNAS, NFS ACL et datasets | **nabla-compose** | Le client YubiKey s'interface par sonde |
 
-Le nom `nabla-yubikey` est une **proposition** de repo absent à ce jour.
-Il faut créer le dépôt avec revue de confidentialité/licence avant
-une extraction. Ne pas y copier d'archives `.age`, de secrets
+Les dépôts publics `nabla-yubikey` et `nabla-openclaw` ont été créés.
+Les premiers transferts sont ouverts en PR Draft, sans cutover. Les licences
+et les fichiers privés doivent rester contrôlés avant chaque lot. Ne pas y copier d'archives `.age`, de secrets
 PIV/OTP, de fichiers `.sops.yaml` ou de sessions réelles.
 
 ## Phases de migration du code
@@ -57,21 +57,23 @@ par exemple classification de l'hôte et contrat Gateway.
 Préserver output, exit codes 0/2, `NO_COLOR`, redaction et
 les commandes anciennes comme wrappers temporaires.
 
-**P3 — cron/heartbeat :** transférer la politique/version non
-secrète et le réconciliateur `plan/check/apply`. Ne pas toucher
-directement aux tables SQLite/aux agents ; la CLI native conserve
-l'état, les archives privées et rollback.
+**P3 — cron/heartbeat :** transférer politique/version non secrète,
+contrats de validation et futur réconciliateur vers `nabla-openclaw`,
+**pas** vers le rôle Ansible Workstation. Ne pas toucher directement à
+SQLite/aux agents ; snapshots et rollback restent privés.
 
-**P4 — intégrations :** scinder
-`OpenClaw Workstation → LiteLLM TrueNAS` (client local ici)
-et les probes de LiteLLM côté TrueNAS (restent Compose).
-Le tunnel SSH et les clés virtuelles doivent être validés avant
-toute bascule.
+**P4 — intégrations :** migrer le Gateway `OpenClaw Workstation →
+OpenClaw TrueNAS` et valider LiteLLM **local au NAS** ; garder les
+sondes serveur, les quotas et secrets dans Compose. Le Gateway source
+Workstation reste en service tant que les modèles, clés virtuelles,
+stockage et réseau du Gateway cible ne sont pas prouvés.
 
-**P5 — cutover :** tests locaux et parité sur Workstation ET
-TrueNAS, puis seulement suppression du code historique dans
-Compose. Pas de sous-module Git obligatoire ni de propagation
-de `git pull` à travers les dépôts.
+**P5 — cutover :** tester sur Workstation ET TrueNAS, puis épingler un
+tag/commit du nouveau `nabla-openclaw` comme submodule de Compose sur
+un chemin ne chevauchant pas `apps/openclaw/compose.yml`. Stopper toute
+duplication des crons avant démarrage de production ; rollback local
+vérifié avant retrait de l'ancien code. Pas de propagation implicite
+de `git pull` entre dépôts.
 
 ## Gate indépendant pour template obsolète
 
@@ -87,3 +89,18 @@ avant modernisation, **pas** une panne Gateway.
 
 Aucun job GitHub Actions, aucun `ansible-playbook --become`,
 aucune modification des PIN/PUK/PIV, aucune copie de `~/.openclaw`.
+
+## Contrôle source ajouté à la PR #16 (2026-10-30)
+
+Le collecteur non privilégié [audit-openclaw-source.py](../scripts/audit-openclaw-source.py)
+compare seulement la CLI Node 24/OpenClaw 2026.10.7 et l'état de
+`openclaw-gateway.service`, sans lire `openclaw.json` ni l'environnement.
+Le verdict `source_cli_and_unit_observed` **ne prouve pas** la
+readyz du Gateway ni le modèle effectif. Voir le
+[runbook source → TrueNAS](openclaw-workstation-to-truenas.md).
+
+```bash
+python3 -m unittest discover -s tests -p 'test_openclaw_source_audit_contract.py' -v
+mise run audit-openclaw-source-syntax
+mise run audit-openclaw-source
+```

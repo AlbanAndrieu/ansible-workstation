@@ -39,15 +39,15 @@ Les dépendances Ubuntu `libfido2`, `pcscd`, `ykman`, `opensc` et GPG disposent 
 
 ## Évolution proposée (30 octobre 2026), sans changer Option A active
 
-Un dépôt YubiKey spécialisé `nabla-yubikey` est **proposé**, mais
-n'existe pas encore. Jusqu'à la création, au contrôle des licences et
-à la validation des tests, `nabla-compose` reste le propriétaire
-effectif des diagnostics matériels. Seules les tâches OS optionnelles
-(`pcscd`, `libfido2`, `ykman`) seraient éventuellement Ansible.
-Les agents/cron/heartbeat OpenClaw publics peuvent ensuite être
-transférés vers le nouveau périmètre Workstation, tandis que
-`~/.openclaw` et les unités utilisateur déjà gérées par dotfiles
-restent privées et ne sont pas automatiquement remplacées.
+Les dépôts publics `nabla-yubikey` et `nabla-openclaw` existent
+désormais. Les premiers lots sont préparés en branches de migration :
+`nabla-yubikey` prend progressivement les diagnostics matériels,
+`nabla-openclaw` devient propriétaire **du Gateway cible TrueNAS**,
+de son heartbeat et de ses automations publiques. `nabla-compose`
+garde l'infrastructure TrueNAS, le stockage et LiteLLM serveur ;
+`ansible-workstation` garde **uniquement** l'OS et l'audit de l'OpenClaw
+**source** sur Ubuntu. `~/.openclaw`, clés et sessions restent privés
+et ne sont pas remplacés. Aucune action YubiKey/PAM par défaut.
 
 Voir le [plan d'extraction](migration-from-nabla-compose-20261030.md).
 En particulier, le vieux template systemd OpenClaw (Node 25.4.0,

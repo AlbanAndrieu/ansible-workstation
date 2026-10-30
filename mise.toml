@@ -95,3 +95,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.yubikey-os-audit]
 description = "Read-only Ubuntu YubiKey package readiness, no sudo/PAM/USB access"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/yubikey-os-prerequisites.yml"
+
+[tasks.audit-openclaw-source-syntax]
+description = "Syntax-check only the source-workstation OpenClaw read-only audit playbook"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-openclaw-source.yml"
+
+[tasks.audit-openclaw-source]
+description = "Audit OpenClaw source on Ubuntu; TrueNAS is destination, not managed here"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-openclaw-source.yml"
