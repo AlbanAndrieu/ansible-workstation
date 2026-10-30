@@ -76,6 +76,9 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         self.assertEqual(apt["ansible.builtin.apt"]["state"], "present")
         self.assertEqual(apt["ansible.builtin.apt"]["update_cache"], False)
         self.assertEqual(apt["ansible.builtin.apt"]["install_recommends"], False)
+        # Do not allow selecting only the apt task by --tags and skipping
+        # the two approval and Ubuntu package availability guards.
+        self.assertNotIn("tags", apt)
         self.assertEqual(set(apt["when"]), {
             "yubikey_os_apply | bool", "yubikey_os_apply_approved | bool"
         })
