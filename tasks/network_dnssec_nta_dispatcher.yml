@@ -1,0 +1,48 @@
+---
+# Preferred persistent approach: NetworkManager owns eno1; the dispatcher
+# reinstates per-link NTA on up, DHCP renewal or device reapply.
+# No global .negative file, no NetworkManager restart, and no resolver restart.
+- name: workstation | Validate scoped dispatcher preconditions
+  ansible.builtin.assert:
+    that:
+      - workstation_split_dns_interface == 'eno1'
+      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_domain == 'int.albandrieu.com'
+      - not ((workstation_split_dns_nta_dispatcher_enabled | bool) and (workstation_split_dns_nta_dispatcher_remove_enabled | bool))
+      - not (workstation_split_dns_persistent_nta_enabled | bool)
+    fail_msg: >-
+      NTA dispatcher requires the vetted LAN; do not apply and remove together
+      or combine per-link dispatcher with the system-wide negative anchor.
+  tags: [dns]
+
+- name: workstation | Ensure NetworkManager dispatcher directory for opt-in NTA
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  when: workstation_split_dns_nta_dispatcher_enabled | bool
+  tags: [dns]
+
+# Only managed profile Wired eno1 and only DNS 172.17.0.1 / ~int zone.
+# On 'down', clear the runtime anchor only when it is exactly ours.
+- name: workstation | Install LAN-only DNSSEC NTA NetworkManager dispatcher
+  ansible.builtin.copy:
+    src: "{{ role_path | default(playbook_dir ~ '/..') }}/files/networkmanager-homelab-nta-dispatcher.sh"
+    dest: /etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta
+    owner: root
+    group: root
+    mode: '0700'
+  become: true
+  when: workstation_split_dns_nta_dispatcher_enabled | bool
+  tags: [dns]
+
+- name: workstation | Remove LAN-only DNSSEC NTA dispatcher on explicit rollback
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/90-nabla-private-dnssec-nta
+    state: absent
+  become: true
+  when: workstation_split_dns_nta_dispatcher_remove_enabled | bool
+  tags: [dns]

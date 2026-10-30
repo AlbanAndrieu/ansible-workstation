@@ -50,6 +50,14 @@
   check_mode: false
   tags: [dns]
 
+- name: workstation | Inspect effective DNS before profile reconciliation
+  ansible.builtin.command:
+    argv: [resolvectl, dns, "{{ workstation_split_dns_interface }}"]
+  register: workstation_dns_effective_before
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
 - name: workstation | Configure pfSense as the sole profile DNS
   ansible.builtin.command:
     argv:
@@ -61,21 +69,38 @@
       - 'yes'
       - ipv4.dns
       - "{{ workstation_split_dns_resolver }}"
-      - ipv4.dns-search
-      - "{{ workstation_split_dns_domain }}"
   become: true
   register: workstation_dns_update
   when: >-
     (workstation_dns_servers.stdout | trim) != workstation_split_dns_resolver
     or (workstation_dns_auto.stdout | trim | lower) not in ['yes', 'true']
-    or workstation_split_dns_domain not in workstation_dns_search.stdout
   tags: [dns]
 
-- name: workstation | Reapply active link DNS only when modified
+# Append rather than overwrite DNS-search entries belonging to other services.
+- name: workstation | Add route-only private DNS domain
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ workstation_dns_profile.stdout | trim }}"
+      - +ipv4.dns-search
+      - "~{{ workstation_split_dns_domain }}"
+  become: true
+  register: workstation_dns_domain_update
+  when: ('~' ~ workstation_split_dns_domain) not in workstation_dns_search.stdout
+  tags: [dns]
+
+- name: workstation | Reapply active link DNS if profile or runtime drifted
   ansible.builtin.command:
     argv: [nmcli, device, reapply, "{{ workstation_split_dns_interface }}"]
   become: true
-  when: workstation_dns_update is changed
+  when: >-
+    workstation_dns_update is changed
+    or workstation_dns_domain_update is changed
+    or workstation_split_dns_resolver not in workstation_dns_effective_before.stdout
+    or '9.9.9.9' in workstation_dns_effective_before.stdout
+    or '149.112.112.112' in workstation_dns_effective_before.stdout
   tags: [dns]
 
 - name: workstation | Read effective link DNS after reconciliation
@@ -96,4 +121,24 @@
       Effective systemd-resolved link DNS is still overridden.
       Check global resolved.conf, NetworkManager dispatcher, VPN and DHCP.
       Do not disable DNS security or rewrite /etc/resolv.conf blindly.
+  when: not ansible_check_mode
+  tags: [dns]
+
+# Never install a persistent NTA in normal workstation provisioning.
+# Explicit opt-in only after runtime NTA validation in nabla-compose.
+- name: workstation | Load approved private DNSSEC negative trust anchor
+  ansible.builtin.import_tasks: network_dnssec_nta.yml
+  when: >-
+    workstation_split_dns_persistent_nta_enabled | bool
+    or workstation_split_dns_persistent_nta_remove_enabled | bool
+  tags: [dns]
+
+# NetworkManager owns eno1, so a systemd.network file would not persist this
+# NTA. Dispatcher applies it per LINK after NM activation/reapply, unlike
+# system-wide .negative trust anchor files.
+- name: workstation | Load scoped NetworkManager DNSSEC NTA dispatcher
+  ansible.builtin.import_tasks: network_dnssec_nta_dispatcher.yml
+  when: >-
+    workstation_split_dns_nta_dispatcher_enabled | bool
+    or workstation_split_dns_nta_dispatcher_remove_enabled | bool
   tags: [dns]

@@ -140,18 +140,56 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and macchanger_enabled
   tags: configure
 
-- name: macchanger | Start the hide-location service
+# Keep the legacy privacy override available only by explicit opt-in.
+# Its previous per-minute timer invoked resolvectl dns eno1 with Quad9, even
+# while the active NetworkManager device still owned pfSense 172.17.0.1.
+- name: macchanger | Start the opt-in hide-location DNS override
   ansible.builtin.systemd_service:
     name: hide-location
     daemon_reload: true
     state: started
     scope: user
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  when: >-
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+    and (ansible_distribution_version not in ['16.04'])
+    and macchanger_enabled
+    and workstation_hide_location_dns_override_enabled | bool
   tags: service
   become: false
   become_user: "{{ lookup('env', 'USER') }}"
-  # ignore_errors: true
+
+# Explicit disable works even after the old unit has already been enabled.
+# A timer may restart an inactive oneshot unit, so disable both components.
+- name: macchanger | Stop legacy hide-location DNS timer
+  ansible.builtin.systemd_service:
+    name: hide-location.timer
+    state: stopped
+    scope: user
+    enabled: false
+  when: >-
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+    and (ansible_distribution_version not in ['16.04'])
+    and macchanger_enabled
+    and not (workstation_hide_location_dns_override_enabled | bool)
+  tags: service
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
+
+- name: macchanger | Stop legacy hide-location DNS service
+  ansible.builtin.systemd_service:
+    name: hide-location.service
+    state: stopped
+    scope: user
+    enabled: false
+  when: >-
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+    and (ansible_distribution_version not in ['16.04'])
+    and macchanger_enabled
+    and not (workstation_hide_location_dns_override_enabled | bool)
+  tags: service
+  become: false
+  become_user: "{{ lookup('env', 'USER') }}"
 
 # TODO guard.sh.j2
 

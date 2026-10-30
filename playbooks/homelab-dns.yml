@@ -1,0 +1,16 @@
+---
+# Standalone DNS-only entrypoint for this repository, which is itself a role.
+# Direct task import avoids Ansible interpreting "../" as an unknown role.
+# It loads the role defaults without executing tasks/workstation.yml.
+- name: Inspect approved workstation LAN DNS only
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars_files:
+    - ../defaults/main.yml
+  tasks:
+    - name: workstation | Import opted-in LAN split-DNS tasks only
+      ansible.builtin.import_tasks: ../tasks/network_split_dns.yml
+      when: workstation_split_dns_enabled | bool
+      tags: [dns]

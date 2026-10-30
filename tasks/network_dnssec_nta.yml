@@ -1,0 +1,55 @@
+---
+# OPT-IN after a proven runtime resolvectl NTA experiment.
+# Scoped to int.albandrieu.com only. Does not disable public DNSSEC/DoT.
+# The .negative file is a system-wide NTA for this subtree, not per-link.
+- name: workstation | Verify narrowly scoped private DNSSEC NTA contract
+  ansible.builtin.assert:
+    that:
+      - workstation_split_dns_interface == 'eno1'
+      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_domain == 'int.albandrieu.com'
+    fail_msg: 'NTA change refused outside the approved LAN zone'
+  tags: [dns]
+
+- name: workstation | Reject contradictory NTA apply and removal flags
+  ansible.builtin.assert:
+    that:
+      - not ((workstation_split_dns_persistent_nta_enabled | bool) and (workstation_split_dns_persistent_nta_remove_enabled | bool))
+    fail_msg: 'Choose either private NTA apply or rollback, never both'
+  tags: [dns]
+
+- name: workstation | Ensure scoped DNSSEC trust anchors directory
+  ansible.builtin.file:
+    path: /etc/dnssec-trust-anchors.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  when: workstation_split_dns_persistent_nta_enabled | bool
+  tags: [dns]
+
+# Negative anchor: an unsigned private DNS subtree under a public domain.
+# Do not edit /etc/resolv.conf, DNSSEC=yes, DoT, or public DNS trust anchors.
+# Keep all other .negative/.positive files intact.
+- name: workstation | Persist ONLY the private DNSSEC negative trust anchor
+  ansible.builtin.copy:
+    dest: /etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative
+    content: "{{ workstation_split_dns_domain }}\n"
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  when: workstation_split_dns_persistent_nta_enabled | bool
+  notify: workstation | Restart resolved after approved NTA change
+  tags: [dns]
+
+# The explicit rollback removes only our own file and preserves all other trust anchors.
+- name: workstation | Remove opt-in private DNSSEC negative trust anchor
+  ansible.builtin.file:
+    path: /etc/dnssec-trust-anchors.d/90-nabla-int-albandrieu.negative
+    state: absent
+  become: true
+  when: workstation_split_dns_persistent_nta_remove_enabled | bool
+  notify: workstation | Restart resolved after approved NTA change
+  tags: [dns]
