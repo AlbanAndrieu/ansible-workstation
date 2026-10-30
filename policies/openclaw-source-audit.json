@@ -1,0 +1,13 @@
+{
+  "schema": "workstation-openclaw-source-audit/v1",
+  "role": "source_only_until_truenas_cutover",
+  "source_host": "workstation",
+  "source_unit": "openclaw-gateway.service",
+  "expected_node_major": 24,
+  "expected_openclaw_cli_version": "2026.10.7",
+  "target_host": "truenas",
+  "target_repo": "AlbanAndrieu/nabla-openclaw",
+  "compose_repo": "AlbanAndrieu/nabla-compose",
+  "no_apply": true,
+  "never_manage_workstation_gateway_from_truenas": true
+}

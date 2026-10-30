@@ -1,0 +1,20 @@
+---
+# Source-only audit: no privilege escalation, no OpenClaw state writes.
+- name: Inspect the local Workstation source before TrueNAS cutover
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Read bounded OpenClaw source metadata
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/../scripts/audit-openclaw-source.py"
+      register: openclaw_source
+      changed_when: false
+      failed_when: openclaw_source.rc != 0
+    - name: Report only allowlisted source verdict
+      ansible.builtin.debug:
+        msg: "{{ openclaw_source.stdout | from_json }}"
+      when: openclaw_source.rc == 0
