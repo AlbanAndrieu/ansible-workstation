@@ -25,6 +25,10 @@
       - libpcsclite-dev
       - pkg-config
     yubikey_os_build_deps_enabled: false
+    # Installing the PAM module never enrolls users or edits any PAM policy.
+    yubikey_os_pam_tools_packages:
+      - libpam-u2f
+    yubikey_os_pam_tools_enabled: false
 
   tasks:
     - name: Inspect only the operating system distribution
@@ -53,7 +57,39 @@
       ansible.builtin.set_fact:
         yubikey_os_selected_packages: >-
           {{ yubikey_os_runtime_packages +
-             (yubikey_os_build_packages if (yubikey_os_build_deps_enabled | bool) else []) }}
+             (yubikey_os_build_packages if (yubikey_os_build_deps_enabled | bool) else []) +
+             (yubikey_os_pam_tools_packages if (yubikey_os_pam_tools_enabled | bool) else []) }}
+      no_log: true
+
+    - name: Verify availability in the already configured Ubuntu package sources
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/apt-cache
+          - show
+          - "{{ item }}"
+      loop: "{{ yubikey_os_selected_packages }}"
+      register: yubikey_os_repository_probes
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Prepare minimal package readiness flags in memory
+      ansible.builtin.set_fact:
+        yubikey_os_package_presence: >-
+          {{ yubikey_os_package_presence | default({}) | combine({
+             item: (item in ansible_facts.get('packages', {}))
+          }) }}
+      loop: "{{ yubikey_os_selected_packages }}"
+      no_log: true
+
+    - name: Prepare distribution candidate readiness flags in memory
+      ansible.builtin.set_fact:
+        yubikey_os_package_repository_available: >-
+          {{ yubikey_os_package_repository_available | default({}) | combine({
+             item.item: (item.rc == 0)
+          }) }}
+      loop: "{{ yubikey_os_repository_probes.results }}"
       no_log: true
 
     - name: Report only allowlisted YubiKey prerequisite package presence
@@ -61,15 +97,10 @@
         msg:
           schema: workstation-yubikey-os-prerequisites/v1
           mode: "{{ 'apply_requested' if yubikey_os_apply | bool else 'audit_only' }}"
-          package_presence: >-
-            {{ dict(yubikey_os_selected_packages | zip(
-              yubikey_os_selected_packages |
-              map('extract', ansible_facts.get('packages', {})) |
-              map('default', []) |
-              map('length') |
-              map('bool') |
-              list)) }}
+          package_presence: "{{ yubikey_os_package_presence }}"
+          ubuntu_repository_candidate: "{{ yubikey_os_package_repository_available }}"
           build_dependencies_selected: "{{ yubikey_os_build_deps_enabled | bool }}"
+          pam_tools_selected: "{{ yubikey_os_pam_tools_enabled | bool }}"
           hardware_accessed: false
           pam_configuration_changed: false
           limitations:
@@ -83,6 +114,14 @@
         that:
           - yubikey_os_apply_approved | bool
         fail_msg: "Apply denied: requires both yubikey_os_apply=true and yubikey_os_apply_approved=true."
+        quiet: true
+      when: yubikey_os_apply | bool
+
+    - name: Refuse an apply with an unavailable package
+      ansible.builtin.assert:
+        that:
+          - (yubikey_os_package_repository_available.values() | select('equalto', false) | list | length) == 0
+        fail_msg: "Apply denied: a selected package is unavailable from the already configured Ubuntu repositories."
         quiet: true
       when: yubikey_os_apply | bool
 
