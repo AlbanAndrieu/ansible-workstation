@@ -1,7 +1,7 @@
 # YubiKey sur Ubuntu — prérequis OS avec Ansible, sans PAM ni enrollment
 
 **Propriétaire :** `ansible-workstation` (paquets et services Ubuntu).
-**Statut : CODE ADDED / RUNTIME NOT VERIFIED — aucun paquet installé par la PR.**
+**Statut : ACCEPTED runtime pour l'audit seul — 30 octobre 2026 ; aucune installation APT ni mutation PAM/YubiKey.**
 **Audits/cryptographie matériels :** [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/scripts/workstation), sans copie de ses scripts.
 
 ## Pourquoi le bundle historique a été retiré
@@ -61,6 +61,37 @@ appareils. `age-plugin-yubikey` construit avec Cargo, les liens
 par ce playbook. L'ancien PPA Yubico et la version historique
 `libykpiv1` ne sont pas réintroduits. Aucune installation
 `yubikey-agent` ou `python3-ykman` redondante par défaut.
+
+## Preuve sur la workstation — 30 octobre 2026
+
+L'opérateur a synchronisé sa branche et exécuté les trois tâches :
+
+- `mise run test-offline` : **131 tests PASS**, 0 échec, 0 erreur.
+  Les refus intentionnels de CLI sensibles (`--ack-*`) sont des
+  contrats réussis, pas des installations refusées.
+- `mise run yubikey-os-syntax` : syntaxe Ansible **PASS**.
+- `mise run yubikey-os-audit` : `localhost ok=8 changed=0
+  unreachable=0 failed=0 skipped=3`, `mode=audit_only`.
+  `hardware_accessed=false`, `pam_configuration_changed=false`.
+  **Tous les 7 paquets runtime sont déjà installés**, et les 7
+  candidats des sources Ubuntu configurées sont disponibles :
+  `yubikey-manager`, `pcscd`, `libu2f-udev`,
+  `libfido2-1`, `opensc`, `gnupg`, `scdaemon`.
+
+**Décision :** aucun `apt apply` YubiKey nécessaire. La présence
+des paquets ne prouve pas les capacités des cartes, et l'installation
+des profils facultatifs (`libpam-u2f`, `libpcsclite-dev`,
+`pkg-config`) n'a pas été demandée.
+
+Après le succès de l'audit, `mise` affiche une alerte **distincte**
+sur des outils de développement manquants (`age`, `fnox`,
+`pre-commit`, `kustomize`, `plumber`, `yamllint`,
+`bitwarden`, `azure-cli`). Le `mise.toml` local ne déclare que
+`python`, `node` et `uv` dans `[tools]` : vérifier les autres
+configurations `mise` actives avant un `mise install` général.
+Cette alerte ne signifie **pas** une dépendance YubiKey manquante.
+`mise install` peut télécharger et installer des outils utilisateur
+mais ne provisionne ni PAM ni les paquets APT.
 
 ## Audit sans modification (par défaut)
 
