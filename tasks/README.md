@@ -39,7 +39,11 @@ Tasks are organized by **category** and loaded from `workstation.yml` in this or
 Le bundle historique `yubikey.yml` et les templates PAM orphelins ont été
 retirés du rôle général : aucun provisioning de token ni remplacement de
 `/etc/pam.d` ne doit se produire dans `workstation.yml`. Les cartes, OTP2,
-PIV, FIDO2, OpenPGP et age restent sous `nabla-compose`. Un éventuel rôle
-futur de prérequis OS ne pourra gérer que les paquets nécessaires et devra
-être explicitement activé. Voir [Option A](../docs/workstation-ownership-option-a.md)
-et [roadmap](../docs/roadmap-workstation.md).
+PIV, FIDO2, OpenPGP et age restent sous `nabla-compose`. Les prérequis OS sont maintenant restaurés dans un
+[playbook autonome](../playbooks/yubikey-os-prerequisites.yml) et non
+dans le rôle général. Ils sont **audités sans sudo par défaut** et une
+installation APT exige **deux confirmations explicites**. Aucun PPA,
+template PAM, accès matériel, enroll ou service systemd géré.
+Voir le [runbook](../docs/yubikey-os-prerequisites.md),
+[Option A](../docs/workstation-ownership-option-a.md)
+et la [roadmap](../docs/roadmap-workstation.md).
