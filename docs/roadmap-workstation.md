@@ -4,7 +4,7 @@
 
 | Priorité | Livrable | Gate de validation | Statut |
 | --- | --- | --- | --- |
-| P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | Code retiré en PR #16 ; 52/52 contrats locaux PASS le 27/10 ; aucun apply |
+| P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | **ACCEPTED** : ancien PPA + templates PAM retirés ; couverture des dépendances OS restaurée séparément en mode opt-in |
 | P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **ACCEPTED runtime** : 60/60, `ok=14 changed=0`, noyau AppArmor enabled, 3 timers actifs ; [preuves](audit-workstation.md) |
 | P0 | [Visibilité Docker/nftables/iptables sans privilèges](audit-workstation-network.md) | 8 tests ciblés, lecture locale, résultat `not_verified` si accès refusé, aucune donnée brute | **ACCEPTED runtime** : 68/68 tests, 3 sondes `access_denied`, forwarding IPv4/IPv6 activé, filtrage `not_verified` |
 | P0 | [Lecture privilégiée **optionnelle** des métadonnées réseau](audit-workstation-network.md) | Aucun script Python root ; commandes fixes `sudo -n`, données brutes non publiées | **ACCEPTED runtime** : 77/77 tests et 3 sondes `ok`, 79+10 règles filter et 151 nft ; politiques observées ACCEPT |
@@ -25,12 +25,14 @@
 | P1 | Restic : configuration chiffrée hors Git, sauvegarde /etc ciblée + état privé | `restic check` + restauration isolée réussie + copie indépendante | À faire |
 | P1 | Nettoyer `tasks/security.yml` et mises à jour unattended | Pas de `dpkg-reconfigure` non conditionné ni écrasement de config arbitraire | À faire |
 | P2 | Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement, aucun changement firmware sans consentement | À faire |
-| P2 | Rôle opt-in des **dépendances OS** YubiKey si besoin | Apt/pcsc uniquement, aucun PIN/PUK/PIV/FIDO2/PAM | À décider après couverture Compose |
+| P0 | [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA et inventaire des packages ; installation APT seulement sur double consentement, non importée du rôle général | **CODE ADDED / RUNTIME NOT VERIFIED** : 8 nouveaux contrats, 124 tests attendus ; aucun apply |
 | P2 | Pipeline audit → plan → apply + rétablissement éprouvé | Aucune modification système non déclarée ; rollback local testé | À faire |
 
 **Faits ne sont pas sauvegardes.** Les snapshots machine restent hors Git avec rétention ; Restic assure la conservation chiffrée et la restauration. Il faut conserver une copie indépendante de TrueNAS.
 
 **Déjà livré :** PR #13 fusionnée (mise/uv/Direnv, DNS opt-in, règles fail-safe), 49/49 contrats locaux PASS. Ces preuves ne démontrent pas le playbook d'installation complet.
+
+**YubiKey :** les 116 contrats offline déjà validés restent la preuve du commit précédent ; le nouveau playbook Ubuntu OS ajoute 8 contrats **non encore exécutés** (124 attendus). Voir le [runbook](yubikey-os-prerequisites.md) ; pas d'installation ni de mutation PAM/carte effectuée.
 
 **Pas de CI payante ni de fusion automatique.** Preuves du 27 octobre : audit système 60/60 ; réseau sans privilèges 68/68 ; lecture filtrage avec autorisation 77/77 et 3 sondes `ok` ; sockets 90/90, `ok=2 changed=0 failed=0`. IPv4/IPv6 forwarding actif, politiques de base ACCEPT. **Suivant :** rapprocher les **9 segments Docker TCP IPv4 wildcard** des services réellement autorisés, créer une allowlist privée, puis vérifier uniquement ces chemins depuis TrueNAS. Deux ports LAN (OpenClaw et SSH) ont déjà produit `refused` ; le reste du LAN est `not_verified`. Aucun observateur WAN disponible : WAN reste `not_verified` sans bloquer la suite. [Procédure](workstation-network-measurement.md). Les **116/116 contrats** sont validés sur la `.venv` ; le localhost **2/2** et la collecte Docker ont déjà réussi. Ne pas relancer ces vérifications sans raison. Les 95 tests du parseur et le relevé sans sudo sont désormais **validés**. Le comptage des verdicts Docker existe dans le code mais n'a pas été réexécuté avec l'audit privilégié. Les protections réseau effectives restent `not_verified`.
 
