@@ -70,8 +70,13 @@ def audit(root: Path) -> tuple[str, list[str]]:
         if lock.exists() or lock.is_symlink():
             issues.append("skills-lock.json: not a regular file")
         for name in EXPECTED:
-            if (root / ".agents/skills" / name).exists():
+            canonical = root / ".agents/skills" / name
+            if canonical.exists() or canonical.is_symlink():
                 issues.append(f"{name}: installed without skills-lock.json")
+            for prefix in ALIASES:
+                alias = root / prefix / name
+                if alias.exists() or alias.is_symlink():
+                    issues.append(f"{prefix}/{name}: alias without skills-lock.json")
         return "not_installed", issues
 
     try:
