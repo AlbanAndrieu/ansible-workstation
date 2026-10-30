@@ -57,11 +57,11 @@ class TestConfigurationAudit(unittest.TestCase):
     def test_user_unit_fragment_and_dropins_are_redacted(self):
         private = "/home/example/.config/systemd/user"
         output = (
-            "LoadState=loaded\\nActiveState=active\\nUnitFileState=enabled\\n"
-            f"FragmentPath={private}/openclaw-gateway.service\\n"
-            f"DropInPaths={private}/openclaw-gateway.service.d/override.conf\\n"
+            "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\n"
+            f"FragmentPath={private}/openclaw-gateway.service\n"
+            f"DropInPaths={private}/openclaw-gateway.service.d/override.conf\n"
         )
-        with patch.object(Path, "home", return_value=Path("/home/example")), \\
+        with patch.object(Path, "home", return_value=Path("/home/example")), \
              patch.object(audit, "run", return_value=(0, output)) as runner:
             result = audit.unit_status("openclaw-gateway.service", True)
         self.assertEqual(result["fragment_source"], "user_config")
@@ -76,7 +76,7 @@ class TestConfigurationAudit(unittest.TestCase):
 
     def test_system_unit_source_is_classified_without_raw_path(self):
         with patch.object(audit, "run", return_value=(
-            0, "FragmentPath=/etc/systemd/system/hide-mac.service\\nDropInPaths=\\n"
+            0, "FragmentPath=/etc/systemd/system/hide-mac.service\nDropInPaths=\n"
         )):
             status = audit.unit_status("hide-mac.service", False)
         self.assertEqual(status["fragment_source"], "etc")
