@@ -31,8 +31,10 @@ provenance before approving any skill update.
   `.claude/skills/<name>` and `.hermes/skills/<name>` resolve to
   `../../.agents/skills/<name>`;
   `skills/<name>` resolves to `../.agents/skills/<name>`.
-- If no skills are installed, no lockfile or managed skill links should exist.
-  The gate reports `not_installed` rather than inventing installed versions.
+- Both skills are pinned in this repository: a missing lockfile is a
+  **blocking drift**, including when the vendor directory is missing. A
+  fresh clone must contain the lockfile, canonical directories and all
+  six links. No implicit installation is attempted.
 
 Do not duplicate installed skill contents under the alias directories, and do
 not commit caches, personal settings, keys or `.env` files.
