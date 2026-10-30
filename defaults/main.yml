@@ -123,7 +123,8 @@ glances_enabled: true
 apache_create_vhosts: true
 webcam_enabled: true
 keepass2_enabled: true
-pam_enabled: true
+# Legacy PAM YubiKey handler removed; never opt in implicitly.
+pam_enabled: false
 variety_enabled: true
 plank_enabled: true
 android_enabled: true

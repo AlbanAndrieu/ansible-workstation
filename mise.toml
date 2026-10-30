@@ -41,8 +41,8 @@ description = "Explicitly repair pre-commit in this worktree's existing venv"
 run = "bash scripts/repair-pre-commit.sh"
 
 [tasks.test-offline]
-description = "Run static offline contracts (no network or Ansible apply)"
-run = "python3 -m unittest discover -s tests -p 'test_*contract.py' -v"
+description = "Run offline contracts only with verified project .venv (including PyYAML); no CI or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m unittest discover -s tests -p 'test_*contract.py' -v"
 
 [tasks.lint]
 description = "Run Ruff in the existing, verified project environment"
@@ -51,3 +51,55 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check tests
 [tasks.syntax]
 description = "Use only project Ansible for syntax checking"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook --syntax-check playbooks/workstation.yml"
+
+[tasks.audit-syntax]
+description = "Validate only the local read-only Ubuntu audit playbook syntax"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation.yml"
+
+[tasks.audit-workstation]
+description = "Explicit read-only Ubuntu audit; no sudo and no persistent snapshot"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml"
+ 
+[tasks.audit-network-syntax]
+description = "Verify the unprivileged network visibility playbook without running it"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation-network.yml"
+
+[tasks.audit-network]
+description = "Read only packet-filter visibility; no sudo or Docker socket"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-network.yml"
+
+[tasks.audit-network-privileged]
+description = "Explicit optional privileged READ ONLY firewall metadata; user Python stays unprivileged; no automatic authentication"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-network-privileged.py --ack-privileged-readonly"
+
+[tasks.audit-listeners-syntax]
+description = "Syntax-check the nonprivileged local TCP/UDP listener scope audit"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation-listeners.yml"
+
+[tasks.audit-listeners]
+description = "Observe anonymous TCP/UDP listener bind scope; no sudo or socket names"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation-listeners.yml"
+
+[tasks.measure-network-local]
+description = "Explicit bounded TCP local-loopback measurement from PRIVATE home allowlist (outside Git)"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/measure-workstation-reachability.py --observer local --allowlist \"$HOME/.config/workstation-audit/targets.json\" --confirm-connect"
+
+[tasks.measure-docker-publishing]
+description = "Explicit local Docker daemon metadata read; Docker socket can grant root-equivalent privileges"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/measure-workstation-docker-publishing.py --ack-docker-socket-read"
+
+[tasks.yubikey-os-syntax]
+description = "Validate OS-only YubiKey prerequisite playbook (no package changes)"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/yubikey-os-prerequisites.yml"
+
+[tasks.yubikey-os-audit]
+description = "Read-only Ubuntu YubiKey package readiness, no sudo/PAM/USB access"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/yubikey-os-prerequisites.yml"
+
+[tasks.audit-openclaw-source-syntax]
+description = "Syntax-check only the source-workstation OpenClaw read-only audit playbook"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-openclaw-source.yml"
+
+[tasks.audit-openclaw-source]
+description = "Audit OpenClaw source on Ubuntu; TrueNAS is destination, not managed here"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-openclaw-source.yml"

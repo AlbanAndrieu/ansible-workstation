@@ -15,7 +15,7 @@ Tasks are organized by **category** and loaded from `workstation.yml` in this or
 | 9 | **Web & containers** | Apache, WebDAV, python, plank, `container.yml`, studio |
 | 10 | **Apps & requirements** | Fonts, Eclipse JavaHL, Wine, X11, shellcheck |
 | 11 | **System tuning & removals** | `system_tuning.yml`, screensaver, `system_remove.yml` |
-| 12 | **Network, backup, misc** | VPN, network, backup, fun, variety, mobile, cpp, gnome, qt, gaming, dev, ai_tools, debug, optimization, php, services, yubikey |
+| 12 | **Network, backup, misc** | VPN, network, backup, fun, variety, mobile, cpp, gnome, qt, gaming, dev, ai_tools, debug, optimization, php, services (YubiKey retiré du rôle global) |
 
 ## Extracted task files (from former inline blocks in `workstation.yml`)
 
@@ -33,3 +33,17 @@ Tasks are organized by **category** and loaded from `workstation.yml` in this or
 - **Packages**: Use the `apt` module with `name`/`state` and `loop` for lists.
 - **Naming**: Task names use `category | Short description` (e.g. `git | Install SCM packages`).
 - **Toggles**: Behaviour is controlled by `*_enabled` variables in `defaults/main.yml`.
+
+## Frontière YubiKey/PAM — 27 octobre 2026
+
+Le bundle historique `yubikey.yml` et les templates PAM orphelins ont été
+retirés du rôle général : aucun provisioning de token ni remplacement de
+`/etc/pam.d` ne doit se produire dans `workstation.yml`. Les cartes, OTP2,
+PIV, FIDO2, OpenPGP et age restent sous `nabla-compose`. Les prérequis OS sont maintenant restaurés dans un
+[playbook autonome](../playbooks/yubikey-os-prerequisites.yml) et non
+dans le rôle général. Ils sont **audités sans sudo par défaut** et une
+installation APT exige **deux confirmations explicites**. Aucun PPA,
+template PAM, accès matériel, enroll ou service systemd géré.
+Voir le [runbook](../docs/yubikey-os-prerequisites.md),
+[Option A](../docs/workstation-ownership-option-a.md)
+et la [roadmap](../docs/roadmap-workstation.md).

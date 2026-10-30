@@ -1,0 +1,25 @@
+---
+# Observe only aggregate listen binding scopes, without revealing endpoints.
+- name: Audit local listening socket bind scope without changing the host
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  tasks:
+    - name: Count TCP and UDP listening bind scopes without exposing endpoints
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -B
+          - "{{ playbook_dir }}/../scripts/audit-workstation-listeners.py"
+          - --format
+          - json
+      register: audit_listener_result
+      changed_when: false
+      no_log: true
+
+    - name: Display allowlisted binding counts and visibility limitations
+      ansible.builtin.debug:
+        msg: "{{ audit_listener_result.stdout | from_json }}"
