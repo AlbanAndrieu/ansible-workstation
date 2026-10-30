@@ -30,7 +30,7 @@ ni de migration à lancer globalement. Utiliser les playbooks
 | Code de contrôle local OpenClaw, heartbeat et automations publiques | **ansible-workstation** *candidate* après parité | Runtime et base `~/.openclaw` restent locaux/privés |
 | Images/Compose OpenClaw sur TrueNAS, serveurs LiteLLM, DB, stockage, clés virtuelles, quotas | **nabla-compose** | Contrats inter-hôtes communs, pas de recopie de credentials |
 | Matériel YubiKey, PIV, OTP2, recovery age, escrow client | **futur nabla-yubikey** | Contrôles de sécurité et validation explicite |
-| Packages `pcscd`/`libfido2`/`ykman` | **ansible-workstation** (futur rôle opt-in) | Pas de PAM ni de mutation du token |
+| Packages `pcscd`/`libfido2`/`ykman` | **ansible-workstation** ([playbook OS autonome](../playbooks/yubikey-os-prerequisites.yml), opt-in) | Audit sans privilèges par défaut ; installation doublement autorisée, pas de PAM ni de mutation du token |
 | Serveur d'escrow TrueNAS, NFS ACL et datasets | **nabla-compose** | Le client YubiKey s'interface par sonde |
 
 Le nom `nabla-yubikey` est une **proposition** de repo absent à ce jour.
