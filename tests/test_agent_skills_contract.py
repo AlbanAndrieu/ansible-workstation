@@ -47,11 +47,14 @@ class AgentSkillsContract(unittest.TestCase):
             self.assertEqual(SKILLS.audit(root), ("installed", []))
             self.assertEqual(SKILLS.main(["--root", str(root)]), 0)
 
-    def test_empty_installation_is_explicit(self):
+    def test_empty_installation_fails_closed_for_pinned_skills(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             fixture(root, installed=False)
-            self.assertEqual(SKILLS.audit(root), ("not_installed", []))
+            state, issues = SKILLS.audit(root)
+            self.assertEqual(state, "missing_manifest")
+            self.assertTrue(any("required pinned skills manifest missing" in x for x in issues))
+            self.assertEqual(SKILLS.main(["--root", str(root)]), 2)
 
     def test_installed_without_lock_fails(self):
         with tempfile.TemporaryDirectory() as d:
