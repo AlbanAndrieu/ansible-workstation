@@ -60,6 +60,14 @@ class AgentSkillsContract(unittest.TestCase):
             (root / "skills-lock.json").unlink()
             self.assertTrue(any("without skills-lock" in x for x in SKILLS.audit(root)[1]))
 
+    def test_orphan_alias_without_lock_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            fixture(root)
+            (root / "skills-lock.json").unlink()
+            self.assertTrue(any("alias without skills-lock" in x
+                                for x in SKILLS.audit(root)[1]))
+
     def test_missing_and_wrong_aliases_fail(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
