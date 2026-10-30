@@ -87,3 +87,11 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B script
 [tasks.measure-docker-publishing]
 description = "Explicit local Docker daemon metadata read; Docker socket can grant root-equivalent privileges"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/measure-workstation-docker-publishing.py --ack-docker-socket-read"
+
+[tasks.yubikey-os-syntax]
+description = "Validate OS-only YubiKey prerequisite playbook (no package changes)"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/yubikey-os-prerequisites.yml"
+
+[tasks.yubikey-os-audit]
+description = "Read-only Ubuntu YubiKey package readiness, no sudo/PAM/USB access"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/yubikey-os-prerequisites.yml"
