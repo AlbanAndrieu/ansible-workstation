@@ -14,7 +14,8 @@ les interfaces. Avec `userland-proxy: false`, les ports publiés par Docker pass
 | ufw : entrée refusée sauf allowlist | Voir ci-dessous ; sortie et forwarding inchangés (Docker, libvirt) |
 
 Allowlist : depuis le LAN `172.17.0.0/24` apache 8082/8087, minidlna 8200 + SSDP 1900/udp,
-mDNS 5353/udp, rsyslog 514 tcp/udp, snmp_exporter 9116, Dropbox 17500 tcp/udp. Depuis TrueNAS
+mDNS 5353/udp, rsyslog 514 tcp/udp, snmp_exporter 9116, Synergy/Deskflow 24800 + service Synergy
+24802, Dropbox 17500 tcp/udp. Depuis TrueNAS
 seulement : LiteLLM 4000 (openrag, litellm, langflow de `nabla-compose`), ollama 11434, zabbix 10050.
 Depuis les bridges Docker locaux `172.16.0.0/16` : 4000 et 11434.
 
@@ -40,8 +41,8 @@ pas eu lieu : `sudo systemctl restart zabbix-agent2`.
 Second apply : **ufw actif** (`deny` en entrée et routé), allowlist en place, zabbix-agent2
 redémarré, sortie hôte et Docker vérifiées. D'anciennes règles ouvertes à tous étaient encore
 enregistrées : 8086, 2003, 22, 24800, 9000, **5432 (postgres en écoute)** et l'interface
-`cni0` (k3s retiré). Le playbook les supprime désormais ; **à rejouer** pour qu'elles
-disparaissent.
+`cni0` (k3s retiré). Le playbook les supprime désormais ; 24800 (Synergy, et Deskflow sur le même
+port) reste ouvert, mais seulement depuis le LAN. **À rejouer** pour qu'elles disparaissent.
 
 ## Durcissement OS : devsec.hardening.os_hardening
 
