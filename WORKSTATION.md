@@ -15,6 +15,7 @@ politique de sauvegarde chiffrée Restic.
 - [Fichiers /etc non par défaut : capture et restauration opt-in](docs/workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026)
 - [Durcissement réseau : ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS (opt-in)](docs/workstation-network-hardening.md)
 - [Durcissement OS : devsec os_hardening adapté au poste, simulation par défaut](docs/workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening)
+- [Restic : évaluation, sauvegarde chiffrée append-only sur TrueNAS + copie hors site](docs/restic-evaluation.md)
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
 - [Réparation de la toolchain utilisateur : mise, starship, direnv, OpenClaw](docs/user-toolchain-recovery.md)

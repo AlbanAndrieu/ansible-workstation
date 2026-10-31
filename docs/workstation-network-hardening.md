@@ -35,7 +35,13 @@ Premier apply (31 octobre 2026) : NFS serveur, rpcbind, Zabbix et Datadog appliq
 `ufw-init`. Le bloc « UFW AND DOCKER » de `/etc/ufw/after.rules` avait été inséré avant le `COMMIT`
 d'origine (deux `*filter` dans la même table). Le playbook ajoute ce `COMMIT` (copie de sauvegarde
 gardée) ; la version corrigée passe `iptables-restore --test`. Le redémarrage de zabbix-agent2 n'a
-pas eu lieu : `sudo systemctl restart zabbix-agent2`. **ufw RUNTIME NOT VERIFIED.**
+pas eu lieu : `sudo systemctl restart zabbix-agent2`.
+
+Second apply : **ufw actif** (`deny` en entrée et routé), allowlist en place, zabbix-agent2
+redémarré, sortie hôte et Docker vérifiées. D'anciennes règles ouvertes à tous étaient encore
+enregistrées : 8086, 2003, 22, 24800, 9000, **5432 (postgres en écoute)** et l'interface
+`cni0` (k3s retiré). Le playbook les supprime désormais ; **à rejouer** pour qu'elles
+disparaissent.
 
 ## Durcissement OS : devsec.hardening.os_hardening
 
