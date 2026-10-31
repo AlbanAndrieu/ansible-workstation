@@ -1,0 +1,16 @@
+app.drey.Damask
+com.bitwarden.desktop
+com.brave.Browser
+com.discordapp.Discord
+com.github.IsmaelMartinez.teams_for_linux
+com.github.dynobo.normcap
+com.google.Chrome
+com.ktechpit.whatsie
+com.redis.RedisInsight
+com.slack.Slack
+io.github.arunsivaramanneo.GPUViewer
+io.kinvolk.Headlamp
+org.bleachbit.BleachBit
+org.deskflow.deskflow
+org.gnome.Logs
+org.telegram.desktop

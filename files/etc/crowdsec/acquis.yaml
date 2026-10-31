@@ -1,0 +1,38 @@
+#Generated acquisition file - wizard.sh (service: apache2) / files : /var/log/apache2/error.log
+filenames:
+  - /var/log/apache2/error.log
+labels:
+  type: apache2
+---
+#Generated acquisition file - wizard.sh (service: smb) / files : 
+journalctl_filter:
+ - _SYSTEMD_UNIT=smb.service
+labels:
+  type: smb
+---
+#Generated acquisition file - wizard.sh (service: linux) / files : /var/log/syslog /var/log/kern.log
+filenames:
+  - /var/log/syslog
+  - /var/log/kern.log
+labels:
+  type: syslog
+---
+#Generated acquisition file - wizard.sh (service: apache2) / files : /var/log/apache2/error.log
+filenames:
+  - /var/log/apache2/error.log
+labels:
+  type: apache2
+---
+#Generated acquisition file - wizard.sh (service: smb) / files : 
+journalctl_filter:
+ - _SYSTEMD_UNIT=smb.service
+labels:
+  type: smb
+---
+#Generated acquisition file - wizard.sh (service: linux) / files : /var/log/syslog /var/log/kern.log
+filenames:
+  - /var/log/syslog
+  - /var/log/kern.log
+labels:
+  type: syslog
+---

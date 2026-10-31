@@ -1,0 +1,62 @@
+---
+# OS hardening with devsec.hardening.os_hardening, tuned for this desktop.
+# Every task runs in check mode unless harden_os_apply AND harden_os_apply_approved are true.
+# Even the simulation needs sudo (-K): the role reads root-only files.
+# Simulate: .venv/bin/ansible-playbook -i localhost, -c local playbooks/harden-os.yml -K --diff
+- name: Simulate or explicitly apply devsec OS hardening
+  hosts: localhost
+  connection: local
+  become: true
+  check_mode: "{{ not harden_os_write }}"
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    harden_os_apply: false
+    harden_os_apply_approved: false
+    harden_os_write: "{{ harden_os_apply | bool and harden_os_apply_approved | bool }}"
+    # PAM carries YubiKey and howdy: owned by nabla-yubikey, never by this role.
+    os_pam_enabled: false
+    # Single local user: no forced password expiry.
+    os_user_pw_ageing: false
+    # Deletes every user's .netrc without backup.
+    os_netrc_enabled: false
+    # ufw belongs to harden-network.yml.
+    ufw_manage_defaults: false
+    # hidepid=2 hides processes from polkit and GNOME tools.
+    hidepid_option: "0"
+    # Keep Docker/libvirt routing, VPN-friendly rp_filter, IPv6 SLAAC and SysRq as they are today.
+    sysctl_overwrite:
+      kernel.sysrq: 176
+      # 0 breaks the Chrome/Electron sandbox, flatpak and rootless podman.
+      kernel.unprivileged_userns_clone: 1
+      net.ipv4.ip_forward: 1
+      net.ipv6.conf.all.forwarding: 1
+      net.ipv4.conf.all.rp_filter: 2
+      net.ipv4.conf.default.rp_filter: 2
+      net.ipv6.conf.all.accept_ra: 1
+      net.ipv6.conf.default.accept_ra: 1
+      net.ipv6.conf.all.autoconf: 1
+      net.ipv6.conf.default.autoconf: 1
+      net.ipv6.conf.all.router_solicitations: -1
+      net.ipv6.conf.default.router_solicitations: -1
+      net.ipv6.conf.default.accept_ra_rtr_pref: 1
+      net.ipv6.conf.default.accept_ra_pinfo: 1
+      net.ipv6.conf.default.accept_ra_defrtr: 1
+      net.ipv6.conf.default.dad_transmits: 1
+      net.ipv6.conf.default.max_addresses: 16
+    # sshd is installed but unused: harden its config, keep the service off.
+    ssh_server_service_enabled: false
+    # Client config is the ssh_config.d drop-in (FIDO keys, agent): not rewritten.
+    ssh_client_hardening: false
+
+  pre_tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - harden_os_apply_approved | bool
+        fail_msg: "Apply denied: requires both harden_os_apply=true and harden_os_apply_approved=true."
+        quiet: true
+      when: harden_os_apply | bool
+
+  roles:
+    - devsec.hardening.os_hardening
+    - devsec.hardening.ssh_hardening

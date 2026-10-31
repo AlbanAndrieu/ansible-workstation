@@ -1,0 +1,61 @@
+{
+    "debug": false,
+    "default-address-pools": [
+        {
+            "base": "172.17.0.0/12",
+            "size": 24
+        }
+    ],
+    "default-shm-size": "1G",
+    "default-ulimits": {
+        "memlock": {
+            "hard": -1,
+            "name": "memlock",
+            "soft": -1
+        },
+        "stack": {
+            "hard": 67108864,
+            "name": "stack",
+            "soft": 67108864
+        }
+    },
+    "dns": [
+        "9.9.9.9",
+        "172.17.0.24"
+    ],
+    "exec-opts": [
+        "native.cgroupdriver=systemd"
+    ],
+    "experimental": false,
+    "features": {
+        "buildkit": true,
+        "containerd-snapshotter": true
+    },
+    "builder": {
+	 	"gc": {
+			"enabled": true,
+			"defaultKeepStorage": "30GB"
+	 	}
+	},
+    "icc": true,
+    "insecure-registries": [
+        "localhost:32000"
+    ],
+    "ip-forward": true,
+    "ip6tables": true,
+    "iptables": true,
+    "live-restore": true,
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-file": "3",
+        "max-size": "100m"
+    },
+    "no-new-privileges": true,
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    },
+    "userland-proxy": false
+}

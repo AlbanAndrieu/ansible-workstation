@@ -20,10 +20,13 @@
 | P0 | Accessibilité WAN **facultative** en l'absence d'observateur extérieur | Téléphone en données cellulaires pour HTTP(S) autorisé, ou origine externe contrôlée ; vérifications NAT/IPv6/Cloudflare en attendant | **DIFFÉRÉ / WAN NOT VERIFIED** : aucun autre ordinateur disponible hors LAN ; ne bloque pas P0 LAN |
 | P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
 | P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
-| P1 | Comparer état observé et politique `policies/home-desktop.yml` | Drift classé attendu/inconnu/non conforme, sans secrets | À faire |
+| P1 | [Comparer état observé et politique `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Drift classé attendu/inconnu/non conforme, sans secrets | **CODE ADDED / RUNTIME NOT VERIFIED** : chemins `/etc`, unités systemd et DNS `eno1` ; sysctl et montages restent dans `audit-workstation.yml`, sans comparaison |
 | P1 | Profil minimal des paquets/services opt-in ; retirer vieilles distributions | `--check` non destructif, tasks idempotentes, rollback | À faire |
 | P1 | Restic : configuration chiffrée hors Git, sauvegarde /etc ciblée + état privé | `restic check` + restauration isolée réussie + copie indépendante | À faire |
 | P1 | Nettoyer `tasks/security.yml` et mises à jour unattended | Pas de `dpkg-reconfigure` non conditionné ni écrasement de config arbitraire | À faire |
+| P1 | [Capture des fichiers /etc non par défaut et des paquets](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets expurgés, restauration en check par défaut, double approbation | **CODE ADDED** : restauration jamais appliquée |
+| P1 | [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **PARTIEL** : NFS/rpcbind/Zabbix/Datadog appliqués ; ufw bloqué par `after.rules`, corrigé, **à rejouer** |
+| P1 | [devsec os_hardening + ssh_hardening adaptés au poste](workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening) | Simulation `--check`, revue du diff, apply doublement approuvé | **SIMULATION OK** : `ok=127 changed=37 failed=0` ; aucun apply |
 | P2 | Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement, aucun changement firmware sans consentement | À faire |
 | P0 | [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA, package_facts et candidats APT ; installation doublement autorisée mais non exécutée | **ACCEPTED runtime (audit seul)** : 131/131 PASS, syntaxe PASS, `ok=8 changed=0 failed=0`, **7/7 paquets présents** ; aucun apply |
 | P2 | Pipeline audit → plan → apply + rétablissement éprouvé | Aucune modification système non déclarée ; rollback local testé | À faire |
@@ -41,3 +44,34 @@
 
 | P1 | [OpenClaw : audit de la Workstation source, cible TrueNAS](openclaw-workstation-to-truenas.md) | Contrats offline, syntaxe Ansible, aucune mutation, état CLI/unit sans secrets | **CODE ADDED / RUNTIME NOT VERIFIED** ; Gateway cible géré par `nabla-openclaw`, pas Ansible |
 | P2 | Découpler les scripts OpenClaw/TrueNAS | Définir API de sonde entre `nabla-openclaw` et `nabla-compose`, wrappers temporaires | **À FAIRE** après image/dataset/modèles validés |
+
+## 30 octobre 2026 — skills Ansible et acceptation DNS
+
+- **Skills** : recette `mise run agent-skills-check` et alias
+  `just agent-skills-check`, script de politique et tests hermétiques.
+  Vérifie source déclarée, schéma et `computedHash` (format seulement),
+  source canonique, liens Claude/Hermes et priorité des règles Ubuntu.
+  **ACCEPTED on operator checkout (earlier HEAD): 11/11 PASS**,
+  `installation=installed`, `status=pass` pour les deux skills.
+  Les fichiers vendor et `skills-lock.json` sont désormais commités
+  sur la PR #17 ; les six liens symboliques sont versionnés. Le
+  contrôle `missing_manifest` fail-closed et la dernière extension
+  de l'audit systemd **doivent encore être rejoués sur le HEAD courant**.
+- **Pre-commit** : les hooks de formatage/lint n'altèrent plus
+  `.agents/skills/`; les contrôles de secrets restent actifs, avec
+  une exception `detect-private-key` pour le scanner de signatures
+  `ansible-validator/scripts/scan_secrets.sh`. Ne pas exclure la
+  totalité du répertoire des scanners.
+- **DNS** : preuve opérateur du 30 octobre : `resolvectl dns eno1`
+  affiche `172.17.0.1`, `resolvectl domain eno1` affiche
+  `~int.albandrieu.com`; `dig @172.17.0.1` et `getent ahostsv4`
+  résolvent `sample.int.albandrieu.com` vers `172.17.0.24`.
+  Cela ne valide pas le DNS hors LAN ni la protection effective DNSSEC.
+- **OpenClaw** : Gateway `systemd --user` actif/activé et CLI Node
+  24/OpenClaw 2026.10.7 observées ; `ExecStart`, HTTP readiness et
+  accès aux modèles restent **NOT VERIFIED**. L'avertissement Ansible
+  Python Homebrew 3.14 est corrigé dans le code du playbook via
+  `ansible_python_interpreter` mais pas encore revalidé sur la station.
+- **Suite** : valider les tests des skills, inspecter les diffs tiers
+  et réaliser une comparaison expurgée des `ExecStart` effectifs
+  avant toute promotion de template ou bascule du Gateway.

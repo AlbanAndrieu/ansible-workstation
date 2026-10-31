@@ -59,7 +59,7 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-workstation]
 description = "Explicit read-only Ubuntu audit; no sudo and no persistent snapshot"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-workstation.yml"
- 
+
 [tasks.audit-network-syntax]
 description = "Verify the unprivileged network visibility playbook without running it"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/audit-workstation-network.yml"
@@ -103,3 +103,43 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.audit-openclaw-source]
 description = "Audit OpenClaw source on Ubuntu; TrueNAS is destination, not managed here"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/audit-openclaw-source.yml"
+
+[tasks.audit-configuration]
+description = "Read-only redacted /etc presence, DNS link and systemd unit status audit; no sudo or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-configuration.py --json"
+
+[tasks.capture-etc]
+description = "Copy /etc files listed in files/etc-manifest.txt into files/etc with secrets redacted; no sudo"
+run = "bash scripts/capture-etc.sh"
+
+[tasks.restore-etc-check]
+description = "Check-only: which captured /etc files differ from this host; no sudo, no diff output"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-etc.yml"
+
+[tasks.capture-packages]
+description = "Write non-default APT/snap/flatpak selections into files/packages and copy referenced keyrings; no sudo"
+run = "bash scripts/capture-packages.sh"
+
+[tasks.restore-packages-check]
+description = "Check-only: count missing or unavailable captured packages; no sudo, no install"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-packages.yml"
+
+[tasks.harden-network-check]
+description = "Check-only: print the ufw allowlist and service clean-up plan; no sudo, no change"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/harden-network.yml"
+
+[tasks.harden-os-check]
+description = "Check mode only: devsec os_hardening with workstation overrides; asks for sudo, changes nothing"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/harden-os.yml -K --diff"
+
+[tasks.agent-skills-check]
+description = "Offline Ansible skill precedence, provenance and symlink gate; only project Python, no network or apply"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m unittest tests/test_agent_skills_contract.py -v && .venv/bin/python -B scripts/check-agent-skills.py"
+
+[tasks.toolchain-check]
+description = "Read-only diagnosis of user mise tools, project runtimes and the OpenClaw user gateway; no install"
+run = "bash scripts/repair-user-toolchain.sh check"
+
+[tasks.toolchain-repair]
+description = "Explicit user repair: mise install, pinned OpenClaw with npm script allowlist, gateway restart; no sudo"
+run = "bash scripts/repair-user-toolchain.sh apply"

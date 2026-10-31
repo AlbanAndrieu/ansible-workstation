@@ -1,0 +1,13 @@
+[Unit]
+Description=SNMP Exporter
+After=network-online.target
+
+# This assumes you are running snmp_exporter under the user "snmp_exporter"
+
+[Service]
+User=snmp_exporter
+Restart=on-failure
+ExecStart=/usr/bin/snmp_exporter --config.file=/etc/snmp_exporter/snmp.yaml
+
+[Install]
+WantedBy=multi-user.target

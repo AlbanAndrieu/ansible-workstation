@@ -1,0 +1,112 @@
+---
+# Reinstall the non-default package selection captured in files/packages/.
+# Run after playbooks/restore-etc.yml so APT sources and configs are already in place.
+# Check-only by default. Installing needs packages_restore_apply AND packages_restore_apply_approved.
+- name: Check or explicitly reinstall captured packages
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    packages_restore_apply: false
+    packages_restore_apply_approved: false
+    packages_restore_src: "{{ playbook_dir | dirname }}/files"
+    packages_restore_write: "{{ packages_restore_apply | bool and packages_restore_apply_approved | bool }}"
+    packages_restore_apt: "{{ lookup('ansible.builtin.file', packages_restore_src + '/packages/apt.txt').splitlines() }}"
+    packages_restore_snap: "{{ lookup('ansible.builtin.file', packages_restore_src + '/packages/snap.txt').splitlines() }}"
+    packages_restore_snap_classic: "{{ lookup('ansible.builtin.file', packages_restore_src + '/packages/snap-classic.txt').splitlines() }}"
+    packages_restore_flatpak: "{{ lookup('ansible.builtin.file', packages_restore_src + '/packages/flatpak.txt').splitlines() }}"
+
+  tasks:
+    - name: Refuse an install without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - packages_restore_apply_approved | bool
+        fail_msg: "Apply denied: requires both packages_restore_apply=true and packages_restore_apply_approved=true."
+        quiet: true
+      when: packages_restore_apply | bool
+
+    - name: Install the APT keyrings referenced by the restored sources
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /usr/share/keyrings/
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ query('ansible.builtin.fileglob', packages_restore_src + '/keyrings/*') }}"
+      become: true
+      when: packages_restore_write
+
+    - name: Refresh the APT cache with the restored sources
+      ansible.builtin.apt:
+        update_cache: true
+      become: true
+      when: packages_restore_write
+
+    - name: Read installed packages without changes
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: List package names the configured APT sources can provide
+      ansible.builtin.command:
+        argv: [/usr/bin/apt-cache, --no-generate, pkgnames]
+      register: packages_restore_available
+      changed_when: false
+      check_mode: false
+
+    - name: Split the APT selection into missing and unavailable
+      ansible.builtin.set_fact:
+        packages_restore_missing: "{{ packages_restore_apt | reject('in', ansible_facts.packages) | list }}"
+        packages_restore_unavailable: >-
+          {{ packages_restore_apt | reject('in', ansible_facts.packages)
+             | reject('in', packages_restore_available.stdout_lines) | list }}
+
+    - name: Install missing APT packages, keeping the restored config files
+      ansible.builtin.apt:
+        name: "{{ packages_restore_missing | difference(packages_restore_unavailable) }}"
+        state: present
+        dpkg_options: force-confold,force-confdef
+      become: true
+      when:
+        - packages_restore_write
+        - packages_restore_missing | difference(packages_restore_unavailable) | length > 0
+
+    - name: Install snaps
+      community.general.snap:
+        name: "{{ packages_restore_snap }}"
+      become: true
+      when: packages_restore_write and packages_restore_snap | length > 0
+
+    - name: Install classic snaps
+      community.general.snap:
+        name: "{{ packages_restore_snap_classic }}"
+        classic: true
+      become: true
+      when: packages_restore_write and packages_restore_snap_classic | length > 0
+
+    - name: Add the Flathub remote
+      community.general.flatpak_remote:
+        name: flathub
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        state: present
+      become: true
+      when: packages_restore_write
+
+    - name: Install flatpaks from Flathub
+      community.general.flatpak:
+        name: "{{ packages_restore_flatpak }}"
+        remote: flathub
+      become: true
+      when: packages_restore_write and packages_restore_flatpak | length > 0
+
+    - name: Report the package restore state
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if packages_restore_write else 'check_only' }}"
+          apt_selected: "{{ packages_restore_apt | length }}"
+          apt_missing: "{{ packages_restore_missing | length }}"
+          apt_unavailable_skipped: "{{ packages_restore_unavailable }}"
+          snaps: "{{ packages_restore_snap + packages_restore_snap_classic }}"
+          flatpaks: "{{ packages_restore_flatpak | length }}"
+          manual: "files/packages/apt-no-repo.txt: vendor repository to re-add first (docker-ce, cloudflared, mise...)"

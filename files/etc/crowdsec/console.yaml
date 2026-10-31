@@ -1,0 +1,5 @@
+share_manual_decisions: false
+share_tainted: true
+share_custom: true
+console_management: true
+share_context: false
