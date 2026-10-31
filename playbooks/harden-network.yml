@@ -51,6 +51,15 @@
         port: "9116"
         proto: tcp
         comment: snmp_exporter
+      # Synergy and Deskflow share 24800; synergy-service also listens on 24802.
+      - from: "{{ harden_lan }}"
+        port: "24800"
+        proto: tcp
+        comment: synergy and deskflow
+      - from: "{{ harden_lan }}"
+        port: "24802"
+        proto: tcp
+        comment: synergy service
       - from: "{{ harden_lan }}"
         port: "17500"
         proto: tcp
@@ -81,6 +90,7 @@
         proto: tcp
         comment: ollama from local containers
     # Pre-existing open-to-anywhere rules found when ufw was first enabled (31 Oct 2026).
+    # 24800 stays reachable, but only from the LAN (see harden_rules).
     harden_legacy_rules:
       - port: "8086"
         proto: tcp
