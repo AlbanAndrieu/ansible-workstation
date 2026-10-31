@@ -47,6 +47,7 @@ SYSTEM_UNITS = (
     "hide-mac.service", "conky.service", "maj0.service",
 )
 ALLOWED_SYSTEMD_KEYS = ("LoadState", "ActiveState", "UnitFileState")
+METADATA_SYSTEMD_KEYS = ("FragmentPath", "DropInPaths")
 PRIVATE_DOMAIN = "~int.albandrieu.com"
 EXPECTED_DNS = "172.17.0.1"
 
@@ -77,18 +78,52 @@ def inventory(root: Path) -> dict[str, str]:
     return result
 
 
+def _source_category(fragment: str, user: bool) -> str:
+    """Allowlist source *categories*, not paths or systemd Environment values."""
+    if not fragment or "\n" in fragment or "\r" in fragment:
+        return "unknown"
+    if user and fragment.startswith(str(Path.home() / ".config/systemd/user") + "/"):
+        return "user_config"
+    prefixes = (
+        ("/etc/systemd/user/" if user else "/etc/systemd/system/", "etc"),
+        ("/run/systemd/user/" if user else "/run/systemd/system/", "runtime"),
+        ("/usr/lib/systemd/user/" if user else "/usr/lib/systemd/system/", "vendor"),
+        ("/lib/systemd/user/" if user else "/lib/systemd/system/", "vendor"),
+    )
+    for prefix, category in prefixes:
+        if fragment.startswith(prefix):
+            return category
+    return "other_review_required"
+
+
 def unit_status(name: str, user: bool) -> dict[str, str]:
+    # Never request ExecStart, Environment or EnvironmentFile.
     argv = ["systemctl"] + (["--user"] if user else []) + ["show", name]
-    for key in ALLOWED_SYSTEMD_KEYS:
+    for key in ALLOWED_SYSTEMD_KEYS + METADATA_SYSTEMD_KEYS:
         argv += ["-p", key]
     rc, output = run(argv)
-    fields = {}
+    fields: dict[str, str] = {}
     if rc == 0:
         for line in output.splitlines():
             key, sep, value = line.partition("=")
-            if sep and key in ALLOWED_SYSTEMD_KEYS and re.fullmatch(r"[a-z-]{1,40}", value):
+            if not sep or key not in ALLOWED_SYSTEMD_KEYS + METADATA_SYSTEMD_KEYS:
+                continue
+            if key in ALLOWED_SYSTEMD_KEYS:
+                if re.fullmatch(r"[a-z-]{1,40}", value):
+                    fields[key] = value
+            else:
+                # Values are kept in memory only, never returned to the caller.
                 fields[key] = value
-    return {key: fields.get(key, "unknown") for key in ALLOWED_SYSTEMD_KEYS}
+    result = {key: fields.get(key, "unknown") for key in ALLOWED_SYSTEMD_KEYS}
+    result["fragment_source"] = (
+        _source_category(fields.get("FragmentPath", ""), user) if rc == 0 else "unknown"
+    )
+    result["dropins"] = (
+        ("present_review_required" if fields["DropInPaths"] else "none")
+        if rc == 0 and "DropInPaths" in fields else "unknown"
+    )
+    result["effective_execstart_alignment"] = "not_verified"
+    return result
 
 
 def audit_dns(interface: str) -> dict[str, object]:

@@ -77,7 +77,10 @@ def audit(root: Path) -> tuple[str, list[str]]:
                 alias = root / prefix / name
                 if alias.exists() or alias.is_symlink():
                     issues.append(f"{prefix}/{name}: alias without skills-lock.json")
-        return "not_installed", issues
+        # Both skills are pinned and committed in this repository.
+        # A clone without the manifest is drift, not a healthy empty install.
+        issues.append("skills-lock.json: required pinned skills manifest missing")
+        return "missing_manifest", issues
 
     try:
         manifest = json.loads(lock.read_text(encoding="utf-8"))

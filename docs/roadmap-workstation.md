@@ -48,9 +48,12 @@
   `just agent-skills-check`, script de politique et tests hermétiques.
   Vérifie source déclarée, schéma et `computedHash` (format seulement),
   source canonique, liens Claude/Hermes et priorité des règles Ubuntu.
-  **CODE ADDED / LOCAL GATE NOT VERIFIED** : aucun test dans le checkout
-  de l'opérateur au nouveau HEAD. Les fichiers vendored et
-  `skills-lock.json` ne sont pas encore commités sur la PR #17 distante.
+  **ACCEPTED on operator checkout (earlier HEAD): 11/11 PASS**,
+  `installation=installed`, `status=pass` pour les deux skills.
+  Les fichiers vendor et `skills-lock.json` sont désormais commités
+  sur la PR #17 ; les six liens symboliques sont versionnés. Le
+  contrôle `missing_manifest` fail-closed et la dernière extension
+  de l'audit systemd **doivent encore être rejoués sur le HEAD courant**.
 - **Pre-commit** : les hooks de formatage/lint n'altèrent plus
   `.agents/skills/`; les contrôles de secrets restent actifs, avec
   une exception `detect-private-key` pour le scanner de signatures
