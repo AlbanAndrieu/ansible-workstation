@@ -37,6 +37,30 @@ credentials crowdsec, etc.
 
 Rétention proposée : 7 quotidiens, 4 hebdomadaires, 12 mensuels.
 
+## Plan retenu (31 octobre 2026)
+
+L'opérateur a choisi le dépôt **`/media/backup/workstation`** (dataset `cpool/backup`, NFSv4.2,
+2,2 To libres). Le partage applique `root_squash` : root ne peut pas y écrire, `albandrieu` si.
+
+- **Exécution** : service systemd système `restic-backup.service` avec `User=albandrieu` et
+  `AmbientCapabilities=CAP_DAC_READ_SEARCH` (méthode recommandée par Restic) : lecture de tout
+  `/etc` sans être root, écriture sur NFS sous l'identité autorisée.
+- **Planification** : `restic-backup.timer` avec `OnCalendar=daily`, `RandomizedDelaySec=1h`
+  et `Persistent=true` (rattrape une exécution manquée si la machine était éteinte). Pas de cron :
+  le timer donne journald, l'état d'échec et les dépendances (`RequiresMountsFor=/media/backup`).
+  Après la sauvegarde : `forget --keep-daily 7 --keep-weekly 4 --keep-monthly 12 --prune`.
+  `restic-check.timer` hebdomadaire : `restic check --read-data-subset=5%`.
+- **Alerte** :
+  - en cas de succès, le service écrit l'horodatage dans `/var/lib/restic/last-success` ;
+  - `zabbix-agent2` expose son âge (`UserParameter=restic.last_success_age`) ;
+  - le Zabbix de TrueNAS déclenche une alerte au-delà de **26 h**, ce qui couvre un échec, un
+    timer arrêté, un montage NFS absent ou une machine éteinte : c'est un *dead man's switch* ;
+  - `OnFailure=` envoie en plus une notification de bureau immédiate.
+- **Mot de passe** : `LoadCredentialEncrypted=` (`systemd-creds`, lié au TPM), copie hors machine.
+- **Limite connue** : sur NFS, la workstation peut effacer ses propres snapshots (pas d'append-only).
+  À compenser par des **snapshots ZFS** du dataset côté TrueNAS, que la workstation ne peut pas
+  supprimer, en attendant `rest-server --append-only`.
+
 ## Gate d'acceptation (roadmap P1)
 
 `restic check --read-data-subset=5%` OK, **restauration de test** d'un échantillon dans un
