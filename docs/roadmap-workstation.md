@@ -24,6 +24,9 @@
 | P1 | Profil minimal des paquets/services opt-in ; retirer vieilles distributions | `--check` non destructif, tasks idempotentes, rollback | À faire |
 | P1 | Restic : configuration chiffrée hors Git, sauvegarde /etc ciblée + état privé | `restic check` + restauration isolée réussie + copie indépendante | À faire |
 | P1 | Nettoyer `tasks/security.yml` et mises à jour unattended | Pas de `dpkg-reconfigure` non conditionné ni écrasement de config arbitraire | À faire |
+| P1 | [Capture des fichiers /etc non par défaut et des paquets](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets expurgés, restauration en check par défaut, double approbation | **CODE ADDED** : restauration jamais appliquée |
+| P1 | [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **PARTIEL** : NFS/rpcbind/Zabbix/Datadog appliqués ; ufw bloqué par `after.rules`, corrigé, **à rejouer** |
+| P1 | [devsec os_hardening + ssh_hardening adaptés au poste](workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening) | Simulation `--check`, revue du diff, apply doublement approuvé | **SIMULATION OK** : `ok=127 changed=37 failed=0` ; aucun apply |
 | P2 | Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement, aucun changement firmware sans consentement | À faire |
 | P0 | [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA, package_facts et candidats APT ; installation doublement autorisée mais non exécutée | **ACCEPTED runtime (audit seul)** : 131/131 PASS, syntaxe PASS, `ok=8 changed=0 failed=0`, **7/7 paquets présents** ; aucun apply |
 | P2 | Pipeline audit → plan → apply + rétablissement éprouvé | Aucune modification système non déclarée ; rollback local testé | À faire |

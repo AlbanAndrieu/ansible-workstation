@@ -43,6 +43,10 @@
       net.ipv6.conf.default.accept_ra_defrtr: 1
       net.ipv6.conf.default.dad_transmits: 1
       net.ipv6.conf.default.max_addresses: 16
+    # sshd is installed but unused: harden its config, keep the service off.
+    ssh_server_service_enabled: false
+    # Client config is the ssh_config.d drop-in (FIDO keys, agent): not rewritten.
+    ssh_client_hardening: false
 
   pre_tasks:
     - name: Refuse an apply without a second explicit approval
@@ -55,3 +59,4 @@
 
   roles:
     - devsec.hardening.os_hardening
+    - devsec.hardening.ssh_hardening

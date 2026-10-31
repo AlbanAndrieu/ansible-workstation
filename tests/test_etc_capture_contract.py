@@ -145,6 +145,8 @@ class OsHardeningContract(unittest.TestCase):
         self.assertIs(v["os_netrc_enabled"], False)
         self.assertIs(v["ufw_manage_defaults"], False)
         self.assertEqual(v["sysctl_overwrite"]["net.ipv4.ip_forward"], 1)
+        self.assertIs(v["ssh_server_service_enabled"], False)
+        self.assertIs(v["ssh_client_hardening"], False)
 
     def test_collection_is_pinned(self):
         req = yaml.safe_load((ROOT / "requirements.yml").read_text())

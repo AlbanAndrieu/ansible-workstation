@@ -52,13 +52,17 @@ vrais. Même la simulation demande sudo. Réglages adaptés à la workstation :
 | `hidepid` sur `/proc` | `0` | `2` masque les processus à polkit et GNOME |
 | `ip_forward`, `rp_filter`, IPv6 RA/SLAAC, SysRq | valeurs actuelles | Docker, libvirt, VPN, IPv6 |
 | `kernel.unprivileged_userns_clone` | `1` | sandbox Chrome/Electron, flatpak, podman rootless |
+| `ssh_hardening` : service sshd | désactivé | openssh-server installé mais inutilisé ; config durcie pour plus tard |
+| `ssh_hardening` : client | non géré | `ssh_config.d/99-workstation.conf`, clés FIDO, agent |
 
 Simulation du 31 octobre 2026 : `ok=89 changed=31 failed=0`. Changements prévus à relire avant
 apply : auditd installé et configuré, `login.defs` réécrit (UMASK 027), limites core dump, `su` en
 0750, `/dev`, `/dev/shm` et `/run` remontés `nosuid`/`noexec` dans `fstab`, modules de systèmes de
 fichiers inutiles bloqués, bit suid retiré de `ssh-keysign`, `pppd`, `lockfile` et `dotlockfile`,
 shell retiré aux comptes système, dossiers home en 0750, paquet `ypserv` retiré (service inactif
-et désactivé ; la config NIS de `/var/yp` reste).
+et désactivé ; la config NIS de `/var/yp` reste). Avec `ssh_hardening` : `ok=127 changed=37
+failed=0` ; `sshd_config` réécrit (clé publique seule, pas de root), clé hôte RSA régénérée en
+4096 bits, activation par socket et MOTD dynamique coupés, sshd laissé désactivé.
 
 ```bash
 mise run harden-os-check   # simulation --diff, sudo demandé
