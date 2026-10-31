@@ -29,7 +29,13 @@ sudo ufw status verbose          # vérification ; retour arrière : sudo ufw di
 **Non couvert :** ports Docker publiés (le conteneur `telegraf` publie `0.0.0.0:8126`, pas Datadog) ;
 postgres 5432, redis 6379 et les ports inconnus restent ouverts sur l'hôte mais deviennent
 inaccessibles depuis le LAN une fois ufw actif. Le serveur Zabbix de TrueNAS doit connaître l'hôte
-`albandrieu`. **RUNTIME NOT VERIFIED** : aucun apply exécuté.
+`albandrieu`.
+
+Premier apply (31 octobre 2026) : NFS serveur, rpcbind, Zabbix et Datadog appliqués, puis échec de
+`ufw-init`. Le bloc « UFW AND DOCKER » de `/etc/ufw/after.rules` avait été inséré avant le `COMMIT`
+d'origine (deux `*filter` dans la même table). Le playbook ajoute ce `COMMIT` (copie de sauvegarde
+gardée) ; la version corrigée passe `iptables-restore --test`. Le redémarrage de zabbix-agent2 n'a
+pas eu lieu : `sudo systemctl restart zabbix-agent2`. **ufw RUNTIME NOT VERIFIED.**
 
 ## Durcissement OS : devsec.hardening.os_hardening
 

@@ -8,6 +8,8 @@
   connection: local
   gather_facts: false
   become: false
+  # A later ufw failure must not skip the zabbix restart.
+  force_handlers: true
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
     harden_apply: false
@@ -130,6 +132,16 @@
       ansible.builtin.file:
         path: /etc/datadog-agent-2025-06-20
         state: absent
+      become: true
+      when: harden_write
+
+    # ufw-docker was inserted before the stock COMMIT: two *filter in one table, ufw-init fails.
+    - name: Close the stock filter table before the ufw-docker block
+      ansible.builtin.replace:
+        path: /etc/ufw/after.rules
+        regexp: '(?<!COMMIT\n)\n# BEGIN UFW AND DOCKER'
+        replace: "\nCOMMIT\n\n# BEGIN UFW AND DOCKER"
+        backup: true
       become: true
       when: harden_write
 
