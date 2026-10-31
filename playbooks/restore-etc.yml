@@ -21,6 +21,8 @@
       - nvidia-persistence.service
       - ollama.service
       - snmp_exporter.service
+    # target_dir of /etc/motion/motion.conf; the motion user is not in its owning group.
+    etc_restore_motion_target_dir: /home/albandrieu/Dropbox/motion
     etc_restore_write: "{{ etc_restore_apply | bool and etc_restore_apply_approved | bool }}"
 
   tasks:
@@ -91,6 +93,36 @@
       when:
         - etc_restore_write
         - ('systemd/system/' + item) not in (etc_restore_manual | default([]))
+
+    - name: Create the motion target directory
+      ansible.builtin.file:
+        path: "{{ etc_restore_motion_target_dir }}"
+        state: directory
+        owner: albandrieu
+        mode: "0775"
+      become: true
+      when: etc_restore_write
+
+    # Without it motion fails with "Permission denied" on its first event and stops capturing.
+    - name: Let motion write there, and keep the owner's access to what it creates
+      ansible.posix.acl:
+        path: "{{ etc_restore_motion_target_dir }}"
+        etype: user
+        entity: "{{ item.entity }}"
+        permissions: rwx
+        default: "{{ item.default }}"
+        state: present
+      loop:
+        - entity: motion
+          default: false
+        - entity: motion
+          default: true
+        - entity: albandrieu
+          default: true
+      loop_control:
+        label: "{{ item.entity }} default={{ item.default }}"
+      become: true
+      when: etc_restore_write
 
     - name: Report what changed and what is left to do by hand
       ansible.builtin.debug:
