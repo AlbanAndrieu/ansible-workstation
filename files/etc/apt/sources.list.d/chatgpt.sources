@@ -1,0 +1,9 @@
+### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+# Remove it to opt out of automatic package updates.
+X-Repolib-Name: ChatGPT
+Types: deb
+URIs: https://persistent.oaistatic.com/codex-app-prod/linux/deb
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/chatgpt-archive-keyring.gpg

@@ -1,0 +1,4 @@
+# Delta from rkhunter default /etc/rkhunter.conf (read automatically after it).
+ALLOWHIDDENDIR=/etc/.java
+ALLOWHIDDENDIR=/etc/.git
+ALLOWHIDDENFILE=/etc/.gitignore

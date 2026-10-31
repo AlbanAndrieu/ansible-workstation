@@ -17,6 +17,7 @@ collections:
   - name: ansible.posix
   - name: ansible.windows
   - name: devsec.hardening
+    version: "10.5.0"
   - name: community.docker
   - name: containers.podman
 

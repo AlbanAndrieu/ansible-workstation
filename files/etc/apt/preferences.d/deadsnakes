@@ -1,0 +1,14 @@
+Explanation: Prevent installing from deadsnakes repo.
+Package: *
+Pin: release o=LP-PPA-deadsnakes
+Pin-Priority: 1
+
+Explanation: Allow installing python 3.{6,7} from deadsnakes/focal
+Package: *python3.6* *python3.7*
+Pin: release o=LP-PPA-deadsnakes,n=focal
+Pin-Priority: 500
+
+Explanation: Allow installing python 3.8 from deadsnakes/bionic
+Package: *python3.8*
+Pin: release o=LP-PPA-deadsnakes,n=bionic
+Pin-Priority: 500

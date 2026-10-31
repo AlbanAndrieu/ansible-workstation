@@ -1,0 +1,107 @@
+# /etc files that differ from Ubuntu package defaults, kept for reinstall.
+# One absolute path per line. scripts/capture-etc.sh copies them into files/etc/.
+# Never list secrets: shadow, ssh host keys, NetworkManager/system-connections,
+# letsencrypt, apt/auth.conf.d, crowdsec *credentials*, GeoIP.conf, docker/key.json.
+
+# Package conffiles modified in place (whole copy)
+/etc/apache2/apache2.conf
+/etc/apache2/ports.conf
+/etc/apache2/sites-available/000-default.conf
+/etc/apache2/sites-available/default-ssl.conf
+/etc/apparmor.d/abstractions/web-data
+/etc/apt/apt.conf.d/10periodic
+/etc/apt/apt.conf.d/20auto-upgrades
+/etc/apt-fast.conf
+/etc/auto.master
+/etc/crontab
+/etc/crowdsec/acquis.yaml
+/etc/crowdsec/console.yaml
+/etc/default/grub
+/etc/default/ufw
+/etc/gdm3/custom.conf
+/etc/glances/glances.conf
+/etc/gprofng.rc
+/etc/howdy/config.ini
+/etc/modprobe.d/blacklist.conf
+/etc/motion/motion.conf
+/etc/ntp.conf
+/etc/odbc.ini
+/etc/php/8.4/apache2/php.ini
+/etc/resolvconf/resolv.conf.d/base
+/etc/resolvconf/resolv.conf.d/head
+/etc/rsyslog.d/50-default.conf
+/etc/tor/torrc
+/etc/tuned/active_profile
+/etc/tuned/profile_mode
+/etc/yp.conf
+/etc/zabbix/zabbix_agent2.conf
+
+# Package conffiles modified in place, stored as drop-ins (hand-written delta)
+/etc/rkhunter.conf.local
+/etc/rsyslog.d/00-workstation.conf
+/etc/rsyslog.d/99-workstation-forward.conf
+/etc/security/limits.d/99-workstation.conf
+/etc/ssh/ssh_config.d/99-workstation.conf
+/etc/systemd/resolved.conf.d/99-workstation.conf
+
+# Admin-created files (do not exist on a fresh install)
+/etc/docker/daemon.json
+/etc/modprobe.d/blacklist-local.conf
+/etc/modprobe.d/blacklist-nouveau.conf
+/etc/modprobe.d/blacklist-nvidia-nouveau.conf
+/etc/modprobe.d/blacklist-nvidia-usb.conf
+/etc/modprobe.d/blacklist-ucsi-ccg.conf
+/etc/modprobe.d/nvidia-drm.conf
+/etc/modprobe.d/e1000e-zc.conf
+/etc/modprobe.d/i40e-zc.conf
+/etc/modprobe.d/igb-zc.conf
+/etc/modprobe.d/ixgbe-zc.conf
+/etc/NetworkManager/conf.d/10-ignore-virtual-interfaces.conf
+/etc/NetworkManager/conf.d/90-logging.conf
+/etc/NetworkManager/conf.d/99-unmanaged-docker.conf
+/etc/sysctl.d/99-ai-workstation.conf
+/etc/sysctl.d/99-ipv6-eno1-accept-ra.conf
+/etc/sysctl.d/99-ipv6-eno1.conf
+/etc/sysctl.d/99-netalertx.conf
+/etc/systemd/journald.conf.d/size.conf
+/etc/systemd/system/cloudflared.service
+/etc/systemd/system/cloudflared-update.service
+/etc/systemd/system/cloudflared-update.timer
+/etc/systemd/system/docker.service.d/override.conf
+/etc/systemd/system/litellm.service
+/etc/systemd/system/nvidia-persistence.service
+/etc/systemd/system/ollama.service
+/etc/systemd/system/php8.4-fpm.service.d/override.conf
+/etc/systemd/system/snmp_exporter.service
+/etc/udev/rules.d/20-hw1.rules
+/etc/udev/rules.d/51-android.rules
+/etc/udev/rules.d/99-veth-unmanaged.rules
+/etc/udev/rules.d/usb_auto_mount.rules
+/etc/X11/xorg.conf
+
+# Third-party APT sources still enabled (keyrings outside /etc: scripts/capture-packages.sh)
+/etc/apt/sources.list.d/1password.sources
+/etc/apt/sources.list.d/chatgpt.sources
+/etc/apt/sources.list.d/claude-desktop.list
+/etc/apt/sources.list.d/cursor.sources
+/etc/apt/sources.list.d/deadsnakes-ubuntu-ppa-noble.sources
+/etc/apt/sources.list.d/graphics-drivers-ubuntu-ppa-resolute.sources
+/etc/apt/sources.list.d/kubescape-ubuntu-kubescape-resolute.sources
+/etc/apt/sources.list.d/nodesource.sources
+/etc/apt/sources.list.d/nvidia-container-toolkit.list
+/etc/apt/sources.list.d/opentofu.list
+/etc/apt/sources.list.d/ubuntuhandbook1-ubuntu-howdy-resolute.sources
+/etc/apt/sources.list.d/vanvugt-ubuntu-lp2152207-resolute.sources
+/etc/apt/keyrings/opentofu.gpg
+/etc/apt/keyrings/opentofu-repo.gpg
+/etc/apt/preferences.d/deadsnakes
+/etc/apt/preferences.d/nodejs
+/etc/apt/preferences.d/nsolid
+
+# PAM: captured, restored only with etc_restore_pam=true (see playbook)
+/etc/pam.conf
+/etc/pam.d/common-account
+/etc/pam.d/common-auth
+/etc/pam.d/common-password
+/etc/pam.d/common-session
+/etc/pam.d/common-session-noninteractive

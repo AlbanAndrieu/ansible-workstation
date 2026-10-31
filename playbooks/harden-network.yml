@@ -1,0 +1,190 @@
+---
+# Network hardening: close unneeded listeners at the source, then enable ufw with allowlists.
+# Check-only by default (prints the plan, no sudo). Writing needs harden_apply AND harden_apply_approved.
+# Apply from the local console. Rollback: sudo ufw disable
+# Docker published ports bypass ufw (DNAT before INPUT): not covered here.
+- name: Plan or explicitly apply the workstation network hardening
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    harden_apply: false
+    harden_apply_approved: false
+    harden_lan: 172.17.0.0/24
+    harden_truenas: 172.17.0.24
+    # Local Docker bridges seen on this host; the daemon pool also overlaps the LAN, so not /12.
+    harden_docker_nets: 172.16.0.0/16
+    harden_rules:
+      - from: "{{ harden_lan }}"
+        port: "8082"
+        proto: tcp
+        comment: apache
+      - from: "{{ harden_lan }}"
+        port: "8087"
+        proto: tcp
+        comment: apache
+      - from: "{{ harden_lan }}"
+        port: "8200"
+        proto: tcp
+        comment: minidlna
+      - from: "{{ harden_lan }}"
+        port: "1900"
+        proto: udp
+        comment: minidlna SSDP
+      - from: "{{ harden_lan }}"
+        port: "5353"
+        proto: udp
+        comment: mDNS
+      - from: "{{ harden_lan }}"
+        port: "514"
+        proto: tcp
+        comment: rsyslog server
+      - from: "{{ harden_lan }}"
+        port: "514"
+        proto: udp
+        comment: rsyslog server
+      - from: "{{ harden_lan }}"
+        port: "9116"
+        proto: tcp
+        comment: snmp_exporter
+      - from: "{{ harden_lan }}"
+        port: "17500"
+        proto: tcp
+        comment: dropbox LAN sync
+      - from: "{{ harden_lan }}"
+        port: "17500"
+        proto: udp
+        comment: dropbox LAN sync
+      # nabla-compose openrag/litellm/langflow on TrueNAS call this LiteLLM.
+      - from: "{{ harden_truenas }}"
+        port: "4000"
+        proto: tcp
+        comment: litellm from TrueNAS
+      - from: "{{ harden_truenas }}"
+        port: "11434"
+        proto: tcp
+        comment: ollama from TrueNAS
+      - from: "{{ harden_truenas }}"
+        port: "10050"
+        proto: tcp
+        comment: zabbix passive checks
+      - from: "{{ harden_docker_nets }}"
+        port: "4000"
+        proto: tcp
+        comment: litellm from local containers
+      - from: "{{ harden_docker_nets }}"
+        port: "11434"
+        proto: tcp
+        comment: ollama from local containers
+    harden_write: "{{ harden_apply | bool and harden_apply_approved | bool }}"
+
+  handlers:
+    - name: Restart zabbix agent
+      ansible.builtin.systemd_service:
+        name: zabbix-agent2.service
+        state: restarted
+      become: true
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - harden_apply_approved | bool
+        fail_msg: "Apply denied: requires both harden_apply=true and harden_apply_approved=true."
+        quiet: true
+      when: harden_apply | bool
+
+    # This host is an NFSv4.2 client only: no export, and v4 needs no rpcbind.
+    - name: Remove the unused NFS server
+      ansible.builtin.apt:
+        name: nfs-kernel-server
+        state: absent
+      become: true
+      when: harden_write
+
+    - name: Stop and mask rpcbind (nfs-common depends on the package)
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        masked: true
+      loop: [rpcbind.socket, rpcbind.service]
+      become: true
+      when: harden_write
+
+    - name: Point the zabbix agent at the TrueNAS Zabbix server
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      loop:
+        - { key: Server, value: "{{ harden_truenas }}" }
+        - { key: ServerActive, value: "{{ harden_truenas }}" }
+        - { key: Hostname, value: albandrieu }
+      become: true
+      when: harden_write
+      notify: Restart zabbix agent
+
+    - name: Remove the leftover Datadog agent configuration backup
+      ansible.builtin.file:
+        path: /etc/datadog-agent-2025-06-20
+        state: absent
+      become: true
+      when: harden_write
+
+    - name: Keep the default policies (deny in, allow out, deny routed)
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        default: "{{ item.policy }}"
+      loop:
+        - { direction: incoming, policy: deny }
+        - { direction: outgoing, policy: allow }
+        - { direction: routed, policy: deny }
+      become: true
+      when: harden_write
+
+    - name: Allow only the listed sources per service
+      community.general.ufw:
+        rule: allow
+        from_ip: "{{ item.from }}"
+        to_port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ harden_rules }}"
+      loop_control:
+        label: "{{ item.from }} -> {{ item.port }}/{{ item.proto }} {{ item.comment }}"
+      become: true
+      when: harden_write
+
+    - name: Log blocked packets at low level
+      community.general.ufw:
+        logging: low
+      become: true
+      when: harden_write
+
+    - name: Enable ufw now
+      community.general.ufw:
+        state: enabled
+      become: true
+      when: harden_write
+
+    - name: Load ufw at boot
+      ansible.builtin.systemd_service:
+        name: ufw.service
+        enabled: true
+        state: started
+      become: true
+      when: harden_write
+
+    - name: Report the hardening plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if harden_write else 'check_only' }}"
+          remove: [nfs-kernel-server, /etc/datadog-agent-2025-06-20]
+          mask: [rpcbind.socket, rpcbind.service]
+          zabbix_server: "{{ harden_truenas }}"
+          ufw_allow: "{{ harden_rules | map(attribute='comment') | zip(harden_rules | map(attribute='port')) | map('join', ':') | list }}"
+          everything_else_inbound: deny
+          rollback: sudo ufw disable
+          verify: sudo ufw status verbose

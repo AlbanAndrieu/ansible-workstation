@@ -1,0 +1,105 @@
+---
+# Restore the /etc files captured in files/etc (list: files/etc-manifest.txt).
+# Check-only by default. Writing needs etc_restore_apply AND etc_restore_apply_approved.
+# PAM is written only with etc_restore_pam too. Never imported from playbooks/workstation.yml.
+- name: Check or explicitly restore captured /etc configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    etc_restore_apply: false
+    etc_restore_apply_approved: false
+    etc_restore_pam: false
+    etc_restore_src: "{{ playbook_dir | dirname }}/files/etc"
+    etc_restore_secret_marker: "@@SECRET@@"
+    # Units enabled on the source workstation; their packages/binaries must be installed first.
+    etc_restore_enable_units:
+      - cloudflared.service
+      - litellm.service
+      - nvidia-persistence.service
+      - ollama.service
+      - snmp_exporter.service
+    etc_restore_write: "{{ etc_restore_apply | bool and etc_restore_apply_approved | bool }}"
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - etc_restore_apply_approved | bool
+        fail_msg: "Apply denied: requires both etc_restore_apply=true and etc_restore_apply_approved=true."
+        quiet: true
+      when: etc_restore_apply | bool
+
+    - name: List captured files
+      ansible.builtin.find:
+        paths: "{{ etc_restore_src }}"
+        recurse: true
+        hidden: true
+      register: etc_restore_found
+
+    - name: Keep files still holding a redacted secret for manual restore
+      ansible.builtin.set_fact:
+        etc_restore_manual: "{{ etc_restore_manual | default([]) + [item.path | relpath(etc_restore_src)] }}"
+      loop: "{{ etc_restore_found.files }}"
+      loop_control:
+        label: "{{ item.path | relpath(etc_restore_src) }}"
+      when: etc_restore_secret_marker in lookup('ansible.builtin.file', item.path)
+
+    - name: Select restorable files
+      ansible.builtin.set_fact:
+        etc_restore_files: >-
+          {{ etc_restore_found.files | map(attribute='path') | map('relpath', etc_restore_src)
+             | reject('in', etc_restore_manual | default([]))
+             | reject('match', '^pam' if not (etc_restore_pam | bool) else '^$')
+             | sort }}
+
+    - name: Ensure parent directories exist
+      ansible.builtin.file:
+        path: "/etc/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop: "{{ etc_restore_files | map('dirname') | reject('equalto', '') | unique | sort }}"
+      become: "{{ etc_restore_write }}"
+      check_mode: "{{ not etc_restore_write }}"
+
+    - name: Restore files, keeping a timestamped backup of what they replace
+      ansible.builtin.copy:
+        src: "{{ etc_restore_src }}/{{ item }}"
+        dest: "/etc/{{ item }}"
+        owner: root
+        group: root
+        mode: preserve
+        backup: true
+      loop: "{{ etc_restore_files }}"
+      register: etc_restore_copy
+      become: "{{ etc_restore_write }}"
+      check_mode: "{{ not etc_restore_write }}"
+      # /etc may hold live secrets: never print before/after content.
+      diff: false
+
+    - name: Reload systemd and enable the restored units
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        daemon_reload: true
+      loop: "{{ etc_restore_enable_units }}"
+      become: true
+      when:
+        - etc_restore_write
+        - ('systemd/system/' + item) not in (etc_restore_manual | default([]))
+
+    - name: Report what changed and what is left to do by hand
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if etc_restore_write else 'check_only' }}"
+          would_change_or_changed: "{{ etc_restore_copy.results | selectattr('changed') | map(attribute='item') | list }}"
+          manual_secret_files: "{{ etc_restore_manual | default([]) }}"
+          pam_skipped: "{{ not (etc_restore_pam | bool) }}"
+          follow_up:
+            - "sudo update-grub && sudo update-initramfs -u  (default/grub, modprobe.d)"
+            - "sudo sysctl --system && sudo udevadm control --reload"
+            - "Restart apache2, rsyslog, systemd-resolved, NetworkManager, docker, tor or reboot."

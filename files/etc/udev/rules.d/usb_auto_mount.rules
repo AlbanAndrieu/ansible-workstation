@@ -1,0 +1,6 @@
+ACTION=="add", KERNEL=="sd*", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", \
+    SYMLINK+="usbdisks/%k", MODE:="0660", \
+    RUN+="/bin/rm /media/usb-sticks/%k", \
+    RUN+="/bin/ln -sf /media/auto_mount_usb/%k /media/usb-sticks/%k"
+ACTION=="remove", KERNEL=="sd*", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", \
+    RUN+="/bin/rm /media/usb-sticks/%k"

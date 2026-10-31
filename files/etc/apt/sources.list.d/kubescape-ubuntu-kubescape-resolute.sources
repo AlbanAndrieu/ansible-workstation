@@ -1,0 +1,32 @@
+Types: deb
+URIs: https://ppa.launchpadcontent.net/kubescape/kubescape/ubuntu/
+Suites: noble
+Components: main
+Signed-By: -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ mQINBGQdXTwBEADXC/3ZcbGPvCCvP/ZO+U75hNvipudXB5pmfWsGPE8GRTuoEinI
+ iLOcub7lBL2rXi8E1dLmgjCWt3rAewcYqebr4yv3Inx6yU6Zlj8JBIoc5Y8F+Yjk
+ sUu40BELupu/gxsa84hs0TExoisSbqjHjqC4jIGYn/qRl0fh910J2g1Iz85qSXj1
+ kd856Q2ZfcvZbLAsfs3iiHEBfBW/aX46ccd1N+xnA9nwUwS9GGKpg2jlzGkHjI5Z
+ TLgchkxC9tvKYIJoRSccmNyV4mjk0pclKfr8pQJM1WPMWLu9dxpC1MonbDhFjEe4
+ ujwrJsDyv+NrkLgIxTBf408YMn+pA0CiHjobWiPbsINeNjA4fMP2PNJ80E6zzzsT
+ ximHnZg1NT/qx+CwqPhx8d/FPAc9/H3shEjCIB4+f4v6ilZRGdNk/eEppjIXO5zj
+ Gvplhs20i8VCE4VH/DprR6MAqEJ7rH7TZEppkgnMJ5nu38hZ960mCgVBqXQfUqH6
+ p1aJVim/T1WSbR8UZm4nZ/ANKXa5dh07AjISwGA6TcW1vPiYUpmoMXyv4dxgVtg3
+ /H/Z//38C1Fq0/xOCcGh4Ckl8HKF0UZVx1n3b7KFV5UFb6MxFcBUIFbMpj+PlaPQ
+ N7t8T+sBycmPd79FMHS0ZJ9ZBsFD8uGINHkM20Y62OT9fEunO2UaOodReQARAQAB
+ tBtMYXVuY2hwYWQgUFBBIGZvciBLdWJlc2NhcGWJAk4EEwEKADgWIQRptkIjrEfk
+ 8Qcen2qZ+XoaDfEkSgUCZB1dPAIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAK
+ CRCZ+XoaDfEkSulcEACE4xs1dh3sIvDY+nhDTnY4nXW1zRzfj9jHQT1ZxGhYyUFt
+ NfcihtIC+tvm6gzNUsqOvT2ARofodDyB2BssNy34ChTruvgbGSBXfmeliV9jVqMe
+ o3oOU4RNGmBtlow7ssuckSgNaiBBnfdCltZyD2I84Uwb3IjaVppXphBhmGrBkbfU
+ IyKkusDBMhrwAsQVaME2i9A2DRS2kKjaiJ067shayq2zFa3a+kr3+XpIf4+SgYo7
+ Y0MmOJeeFsDrqWnFAIOAV4pcQiVlQNeVP1BM+JapZTUEMjDBUeaLUk3hjJ+EYIaF
+ I4p5rWguFQ23Ii8eVTM7rLecfwi/RivBB1LzCpHD5gZ1kdob7gp93xNb45UdTrUz
+ PlcsL2c8bsEMtKeg4LG/URV3iJ+dOruHMICXlCFJtRhxj3mLNinsgk8oySH7T1vI
+ 3wekOCSxF9Z0xyJM/wrJFudKO8LCYhKwipQzVi6W64MyS8q/we/AAJIutVo9wHqL
+ eZ+m1yTW6um8AqJMFTTeHXNN8yhfcSMl0N5ljIZd38n3sy+ff8k3IH/Oi0senvpq
+ 4Tyx6l8Ud7OPcWSgjCNXGV77BP9qpkPVqPMjSavSzFS3czuplcE1D04AXMlGCnoh
+ jEAoyr5wjgiZiQQLdzLotEbolznuY79Ly08gbSCOOKfFdseYGP8+PPc/n/MlSw==
+ =cZmB
+ -----END PGP PUBLIC KEY BLOCK-----

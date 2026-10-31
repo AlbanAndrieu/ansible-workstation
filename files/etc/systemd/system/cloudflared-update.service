@@ -1,0 +1,7 @@
+[Unit]
+Description=Update cloudflared
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/bin/bash -c '/usr/bin/cloudflared update; code=$?; if [ $code -eq 11 ]; then systemctl restart cloudflared; exit 0; fi; exit $code'

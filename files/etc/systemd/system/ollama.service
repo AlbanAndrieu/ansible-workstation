@@ -1,0 +1,27 @@
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+# NOK Environment="OLLAMA_VULKAN=1"
+Environment="OLLAMA_KEEP_ALIVE=12h"
+Environment="OLLAMA_NUM_PARALLEL=1"
+# Environment="OLLAMA_MAX_QUEUE=4"
+Environment="OLLAMA_MAX_LOADED_MODELS=1"
+# 32768 too big for RTX 2060
+Environment="OLLAMA_CONTEXT_LENGTH=8192"
+Environment="OLLAMA_FLASH_ATTENTION=1"
+Environment="OLLAMA_MODELS=/data/models/ollama"
+Environment="OLLAMA_GPU_OVERHEAD=536870912"
+Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
+Environment="OLLAMA_API_KEY=@@SECRET@@"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
+[Install]
+WantedBy=default.target

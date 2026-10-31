@@ -47,6 +47,56 @@ Le template historique `templates/openclaw-gateway-systemd.sh-Ubuntu.j2` contien
 
 La sauvegarde chiffrée (Restic) est distincte de Git : conserver une copie indépendante et prouver une restauration isolée avant de la considérer achevée.
 
+## Capture du contenu (31 octobre 2026)
+
+Seconde phase, sur demande de l'opérateur : `files/etc/` contient **uniquement** les fichiers qui
+diffèrent des défauts Ubuntu, pour les services encore utilisés (liste : [`files/etc-manifest.txt`](../files/etc-manifest.txt)).
+
+- **Conffiles modifiés** (md5 ≠ dpkg ou ucf) : copie intégrale, sauf `ssh_config`, `limits.conf`,
+  `rkhunter.conf`, `rsyslog.conf` et `resolved.conf`, réduits à leur delta en drop-in (comparés
+  aux `.deb` officiels) pour ne pas figer les défauts des futures versions.
+- **Fichiers créés à la main** : unités systemd, overrides, `sysctl.d`, `modprobe.d`, udev, `daemon.json`, etc.
+- **Exclus** : services inactifs (graylog, tomcat9, nexus, pacemaker, consul…), sauvegardes `*.dpkg-old`/datées.
+
+```bash
+mise run capture-etc        # rafraîchit files/etc depuis /etc, sans sudo, secrets masqués
+mise run restore-etc-check  # liste ce qui changerait, sans sudo ni contenu affiché
+# Nouvelle machine, après installation des paquets :
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-etc.yml \
+  -e etc_restore_apply=true -e etc_restore_apply_approved=true -K
+```
+
+Le playbook sauvegarde chaque fichier remplacé (`backup: true`), n'affiche jamais de diff et active
+cloudflared, litellm, nvidia-persistence, ollama et snmp_exporter. **PAM** (`pam.conf`, `pam.d/common-*`)
+n'est écrit qu'avec `-e etc_restore_pam=true`, console locale ouverte.
+
+**À restaurer hors Git** (Restic ou à la main) : valeurs masquées `@@SECRET@@` de `odbc.ini`,
+`glances.conf`, `torrc`, `ollama.service` (fichiers ignorés par le playbook tant qu'ils les contiennent) ;
+`GeoIP.conf`, `apt/auth.conf.d`, credentials crowdsec, config et credentials cloudflared,
+`EnvironmentFile` de litellm, `docker/key.json`, letsencrypt (ou réémission certbot),
+`NetworkManager/system-connections`. **Non capturés faute de lecture sans sudo** : règles ufw,
+`crowdsec/config.yaml`, `sudoers.d`.
+
+### Paquets
+
+`files/packages/` liste les paquets **choisis** : APT `showmanual` moins la fermeture de
+`ubuntu-desktop`/`ubuntu-minimal`/`ubuntu-standard` (déjà installée par Ubuntu), les noyaux versionnés
+et les services retirés ; snaps hors bases/runtimes ; flatpaks Flathub. `apt-no-repo.txt` liste les
+paquets installés dont **aucune source APT configurée** ne fournit de version (docker-ce, cloudflared,
+mise, gh, tailscale…) : ré-ajouter le dépôt éditeur à la main avant de les installer. Les clés des
+sources capturées stockées hors `/etc` sont dans `files/keyrings/`.
+
+```bash
+mise run capture-packages        # régénère files/packages et files/keyrings, sans sudo
+mise run restore-packages-check  # compte les paquets manquants ou indisponibles
+# Nouvelle machine : d'abord restore-etc (sources APT), puis :
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-packages.yml \
+  -e packages_restore_apply=true -e packages_restore_apply_approved=true -K
+```
+
+L'installation garde les configurations déjà restaurées (`force-confold`) et saute, en les listant,
+les paquets qu'aucune source ne fournit.
+
 ## État de validation
 
 **CODE ADDED / WORKSTATION RUNTIME NOT VERIFIED**. Les scripts et tests présents dans cette branche ne sont pas la preuve d'une exécution sur la station. Aucun sudo, apply Ansible, changement DNS/systemd, ou test réseau externe réalisé.

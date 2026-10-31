@@ -1,0 +1,5 @@
+#nameserver 127.0.0.53
+# My adguardhome DNS
+# nameserver 172.17.0.33
+#search home albandrieu.com 
+

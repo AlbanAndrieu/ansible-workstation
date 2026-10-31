@@ -1,0 +1,9 @@
+another-redis-desktop-manager
+chromium
+cups
+firefox
+pinta
+ruff
+slack
+temporal
+thunderbird

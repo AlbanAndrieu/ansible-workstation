@@ -1,0 +1,3 @@
+SUBSYSTEM=="net", KERNEL=="veth*", ENV{NM_UNMANAGED}="1"
+SUBSYSTEM=="net", KERNEL=="br-*", ENV{NM_UNMANAGED}="1"
+SUBSYSTEM=="net", KERNEL=="docker*", ENV{NM_UNMANAGED}="1"

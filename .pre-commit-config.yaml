@@ -1,5 +1,8 @@
 # fail_fast: true
 minimum_pre_commit_version: 4.5.0
+# nodeenv "latest" now resolves to an unparsable pre-release ("...0-alpha"): pin Node LTS.
+default_language_version:
+  node: 24.22.1
 exclude: |
   (?x)^(
       .*\{\{.*\}\}.*|     # Exclude any files with cookiecutter variables
@@ -54,18 +57,18 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/⚙️ exec · Remove trailing whitespace"
         args: [--markdown-linebreak-ext=md]
       - id: fix-byte-order-marker
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/⚙️ exec · Verify byte order"
       - id: mixed-line-ending
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/⚙️ exec · Verify mixed line ending"
         args: [--fix=lf]
       - id: end-of-file-fixer
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/⚙️ exec · Verify end of file"
       - id: check-executables-have-shebangs
         name: "📁 filesystem/⚙️ exec · Verify shebang preset"
@@ -75,31 +78,32 @@ repos:
               templates/.*-systemd.sh-Ubuntu.j2|
           )$
       - id: check-shebang-scripts-are-executable
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/⚙️ exec · Verify script permissions"
       - id: check-symlinks
         name: "📁 filesystem/🔗 symlink · Check symlink validity"
       - id: destroyed-symlinks
         name: "📁 filesystem/🔗 symlink · Detect broken symlinks"
       - id: debug-statements
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📝 debug · Check debug statements"
       - id: check-ast
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📝 ast · Check ast"
       - id: check-builtin-literals
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📝 literals · Check builtin literals"
       - id: check-case-conflict
         name: "📁 filesystem/📝 names · Check case sensitivity"
       - id: check-illegal-windows-names
         name: "📁 filesystem/📝 names · Validate Windows filenames"
       - id: check-docstring-first
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📝 docstring · Validate docstring first"
       - id: name-tests-test
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📝 names · Check tests names"
+        args: [--pytest-test-first]
 
         # --------------------------- 🔍 Code Quality Tools -------------------------- #
       - id: check-json
@@ -109,17 +113,17 @@ repos:
       - id: check-xml
         name: "📁 filesystem/📜 xml - Check xml"
       - id: check-yaml
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📁 filesystem/📜 yaml - Check yaml"
         args: [--allow-multiple-documents]
       - id: sort-simple-yaml
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🔀 sort/📜 yaml - Sort yaml"
       - id: file-contents-sorter
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🔀 sort/📜 file · Sort contents"
       - id: requirements-txt-fixer
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🔀 sort/🐍 json · Sort requirements"
         # ------------------------------- 🌳 Git Tools ------------------------------- #
       - id: check-merge-conflict
@@ -157,14 +161,14 @@ repos:
     rev: b3680b6ebf9f7cf29b19307f246adef66756feef
     hooks:
       - id: hindent
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🤖 hindent · Format scripts"
 
   - repo: https://github.com/asottile/add-trailing-comma
     rev: v4.0.0
     hooks:
       - id: add-trailing-comma
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🤖 comma · Add trailing comma"
 
     # --------------------------- 🔍 Code Quality Tools -------------------------- #
@@ -174,17 +178,17 @@ repos:
     rev: v3.22.0
     hooks:
       - id: pyupgrade
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🐍 python · Py Upgrade"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.2
+    rev: v0.17.3
     hooks:
       - id: ruff-format
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🐍 python · Format with Ruff"
 
       - id: ruff
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🐍 python · Lint with Ruff (read only)"
         args: [--no-fix]
 
@@ -205,7 +209,7 @@ repos:
     # This helps ensure cross-compatibility with people who don't wish to use uv
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.13.5
+    rev: 0.13.6
     hooks:
       # Do not run uv-sync from a git hook: exact sync may REMOVE packages
       # from an existing development environment during a commit.
@@ -244,10 +248,12 @@ repos:
       # Choose one of:
       # - id: shfmt         # native (requires Go to build)
       - id: shfmt-docker # Docker image (requires Docker to run)
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "🐚 🐳 shell · Format shell scripts"
+        # 2-space indent: shfmt's default tabs are rejected by bashate E002.
+        args: [--write, -i, "2"]
   - repo: https://github.com/detailyang/pre-commit-shell
-    rev: v1.0.6
+    rev: 1.0.5
     hooks:
       - id: shell-lint
         name: "🐚 shell · Lint shell scripts"
@@ -276,14 +282,14 @@ repos:
 
     ### Makefile ###
   - repo: https://github.com/mrtazz/checkmake.git
-    rev: v0.3.2
+    rev: v0.3.0
     hooks:
       - id: checkmake
         name: "🐮 Makefile · Lint Makefile"
 
     ### SQL ###
   - repo: https://github.com/sqlfluff/sqlfluff
-    rev: 4.4.0
+    rev: 4.5.0
     hooks:
       - id: sqlfluff-fix
         name: "📊 SQL · Attempts to fix rule violations."
@@ -335,7 +341,7 @@ repos:
 
     ### Javascript & Web Tools ###
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v2.6.2"
+    rev: "v2.6.4"
     hooks:
       - id: biome-check
         name: "🟨 javascript · Lint, format, and safe fixes with Biome"
@@ -343,6 +349,7 @@ repos:
         exclude: >
           (?x)^(
             \.agents/skills/.*|
+            files/etc/.*|
               trivy-sbom.json|
               my-app/public/.*|
           )$
@@ -371,7 +378,7 @@ repos:
 
     ### Additional File Types ###
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
         name: "✨ misc-files · Format misc web files"
@@ -381,6 +388,7 @@ repos:
         exclude: >
           (?x)^(
             \.agents/skills/.*|
+            files/etc/.*|
               trivy-sbom.json|
               my-app/public/.*|
               playbooks/workstation.yml|
@@ -388,7 +396,7 @@ repos:
 
     ### Data & Config Validation ###
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.2
+    rev: 0.39.0
     hooks:
       - id: check-github-workflows
         name: "🧩 github-actions · Validate gh workflow files"
@@ -423,7 +431,7 @@ repos:
       - id: encryption-check
         name: "🔒 security · Detect encryption"
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.30.1
+    rev: v8.30.0
     hooks:
       - id: gitleaks-docker
         name: "🔒 🐳 security · Detect hardcoded secrets"
@@ -450,7 +458,7 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
-        exclude: ^\.agents/skills/
+        exclude: ^(\.agents/skills|files/(etc|keyrings))/
         name: "📜 yamllint - Lint Yaml"
         args: [--format, parsable, --strict]
 
