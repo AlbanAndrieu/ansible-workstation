@@ -1,0 +1,27 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+[Unit]
+Description=Restic backup of the workstation to TrueNAS
+RequiresMountsFor={{ restic_repository }}
+OnFailure=restic-notify@%n.service
+
+[Service]
+Type=oneshot
+# The NFS share squashes root: run as the share owner, read everything via the capability.
+User={{ restic_user }}
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+LoadCredentialEncrypted=restic.password:/etc/credstore.encrypted/restic.password
+Environment=RESTIC_REPOSITORY={{ restic_repository }}
+Environment=RESTIC_PASSWORD_FILE=%d/restic.password
+Environment=RESTIC_CACHE_DIR=%C/restic
+CacheDirectory=restic
+StateDirectory=restic
+StateDirectoryMode=0755
+ProtectSystem=strict
+ReadWritePaths={{ restic_repository }}
+PrivateTmp=yes
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/bin/restic backup --one-file-system --exclude-caches --files-from /etc/restic/include.txt --exclude-file /etc/restic/exclude.txt
+ExecStartPost=/usr/bin/restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 12 --prune
+# Read by zabbix-agent2 (restic.last_success_age): the dead man's switch.
+ExecStartPost=/usr/bin/touch %S/restic/last-success

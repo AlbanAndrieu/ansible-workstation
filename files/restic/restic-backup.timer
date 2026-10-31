@@ -1,0 +1,12 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+[Unit]
+Description=Daily Restic backup of the workstation
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+# Catch up a run missed while the workstation was off.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

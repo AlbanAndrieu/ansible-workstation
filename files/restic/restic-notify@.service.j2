@@ -1,0 +1,10 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+# Best effort: only reaches an open desktop session; Zabbix covers the rest.
+[Unit]
+Description=Desktop notification: %i failed
+
+[Service]
+Type=oneshot
+User={{ restic_user }}
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{{ restic_uid }}/bus
+ExecStart=/usr/bin/notify-send --urgency=critical "Sauvegarde Restic" "%i a échoué : journalctl -u %i"
