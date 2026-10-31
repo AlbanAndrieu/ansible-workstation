@@ -58,7 +58,7 @@ REPOSITORY_DEVSKIM_ARGUMENTS: --severity critical,important --skip-git-ignored-f
 REPOSITORY_TRIVY_DISABLE_ERRORS: false
 REPOSITORY_TRIVY_ARGUMENTS:
   --security-checks vuln,config,secret --vuln-type os,library --ignore-unfixed --ignorefile .trivyignore.yaml --skip-dirs .direnv
-  --skip-dirs .venv --skip-dirs megalinter-reports --skip-files pip.conf --skip-files Pipfile --skip-files /usr/bin/nomad --skip-files
+  --skip-dirs .venv --skip-dirs megalinter-reports --skip-files pip.conf --skip-files /usr/bin/nomad --skip-files
   terraform/nomad/jobs/4-2-keycloak.nomad
 REPOSITORY_TRIVY_DISABLE_ERRORS_IF_LESS_THAN: 3
 REPOSITORY_CHECKOV_DISABLE_ERRORS_IF_LESS_THAN: 1
