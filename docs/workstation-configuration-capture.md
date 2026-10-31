@@ -104,6 +104,48 @@ mise run restore-packages-check  # compte les paquets manquants ou indisponibles
 L'installation garde les configurations déjà restaurées (`force-confold`) et saute, en les listant,
 les paquets qu'aucune source ne fournit.
 
+## Politique déclarée et dérive
+
+[`policies/home-desktop.yml`](../policies/home-desktop.yml) déclare l'état
+**voulu** de la workstation, sans contenu de fichier ni identité. Chaque
+sonde du script (24 chemins `/etc`, 13 unités système, 3 unités utilisateur,
+DNS `eno1`) y figure **exactement une fois**, avec un niveau :
+
+| Niveau | Sens | Écart |
+| --- | --- | --- |
+| `required` | Intention OS appuyée par une preuve documentée | `non_compliant` ; correction par apply opt-in revu, jamais automatique |
+| `baseline` | Dernière observation acceptée (Docker actif, ufw inactif, Gateway OpenClaw) | `changed_since_baseline` : changement à expliquer |
+| `review` | Inventorié, sans attente validée | `review_required`, ne passe jamais |
+
+Les entrées `required` et `baseline` citent leur preuve (`evidence`).
+`required` couvre `/etc/fstab`, `/etc/crypttab` (racine LUKS),
+`/etc/fail2ban`, `/etc/apparmor.d`, les services NetworkManager,
+systemd-resolved et fail2ban, et le DNS `eno1`.
+Tout le reste est `review` tant que l'opérateur n'a pas fourni de preuve :
+par exemple, `systemd/resolved.conf` peut n'exister que sous `/usr/lib`
+avec un systemd récent.
+
+`mise run audit-configuration` ajoute au rapport une clé `policy` qui ne
+contient que des issues (`expected`, `drift`, `unknown`, `review_required`),
+leurs compteurs et un statut global (`non_compliant` > `incomplete` >
+`changed_since_baseline` > `conforms_to_declared_policy`). Une sonde en
+échec donne `unknown`, jamais `expected`. Une unité `not-found` est en
+dérive même si elle est `inactive`. Un lien symbolique reste `unknown` car
+il n'est pas suivi. Le code de sortie reste 0 : c'est un rapport, pas une gate.
+
+La politique **ne peut pas élargir la surface de sonde** : un chemin ou une
+unité inconnue, une entrée manquante, une attente sans preuve, un DNS
+différent du contrat épinglé (`defaults/main.yml`, `tasks/network_split_dns.yml`,
+script), ou un chemin audité présent dans `never_capture` rendent la
+politique `invalid_policy`. Les messages d'erreur sont fixes et ne
+reproduisent jamais le contenu du fichier lu.
+
+**Phase suivante, non commencée :** promouvoir le *contenu* de fichiers
+`review` à faible risque (`sysctl.d`, `modprobe.d`, `journald.conf`,
+`resolved.conf.d`, `NetworkManager/conf.d`) en templates Ansible opt-in.
+Cela exige une revue opérateur sur la station, hors Git, avec suppression
+des secrets avant toute publication.
+
 ## État de validation
 
 **CODE ADDED / WORKSTATION RUNTIME NOT VERIFIED**. Les scripts et tests présents dans cette branche ne sont pas la preuve d'une exécution sur la station. Aucun sudo, apply Ansible, changement DNS/systemd, ou test réseau externe réalisé.

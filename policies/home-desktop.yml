@@ -1,0 +1,154 @@
+---
+# Declared OS intent for the single home Ubuntu workstation (Option A).
+# Desired state only: no hostname, user, MAC, UUID, serial, key, token or
+# file content. Observations stay outside Git; the redacted audit
+# scripts/audit-workstation-configuration.py compares them to this file and
+# reports outcomes, never raw values.
+#
+# Levels:
+#   required - deviation is non-compliant; correct only through a reviewed
+#              opt-in apply with rollback, never automatically.
+#   baseline - last accepted observation; a deviation is a change to explain,
+#              not automatically a fault.
+#   review   - inventoried, but no validated expectation yet. Promote only
+#              with operator evidence.
+#
+# Every probe of the audit script must appear here (tests enforce it), so a
+# new probe forces an explicit policy decision. This file cannot widen the
+# probe surface: unknown paths or units are rejected.
+schema: workstation-os-policy/v1
+profile: home-desktop
+
+dns:
+  level: required
+  # Pinned in three places on purpose; tests keep them identical:
+  # defaults/main.yml, tasks/network_split_dns.yml and the audit script.
+  interface: eno1
+  resolver: 172.17.0.1
+  route_domain: "~int.albandrieu.com"
+  evidence: "docs/roadmap-workstation.md: operator resolvectl proof 2026-10-30"
+
+etc_paths:
+  fstab:
+    expect: file
+    level: required
+    evidence: "workstation-hardware-inventory.md: LVM root, /workspace, /data"
+  crypttab:
+    expect: file
+    level: required
+    evidence: "workstation-hardware-inventory.md: encrypted LUKS root"
+  NetworkManager/NetworkManager.conf:
+    expect: file
+    level: baseline
+    evidence: "docs/workstation-split-dns.md: NetworkManager owns eno1"
+  # Opt-in NTA dispatcher; deployment state not attested.
+  NetworkManager/conf.d:
+    level: review
+  NetworkManager/dispatcher.d:
+    level: review
+  # Recent systemd may ship defaults under /usr/lib only: no presence claim.
+  systemd/resolved.conf:
+    level: review
+  systemd/resolved.conf.d:
+    level: review
+  systemd/system:
+    level: review
+  systemd/logind.conf:
+    level: review
+  systemd/journald.conf:
+    level: review
+  ssh/sshd_config:
+    level: review
+  ssh/sshd_config.d:
+    level: review
+  sysctl.conf:
+    level: review
+  sysctl.d:
+    level: review
+  modprobe.d:
+    level: review
+  modules-load.d:
+    level: review
+  nftables.conf:
+    level: review
+  ufw:
+    level: review
+  fail2ban:
+    expect: directory
+    level: required
+    evidence: "docs/workstation-ownership-option-a.md: fail2ban active 2026-10-27"
+  apparmor.d:
+    expect: directory
+    level: required
+    evidence: "docs/audit-workstation.md: apparmor_kernel=enabled 2026-10-27"
+  apt/apt.conf.d:
+    level: review
+  # Examine only; never copy sudoers or add passwordless sudo.
+  sudoers.d:
+    level: review
+  docker/daemon.json:
+    level: review
+  containerd/config.toml:
+    level: review
+
+system_units:
+  NetworkManager.service:
+    active_state: active
+    level: required
+    evidence: "docs/workstation-split-dns.md: nmcli manages eno1"
+  systemd-resolved.service:
+    active_state: active
+    level: required
+    evidence: "docs/roadmap-workstation.md: resolvectl link proof 2026-10-30"
+  fail2ban.service:
+    active_state: active
+    level: required
+    evidence: "docs/workstation-ownership-option-a.md: fail2ban active 2026-10-27"
+  docker.service:
+    active_state: active
+    level: baseline
+    evidence: "docs/roadmap-workstation.md: 12 containers observed"
+  # Observation only: an inactive ufw unit does not prove absence of filtering.
+  ufw.service:
+    active_state: inactive
+    level: baseline
+    evidence: "docs/workstation-ownership-option-a.md: ufw service inactive 2026-10-27"
+  ssh.service:
+    level: review
+  containerd.service:
+    level: review
+  boot-ip.service:
+    level: review
+  boot-update.service:
+    level: review
+  hide-location.service:
+    level: review
+  hide-mac.service:
+    level: review
+  conky.service:
+    level: review
+  maj0.service:
+    level: review
+
+user_units:
+  # Source-only until the TrueNAS cutover owned by nabla-openclaw.
+  openclaw-gateway.service:
+    active_state: active
+    unit_file_state: enabled
+    level: baseline
+    evidence: "docs/roadmap-workstation.md: Gateway active/enabled 2026-10-30"
+  litellm.service:
+    level: review
+  reactive.service:
+    level: review
+
+# Never inventoried, read, copied or committed (relative to /etc).
+never_capture:
+  - shadow
+  - gshadow
+  - ssh/ssh_host_
+  - NetworkManager/system-connections
+  - wireguard
+  - ssl/private
+  - credstore
+  - credstore.encrypted
