@@ -1,0 +1,146 @@
+---
+# Daily encrypted Restic backup of /etc and private home config to TrueNAS (NFS).
+# Check-only by default (prints the plan, no sudo). Writing needs restic_apply AND restic_apply_approved.
+# The repository password is generated once, TPM-encrypted, never printed: copy it off the machine with
+#   sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password -
+# Rollback: sudo systemctl disable --now restic-backup.timer restic-check.timer
+- name: Plan or explicitly install the Restic backup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    restic_apply: false
+    restic_apply_approved: false
+    restic_repository: /media/backup/workstation
+    restic_user: albandrieu
+    restic_uid: 1000
+    restic_home: /home/albandrieu
+    restic_templates:
+      - src: restic-backup.service.j2
+        dest: /etc/systemd/system/restic-backup.service
+      - src: restic-check.service.j2
+        dest: /etc/systemd/system/restic-check.service
+      - src: restic-init.service.j2
+        dest: /etc/systemd/system/restic-init.service
+      - src: restic-notify@.service.j2
+        dest: /etc/systemd/system/restic-notify@.service
+      - src: include.txt.j2
+        dest: /etc/restic/include.txt
+      - src: exclude.txt.j2
+        dest: /etc/restic/exclude.txt
+    restic_write: "{{ restic_apply | bool and restic_apply_approved | bool }}"
+
+  handlers:
+    - name: Restart zabbix agent
+      ansible.builtin.systemd_service:
+        name: zabbix-agent2.service
+        state: restarted
+      become: true
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - restic_apply_approved | bool
+        fail_msg: "Apply denied: requires both restic_apply=true and restic_apply_approved=true."
+        quiet: true
+      when: restic_apply | bool
+
+    - name: Install restic
+      ansible.builtin.apt:
+        name: restic
+        state: present
+      become: true
+      when: restic_write
+
+    - name: Create the Restic and credential directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - path: /etc/restic
+          mode: "0755"
+        - path: /etc/credstore.encrypted
+          mode: "0700"
+      become: true
+      when: restic_write
+
+    - name: Generate the repository password once, TPM-encrypted
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail;
+          head -c 32 /dev/urandom | base64 |
+          systemd-creds encrypt --name=restic.password - /etc/credstore.encrypted/restic.password
+        creates: /etc/credstore.encrypted/restic.password
+        executable: /bin/bash
+      become: true
+      when: restic_write
+
+    - name: Install units and file lists
+      ansible.builtin.template:
+        src: "../files/restic/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ restic_templates }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      become: true
+      when: restic_write
+
+    - name: Install timers
+      ansible.builtin.copy:
+        src: "../files/restic/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: [restic-backup.timer, restic-check.timer]
+      become: true
+      when: restic_write
+
+    - name: Expose the last successful backup age to zabbix-agent2
+      ansible.builtin.copy:
+        src: ../files/restic/zabbix-restic.conf
+        dest: /etc/zabbix/zabbix_agent2.d/restic.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: restic_write
+      notify: Restart zabbix agent
+
+    - name: Create the repository if absent
+      ansible.builtin.systemd_service:
+        name: restic-init.service
+        state: started
+        daemon_reload: true
+      become: true
+      when: restic_write
+
+    - name: Enable the backup and check timers
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop: [restic-backup.timer, restic-check.timer]
+      become: true
+      when: restic_write
+
+    - name: Report the backup plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if restic_write else 'check_only' }}"
+          repository: "{{ restic_repository }}"
+          run_as: "{{ restic_user }} + CAP_DAC_READ_SEARCH"
+          schedule: daily backup, weekly 5% check, catch-up after downtime
+          retention: 7 daily, 4 weekly, 12 monthly
+          alert: zabbix item restic.last_success_age > 93600 (26 h) on TrueNAS
+          first_run: sudo systemctl start restic-backup.service
+          password_offsite: sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password -

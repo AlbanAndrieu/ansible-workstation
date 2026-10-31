@@ -1,0 +1,11 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+[Unit]
+Description=Weekly Restic repository check
+
+[Timer]
+OnCalendar=weekly
+RandomizedDelaySec=2h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

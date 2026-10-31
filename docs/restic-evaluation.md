@@ -61,6 +61,28 @@ L'opérateur a choisi le dépôt **`/media/backup/workstation`** (dataset `cpool
   À compenser par des **snapshots ZFS** du dataset côté TrueNAS, que la workstation ne peut pas
   supprimer, en attendant `rest-server --append-only`.
 
+## Implémentation
+
+[`playbooks/restic-backup.yml`](../playbooks/restic-backup.yml) et [`files/restic/`](../files/restic/) :
+plan seulement par défaut, écriture avec `restic_apply` **et** `restic_apply_approved`.
+
+```bash
+mise run restic-backup-check   # plan, sans sudo
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/restic-backup.yml \
+  -e restic_apply=true -e restic_apply_approved=true -K
+sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password -   # à copier dans Bitwarden
+sudo systemctl start restic-backup.service   # premier snapshot, puis :
+journalctl -u restic-backup.service -n 30
+```
+
+Le mot de passe est chiffré par le TPM : **sans sa copie hors machine, une panne de carte mère
+rend les snapshots illisibles**.
+
+**Côté Zabbix (TrueNAS), une seule fois** : sur l'hôte `albandrieu`, item *Zabbix agent* de clé
+`restic.last_success_age` (numérique, unité `s`, intervalle 10 min) et trigger
+`last(/albandrieu/restic.last_success_age)>93600` (26 h), sévérité *High*. Ajouter aussi un
+trigger `nodata(/albandrieu/restic.last_success_age,2h)=1` pour détecter l'agent muet.
+
 ## Gate d'acceptation (roadmap P1)
 
 `restic check --read-data-subset=5%` OK, **restauration de test** d'un échantillon dans un

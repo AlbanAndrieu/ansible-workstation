@@ -1,0 +1,13 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+[Unit]
+Description=Create the Restic repository once
+RequiresMountsFor={{ restic_repository }}
+ConditionPathExists=!{{ restic_repository }}/config
+
+[Service]
+Type=oneshot
+User={{ restic_user }}
+LoadCredentialEncrypted=restic.password:/etc/credstore.encrypted/restic.password
+Environment=RESTIC_REPOSITORY={{ restic_repository }}
+Environment=RESTIC_PASSWORD_FILE=%d/restic.password
+ExecStart=/usr/bin/restic init
