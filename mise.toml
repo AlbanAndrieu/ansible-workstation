@@ -132,6 +132,10 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 description = "Check mode only: devsec os_hardening with workstation overrides; asks for sudo, changes nothing"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/harden-os.yml -K --diff"
 
+[tasks.restic-backup-check]
+description = "Check-only: print the Restic backup plan (repository, schedule, alert); no sudo, no change"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/restic-backup.yml"
+
 [tasks.agent-skills-check]
 description = "Offline Ansible skill precedence, provenance and symlink gate; only project Python, no network or apply"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m unittest tests/test_agent_skills_contract.py -v && .venv/bin/python -B scripts/check-agent-skills.py"
