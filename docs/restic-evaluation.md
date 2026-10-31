@@ -83,6 +83,37 @@ rend les snapshots illisibles**.
 `last(/albandrieu/restic.last_success_age)>93600` (26 h), sévérité *High*. Ajouter aussi un
 trigger `nodata(/albandrieu/restic.last_success_age,2h)=1` pour détecter l'agent muet.
 
+### Mot de passe : où il est, copie Vaultwarden
+
+Le mot de passe n'existe en clair nulle part sur disque : seulement dans
+`/etc/credstore.encrypted/restic.password`, chiffré par le TPM. Copie dans Vaultwarden, sans
+affichage (le coffre doit être déverrouillé par l'opérateur) :
+
+```bash
+export BW_SESSION="$(bw unlock --raw)"
+sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password - \
+  | jq -Rn '{type:1, name:"restic workstation", notes:"Dépôt /media/backup/workstation (TrueNAS cpool/backup)", login:{username:"restic", password:input}}' \
+  | bw encode | bw create item | jq -r .id
+bw lock
+```
+
+**Pourquoi pas la YubiKey** pour ce mot de passe : la sauvegarde de nuit tourne sans personne
+devant l'écran, donc sans contact sur la clé. Le TPM déverrouille sans intervention ; la YubiKey
+protège la copie Vaultwarden (2FA).
+
+### Rétention : Restic + snapshots ZFS
+
+Restic garde 7 quotidiens, 4 hebdomadaires et 12 mensuels, mais la workstation peut effacer son
+dépôt sur NFS. Une tâche de **snapshots ZFS** sur `cpool/backup`, côté TrueNAS, garde des copies
+que la workstation ne peut pas supprimer. Proposition : chaque jour à 03:00 (après la sauvegarde),
+conservés 14 jours. Sur TrueNAS, en root (géré par `nabla-compose`, pas par ce dépôt) :
+
+```bash
+midclt call pool.snapshottask.create '{"dataset":"cpool/backup","recursive":true,"lifetime_value":14,"lifetime_unit":"DAY","naming_schema":"auto-%Y-%m-%d_%H-%M","schedule":{"minute":"0","hour":"3","dom":"*","month":"*","dow":"*"}}'
+```
+
+Coût : les blocs supprimés par `restic prune` restent occupés 14 jours.
+
 ## Gate d'acceptation (roadmap P1)
 
 `restic check --read-data-subset=5%` OK, **restauration de test** d'un échantillon dans un
