@@ -1,0 +1,4 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+# Only the textfile collector: Prometheus on TrueNAS reads node_textfile_mtime_seconds
+# of /var/lib/restic/last-success.prom, nothing else about this host.
+ARGS="--collector.disable-defaults --collector.textfile --collector.textfile.directory=/var/lib/restic --web.listen-address=172.17.0.57:9100"

@@ -38,8 +38,18 @@ class ResticBackupContract(unittest.TestCase):
         self.assertTrue(backup.rstrip().endswith("/last-success"))
         timer = (UNITS / "restic-backup.timer").read_text()
         self.assertIn("Persistent=true", timer)
+        self.assertIn("%S/restic/last-success.prom", backup)
         zabbix = (UNITS / "zabbix-restic.conf").read_text()
         self.assertIn("UserParameter=restic.last_success_age,", zabbix)
+
+    def test_node_exporter_exposes_only_the_restic_textfile(self):
+        args = (UNITS / "prometheus-node-exporter.default").read_text()
+        self.assertIn("--collector.disable-defaults", args)
+        self.assertIn("--collector.textfile.directory=/var/lib/restic", args)
+        self.assertIn("--web.listen-address=172.17.0.57:9100", args)
+        harden = yaml.safe_load((ROOT / "playbooks/harden-network.yml").read_text())
+        rule = next(r for r in harden[0]["vars"]["harden_rules"] if r["port"] == "9100")
+        self.assertEqual(rule["from"], "{{ harden_truenas }}")
 
     def test_init_never_overwrites_a_repository(self):
         init = (UNITS / "restic-init.service.j2").read_text()

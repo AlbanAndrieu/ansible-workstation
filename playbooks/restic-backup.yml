@@ -39,6 +39,13 @@
         state: restarted
       become: true
 
+    - name: Restart node exporter
+      ansible.builtin.systemd_service:
+        name: prometheus-node-exporter.service
+        state: restarted
+        enabled: true
+      become: true
+
   tasks:
     - name: Refuse an apply without a second explicit approval
       ansible.builtin.assert:
@@ -116,6 +123,25 @@
       when: restic_write
       notify: Restart zabbix agent
 
+    - name: Install node_exporter for the Prometheus alert
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+        install_recommends: false
+      become: true
+      when: restic_write
+
+    - name: Restrict node_exporter to the Restic textfile metric
+      ansible.builtin.copy:
+        src: ../files/restic/prometheus-node-exporter.default
+        dest: /etc/default/prometheus-node-exporter
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: restic_write
+      notify: Restart node exporter
+
     - name: Create the repository if absent
       ansible.builtin.systemd_service:
         name: restic-init.service
@@ -141,6 +167,6 @@
           run_as: "{{ restic_user }} + CAP_DAC_READ_SEARCH"
           schedule: daily backup, weekly 5% check, catch-up after downtime
           retention: 7 daily, 4 weekly, 12 monthly
-          alert: zabbix item restic.last_success_age > 93600 (26 h) on TrueNAS
+          alert: Prometheus ResticBackupStale (26 h), backup Zabbix restic.last_success_age, both in nabla-compose
           first_run: sudo systemctl start restic-backup.service
           password_offsite: sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password -
