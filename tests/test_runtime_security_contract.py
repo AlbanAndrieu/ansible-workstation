@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Static, offline contracts. Never install packages or change host networking."""
+
 from pathlib import Path
 import tomllib
 import unittest
@@ -21,14 +22,18 @@ class ModernRuntimeSecurityContract(unittest.TestCase):
             any(
                 d.startswith("ansible-core>=2.21")
                 for d in project["project"]["dependencies"]
-            )
+            ),
         )
 
     def test_no_direnv_downloads(self):
         envrc = (ROOT / ".envrc").read_text()
         for forbidden in (
-            "curl ", "pip install", "pyenv install",
-            "source .env.secrets", "unset PS1", "nvm install",
+            "curl ",
+            "pip install",
+            "pyenv install",
+            "source .env.secrets",
+            "unset PS1",
+            "nvm install",
         ):
             self.assertNotIn(forbidden, envrc)
 
@@ -54,10 +59,29 @@ class ModernRuntimeSecurityContract(unittest.TestCase):
         self.assertIn("not (tailscale_enabled | bool)", security)
         self.assertIn("'tailscaled.service' in ansible_facts.services", security)
         self.assertNotIn(
-            "state: absent", security[security.index("# Tailscale is retained"):]
+            "state: absent",
+            security[security.index("# Tailscale is retained") :],
         )
         self.assertIn("workstation_firewall_manage_enabled | bool", security)
         self.assertIn("workstation_cloudflared_manage_existing | bool", security)
+
+    def test_unattended_upgrades_are_idempotent_and_non_invasive(self):
+        security = (ROOT / "tasks/security.yml").read_text()
+        handlers = (ROOT / "handlers/main.yml").read_text()
+        for forbidden in (
+            "dpkg-reconfigure",
+            "dest: /etc/apt/apt.conf.d/50unattended-upgrades",
+            "ppa:backbox",
+            "action:",
+            "with_items",
+            "ignore_errors",
+            "force=yes",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, security)
+        self.assertIn("52unattended-upgrades-workstation", security)
+        self.assertIn("notify: workstation | Restart fail2ban", security)
+        self.assertIn("- name: workstation | Restart fail2ban", handlers)
         self.assertNotIn("cloudflared service install", security)
 
     def test_legacy_python_global_pip_disabled(self):

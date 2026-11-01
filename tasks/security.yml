@@ -1,292 +1,150 @@
 ---
+# Shared by apport, Tailscale and cloudflared tasks below.
+- name: workstation | Inspect installed services
+  ansible.builtin.service_facts:
+  when: ansible_os_family == 'Debian'
+  tags: [security, vpn, tunnel]
+
 - name: workstation | Install certificates tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - libnss3-tools # for certutil
+      - apt-transport-https
+      - ca-certificates
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  when: ansible_os_family == 'Debian'
   tags: package
-  with_items:
-    - libnss3-tools # for certutil
-    - apt-transport-https
-    - ca-certificates
 
 - name: workstation | Install VNC
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name: tigervnc-standalone-server
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and vnc_enabled
+  when: ansible_os_family == 'Debian' and vnc_enabled
   tags: package
-  with_items:
-    - vnc4server
 
 - name: workstation | Install XRDP
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name: xrdp
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and xrdp_enabled
+  when: ansible_os_family == 'Debian' and xrdp_enabled
   tags: package
-  with_items:
-    - xrdp
 
 # Warning might be in conflict with security profile
 - name: workstation | Install stats basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - htop
+      - finger
+      - sysstat
+      - net-tools # for netstat
+      - rusers
+      - curl
+      - wget
+      - rsync
+      - unar
+      - pydf # disk
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  when: ansible_os_family == 'Debian' and stats_enabled
   tags: package
-  with_items:
-    - htop
-    - finger
-    - sysstat
-    - net-tools # for netstat
-    #    - rusersd
-    - rusers
-    #    - rwho
-    #    - rwhod
-    # check ssl
-    # sslscan --no-failed --ssl3 localhost:443
-    #    - sslscan
-    - curl
-    - wget
-    - rsync
-    - unar
-    - pydf # disk
 
 - name: workstation | Install network security basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - tcpdump
+      - dsniff # ARP spoofing
+      - arpalert
+      - mitmproxy
+      - aircrack-ng
+      - nikto
+      - hydra
+      - hydra-gtk
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  with_items:
-    - tcpdump
-    # https://doc.ubuntu-fr.org/httrack
-    #    - httrack
-    #    - httraqt
-    #    - webhttrack
-    # Spoofing ARP
-    - dsniff
-    - arpalert
-    # Pyhton proxy
-    - mitmproxy
-    # WEP WPA cracker
-    - aircrack-ng
-    - nikto
-    - hydra
-    - hydra-gtk
-  tags:
-    - package
-    - security
-    - network
+  when: ansible_os_family == 'Debian' and stats_enabled
+  tags: [package, security, network]
 
+# sudo rkhunter --check --rwo --pkgmgr dpkg ; sudo rkhunter --propupd
 - name: workstation | Install security basic tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - testdisk
+      - chkrootkit
+      - rkhunter
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
-  with_items:
-    - testdisk
-    #    - photorec
-    - chkrootkit
-    # sudo chkrootkit
-    - rkhunter
-  tags:
-    - package
-    - security
-    - rootkit
-# sudo rkhunter --check --rwo --pkgmgr dpkg
-# update your system
-# sudo rkhunter --propupd
-# TODO    - burp
-# TODO    - mig
-# See https://tools.pentestbox.com/ on windows
-# https://github.com/stasinopoulos/commix
-# see : https://blog.anantshri.info/ironwasp-on-linux/
-# wget https://blog.anantshri.info/content/uploads/2013/01/ironwasp_installer.sh.txt -O ~/ironwasp_installer.sh && sh ~/ironwasp_installer.sh
-# see https://github.com/0xsauby/yasuo
-# sudo gem install ruby-nmap net-http-persistent mechanize text-table
-
-# TODO
-# http://www.iss.net/security_center/advice/Services/SunRPC/rpc.rusersd/default.htm
-
-# See BackBox https://backbox.org/
-# TODO
-# sudo apt-get purge ri1.9.1 ruby1.9.1 ruby1.9.3 bundler
-# sudo gem cleanup
-# sudo rm -rf /var/lib/gems/1.*
-- name: video | Add repo for security pentest packages
-  ansible.builtin.apt_repository:
-    repo: "ppa:backbox/four"
-    state: "{{"
-    update_cache: "yes"
-    cmd: util_repository_state | default('present') }}
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['14.04', '16.04'] and backbox_enabled
-  tags: gstreamer_setup
-
-- name: workstation | Install security pentest tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04'] and backbox_enabled
-  tags: package
-  with_items:
-    - beef-project
-    - metasploit-framework
-    - whatweb
-    #    - wpscan
-    - setoolkit
-    - openvas
-    - sqlite3
-    # https://null-byte.wonderhowto.com/how-to/hack-like-pro-crack-online-passwords-with-tamper-data-thc-hydra-0155374/
-    - hydra-gtk
-  become: true
-# sudo apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
+  when: ansible_os_family == 'Debian' and stats_enabled
+  tags: [package, security, rootkit]
 
 - name: workstation | Install security antivirus tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - clamav
+      - clamav-daemon
+      - clamtk
+      - tiger
+      - inotify-tools
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and stats_enabled
+  when: ansible_os_family == 'Debian' and stats_enabled
   tags: package
-  with_items:
-    - clamav
-    - clamav-daemon
-    - clamtk
-    - tiger
-    - inotify-tools
 
-# https://askubuntu.com/questions/645097/installing-sophos-anti-virus
-
-# See https://www.linux.com/learn/easily-encrypt-your-flash-drives-linux
 - name: workstation | Install security encryption tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - age
+      - gnome-disk-utility
+      - cryptsetup
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - gnupg
-    - age
-    - gnome-disk-utility
-    - cryptsetup
-  tags:
-    - package
-    - encryption
-    - gpg
+  when: ansible_os_family == 'Debian'
+  tags: [package, encryption, gpg]
 
 - name: workstation | Install security tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+  ansible.builtin.apt:
+    name:
+      - apt-listchanges
+      - needrestart
+      - debsecan
+      - debsums
+      - skopeo
+      - lynis # sudo lynis audit system
+      - debian-goodies # checkrestart
+      - wipe
+      - secure-delete
+      - gpa
+      - seahorse
+      - seahorse-nautilus
+      - keychain
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - apt-listchanges
-    - needrestart
-    - debsecan
-    - debsums
-  tags:
-    - package
+  when: ansible_os_family == 'Debian'
+  tags: [package, docker, lynis, hdd, wipe, gpg, keychain, vm]
 
-- name: workstation | Install security docker
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - skopeo
-    - lynis # sudo lynis audit system
-  tags:
-    - package
-    - docker
-    - lynis
-    - vm
-
-- name: workstation | Install security lynis
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - debian-goodies # checkrestart http://manpages.ubuntu.com/manpages/trusty/man1/checkrestart.1.html
-    # - apt-listbugs  #  useless
-  tags:
-    - package
-    - lynis
-    - vm
-
-# See https://linuxhint.com/completely_wipe_hard_drive_ubuntu/
-- name: workstation | Install disk cleaning tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - wipe
-    - secure-delete
-  tags:
-    - package
-    - hdd
-    - wipe
-    - vm
-
-# - name: workstation | Install authy otp tools
-#   snap:
-#     name: authy
-#     classic: true
-#   become: true
-#   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
-#   tags:
-#     - package
-#     - otp
-#     - authy
-#     - vm
-# TODO
-# flatpak install flathub com.belmoussaoui.Authenticator
-# flatpak run com.belmoussaoui.Authenticator
-
-- name: workstation | Install gpg ui tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    # - gnome-keysign
-    - gpa
-    - seahorse
-    - seahorse-nautilus
-  tags:
-    - package
-    - gpg
-    - vm
-
-# sudo apt-get install gnome-keyring
-- name: workstation | Install keychain for passphrase tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  with_items:
-    - keychain
-  tags:
-    - package
-    - keychain
-    - vm
-
-# sudo systemctl disable apport
 - name: workstation | Disable apport
-  ansible.builtin.systemd:
-    name: apport
+  ansible.builtin.systemd_service:
+    name: apport.service
     state: stopped
     enabled: false
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  changed_when: false
   become: true
-  ignore_errors: true
+  when:
+    - ansible_os_family == 'Debian'
+    - "'apport.service' in ansible_facts.services"
 
+# The 20auto-upgrades file below enables the periodic run idempotently.
 - name: workstation | Install unattended upgrade
-  become: true
   ansible.builtin.apt:
     name:
       - unattended-upgrades
       - apt-listchanges
     state: present
-  tags:
-    - package
-    - unattended-upgrades
-    - vm
-
-- name: workstation | Enable unattended upgrade
-  ansible.builtin.command: dpkg-reconfigure --priority=low unattended-upgrades
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  tags:
-    - package
-    - unattended-upgrades
-    - vm
+  when: ansible_os_family == 'Debian'
+  tags: [package, unattended-upgrades, vm]
 
 - name: workstation | Configure automatic security updates
   ansible.builtin.copy:
@@ -298,90 +156,47 @@
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
-  tags:
-    - unattended-upgrades
-    - vm
+  become: true
+  when: ansible_os_family == 'Debian'
+  tags: [unattended-upgrades, vm]
 
-# https://github.com/openclaw/openclaw-ansible/blob/main/roles/openclaw/tasks/firewall-linux.yml
-
-- name: workstation | Configure unattended-upgrades to only install security updates
+# Drop-in instead of overwriting the 50unattended-upgrades package conffile,
+# whose default origins already cover the release and -security pockets.
+- name: workstation | Configure unattended-upgrades behaviour
   ansible.builtin.copy:
-    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-workstation
     owner: root
     group: root
     mode: "0644"
     content: |
-      // OpenClaw security hardening - automatic security updates
-      Unattended-Upgrade::Allowed-Origins {
-          "${distro_id}:${distro_codename}-security";
-          "${distro_id}ESMApps:${distro_codename}-apps-security";
-          "${distro_id}ESM:${distro_codename}-infra-security";
-      };
-      Unattended-Upgrade::Package-Blacklist {
-      };
+      // Managed by ansible-workstation
       Unattended-Upgrade::AutoFixInterruptedDpkg "true";
       Unattended-Upgrade::MinimalSteps "true";
       Unattended-Upgrade::Remove-Unused-Dependencies "true";
       Unattended-Upgrade::Automatic-Reboot "false";
-      Unattended-Upgrade::Automatic-Reboot-Time "03:00";
-  tags:
-    - unattended-upgrades
-    - vm
-
-- name: workstation | Install logwatch
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  with_items:
-    - logwatch
-  tags:
-    - package
-    - logwatch
-    - vm
+  when: ansible_os_family == 'Debian'
+  tags: [unattended-upgrades, vm]
 
-- name: workstation | Install secrets tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+- name: workstation | Install logwatch and secrets tools
+  ansible.builtin.apt:
+    name:
+      - logwatch
+      - libsecret-tools
+      - gnome-keyring
+      - lastpass-cli # do not install bitwarden via snap
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  with_items:
-    - libsecret-tools
-    - gnome-keyring
-  tags:
-    - package
-    - secrets
+  when: ansible_os_family == 'Debian'
+  tags: [package, logwatch, secrets, lastpass, vm]
 
-# DO not install bitwarden via snap
-- name: workstation | Install key manager
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
-  with_items:
-    - lastpass-cli # https://github.com/lastpass/lastpass-cli
-    # - vault
-    # - 1password-cli  # https://developer.1password.com/docs/cli/get-started/
-  tags:
-    - package
-    - secrets
-    - lastpass
-
-# Fix sshd's configuration for use within the container.
-# See playbook geerlingguy.security
-
-# Port 9922
-# sed -i -e 's/^UsePAM .*/UsePAM no/' /etc/ssh/sshd_config
-# sed -i -e 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-# sed -i -e 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-# edit your /etc/ssh/sshd_config to allow 2FA
-# sed -i -e 's/^ChallengeResponseAuthentication .*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
-
-# AllowUsers albandrieu albanandrieu
-
-# Install and configure fail2ban for SSH brute-force protection
 - name: workstation | Install fail2ban
   ansible.builtin.apt:
     name: fail2ban
     state: present
     update_cache: true
+  become: true
+  when: ansible_os_family == 'Debian'
 
 - name: workstation | Configure fail2ban for SSH protection
   ansible.builtin.copy:
@@ -390,7 +205,6 @@
     group: root
     mode: "0644"
     content: |
-      # OpenClaw security hardening - SSH protection
       [DEFAULT]
       bantime = 3600
       findtime = 600
@@ -401,22 +215,32 @@
       enabled = true
       port = ssh
       filter = sshd
-      # logpath not needed - systemd backend reads from journal
-  notify: Restart fail2ban
+  become: true
+  when: ansible_os_family == 'Debian'
+  notify: workstation | Restart fail2ban
 
 - name: workstation | Enable and start fail2ban
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: fail2ban
     state: started
     enabled: true
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: workstation | Uninstall unsecured applications
+  ansible.builtin.apt:
+    name:
+      - telnetd
+      - ftpd
+      - vsftpd
+    state: absent
+    purge: true
+  become: true
+  when: ansible_os_family == 'Debian'
+  tags: package
 
 # Tailscale is retained as an optional legacy VPN, never uninstalled here.
 # Explicit management of an existing service can safely disable it without purge.
-- name: workstation | Inspect installed VPN and tunnel units
-  ansible.builtin.service_facts:
-  when: ansible_os_family == 'Debian'
-  tags: [security, vpn, tunnel]
-
 - name: workstation | Disable existing Tailscale without uninstalling it
   ansible.builtin.systemd_service:
     name: tailscaled.service
@@ -484,91 +308,54 @@
 # Firewall management is opt-in: Docker bridge/SSH routes must be audited first.
 - name: workstation | Apply approved firewall configuration
   when: workstation_firewall_manage_enabled | bool
+  become: true
   tags: [security, firewall]
   block:
-  # UFW Firewall configuration
-  - name: workstation | Install UFW
-    ansible.builtin.apt:
-      name: ufw
-      state: present
-      update_cache: true
+    - name: workstation | Install UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+        update_cache: true
 
-  - name: workstation | Set UFW default policies
-    community.general.ufw:
-      direction: "{{ item.direction }}"
-      policy: "{{ item.policy }}"
-    loop:
-      - { direction: "incoming", policy: "deny" }
-      - { direction: "outgoing", policy: "allow" }
-      - { direction: "routed", policy: "deny" }
+    - name: workstation | Set UFW default policies
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: "incoming", policy: "deny" }
+        - { direction: "outgoing", policy: "allow" }
+        - { direction: "routed", policy: "deny" }
 
-  # - name: workstation | Allow SSH on port 22
-  #   community.general.ufw:
-  #     rule: allow
-  #     port: '9922' # security_ssh_port
-  #     proto: tcp
-  #     comment: 'SSH'
+    - name: workstation | Allow Tailscale UDP port 41641
+      community.general.ufw:
+        rule: allow
+        port: "41641"
+        proto: udp
+        comment: "Tailscale"
+      when: tailscale_enabled | bool
 
-  - name: workstation | Allow Tailscale UDP port 41641
-    community.general.ufw:
-      rule: allow
-      port: "41641"
-      proto: udp
-      comment: "Tailscale"
-    when: tailscale_enabled | bool
+    - name: workstation | Validate default network interface was detected
+      ansible.builtin.assert:
+        that:
+          - ansible_default_ipv4.interface is defined
+        fail_msg: "Failed to detect default network interface. Cannot configure firewall rules safely."
+        success_msg: "Default network interface detected: {{ ansible_default_ipv4.interface }}"
 
-  - name: workstation | Get default network interface
-    ansible.builtin.shell:
-      cmd: |
-        set -o pipefail
-        ip route | grep default | awk '{print $5}' | head -n1
-      executable: /bin/bash
-    register: default_interface
-    changed_when: false
+    - name: workstation | Create UFW after.rules for Docker isolation
+      ansible.builtin.blockinfile:
+        path: /etc/ufw/after.rules
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - Docker isolation"
+        insertbefore: "^COMMIT$"
+        block: |
+          # Docker port isolation - block all forwarded traffic by default
+          :DOCKER-USER - [0:0]
 
-  - name: workstation | Validate default network interface was detected
-    ansible.builtin.assert:
-      that:
-        - default_interface.stdout is defined
-        - default_interface.stdout | length > 0
-      fail_msg: "Failed to detect default network interface. Cannot configure firewall rules safely."
-      success_msg: "Default network interface detected: {{ default_interface.stdout }}"
+          # Allow established connections
+          -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
-  - name: workstation | Create UFW after.rules for Docker isolation
-    ansible.builtin.blockinfile:
-      path: /etc/ufw/after.rules
-      marker: "# {mark} ANSIBLE MANAGED BLOCK - Docker isolation"
-      insertbefore: "^COMMIT$"
-      block: |
-        # Docker port isolation - block all forwarded traffic by default
-        :DOCKER-USER - [0:0]
+          # Allow localhost
+          -A DOCKER-USER -i lo -j ACCEPT
 
-        # Allow established connections
-        -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-
-        # Allow localhost
-        -A DOCKER-USER -i lo -j ACCEPT
-
-        # Block all other forwarded traffic to Docker containers from external interface
-        -A DOCKER-USER -i {{ default_interface.stdout }} -j DROP
-      create: false
-
-# Block usb key usage
-# - name: workstation | Install usbguard
-#   ansible.builtin.apt:
-#     name: usbguard
-#     state: present
-
-- name: workstation | Uninstall unsecured applications
-  ansible.builtin.apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-  tags: package
-  with_items:
-    - telnetd
-    - ftpd
-    - vsftpd
+          # Block all other forwarded traffic to Docker containers from external interface
+          -A DOCKER-USER -i {{ ansible_default_ipv4.interface }} -j DROP
+        create: false

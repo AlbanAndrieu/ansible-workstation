@@ -10,3 +10,9 @@
     state: restarted
   become: true
   listen: workstation | Restart resolved after approved NTA change
+
+- name: workstation | Restart fail2ban
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    state: restarted
+  become: true
