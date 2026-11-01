@@ -57,14 +57,16 @@ class EtcCaptureContract(unittest.TestCase):
                 )
 
     def test_capture_script_redacts_derived_secret_keys(self):
-        script = (ROOT / "scripts/capture-etc.sh").read_text()
-        functions = re.search(r"^marker=.*?^}\n", script, re.S | re.M).group(0)
+        # The rules live in capture-common.sh, sourced by capture-etc.sh.
+        common = ROOT / "scripts/capture-common.sh"
+        self.assertIn('. "${root}/scripts/capture-common.sh"',
+                      (ROOT / "scripts/capture-etc.sh").read_text())
         sample = (
             "db_password = a\nclient_secret: b\nPrivateKey = c\npsk=d\n"
             "password requisite pam_pwquality.so retry=3\n"
         )
         out = subprocess.run(
-            ["/bin/bash", "-c", functions + "redact"],
+            ["/bin/bash", "-c", '. "$1"; redact', "redact", str(common)],
             input=sample,
             capture_output=True,
             text=True,
