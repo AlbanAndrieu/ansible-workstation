@@ -13,7 +13,12 @@
     etc_restore_apply_approved: false
     etc_restore_pam: false
     etc_restore_src: "{{ playbook_dir | dirname }}/files/etc"
+    # Values removed by scripts/capture-etc.sh. A marker on an active line makes the
+    # file a manual restore; a marker only in a comment does not change the config.
     etc_restore_secret_marker: "@@SECRET@@"
+    etc_restore_internal_marker: "@@INTERNAL@@"
+    etc_restore_manual_pattern: >-
+      ^(?![ \t]*[#;]).*({{ etc_restore_secret_marker }}|{{ etc_restore_internal_marker }})
     # Units enabled on the source workstation; their packages/binaries must be installed first.
     etc_restore_enable_units:
       - cloudflared.service
@@ -41,13 +46,13 @@
         hidden: true
       register: etc_restore_found
 
-    - name: Keep files still holding a redacted secret for manual restore
+    - name: Keep files whose active lines hold a redacted value for manual restore
       ansible.builtin.set_fact:
         etc_restore_manual: "{{ etc_restore_manual | default([]) + [item.path | relpath(etc_restore_src)] }}"
       loop: "{{ etc_restore_found.files }}"
       loop_control:
         label: "{{ item.path | relpath(etc_restore_src) }}"
-      when: etc_restore_secret_marker in lookup('ansible.builtin.file', item.path)
+      when: lookup('ansible.builtin.file', item.path) is search(etc_restore_manual_pattern, multiline=True)
 
     - name: Select restorable files
       ansible.builtin.set_fact:

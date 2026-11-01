@@ -16,6 +16,7 @@ CAPTURE_ETC = ROOT / "scripts/capture-etc.sh"
 CAPTURE_PACKAGES = ROOT / "scripts/capture-packages.sh"
 COMMON = ROOT / "scripts/capture-common.sh"
 MARKER = "@@SECRET@@"
+INTERNAL = "@@INTERNAL@@"
 
 PEM_PRIVATE = "-----BEGIN " + "OPENSSH PRIVATE KEY-----\nAAAA\n"
 # OpenPGP old-format packet headers: tag 6 = public key, tag 5 = secret key.
@@ -39,6 +40,29 @@ EnvironmentFile=/etc/keep/env
 PasswordAuthentication no
 password [success=1 default=ignore] pam_unix.so obscure yescrypt
 max_retries = 3
+"""
+INTERNAL_SHAPES = """\
+DNS=172.31.250.1
+Server = 10.123.45.67
+pool 172.30.0.0/16
+local6.* @192.168.77.8:5140
+tailnet 100.101.102.103
+ula fd12:3456:789a::1/64
+search int.albandrieu.com albandrieu.com
+nas = nas.lan
+Hostname=fixture-host
+"""
+INTERNAL_KEPT = """\
+-A ufw-before-forward -s 10.0.0.0/8 -j DROP
+-A ufw-before-forward -s 172.16.0.0/12 -j DROP
+-A ufw-before-forward -s 192.168.0.0/16 -j DROP
+nameserver 127.0.0.53
+FallbackDNS=9.9.9.9 149.112.112.112
+ServerName www.albandrieu.com
+ServerAlias print.albandrieu.com
+iconv.internal_encoding = UTF-8
+HostnameItem=system.hostname
+version 10.2
 """
 KEPT = (
     'Environment="A=1"',
@@ -122,6 +146,22 @@ class CaptureEtcScript(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertIn(line, captured)
         self.assertIn("redacted secret(s): /etc/app/app.conf", result.stderr)
+
+    def test_removes_internal_addresses_and_names_only(self):
+        self.fx.host("net.conf", INTERNAL_SHAPES + INTERNAL_KEPT)
+        result = self.fx.capture("/etc/net.conf")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        captured = (self.fx.dest / "net.conf").read_text()
+        for value in ("172.31.", "10.123.", "172.30.", "192.168.77", "100.101.",
+                      "fd12:", " int.albandrieu",
+                      "nas.lan", "fixture-host"):
+            with self.subTest(value=value):
+                self.assertNotIn(value, captured)
+        self.assertEqual(captured.count(INTERNAL), 9)
+        self.assertTrue(captured.endswith(INTERNAL_KEPT), captured)
+        self.assertIn("search @@INTERNAL@@ albandrieu.com", captured)
+        self.assertIn("internal address(es) or hostname(s) removed: /etc/net.conf",
+                      result.stderr)
 
     def test_refuses_secret_stores_and_paths_outside_etc(self):
         for rel in ("shadow", "ssh/ssh_host_ed25519_key", "server.key",
@@ -231,7 +271,7 @@ class CommittedCaptures(unittest.TestCase):
         # so a rule added later forces a reviewed re-redaction.
         script = (
             '. "$1"; shift; for f; do is_text "$f" || continue; '
-            'redact <"$f" | cmp -s - "$f" || echo "unredacted: $f"; '
+            'redact <"$f" | scrub_internal | cmp -s - "$f" || echo "unredacted: $f"; '
             'has_secret_signature "$f" && echo "signature: $f"; done; true'
         )
         files = sorted(str(p) for p in (ROOT / "files/etc").rglob("*") if p.is_file())
