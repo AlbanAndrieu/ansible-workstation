@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -19,23 +20,34 @@ class DirenvVenvContract(unittest.TestCase):
         self.assertIn('export VIRTUAL_ENV="$PWD/.venv"', text)
         self.assertIn('PATH_add "$VIRTUAL_ENV/bin"', text)
         self.assertIn('[ ! -L "$PWD/.venv" ]', text)
-        for forbidden in ("uv sync", "pip install", "curl ", "wget ",
-                          "source .env.secrets", "pre-commit install"):
+        for forbidden in (
+            "uv sync",
+            "pip install",
+            "curl ",
+            "wget ",
+            "source .env.secrets",
+            "pre-commit install",
+        ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, text)
 
         helper = (ROOT / "scripts/ensure-direnv-venv.sh").read_text()
         self.assertIn("uv venv --offline --no-python-downloads", helper)
-        self.assertNotIn("uv sync", helper.replace(
-            "# No Python downloads, no network, no uv sync, no package install.",
-            "",
-        ).replace(
-            "# Never overwrite an existing environment. A first-time empty venv is safe",
-            "",
-        ).replace(
-            "# to sync later using the separately guarded 'mise run sync' task.",
-            "",
-        ))
+        self.assertNotIn(
+            "uv sync",
+            helper.replace(
+                "# No Python downloads, no network, no uv sync, no package install.",
+                "",
+            )
+            .replace(
+                "# Never overwrite an existing environment. A first-time empty venv is safe",  # noqa: E501
+                "",
+            )
+            .replace(
+                "# to sync later using the separately guarded 'mise run sync' task.",
+                "",
+            ),
+        )
         self.assertIn('touch "$MARKER"', helper)
         self.assertIn('if [ -e "$VENV" ]; then', helper)
         self.assertIn('if [ -L "$VENV" ]; then', helper)
@@ -45,11 +57,11 @@ class DirenvVenvContract(unittest.TestCase):
         source = script.read_text()
         self.assertIn("declare -p PROMPT_COMMAND", source)
         self.assertIn("declare -F _direnv_hook", source)
-        self.assertNotIn("eval \"$(direnv hook bash)\"", source)
+        self.assertNotIn('eval "$(direnv hook bash)"', source)
         self.assertNotIn("uv sync --locked", source)
         self.assertNotIn("git config --global", source)
         result = subprocess.run(
-            ["/bin/bash", "-c", "source \"$1\"", "_", str(script)],
+            ["/bin/bash", "-c", 'source "$1"', "_", str(script)],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -62,8 +74,8 @@ class DirenvVenvContract(unittest.TestCase):
     def test_sourced_diagnostic_cannot_overwrite_caller_variables(self):
         script = ROOT / "scripts/diagnose-direnv-shell.sh"
         command = (
-            'target=original; binary=original; '
-            '_prompt_declaration=original; _prompt_bad_source=original; '
+            "target=original; binary=original; "
+            "_prompt_declaration=original; _prompt_bad_source=original; "
             'source "$1" >/dev/null; '
             '[[ "$target" == original ]] && '
             '[[ "$binary" == original ]] && '
@@ -72,27 +84,37 @@ class DirenvVenvContract(unittest.TestCase):
         )
         result = subprocess.run(
             ["/bin/bash", "--noprofile", "--norc", "-c", command, "_", str(script)],
-            cwd=ROOT, capture_output=True, text=True, check=False, timeout=5,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_diagnostic_identifies_malformed_mise_history_without_leaking_prompt(self):
-        diag = (ROOT / "scripts/diagnose-direnv-shell.sh").read_text()
-        self.assertIn('INVALID _mise_hookhistory token detected', diag)
+        # Normalize ${var} to $var: shellcheck SC2250 enforces braces.
+        diag = re.sub(
+            r"\$\{(\w+)\}",
+            r"$\1",
+            (ROOT / "scripts/diagnose-direnv-shell.sh").read_text(),
+        )
+        self.assertIn("INVALID _mise_hookhistory token detected", diag)
         self.assertIn("AFTER the preceding", diag)
-        self.assertIn('$_prompt_declaration', diag)
+        self.assertIn("$_prompt_declaration", diag)
         self.assertNotIn('echo "$PROMPT_COMMAND"', diag)
         self.assertNotIn('eval "$PROMPT_COMMAND"', diag)
-        self.assertIn('PS1: INVALID _mise_hookhistory', diag)
+        self.assertIn("PS1: INVALID _mise_hookhistory", diag)
         self.assertIn('declare -f "$_prompt_hook_function"', diag)
-        self.assertIn('Prompt function %s: INVALID _mise_hookhistory', diag)
+        self.assertIn("Prompt function %s: INVALID _mise_hookhistory", diag)
         self.assertNotIn('echo "$_prompt_hook_body"', diag)
 
     def test_explicit_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as source:
             cfg = tomllib.load(source)
         self.assertEqual(
-            cfg["tasks"]["init"]["run"], "bash scripts/bootstrap-workstation.sh"
+            cfg["tasks"]["init"]["run"],
+            "bash scripts/bootstrap-workstation.sh",
         )
         self.assertEqual(
             cfg["tasks"]["recover-venv"]["run"],
@@ -199,7 +221,7 @@ class DirenvVenvContract(unittest.TestCase):
                 'mkdir -p "$path/bin"\n'
                 'echo "home = /fake/python" > "$path/pyvenv.cfg"\n'
                 'printf "#!/bin/sh\nexit 0\n" > "$path/bin/python"\n'
-                'chmod 700 "$path/bin/python"\n'
+                'chmod 700 "$path/bin/python"\n',
             )
             fake_uv.chmod(0o755)
             log = root / "uv-called"
@@ -217,11 +239,13 @@ class DirenvVenvContract(unittest.TestCase):
                     timeout=5,
                 )
                 self.assertEqual(
-                    result.returncode, 0, f"pass {iteration}: {result.stderr}"
+                    result.returncode,
+                    0,
+                    f"pass {iteration}: {result.stderr}",
                 )
             self.assertTrue((root / ".venv/bin/python").exists())
             self.assertTrue(
-                (root / ".venv/.ansible-workstation-uv-managed").exists()
+                (root / ".venv/.ansible-workstation-uv-managed").exists(),
             )
             calls = log.read_text().splitlines()
             self.assertEqual(len(calls), 1)
