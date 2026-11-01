@@ -167,9 +167,9 @@ class TestConfigurationAudit(unittest.TestCase):
 
     def test_dns_expected(self):
         def fake(argv, timeout=5):
-            if argv[:2] == ["resolvectl", "dns"]:
+            if argv[:2] == [audit.RESOLVECTL, "dns"]:
                 return 0, "Link 2 (eno1): 172.17.0.1"
-            if argv[:2] == ["resolvectl", "domain"]:
+            if argv[:2] == [audit.RESOLVECTL, "domain"]:
                 return 0, "Link 2 (eno1): ~int.albandrieu.com"
             return 0, "172.17.0.1"
         with patch.object(audit, "run", side_effect=fake):
@@ -177,6 +177,19 @@ class TestConfigurationAudit(unittest.TestCase):
         self.assertEqual(status["resolved_link_dns"], "expected")
         self.assertEqual(status["private_route_domain"], "expected")
         self.assertEqual(status["link_probes"], {"dns": "ok", "domain": "ok"})
+
+    def test_probes_use_absolute_binaries_not_user_path(self):
+        seen = []
+
+        def fake(argv, timeout=5):
+            seen.append(argv[0])
+            return 1, ""
+
+        with patch.object(audit, "run", side_effect=fake):
+            audit.audit_dns("eno1")
+            audit.unit_status("ufw.service", False)
+        self.assertTrue(seen)
+        self.assertTrue(all(arg.startswith("/usr/bin/") for arg in seen), seen)
 
     def test_dns_probe_failure_is_reported_separately_from_drift(self):
         with patch.object(audit, "run", return_value=(127, "")):

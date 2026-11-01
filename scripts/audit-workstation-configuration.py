@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-import json
+import importlib.util
 from pathlib import Path
 import re
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common", Path(__file__).with_name("audit_common.py"))
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 ETC_PATHS = (
     "NetworkManager/NetworkManager.conf",
@@ -62,6 +66,10 @@ METADATA_SYSTEMD_KEYS = ("FragmentPath", "DropInPaths")
 PRIVATE_DOMAIN = "~int.albandrieu.com"
 EXPECTED_DNS = "172.17.0.1"
 DNS_INTERFACE = "eno1"
+# Absolute paths: a user PATH entry cannot substitute these probes.
+SYSTEMCTL = "/usr/bin/systemctl"
+RESOLVECTL = "/usr/bin/resolvectl"
+NMCLI = "/usr/bin/nmcli"
 
 POLICY_SCHEMA = "workstation-os-policy/v1"
 DEFAULT_POLICY = Path(__file__).resolve().parents[1] / "policies/home-desktop.yml"
@@ -89,18 +97,11 @@ class PolicyError(ValueError):
 
 
 def run(argv: list[str], timeout: int = 5) -> tuple[int, str]:
-    try:
-        p = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            check=False,
-            stdin=subprocess.DEVNULL,
-            timeout=timeout,
-        )
-        return p.returncode, p.stdout[:8192] if p.returncode == 0 else ""
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        return 127, ""
+    # systemctl --user needs the caller's session bus: inherit the environment
+    # only for it. Output above 8 KiB is refused, never truncated.
+    env = None if "--user" in argv else common.FIXED_ENV
+    status, out = common.run_fixed(argv, timeout=timeout, max_bytes=8192, env=env)
+    return (0, out) if status == "ok" else (127 if status == "missing" else 1, "")
 
 
 def inventory(root: Path) -> dict[str, str]:
@@ -140,7 +141,7 @@ def _source_category(fragment: str, user: bool) -> str:
 
 def unit_status(name: str, user: bool) -> dict[str, str]:
     # Never request ExecStart, Environment or EnvironmentFile.
-    argv = ["systemctl"] + (["--user"] if user else []) + ["show", name]
+    argv = [SYSTEMCTL] + (["--user"] if user else []) + ["show", name]
     for key in ALLOWED_SYSTEMD_KEYS + METADATA_SYSTEMD_KEYS:
         argv += ["-p", key]
     rc, output = run(argv)
@@ -172,9 +173,9 @@ def unit_status(name: str, user: bool) -> dict[str, str]:
 def audit_dns(interface: str) -> dict[str, object]:
     if not re.fullmatch(r"[a-zA-Z0-9_.-]{1,32}", interface):
         raise ValueError("invalid interface")
-    rc_dns, dns = run(["resolvectl", "dns", interface])
-    rc_domain, domain = run(["resolvectl", "domain", interface])
-    rc_nm, nm = run(["nmcli", "-g", "IP4.DNS", "device", "show", interface])
+    rc_dns, dns = run([RESOLVECTL, "dns", interface])
+    rc_domain, domain = run([RESOLVECTL, "domain", interface])
+    rc_nm, nm = run([NMCLI, "-g", "IP4.DNS", "device", "show", interface])
     # Token comparisons, not substring matching on arbitrary addresses.
     ip_tokens = re.findall(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])", dns)
     domain_tokens = domain.split()
@@ -384,7 +385,7 @@ def main() -> int:
     args = parser.parse_args()
     result = audit()
     result["policy"] = evaluate_policy(result, args.policy)
-    print(json.dumps(result, sort_keys=True, indent=2 if args.json else None))
+    common.emit(result, indent=2 if args.json else None)
     # Unknowns are informative; report is not a pass for DNS or runtime unit parity.
     # Policy status is reported in JSON; exit code stays 0 (report, not a gate).
     return 0

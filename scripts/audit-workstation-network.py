@@ -6,11 +6,16 @@ addresses, ports, interfaces, system identities or Docker socket information.
 An unprivileged failure is UNKNOWN, not evidence of an empty firewall.
 """
 import argparse
+import importlib.util
 import json
 from pathlib import Path
 import re
 import shlex
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common", Path(__file__).with_name("audit_common.py"))
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 SCHEMA = "workstation-network-filter-audit/v1"
 COMMANDS = {
@@ -23,6 +28,7 @@ HOOKS = {"input", "forward", "output"}
 FAMILIES = {"ip", "ip6", "inet"}
 BUILTIN_CHAINS = ("INPUT", "FORWARD", "OUTPUT")
 ERROR_STATUSES = {"access_denied", "missing", "timed_out", "error"}
+MAX_RAW_BYTES = 1024 * 1024
 LIMITS = [
     "Unprivileged probes may be access_denied; that is not an empty ruleset.",
     "No sudo, Docker socket, Docker daemon change or rule modification.",
@@ -41,27 +47,9 @@ def forwarding_state(path):
 
 
 def run_probe(name):
-    argv = COMMANDS[name]
-    if not Path(argv[0]).is_file():
-        return "missing", ""
-    try:
-        result = subprocess.run(
-            argv, input="", text=True, capture_output=True, timeout=4,
-            check=False, env={"LC_ALL": "C", "PATH": "/usr/sbin:/usr/bin:/bin"},
-        )
-    except subprocess.TimeoutExpired:
-        return "timed_out", ""
-    except (OSError, ValueError):
-        return "error", ""
-    if result.returncode == 0:
-        return "ok", result.stdout[:1024 * 1024]
-    error = (result.stderr + result.stdout[:256]).lower()
-    denied = (
-        "permission denied", "operation not permitted", "must be root",
-        "requires root", "not permitted", "permission error",
-        "you must be root",
-    )
-    return ("access_denied" if any(x in error for x in denied) else "error"), ""
+    # Oversized output is an error: a truncated ruleset would undercount.
+    status, raw = common.run_fixed(COMMANDS[name], timeout=4, max_bytes=MAX_RAW_BYTES)
+    return common.public_status(status), raw
 
 
 def _policy(raw):
@@ -214,7 +202,7 @@ def main():
     args = parser.parse_args()
     data = inspect()
     if args.format == "json":
-        print(json.dumps(data, indent=2, sort_keys=True))
+        common.emit(data)
         return
     print("NETWORK FILTER VISIBILITY — read only; effective filtering NOT VERIFIED")
     print("IP forwarding:", data["ip_forward"])

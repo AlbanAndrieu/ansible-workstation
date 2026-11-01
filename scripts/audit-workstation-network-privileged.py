@@ -7,10 +7,13 @@ No rules, addresses, stderr or ports are printed or saved.
 """
 import argparse
 import importlib.util
-import json
 import os
 from pathlib import Path
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common", Path(__file__).with_name("audit_common.py"))
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 COLLECTOR = Path(__file__).with_name("audit-workstation-network.py")
 SPEC = importlib.util.spec_from_file_location("workstation_network_filter", COLLECTOR)
@@ -18,13 +21,7 @@ NETWORK = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(NETWORK)
 
 SUDO = "/usr/bin/sudo"
-MAX_RAW_BYTES = 1024 * 1024
-DENIED_MARKERS = (
-    "permission denied", "operation not permitted", "must be root",
-    "requires root", "you must be root", "password is required",
-    "a terminal is required", "not in the sudoers", "not allowed to execute",
-    "authentication is required", "no tty present",
-)
+MAX_RAW_BYTES = NETWORK.MAX_RAW_BYTES
 
 
 def privileged_probe(name, executor=None):
@@ -34,27 +31,14 @@ def privileged_probe(name, executor=None):
     if os.geteuid() == 0:
         return "error", ""
     args = NETWORK.COMMANDS[name]
-    if not Path(SUDO).is_file() or not Path(args[0]).is_file():
+    if not Path(args[0]).is_file():
         return "missing", ""
-    if executor is None:
-        executor = subprocess.run
-    try:
-        result = executor(
-            [SUDO, "-n", "--", *args],
-            input="", capture_output=True, text=True, check=False, timeout=5,
-            env={"LC_ALL": "C", "PATH": "/usr/sbin:/usr/bin:/bin"},
-        )
-    except subprocess.TimeoutExpired:
-        return "timed_out", ""
-    except (OSError, ValueError):
-        return "error", ""
-    if result.returncode == 0:
-        # Do not feed a truncated ruleset to parsers as a successful result.
-        raw = result.stdout or ""
-        return ("ok", raw) if len(raw.encode("utf-8")) <= MAX_RAW_BYTES else ("error", "")
-    error = (result.stderr or "").lower()
-    return ("access_denied" if any(v in error for v in DENIED_MARKERS)
-            else "error"), ""
+    # run_fixed refuses a missing sudo and never returns stderr or partial output.
+    status, raw = common.run_fixed(
+        [SUDO, "-n", "--", *args], timeout=5, max_bytes=MAX_RAW_BYTES,
+        executor=executor,
+    )
+    return common.public_status(status), raw
 
 
 def main():
@@ -78,7 +62,7 @@ def main():
         "No elevation of the user-owned Python code; no sudoers changes.",
         "A denied or timed-out probe is UNKNOWN, not an empty firewall.",
     ]
-    print(json.dumps(result, indent=2, sort_keys=True))
+    common.emit(result)
 
 
 if __name__ == "__main__":
