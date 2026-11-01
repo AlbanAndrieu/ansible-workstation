@@ -23,5 +23,5 @@ Nice=19
 IOSchedulingClass=idle
 ExecStart=/usr/bin/restic backup --one-file-system --exclude-caches --files-from /etc/restic/include.txt --exclude-file /etc/restic/exclude.txt
 ExecStartPost=/usr/bin/restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 12 --prune
-# Read by zabbix-agent2 (restic.last_success_age): the dead man's switch.
-ExecStartPost=/usr/bin/touch %S/restic/last-success
+# Dead man's switch: zabbix-agent2 reads last-success, node_exporter the .prom mtime.
+ExecStartPost=/usr/bin/touch %S/restic/last-success.prom %S/restic/last-success
