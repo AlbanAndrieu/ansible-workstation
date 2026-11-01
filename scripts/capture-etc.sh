@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Copy the /etc files listed in files/etc-manifest.txt into files/etc/, redacting secrets.
+# Copy the /etc files listed in files/etc-manifest.txt into files/etc/, redacting secrets
+# and private infrastructure addresses or names (capture-common.sh).
 # Read-only on the system: no sudo, unreadable or absent paths are reported and skipped.
 # Whatever the manifest says, refuses secret stores, paths or symlinks leaving /etc,
 # directories, binaries other than public OpenPGP keys, and files still carrying a
@@ -58,7 +59,7 @@ capture_one() {
 
   # Stage outside the repository so a refused file never replaces the repo copy.
   if is_text "${real}"; then
-    if ! redact <"${real}" >"${staged}"; then
+    if ! redact <"${real}" | scrub_internal >"${staged}"; then
       refuse "read error" "${shown}"
       return
     fi
@@ -87,6 +88,9 @@ capture_one() {
   chmod "${mode}" -- "${dest}/${rel}"
   if grep -qF -- "${CAPTURE_MARKER}" "${dest}/${rel}"; then
     note "redacted secret(s): ${shown}"
+  fi
+  if grep -qF -- "${CAPTURE_INTERNAL_MARKER}" "${dest}/${rel}"; then
+    note "internal address(es) or hostname(s) removed: ${shown}"
   fi
   if ! world_readable "${real}"; then
     note "not world-readable on the host, review before commit: ${shown}"

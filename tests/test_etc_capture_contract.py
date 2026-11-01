@@ -1,5 +1,6 @@
 """Offline guardrails for the captured /etc files and their opt-in restore."""
 
+import ipaddress
 from pathlib import Path
 import re
 import subprocess
@@ -75,6 +76,42 @@ class EtcCaptureContract(unittest.TestCase):
         self.assertEqual(out.count("@@SECRET@@"), 4)
         self.assertIn("password requisite pam_pwquality.so retry=3", out)
         self.assertIsNone(UNREDACTED.search(out))
+
+    def test_no_internal_address_or_name_left(self):
+        generic = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}
+        private = [ipaddress.ip_network(n) for n in (
+            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10",
+            "fc00::/7")]
+        ipv4 = re.compile(r"(?<![\d.])(\d{1,3}(?:\.\d{1,3}){3})(/\d{1,2})?(?!\d)")
+        for path in CAPTURED.rglob("*"):
+            if not path.is_file():
+                continue
+            text = path.read_text(errors="replace")
+            self.assertNotRegex(text, r"(?i)int\.albandrieu\.com", path)
+            for match in ipv4.finditer(text):
+                if match.group(0) in generic:
+                    continue
+                try:
+                    ip = ipaddress.ip_address(match.group(1))
+                except ValueError:
+                    continue
+                self.assertFalse(any(ip in net for net in private), path)
+
+    def test_restore_marks_manual_only_for_markers_on_active_lines(self):
+        v = play()["vars"]
+        pattern = (
+            v["etc_restore_manual_pattern"]
+            .replace("{{ etc_restore_secret_marker }}", v["etc_restore_secret_marker"])
+            .replace("{{ etc_restore_internal_marker }}",
+                     v["etc_restore_internal_marker"])
+        )
+        manual = re.compile(pattern, re.MULTILINE)
+        self.assertTrue(manual.search("a = 1\nDNS=@@INTERNAL@@\n"))
+        self.assertTrue(manual.search('Environment="KEY=@@SECRET@@"\n'))
+        self.assertFalse(manual.search("a = 1\n# DNS=@@INTERNAL@@\n; p=@@SECRET@@\n"))
+        task = next(t for t in play()["tasks"] if "etc_restore_manual" in str(t))
+        self.assertIn("is search(etc_restore_manual_pattern, multiline=True)",
+                      task["when"])
 
     def test_restore_is_check_only_by_default(self):
         p = play()

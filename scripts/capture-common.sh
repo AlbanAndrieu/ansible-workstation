@@ -54,6 +54,32 @@ redact() {
     -e "/^[[:space:]#;]*Environment=/s/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD|PASSWD|PSK)[A-Za-z0-9_]*=)[^\" ]+/\\1${m}/Ig"
 }
 
+CAPTURE_INTERNAL_MARKER='@@INTERNAL@@'
+
+# Replace private infrastructure addresses and names with CAPTURE_INTERNAL_MARKER:
+# RFC 1918, CGNAT (Tailscale) and IPv6 ULA addresses with their prefix, names
+# under int.albandrieu.com, .lan, .internal or .home.arpa, and Hostname/HostName
+# values. Kept on purpose: the generic RFC 1918 blocks of filter rules, which
+# reveal nothing, loopback, public resolvers, and public vhosts, already listed
+# in Certificate Transparency logs.
+scrub_internal() {
+  local m="${CAPTURE_INTERNAL_MARKER}" o='[0-9]{1,3}'
+  local private="10\\.${o}\\.${o}\\.${o}|172\\.(1[6-9]|2[0-9]|3[01])\\.${o}\\.${o}|192\\.168\\.${o}\\.${o}|100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.${o}\\.${o}"
+  local edge='[^A-Za-z0-9.-]'
+  sed -E \
+    -e 's#(^|[^0-9.])10\.0\.0\.0/8([^0-9]|$)#\1@@KEEP_RFC1918_A@@\2#g' \
+    -e 's#(^|[^0-9.])172\.16\.0\.0/12([^0-9]|$)#\1@@KEEP_RFC1918_B@@\2#g' \
+    -e 's#(^|[^0-9.])192\.168\.0\.0/16([^0-9]|$)#\1@@KEEP_RFC1918_C@@\2#g' \
+    -e "s#(^|[^0-9A-Za-z.])(${private})(/[0-9]{1,2})?#\\1${m}#g" \
+    -e "s#(^|[^0-9A-Za-z:.])[fF][cdCD][0-9a-fA-F]{2}(:[0-9a-fA-F]{0,4}){2,7}(/[0-9]{1,3})?#\\1${m}#g" \
+    -e "s#(^|${edge})([A-Za-z0-9-]+\\.)*int\\.albandrieu\\.com([^A-Za-z0-9_-]|\$)#\\1${m}\\3#Ig" \
+    -e "s#(^|${edge})([A-Za-z0-9-]+\\.)+(lan|internal|home\\.arpa)([^A-Za-z0-9_-]|\$)#\\1${m}\\4#Ig" \
+    -e "s/^([[:space:]#;]*Hostname[[:space:]]*=[[:space:]]*).+/\\1${m}/I" \
+    -e "s/^([[:space:]]*HostName[[:space:]]+).+/\\1${m}/I" \
+    -e 's#@@KEEP_RFC1918_A@@#10.0.0.0/8#g; s#@@KEEP_RFC1918_B@@#172.16.0.0/12#g' \
+    -e 's#@@KEEP_RFC1918_C@@#192.168.0.0/16#g'
+}
+
 # Copy stdin to $2, which must stay inside directory $1. Symlinks planted in
 # the repository are never followed: the parent must resolve inside $1 and
 # the target is replaced by rename, not opened.

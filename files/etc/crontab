@@ -21,4 +21,4 @@ SHELL=/bin/sh
 47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
 52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
 #
-0 1 * * * root /usr/bin/nmap -sV -O -p- -T4 -A --stats-every 10s -oX /tmp/lastnampscan.xml 192.168.1.0/24 -v >/dev/null 2>&1
+0 1 * * * root /usr/bin/nmap -sV -O -p- -T4 -A --stats-every 10s -oX /tmp/lastnampscan.xml @@INTERNAL@@ -v >/dev/null 2>&1
