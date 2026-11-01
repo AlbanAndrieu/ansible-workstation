@@ -36,8 +36,11 @@ snap list 2>/dev/null | awk 'NR > 1 && $6 !~ /base|snapd/ && $1 !~ /^(core[0-9]*
 flatpak list --app --columns=application 2>/dev/null | sort -u >"${out}/flatpak.txt"
 
 # Keyrings referenced by captured sources but stored outside /etc.
-grep -ohE '(Signed-By:[[:space:]]*|signed-by=)/usr/share/keyrings/[^],[:space:]]+' \
-  "${root}"/files/etc/apt/sources.list.d/* | sed -E 's/^(Signed-By:[[:space:]]*|signed-by=)//' | sort -u |
+# /dev/null keeps grep off stdin when no source is captured; no match is not an error.
+shopt -s nullglob
+{ grep -ohE '(Signed-By:[[:space:]]*|signed-by=)/usr/share/keyrings/[^],[:space:]]+' \
+  /dev/null "${root}"/files/etc/apt/sources.list.d/* || true; } |
+  sed -E 's/^(Signed-By:[[:space:]]*|signed-by=)//' | sort -u |
   while read -r key; do
     if [ -r "${key}" ]; then
       cp "${key}" "${keyrings}/"

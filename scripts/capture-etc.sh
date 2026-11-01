@@ -7,10 +7,12 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest="${root}/files/etc-manifest.txt"
 dest="${root}/files/etc"
 marker='@@SECRET@@'
+# Any key containing a secret word: db_password, client_secret, psk, PrivateKey...
+key='[A-Za-z0-9_.-]*(password|passwd|secret|token|api_?key|psk|private_?key)[A-Za-z0-9_.-]*'
 
 redact() {
   sed -E \
-    -e "s/^([[:space:]]*(password|passwd|secret|token|api_key)[[:space:]]*[=:][[:space:]]*).+/\1${marker}/I" \
+    -e "s/^([[:space:]]*${key}[[:space:]]*[=:][[:space:]]*).+/\1${marker}/I" \
     -e "s/^([[:space:]#]*HashedControlPassword[[:space:]]+).+/\1${marker}/" \
     -e "s/(Environment=\"?[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD)=)[^\" ]+/\1${marker}/"
 }

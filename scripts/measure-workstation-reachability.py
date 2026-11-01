@@ -5,6 +5,7 @@ No discovery, DNS, port sweep, subprocess, elevated privilege or persistence.
 Targets/ports are private in an operator-owned 0600 JSON file outside Git.
 Public output has counters only and NEVER proves the claimed observer location.
 """
+
 import argparse
 import errno
 import ipaddress
@@ -13,20 +14,27 @@ import os
 from pathlib import Path
 import socket
 import stat
-import sys
 
 SCHEMA = "workstation-reachability-measurement/v1"
 MANIFEST_SCHEMA = "workstation-connectivity-allowlist/v1"
 OBSERVERS = ("local", "lan", "wan")
 MAX_TARGETS = 12
 TIMEOUT_SECONDS = 1.5
-RFC1918 = tuple(ipaddress.ip_network(x) for x in (
-    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
-))
+RFC1918 = tuple(
+    ipaddress.ip_network(x)
+    for x in (
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+    )
+)
 IPV6_ULA = ipaddress.ip_network("fc00::/7")
 RESULT_KEYS = (
-    "expected_allowed", "expected_denied", "unexpected_open",
-    "unexpected_closed", "inconclusive",
+    "expected_allowed",
+    "expected_denied",
+    "unexpected_open",
+    "unexpected_closed",
+    "inconclusive",
 )
 
 
@@ -40,7 +48,9 @@ def validate_scope(address, observer):
     except (ValueError, TypeError):
         raise InvalidManifest("target address must be a numeric IP literal") from None
     if ip.is_multicast or ip.is_unspecified or ip.is_link_local:
-        raise InvalidManifest("multicast, wildcard and link-local addresses are prohibited")
+        raise InvalidManifest(
+            "multicast, wildcard and link-local addresses are prohibited",
+        )
     if observer == "local":
         allowed = ip.is_loopback
     elif observer == "lan":
@@ -50,7 +60,9 @@ def validate_scope(address, observer):
     else:
         allowed = ip.is_global
     if not allowed:
-        raise InvalidManifest("target address is not in the declared observer's address class")
+        raise InvalidManifest(
+            "target address is not in the declared observer's address class",
+        )
     return ip
 
 
@@ -63,7 +75,9 @@ def read_manifest(path, observer, *, repo_root=None):
         metadata = real.stat()
     except OSError:
         raise InvalidManifest("manifest is not accessible") from None
-    root = (Path(repo_root) if repo_root else Path(__file__).resolve().parents[1]).resolve()
+    root = (
+        Path(repo_root) if repo_root else Path(__file__).resolve().parents[1]
+    ).resolve()
     if real == root or root in real.parents:
         raise InvalidManifest("manifest must be outside the Git checkout")
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
@@ -86,7 +100,10 @@ def read_manifest(path, observer, *, repo_root=None):
     selected, seen = [], set()
     for row in values:
         if not isinstance(row, dict) or set(row) != {
-            "observer", "address", "port", "expected"
+            "observer",
+            "address",
+            "port",
+            "expected",
         }:
             raise InvalidManifest("target has unexpected fields")
         site = row["observer"]
@@ -121,7 +138,7 @@ def try_tcp(ip, port, timeout=TIMEOUT_SECONDS, connector=None):
         with socket.socket(family, socket.SOCK_STREAM) as client:
             client.settimeout(timeout)
             result = client.connect_ex(
-                (str(ip), port, 0, 0) if ip.version == 6 else (str(ip), port)
+                (str(ip), port, 0, 0) if ip.version == 6 else (str(ip), port),
             )
     except (TimeoutError, socket.timeout):
         return "timed_out"
@@ -140,16 +157,25 @@ def try_tcp(ip, port, timeout=TIMEOUT_SECONDS, connector=None):
 
 def summarize(targets, observer, *, active=False, connector=None):
     outcomes = {name: 0 for name in RESULT_KEYS}
-    observed = {name: 0 for name in (
-        "connected", "refused", "timed_out", "unreachable", "error"
-    )}
+    observed = {
+        name: 0
+        for name in (
+            "connected",
+            "refused",
+            "timed_out",
+            "unreachable",
+            "error",
+        )
+    }
     for ip, port, expectation in targets if active else ():
         result = try_tcp(ip, port, connector=connector)
         observed[result if result in observed else "error"] += 1
         if result == "connected":
             status = "expected_allowed" if expectation == "allow" else "unexpected_open"
         elif result == "refused":
-            status = "unexpected_closed" if expectation == "allow" else "expected_denied"
+            status = (
+                "unexpected_closed" if expectation == "allow" else "expected_denied"
+            )
         else:
             status = "inconclusive"
         outcomes[status] += 1
@@ -163,17 +189,25 @@ def summarize(targets, observer, *, active=False, connector=None):
         "attempts": sum(observed.values()),
         "outcomes": outcomes,
         "transport_observed": observed,
-        "overall_reachability": "not_verified" if not active else
-            ("unexpected_open" if outcomes["unexpected_open"] else
-             "needs_review" if outcomes["unexpected_closed"] or outcomes["inconclusive"]
-             else "matched_configured_expectations"),
+        "overall_reachability": "not_verified"
+        if not active
+        else (
+            "unexpected_open"
+            if outcomes["unexpected_open"]
+            else "needs_review"
+            if outcomes["unexpected_closed"] or outcomes["inconclusive"]
+            else "matched_configured_expectations"
+        ),
         "limitations": [
-            "Observer location is self-declared; do not run LAN/WAN on the target itself.",
-            "Only explicit numerical-IP/port targets are tested once; no discovery or DNS.",
+            "Observer location is self-declared; "
+            "do not run LAN/WAN on the target itself.",
+            "Only explicit numerical-IP/port targets are tested once; "
+            "no discovery or DNS.",
             "Refused is a denial; timeout/unreachable/error remain inconclusive.",
             "A TCP handshake does not verify TLS, authentication, application or UDP.",
             "Connected to a proxy/tunnel is not evidence of workstation reachability.",
-            "Only aggregated counters are printed; no targets, ports, IDs or source IPs.",
+            "Only aggregated counters are printed; "
+            "no targets, ports, IDs or source IPs.",
         ],
     }
 
@@ -181,10 +215,16 @@ def summarize(targets, observer, *, active=False, connector=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--observer", choices=OBSERVERS, required=True)
-    parser.add_argument("--allowlist", required=True,
-                        help="absolute path to private 0600 JSON file OUTSIDE Git")
-    parser.add_argument("--confirm-connect", action="store_true",
-                        help="explicit opt-in for at most 12 single TCP connections")
+    parser.add_argument(
+        "--allowlist",
+        required=True,
+        help="absolute path to private 0600 JSON file OUTSIDE Git",
+    )
+    parser.add_argument(
+        "--confirm-connect",
+        action="store_true",
+        help="explicit opt-in for at most 12 single TCP connections",
+    )
     args = parser.parse_args(argv)
     if os.geteuid() == 0:
         parser.error("never run this collector as root or with sudo")
