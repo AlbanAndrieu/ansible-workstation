@@ -94,6 +94,21 @@ Une version de paquet installée ne prouve pas l'absence de vulnérabilité.
 - Les futurs rapports privés devront définir lieu de stockage, contrôle
   d'accès, rétention et chiffrement Restic **avant** activation.
 
+## Exécution des sondes (1er novembre 2026)
+
+Les scripts d'audit qui lancent une commande (`audit-openclaw-source.py`,
+`audit-workstation-configuration.py`, `audit-workstation-listeners.py`,
+`audit-workstation-network.py`, `audit-workstation-network-privileged.py`,
+`measure-workstation-docker-publishing.py`) passent tous par
+[`scripts/audit_common.py`](../scripts/audit_common.py), chargé par chemin :
+argv fixe sans shell, environnement minimal (sauf `systemctl --user`, qui
+a besoin du bus de session), binaires système en chemin absolu, stdin vide,
+délai borné. Une sortie trop longue est un **échec**, jamais une sortie
+tronquée analysée comme complète ; stderr et sortie partielle ne quittent
+jamais le module. `measure-workstation-reachability.py` reste sans aucun
+lanceur de commande. `tests/test_audit_common_contract.py` applique au
+module l'union des jetons interdits des scripts.
+
 ## Observations réellement validées le 27 octobre 2026
 
 L'opérateur a fourni la preuve de l'ancienne révision (commit `86634080`) :

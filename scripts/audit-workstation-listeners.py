@@ -5,10 +5,14 @@ No sudo, no container API, no port/address/process output; not an exposure
 test. Docker DNAT-published ports may not appear as host listening sockets.
 """
 import argparse
-import ipaddress
+import importlib.util
 import json
 from pathlib import Path
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common", Path(__file__).with_name("audit_common.py"))
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 SCHEMA = "workstation-listener-visibility/v1"
 COMMANDS = {
@@ -43,14 +47,9 @@ def binding_scope(address):
     if host == "*":
         return "wildcard"
     try:
-        ip = ipaddress.ip_address(host)
+        return common.bind_scope(host)
     except ValueError:
         return "unknown"
-    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
-        ip = ip.ipv4_mapped
-    if ip.is_unspecified:
-        return "wildcard"
-    return "loopback" if ip.is_loopback else "interface_specific"
 
 
 def summarize_ss(output):
@@ -83,27 +82,11 @@ def summarize_ss(output):
 def probe(protocol, executor=None):
     if protocol not in COMMANDS:
         raise ValueError("unexpected listener protocol")
-    argv = COMMANDS[protocol]
-    if not Path(argv[0]).is_file():
-        return {"status": "missing", "summary": None}
-    if executor is None:
-        executor = subprocess.run
-    try:
-        result = executor(
-            argv, capture_output=True, text=True, input="", timeout=4,
-            check=False, env={"LC_ALL": "C", "PATH": "/usr/bin:/bin"},
-        )
-    except subprocess.TimeoutExpired:
-        return {"status": "timed_out", "summary": None}
-    except (OSError, ValueError):
-        return {"status": "error", "summary": None}
-    if result.returncode != 0:
-        return {"status": "access_denied" if "permission denied" in
-                (result.stderr or "").lower() else "error", "summary": None}
-    raw = result.stdout or ""
-    if len(raw.encode("utf-8")) > MAX_BYTES:
-        return {"status": "error", "summary": None}
-    return {"status": "ok", "summary": summarize_ss(raw)}
+    status, raw = common.run_fixed(
+        COMMANDS[protocol], timeout=4, max_bytes=MAX_BYTES, executor=executor,
+    )
+    status = common.public_status(status)
+    return {"status": status, "summary": summarize_ss(raw) if status == "ok" else None}
 
 
 def inspect():
@@ -128,7 +111,7 @@ def main():
     args = parser.parse_args()
     report = inspect()
     if args.format == "json":
-        print(json.dumps(report, sort_keys=True, indent=2))
+        common.emit(report)
         return
     print("LISTENER BINDING VISIBILITY (read only; reachability NOT VERIFIED)")
     for proto in COMMANDS:

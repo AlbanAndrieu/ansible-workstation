@@ -6,12 +6,17 @@ Runs only a fixed read command after explicit acknowledgment. Never enables
 Docker privileges, starts/stops containers, or prints any port/address/name.
 """
 import argparse
+import importlib.util
 import ipaddress
 import json
 import os
 from pathlib import Path
 import re
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common", Path(__file__).with_name("audit_common.py"))
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 SCHEMA = "workstation-docker-publications/v1"
 DOCKER = "/usr/bin/docker"
@@ -41,13 +46,7 @@ def scope_for_segment(segment):
     except ValueError:
         return (protocol, "unknown", "unknown")
     family = "ipv4" if ip.version == 4 else "ipv6"
-    if ip.is_unspecified:
-        scope = "wildcard"
-    elif ip.is_loopback:
-        scope = "loopback"
-    else:
-        scope = "interface_specific"
-    return (protocol, family, scope)
+    return (protocol, family, common.bind_scope(ip))
 
 
 def summarize(lines):
@@ -96,7 +95,8 @@ def inspect(executor=None):
         "limitations": [
             "Docker daemon access is root-equivalent on many hosts.",
             "This fixed Docker CLI command reads local container metadata only.",
-            "No Docker container names, identifiers, host IPs or port numbers are reported.",
+            "No Docker container names, identifiers, host IPs or port numbers"
+            " are reported.",
             "Docker formatted port ranges count as segments, not unique ports.",
             "Published ports alone do not prove LAN/WAN reachability.",
             "No Docker privileges, group membership or sudoers were modified.",
@@ -105,30 +105,12 @@ def inspect(executor=None):
     if os.geteuid() == 0:
         result["status"] = "refused_root"
         return result
-    if not Path(DOCKER).is_file():
-        result["status"] = "missing"
-        return result
-    if executor is None:
-        executor = subprocess.run
-    try:
-        response = executor(
-            ARGV, input="", capture_output=True, text=True,
-            timeout=6, check=False,
-            env={"LC_ALL": "C", "PATH": "/usr/bin:/bin"},
-        )
-    except subprocess.TimeoutExpired:
-        result["status"] = "timed_out"
-        return result
-    except (OSError, ValueError):
-        return result
-    if response.returncode:
-        info = (response.stderr or "").lower()
-        result["status"] = "access_denied" if (
-            "permission denied" in info or "connect: permission" in info
-        ) else "unavailable"
-        return result
-    raw = response.stdout or ""
-    if len(raw.encode("utf-8")) > MAX_BYTES:
+    # The fixed environment carries no DOCKER_HOST: only ARGV selects the daemon.
+    status, raw = common.run_fixed(ARGV, timeout=6, max_bytes=MAX_BYTES,
+                                   executor=executor)
+    if status != "ok":
+        result["status"] = "unavailable" if status == "failed" else (
+            common.public_status(status))
         return result
     summary = summarize(raw)
     if summary is not None:
@@ -146,7 +128,7 @@ def main(argv=None):
         parser.error("explicit --ack-docker-socket-read required")
     if os.geteuid() == 0:
         parser.error("never run this Python script with root or sudo")
-    print(json.dumps(inspect(), indent=2, sort_keys=True))
+    common.emit(inspect())
 
 
 if __name__ == "__main__":
