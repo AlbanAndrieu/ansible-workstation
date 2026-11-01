@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 import yaml
@@ -15,7 +16,8 @@ FORBIDDEN = re.compile(
     r"credentials|GeoIP\.conf|docker/key\.json|wireguard|sudoers",
 )
 UNREDACTED = re.compile(
-    r"^\s*(password|passwd|secret|token|api_key)\s*[=:]\s*(?!@@SECRET@@)\S"
+    r"^\s*[\w.-]*(password|passwd|secret|token|api_?key|psk|private_?key)[\w.-]*"
+    r"\s*[=:]\s*(?!@@SECRET@@)\S"
     r"|HashedControlPassword\s+(?!@@SECRET@@)\S"
     r"|Environment=\"?[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD)=(?!@@SECRET@@)[^\"\s]",
     re.IGNORECASE | re.MULTILINE,
@@ -53,6 +55,24 @@ class EtcCaptureContract(unittest.TestCase):
                     UNREDACTED.search(path.read_text(errors="replace")),
                     path,
                 )
+
+    def test_capture_script_redacts_derived_secret_keys(self):
+        script = (ROOT / "scripts/capture-etc.sh").read_text()
+        functions = re.search(r"^marker=.*?^}\n", script, re.S | re.M).group(0)
+        sample = (
+            "db_password = a\nclient_secret: b\nPrivateKey = c\npsk=d\n"
+            "password requisite pam_pwquality.so retry=3\n"
+        )
+        out = subprocess.run(
+            ["/bin/bash", "-c", functions + "redact"],
+            input=sample,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        self.assertEqual(out.count("@@SECRET@@"), 4)
+        self.assertIn("password requisite pam_pwquality.so retry=3", out)
+        self.assertIsNone(UNREDACTED.search(out))
 
     def test_restore_is_check_only_by_default(self):
         p = play()
