@@ -192,3 +192,15 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 [tasks.howdy-cameras-audit]
 description = "Read-only Howdy/motion camera audit: no sudo, no package change, never PAM"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/howdy-cameras.yml"
+
+[tasks.cleanup-check]
+description = "Read-only cleanup preview: disk usage, BleachBit cleaner availability and bleachbit --preview"
+run = "bash scripts/workstation-cleanup.sh check"
+
+[tasks.cleanup-apply]
+description = "Clean regenerable user caches with BleachBit and files/bleachbit/workstation_dev.xml; no sudo"
+run = "bash scripts/workstation-cleanup.sh apply"
+
+[tasks.cleanup-apply-system]
+description = "Explicit sudo cleanup: apt caches, disabled snaps, journald size, unused flatpaks"
+run = "bash scripts/workstation-cleanup.sh apply-system"
