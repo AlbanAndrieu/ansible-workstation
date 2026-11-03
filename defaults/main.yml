@@ -80,7 +80,7 @@ tlp_enabled: true
 tweak_enabled: true
 compizconfig_enabled: true
 gstreamer_enabled: true
-howdy_enabled: true
+# Howdy: see playbooks/howdy-cameras.yml (never installed by this role).
 skype_enabled: false
 webapps_enabled: true
 pidgin_enabled: false

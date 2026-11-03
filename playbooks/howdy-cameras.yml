@@ -1,0 +1,414 @@
+---
+# Howdy package and motion/Howdy webcam split. OS scope only.
+# Never edits PAM: Howdy/YubiKey PAM belongs to nabla-yubikey (see harden-os.yml).
+# Read-only by default. Never imported from playbooks/workstation.yml.
+# Audit: .venv/bin/ansible-playbook -i localhost, -c local playbooks/howdy-cameras.yml
+- name: Audit or explicitly provision Howdy and the motion/Howdy camera split
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    howdy_cameras_apply: false
+    howdy_cameras_apply_approved: false
+    howdy_cameras_write: "{{ howdy_cameras_apply | bool and howdy_cameras_apply_approved | bool }}"
+    # Stable V4L2 links (/dev/v4l/by-path/... or /dev/v4l/by-id/...), never
+    # /dev/videoN: two identical webcams can swap numbers at boot.
+    howdy_camera_device: ""
+    motion_camera_device: ""
+    howdy_config_path: /etc/howdy/config.ini
+    # Upstream default. Higher values accept weaker matches.
+    howdy_certainty: "3.5"
+    motion_config_path: /etc/motion/motion.conf
+    # motion stops this long after each start; the camera is then free for calls.
+    motion_autostop_after: 5min
+    # Re-enable only this operator-added source; no new PPA is ever created here.
+    howdy_apt_source: /etc/apt/sources.list.d/ubuntuhandbook1-ubuntu-howdy-resolute.sources
+    howdy_apt_origin: LP-PPA-ubuntuhandbook1-howdy
+    # PAM services checked for Howdy before/after install. Read-only.
+    howdy_pam_services:
+      - common-auth
+      - sudo
+      - sudo-i
+      - polkit-1
+      - gdm-password
+      - login
+      - su
+
+  tasks:
+    - name: Inspect only the operating system distribution
+      ansible.builtin.setup:
+        gather_subset: ["!all", "!min", distribution]
+      no_log: true
+
+    - name: Reject unsupported operating systems
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.get('distribution', '') == 'Ubuntu'
+          - ansible_facts.get('distribution_version', '') in ['24.04', '26.04']
+        fail_msg: "Howdy/camera management is limited to Ubuntu 24.04/26.04."
+        quiet: true
+
+    # ---------------------------------------------------------------- audit
+    - name: List stable V4L2 capture links
+      ansible.builtin.find:
+        paths: [/dev/v4l/by-path, /dev/v4l/by-id]
+        file_type: link
+        patterns: ["*-video-index0"]
+      register: howdy_cameras_links
+
+    - name: Resolve each stable link to its current /dev/videoN
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+        get_checksum: false
+      loop: "{{ howdy_cameras_links.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+      register: howdy_cameras_link_stats
+
+    - name: Map stable links to devices in memory
+      ansible.builtin.set_fact:
+        howdy_cameras_map: >-
+          {{ howdy_cameras_map | default([])
+             + [item.item.path ~ ' -> ' ~ (item.stat.lnk_source | default('?'))] }}
+      loop: "{{ howdy_cameras_link_stats.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: Read the motion configuration without privileges
+      ansible.builtin.slurp:
+        src: "{{ motion_config_path }}"
+      register: howdy_cameras_motion_raw
+      failed_when: false
+      no_log: true
+
+    - name: Read the Howdy configuration without privileges
+      ansible.builtin.slurp:
+        src: "{{ howdy_config_path }}"
+      register: howdy_cameras_howdy_raw
+      failed_when: false
+      no_log: true
+
+    - name: Keep only allowlisted configuration values in memory
+      ansible.builtin.set_fact:
+        howdy_cameras_motion_device: >-
+          {{ motion_text | regex_findall('(?m)^\s*(?:video_device|videodevice)\s+(\S+)') | first | default('') }}
+        howdy_cameras_motion_stream_localhost: >-
+          {{ motion_text | regex_findall('(?m)^\s*stream_localhost\s+(\S+)') | first | default('unset') }}
+        howdy_cameras_motion_webcontrol_localhost: >-
+          {{ motion_text | regex_findall('(?m)^\s*webcontrol_localhost\s+(\S+)') | first | default('unset') }}
+        howdy_cameras_howdy_device: >-
+          {{ howdy_text | regex_findall('(?m)^\s*device_path\s*=\s*(\S*)') | first | default('') }}
+        howdy_cameras_howdy_disabled: >-
+          {{ howdy_text | regex_findall('(?m)^\s*disabled\s*=\s*(\S+)') | first | default('unset') }}
+        howdy_cameras_howdy_certainty: >-
+          {{ howdy_text | regex_findall('(?m)^\s*certainty\s*=\s*(\S+)') | first | default('unset') }}
+      vars:
+        motion_text: "{{ howdy_cameras_motion_raw.content | default('') | b64decode }}"
+        howdy_text: "{{ howdy_cameras_howdy_raw.content | default('') | b64decode }}"
+      no_log: true
+
+    - name: Resolve configured camera paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+        get_checksum: false
+      loop:
+        - "{{ howdy_cameras_motion_device or '/nonexistent-motion' }}"
+        - "{{ howdy_cameras_howdy_device or '/nonexistent-howdy' }}"
+      register: howdy_cameras_configured
+
+    - name: Read motion service state
+      ansible.builtin.command:
+        argv: [systemctl, show, motion.service, -p, UnitFileState, -p, ActiveState, --value]
+      register: howdy_cameras_motion_state
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Find active Howdy auth lines in selected PAM services (read-only)
+      ansible.builtin.find:
+        paths: /etc/pam.d
+        patterns: "{{ howdy_pam_services }}"
+        contains: '^\s*auth\b.*howdy'
+      register: howdy_cameras_pam_before
+
+    - name: Fingerprint selected PAM services before any change
+      ansible.builtin.stat:
+        path: "/etc/pam.d/{{ item }}"
+        checksum_algorithm: sha256
+      loop: "{{ howdy_pam_services }}"
+      register: howdy_cameras_pam_sums_before
+
+    - name: Read Howdy package candidate
+      ansible.builtin.command:
+        argv: [apt-cache, policy, howdy]
+      register: howdy_cameras_policy
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Report the allowlisted camera, motion and Howdy state
+      ansible.builtin.debug:
+        msg:
+          schema: workstation-howdy-cameras/v1
+          mode: "{{ 'apply_requested' if howdy_cameras_apply | bool else 'audit_only' }}"
+          cameras: "{{ howdy_cameras_map | default([]) }}"
+          motion:
+            config_readable: "{{ howdy_cameras_motion_raw.content is defined }}"
+            video_device: "{{ howdy_cameras_motion_device }}"
+            video_device_stable: "{{ howdy_cameras_motion_device is match('^/dev/v4l/') }}"
+            resolves_to: "{{ motion_stat.lnk_source | default(motion_stat.path | default('')) }}"
+            stream_localhost: "{{ howdy_cameras_motion_stream_localhost }}"
+            webcontrol_localhost: "{{ howdy_cameras_motion_webcontrol_localhost }}"
+            unit_state: "{{ howdy_cameras_motion_state.stdout_lines | default([]) }}"
+          howdy:
+            candidate: "{{ (howdy_cameras_policy.stdout | default('') | regex_search('Candidate:\\s*(\\S+)', '\\1') or ['none']) | first }}"
+            config_readable: "{{ howdy_cameras_howdy_raw.content is defined }}"
+            device_path: "{{ howdy_cameras_howdy_device }}"
+            device_path_stable: "{{ howdy_cameras_howdy_device is match('^/dev/v4l/') }}"
+            resolves_to: "{{ howdy_stat.lnk_source | default(howdy_stat.path | default('')) }}"
+            disabled: "{{ howdy_cameras_howdy_disabled }}"
+            certainty: "{{ howdy_cameras_howdy_certainty }}"
+          conflict_same_camera: >-
+            {{ (motion_stat.exists | default(false)) and (howdy_stat.exists | default(false))
+               and (motion_stat.lnk_source | default(motion_stat.path))
+                   == (howdy_stat.lnk_source | default(howdy_stat.path)) }}
+          pam_howdy_active_services: "{{ howdy_cameras_pam_before.files | map(attribute='path') | map('basename') | list }}"
+          pam_configuration_changed: false
+          limitations:
+            - "A UVC webcam serves one streaming client at a time: motion and Howdy need distinct cameras."
+            - "Logitech C310 has no infrared sensor: a photo can fool Howdy; keep it a convenience, never a sole factor."
+            - "Unreadable configuration files are reported, never read with sudo during audit."
+      vars:
+        motion_stat: "{{ howdy_cameras_configured.results[0].stat }}"
+        howdy_stat: "{{ howdy_cameras_configured.results[1].stat }}"
+
+    # ---------------------------------------------------------------- apply
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that: [howdy_cameras_apply_approved | bool]
+        fail_msg: "Apply denied: requires howdy_cameras_apply=true and howdy_cameras_apply_approved=true."
+        quiet: true
+      when: howdy_cameras_apply | bool
+
+    - name: Resolve the requested camera links
+      ansible.builtin.stat:
+        path: "{{ item }}"
+        get_checksum: false
+      loop:
+        - "{{ motion_camera_device or '/nonexistent-motion' }}"
+        - "{{ howdy_camera_device or '/nonexistent-howdy' }}"
+      register: howdy_cameras_requested
+      when: howdy_cameras_write | bool
+
+    - name: Refuse unstable, missing or shared cameras
+      ansible.builtin.assert:
+        that:
+          - motion_camera_device is match('^/dev/v4l/by-(path|id)/')
+          - howdy_camera_device is match('^/dev/v4l/by-(path|id)/')
+          - howdy_cameras_requested.results[0].stat.exists
+          - howdy_cameras_requested.results[1].stat.exists
+          - howdy_cameras_requested.results[0].stat.lnk_source != howdy_cameras_requested.results[1].stat.lnk_source
+          - motion_autostop_after is match('^[0-9]+(s|min|h)$')
+        fail_msg: >-
+          Apply denied: set motion_camera_device and howdy_camera_device to two
+          different existing /dev/v4l/by-path (or by-id) links and a duration like 5min.
+        quiet: true
+      when: howdy_cameras_write | bool
+
+    - name: Read the motion configuration with privileges
+      ansible.builtin.slurp:
+        src: "{{ motion_config_path }}"
+      register: howdy_cameras_motion_priv
+      become: true
+      no_log: true
+      when: howdy_cameras_write | bool
+
+    - name: Refuse a multi-camera or ambiguous motion configuration
+      ansible.builtin.assert:
+        that:
+          - (conf | regex_findall('(?m)^\s*video_device\s+\S+') | length) == 1
+          - (conf | regex_findall('(?m)^\s*camera\s+\S+') | length) == 0
+        fail_msg: "Expected exactly one video_device and no camera include in {{ motion_config_path }}."
+        quiet: true
+      vars:
+        conf: "{{ howdy_cameras_motion_priv.content | b64decode }}"
+      when: howdy_cameras_write | bool
+
+    - name: Refuse when the operator-added Howdy source is absent
+      ansible.builtin.stat:
+        path: "{{ howdy_apt_source }}"
+      register: howdy_cameras_source
+      failed_when: not howdy_cameras_source.stat.exists
+      when: howdy_cameras_write | bool
+
+    - name: Re-enable the existing Howdy source disabled by the release upgrade
+      ansible.builtin.lineinfile:
+        path: "{{ howdy_apt_source }}"
+        regexp: '^Enabled:\s*no\s*$'
+        line: "Enabled: yes"
+        backrefs: true
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Restrict the Howdy PPA so it never overrides Ubuntu packages
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/ubuntuhandbook1-howdy.pref
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by ansible-workstation playbooks/howdy-cameras.yml
+          # Packages that exist only in this PPA (howdy) stay installable;
+          # Ubuntu archive versions always win for everything else.
+          Package: *
+          Pin: release o={{ howdy_apt_origin }}
+          Pin-Priority: 100
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Install Howdy from the restricted source
+      ansible.builtin.apt:
+        name: howdy
+        state: present
+        update_cache: true
+        install_recommends: false
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Read the installed Howdy configuration
+      ansible.builtin.slurp:
+        src: "{{ howdy_config_path }}"
+      register: howdy_cameras_installed_conf
+      become: true
+      no_log: true
+      when: howdy_cameras_write | bool
+
+    - name: Refuse an unexpected Howdy configuration layout
+      ansible.builtin.assert:
+        that:
+          - conf is search('(?m)^\s*device_path\s*=')
+          - conf is search('(?m)^\s*certainty\s*=')
+          - conf is search('(?m)^\s*disabled\s*=')
+        fail_msg: "Unexpected {{ howdy_config_path }} layout: edit it with 'sudo howdy config'."
+        quiet: true
+      vars:
+        conf: "{{ howdy_cameras_installed_conf.content | b64decode }}"
+      when: howdy_cameras_write | bool
+
+    - name: Point Howdy to its dedicated camera and keep it inert in PAM
+      ansible.builtin.lineinfile:
+        path: "{{ howdy_config_path }}"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        backup: true
+      loop:
+        - { regexp: '^\s*device_path\s*=', line: "device_path = {{ howdy_camera_device }}" }
+        - { regexp: '^\s*certainty\s*=', line: "certainty = {{ howdy_certainty }}" }
+        # disabled = true: the PAM module ignores Howdy even if a PAM line exists.
+        - { regexp: '^\s*disabled\s*=', line: "disabled = true" }
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Point motion to its dedicated camera
+      ansible.builtin.lineinfile:
+        path: "{{ motion_config_path }}"
+        regexp: '^\s*video_device\s+'
+        line: "video_device {{ motion_camera_device }}"
+        backup: true
+      become: true
+      register: howdy_cameras_motion_changed
+      when: howdy_cameras_write | bool
+
+    - name: Create the motion drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/motion.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Install the motion auto-stop units
+      ansible.builtin.copy:
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: "{{ item.content }}"
+      loop:
+        - dest: /etc/systemd/system/motion.service.d/10-autostop.conf
+          content: |
+            # Managed by ansible-workstation playbooks/howdy-cameras.yml
+            [Unit]
+            Wants=motion-autostop.timer
+        - dest: /etc/systemd/system/motion-autostop.timer
+          content: |
+            # Managed by ansible-workstation playbooks/howdy-cameras.yml
+            [Unit]
+            Description=Stop motion {{ motion_autostop_after }} after each start
+            PartOf=motion.service
+
+            [Timer]
+            OnActiveSec={{ motion_autostop_after }}
+            AccuracySec=10s
+            RemainAfterElapse=no
+            Unit=motion-autostop.service
+        - dest: /etc/systemd/system/motion-autostop.service
+          content: |
+            # Managed by ansible-workstation playbooks/howdy-cameras.yml
+            # Starting this unit stops motion (Conflicts=) and frees its webcam.
+            [Unit]
+            Description=Stop motion to free its webcam for video calls
+            Conflicts=motion.service
+            After=motion.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/bin/true
+      loop_control:
+        label: "{{ item.dest }}"
+      become: true
+      register: howdy_cameras_units
+      when: howdy_cameras_write | bool
+
+    - name: Reload systemd after unit changes
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      become: true
+      when:
+        - howdy_cameras_write | bool
+        - howdy_cameras_units is changed
+
+    - name: Restart motion only when it was already running and its camera changed
+      ansible.builtin.systemd_service:
+        name: motion.service
+        state: restarted
+      become: true
+      when:
+        - howdy_cameras_write | bool
+        - howdy_cameras_motion_changed is changed
+        - "'active' in (howdy_cameras_motion_state.stdout_lines | default([]))"
+
+    - name: Fingerprint selected PAM services after the package install
+      ansible.builtin.stat:
+        path: "/etc/pam.d/{{ item }}"
+        checksum_algorithm: sha256
+      loop: "{{ howdy_pam_services }}"
+      register: howdy_cameras_pam_sums_after
+      when: howdy_cameras_write | bool
+
+    - name: Fail loudly if the package changed PAM (Howdy stays inert, disabled = true)
+      ansible.builtin.assert:
+        that:
+          - >-
+            (howdy_cameras_pam_sums_before.results | map(attribute='stat.checksum', default='absent') | list)
+            == (howdy_cameras_pam_sums_after.results | map(attribute='stat.checksum', default='absent') | list)
+        fail_msg: >-
+          The howdy package changed PAM during install. Howdy is inert (disabled = true)
+          but PAM now references it: run 'sudo pam-auth-update' and untick Howdy,
+          or let nabla-yubikey own the activation. This playbook never edits PAM.
+        quiet: true
+      when: howdy_cameras_write | bool

@@ -75,30 +75,5 @@
     - gstreamer1.0-plugins-bad
     - gstreamer1.0-plugins-ugly
 
-# See https://www.freeyourdesktop.com/2018/07/howdy-unlock-your-desktop-with-face-recognition/
-- name: webcam | Install howdy tools PPA
-  ansible.builtin.apt_repository:
-    repo: "ppa:boltgolt/howdy"
-    update_cache: "yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04']
-  tags: howdy
-
-# Fix on Ubuntu 19
-# sudo ln -s /usr/local/bin/pip3 /usr/bin/pip3
-
-- name: webcam | Install howdy tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '14.04', '16.04'] and
-    howdy_enabled
-  tags: howdy
-  with_items:
-    - howdy
-
-- name: webcam | Copy the howdy config
-  ansible.builtin.template: src=howdy.conf.j2 dest=/etc/howdy/config.ini mode=0644
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and howdy_enabled
-  tags: howdy
+# Howdy (face unlock) left the global role: its broken boltgolt
+# PPA task was unconditional. Use playbooks/howdy-cameras.yml (opt-in, no PAM).

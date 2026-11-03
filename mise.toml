@@ -184,3 +184,11 @@ run = "sudo python3 scripts/accept-private-nta-dispatcher.py --exercise --acknow
 [tasks.workstation-wifi-path]
 description = "Read-only radio, IPv4 route, public and local DNS separation; no pfSense mutation"
 run = "python3 scripts/diagnose-wifi-path.py --check"
+
+[tasks.howdy-cameras-syntax]
+description = "Syntax-check the opt-in Howdy / motion camera split playbook"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/howdy-cameras.yml"
+
+[tasks.howdy-cameras-audit]
+description = "Read-only Howdy/motion camera audit: no sudo, no package change, never PAM"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/howdy-cameras.yml"
