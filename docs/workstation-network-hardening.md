@@ -26,16 +26,18 @@ mise run harden-network-check   # plan seulement
 sudo ufw status verbose          # vérification ; retour arrière : sudo ufw disable
 ```
 
-**Non couvert :** ports Docker publiés (le conteneur `telegraf` publie `0.0.0.0:8126`, pas Datadog) ;
-postgres 5432, redis 6379 et les ports inconnus restent ouverts sur l'hôte mais deviennent
-inaccessibles depuis le LAN une fois ufw actif. Le serveur Zabbix de TrueNAS doit connaître l'hôte
-`albandrieu`.
+**Non couvert :** ports Docker publiés. Docker les ouvre par DNAT, avant ufw : le 3 novembre 2026,
+ufw actif, postgres 5432 (auth `trust`), redis 6379 (sans mot de passe) et quatre autres ports
+étaient joignables depuis TrueNAS. nabla-compose les publie désormais sur `127.0.0.1` ; seuls
+LiteLLM 4000 (consommé par TrueNAS) et Grafana 3009 restent sur toutes les interfaces. Le serveur
+Zabbix de TrueNAS doit connaître l'hôte `albandrieu`.
 
 Premier apply (31 octobre 2026) : NFS serveur, rpcbind, Zabbix et Datadog appliqués, puis échec de
 `ufw-init`. Le bloc « UFW AND DOCKER » de `/etc/ufw/after.rules` avait été inséré avant le `COMMIT`
 d'origine (deux `*filter` dans la même table). Le playbook ajoute ce `COMMIT` (copie de sauvegarde
 gardée) ; la version corrigée passe `iptables-restore --test`. Le redémarrage de zabbix-agent2 n'a
-pas eu lieu : `sudo systemctl restart zabbix-agent2`. **ufw RUNTIME NOT VERIFIED.**
+pas eu lieu : `sudo systemctl restart zabbix-agent2`. Vérifié le 3 novembre 2026 après redémarrage :
+`ufw.service` actif au boot, INPUT et FORWARD en DROP ; la liste des règles (sudo) n'a pas été relue.
 
 ## Durcissement OS : devsec.hardening.os_hardening
 
