@@ -18,6 +18,8 @@ politique de sauvegarde chiffrée Restic.
 - [Inventaire matériel historique](workstation-hardware-inventory.md)
 - [Runbook des runtimes mise/uv et DNS](docs/mise-uv-cloudflare-workstation.md)
 - [Réparation de la toolchain utilisateur : mise, starship, direnv, OpenClaw](docs/user-toolchain-recovery.md)
+- [Howdy et motion : une caméra chacun, arrêt automatique de motion, sans PAM](docs/howdy-cameras.md)
+- [Nettoyage avec BleachBit : caches régénérables uniquement, nettoyeur personnalisé](docs/workstation-cleanup.md)
 - [Préparation de l'extraction Workstation depuis nabla-compose](docs/migration-from-nabla-compose-20261030.md)
 - [Audit de la source OpenClaw Workstation → cible TrueNAS](docs/openclaw-workstation-to-truenas.md)
 

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Custom BleachBit cleaner for this workstation (CleanerML).
+  Complements the built-in cleaners (vscode, google_chrome, firefox,
+  thunderbird, thumbnails, claude, apt, snap) with the regenerable caches
+  that nabla/env/linux/cleanup-*.sh used to delete with rm -Rf.
+  Installed per user by scripts/workstation-cleanup.sh into
+  ~/.config/bleachbit/cleaners/. Never targets profiles, installed tools,
+  credentials, databases, logs or Docker containers/volumes.
+-->
+<cleaner id="workstation_dev" os="linux">
+  <label>Workstation dev caches</label>
+  <description>Regenerable developer caches (Python, Node, editors, Chrome, Docker build).</description>
+  <option id="python_caches">
+    <label>Python package caches</label>
+    <description>pip, Poetry and Pipenv download caches</description>
+    <action command="delete" search="walk.all" path="~/.cache/pip/"/>
+    <action command="delete" search="walk.all" path="~/.cache/pypoetry/"/>
+    <action command="delete" search="walk.all" path="~/.cache/pipenv/"/>
+  </option>
+  <option id="uv_cache">
+    <label>uv cache prune</label>
+    <description>Remove unused entries from the uv cache (runs: uv cache prune)</description>
+    <action command="process" cmd="uv cache prune"/>
+  </option>
+  <option id="node_caches">
+    <label>Node.js package caches</label>
+    <description>npm content cache, Yarn cache and node-gyp headers</description>
+    <action command="delete" search="walk.all" path="~/.npm/_cacache/"/>
+    <action command="delete" search="walk.all" path="~/.cache/yarn/"/>
+    <action command="delete" search="walk.all" path="~/.node-gyp/"/>
+  </option>
+  <option id="pre_commit_gc">
+    <label>pre-commit garbage collection</label>
+    <description>Remove hook environments no longer referenced (runs: pre-commit gc)</description>
+    <action command="process" cmd="pre-commit gc"/>
+  </option>
+  <option id="editor_extras">
+    <label>Cursor extra caches</label>
+    <description>Cursor updater cache, YAML schema cache and state database backup</description>
+    <action command="delete" search="walk.all" path="~/.cache/Cursor/"/>
+    <action command="delete" search="walk.all" path="~/.config/Cursor/User/globalStorage/redhat.vscode-yaml/schemas_cache/"/>
+    <action command="delete" search="file" path="~/.config/Cursor/User/globalStorage/state.vscdb.backup"/>
+  </option>
+  <option id="chrome_component_caches">
+    <label>Chrome component caches</label>
+    <description>Downloaded component, extension package and model-store caches</description>
+    <action command="delete" search="walk.all" path="~/.config/google-chrome/component_crx_cache/"/>
+    <action command="delete" search="walk.all" path="~/.config/google-chrome/extensions_crx_cache/"/>
+    <action command="delete" search="walk.all" path="~/.config/google-chrome/optimization_guide_model_store/"/>
+  </option>
+  <option id="ansible_tmp">
+    <label>Ansible temporary files</label>
+    <description>Leftover remote/local temporary directories under ~/.ansible/tmp</description>
+    <action command="delete" search="walk.all" path="~/.ansible/tmp/"/>
+  </option>
+  <option id="docker_build">
+    <label>Docker dangling images and build cache</label>
+    <description>Runs docker image prune --force and docker builder prune --force (never containers or volumes)</description>
+    <action command="process" cmd="docker image prune --force"/>
+    <action command="process" cmd="docker builder prune --force"/>
+  </option>
+  <option id="maven_repository">
+    <label>Maven local repository</label>
+    <description>Every dependency is downloaded again on the next build</description>
+    <warning>Deletes ~/.m2/repository: next Maven builds re-download all dependencies.</warning>
+    <action command="delete" search="walk.all" path="~/.m2/repository/"/>
+  </option>
+  <option id="variety_downloads">
+    <label>Variety downloaded wallpapers</label>
+    <description>Wallpapers downloaded by Variety (favourites are kept elsewhere)</description>
+    <warning>Deletes downloaded wallpapers; Variety downloads new ones.</warning>
+    <action command="delete" search="walk.all" path="~/.config/variety/Downloaded/"/>
+  </option>
+</cleaner>

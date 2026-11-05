@@ -106,3 +106,16 @@ python3 -m unittest discover -s tests -p 'test_openclaw_source_audit_contract.py
 mise run audit-openclaw-source-syntax
 mise run audit-openclaw-source
 ```
+
+## Lot 1 copié (2026-11-02) : diagnostics DNS et Wi-Fi du poste
+
+Copie depuis `nabla-compose` `scripts/workstation/` (commit `cc3f9ca6`),
+sans changement de comportement : `homelab-split-dns.py`,
+`diagnose-nss-resolution.py`, `diagnose-dnssec-chain.py`,
+`recover-split-dns-nta.py`, `accept-private-nta-dispatcher.py` et
+`diagnose-wifi-path.py`, avec leurs tests renommés en `*_contract.py`
+(inclus dans `mise run test-offline`) et des tâches `mise run workstation-*`.
+Les originaux restent dans Compose tant que leur retrait n'est pas décidé.
+
+Restent dans Compose : LiteLLM/FastAPI, CrowdSec/pfSense, DefectDojo,
+Nexus et les scripts OpenClaw (cible `nabla-openclaw`).

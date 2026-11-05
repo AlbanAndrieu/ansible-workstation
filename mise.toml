@@ -143,3 +143,64 @@ run = "bash scripts/repair-user-toolchain.sh check"
 [tasks.toolchain-repair]
 description = "Explicit user repair: mise install, pinned OpenClaw with npm script allowlist, gateway restart; no sudo"
 run = "bash scripts/repair-user-toolchain.sh apply"
+
+# DNS/Wi-Fi diagnostics copied from nabla-compose scripts/workstation (cc3f9ca6).
+[tasks.workstation-split-dns-check]
+description = "Read-only pfSense DNS UDP/TCP, NetworkManager, resolved and NSS evidence"
+run = "python3 scripts/homelab-split-dns.py --check"
+
+[tasks.workstation-split-dns-repair]
+description = "Explicit workstation-only split-DNS recovery; fails closed if pfSense UDP DNS is unverified"
+run = "python3 scripts/homelab-split-dns.py --apply --acknowledge I_APPROVE_WORKSTATION_SPLIT_DNS_REPAIR"
+
+[tasks.workstation-nss-path]
+description = "Read-only, deadline-bounded glibc NSS vs systemd-resolved vs 127.0.0.53 stub comparison"
+run = "python3 scripts/diagnose-nss-resolution.py --check --samples 2 --timeout 3"
+
+[tasks.workstation-dnssec-check]
+description = "Read-only DNSSEC validation comparison; no settings changed, no sudo"
+run = "python3 scripts/diagnose-dnssec-chain.py --check --samples 2 --timeout 4"
+
+[tasks.workstation-dnssec-nta-check]
+description = "Read-only per-link DNSSEC NTA and validated private lookup"
+run = "python3 scripts/recover-split-dns-nta.py --check"
+
+[tasks.workstation-dnssec-nta-try]
+description = "Explicit runtime-only negative trust anchor for the private zone; not persistent"
+run = "python3 scripts/recover-split-dns-nta.py --apply --acknowledge I_APPROVE_SCOPED_PRIVATE_DNSSEC_NTA"
+
+[tasks.workstation-dnssec-nta-rollback]
+description = "Explicit NTA rollback; refuses if other NTAs would be lost"
+run = "python3 scripts/recover-split-dns-nta.py --remove --acknowledge I_APPROVE_SCOPED_PRIVATE_DNSSEC_NTA"
+
+[tasks.workstation-dnssec-dispatcher-check]
+description = "Read-only: installed dispatcher, exact eno1 NTA and authenticated public DNS"
+run = "python3 scripts/accept-private-nta-dispatcher.py --check"
+
+[tasks.workstation-dnssec-dispatcher-exercise]
+description = "Explicit sudo acceptance: clear the private NTA, reapply NetworkManager, wait for the dispatcher"
+run = "sudo python3 scripts/accept-private-nta-dispatcher.py --exercise --acknowledge I_APPROVE_NTA_REAPPLY_SMOKE"
+
+[tasks.workstation-wifi-path]
+description = "Read-only radio, IPv4 route, public and local DNS separation; no pfSense mutation"
+run = "python3 scripts/diagnose-wifi-path.py --check"
+
+[tasks.howdy-cameras-syntax]
+description = "Syntax-check the opt-in Howdy / motion camera split playbook"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local --syntax-check playbooks/howdy-cameras.yml"
+
+[tasks.howdy-cameras-audit]
+description = "Read-only Howdy/motion camera audit: no sudo, no package change, never PAM"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/howdy-cameras.yml"
+
+[tasks.cleanup-check]
+description = "Read-only cleanup preview: disk usage, BleachBit cleaner availability and bleachbit --preview"
+run = "bash scripts/workstation-cleanup.sh check"
+
+[tasks.cleanup-apply]
+description = "Clean regenerable user caches with BleachBit and files/bleachbit/workstation_dev.xml; no sudo"
+run = "bash scripts/workstation-cleanup.sh apply"
+
+[tasks.cleanup-apply-system]
+description = "Explicit sudo cleanup: apt caches, disabled snaps, journald size, unused flatpaks"
+run = "bash scripts/workstation-cleanup.sh apply-system"
