@@ -131,7 +131,7 @@
       become: true
       when: restic_write
 
-    - name: Restrict node_exporter to the Restic textfile metric
+    - name: Configure node_exporter host metrics and the Restic textfile
       ansible.builtin.copy:
         src: ../files/restic/prometheus-node-exporter.default
         dest: /etc/default/prometheus-node-exporter

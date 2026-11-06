@@ -54,7 +54,7 @@
       - from: "{{ harden_truenas }}"
         port: "9100"
         proto: tcp
-        comment: node_exporter restic metric
+        comment: node_exporter host and restic metrics
       # Synergy and Deskflow share 24800; synergy-service also listens on 24802.
       - from: "{{ harden_lan }}"
         port: "24800"
