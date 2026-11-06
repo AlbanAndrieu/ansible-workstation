@@ -1,4 +1,7 @@
 # Managed by ansible-workstation playbooks/restic-backup.yml
-# Only the textfile collector: Prometheus on TrueNAS reads node_textfile_mtime_seconds
-# of /var/lib/restic/last-success.prom, nothing else about this host.
-ARGS="--collector.disable-defaults --collector.textfile --collector.textfile.directory=/var/lib/restic --web.listen-address=172.17.0.57:9100"
+# Host metrics for TrueNAS Prometheus (job workstation_node) and the OpenClaw
+# heartbeat: default collectors (CPU, memory, filesystems, ZFS) plus systemd unit
+# states, and the Restic textfile (node_textfile_mtime_seconds of
+# /var/lib/restic/last-success.prom). LAN-bound; ufw admits only TrueNAS on 9100
+# (playbooks/harden-network.yml).
+ARGS="--collector.systemd --collector.textfile --collector.textfile.directory=/var/lib/restic --web.listen-address=172.17.0.57:9100"

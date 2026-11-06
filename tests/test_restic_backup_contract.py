@@ -42,9 +42,13 @@ class ResticBackupContract(unittest.TestCase):
         zabbix = (UNITS / "zabbix-restic.conf").read_text()
         self.assertIn("UserParameter=restic.last_success_age,", zabbix)
 
-    def test_node_exporter_exposes_only_the_restic_textfile(self):
+    def test_node_exporter_exposes_host_metrics_to_truenas_only(self):
         args = (UNITS / "prometheus-node-exporter.default").read_text()
-        self.assertIn("--collector.disable-defaults", args)
+        # Host metrics (CPU, memory, filesystems, ZFS, systemd) feed TrueNAS
+        # Prometheus and the OpenClaw heartbeat; ufw keeps them TrueNAS-only.
+        self.assertNotIn("--collector.disable-defaults", args)
+        self.assertIn("--collector.systemd", args)
+        self.assertIn("--collector.textfile ", args)
         self.assertIn("--collector.textfile.directory=/var/lib/restic", args)
         self.assertIn("--web.listen-address=172.17.0.57:9100", args)
         harden = yaml.safe_load((ROOT / "playbooks/harden-network.yml").read_text())
