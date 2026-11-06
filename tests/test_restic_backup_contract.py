@@ -50,6 +50,11 @@ class ResticBackupContract(unittest.TestCase):
         self.assertIn("--collector.systemd", args)
         self.assertIn("--collector.textfile ", args)
         self.assertIn("--collector.textfile.directory=/var/lib/restic", args)
+        # apt, docker-health, nvme and smartmon textfile collectors write here.
+        self.assertIn(
+            "--collector.textfile.directory=/var/lib/prometheus/node-exporter",
+            args,
+        )
         self.assertIn("--web.listen-address=172.17.0.57:9100", args)
         harden = yaml.safe_load((ROOT / "playbooks/harden-network.yml").read_text())
         rule = next(r for r in harden[0]["vars"]["harden_rules"] if r["port"] == "9100")

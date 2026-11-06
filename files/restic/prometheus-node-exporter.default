@@ -1,7 +1,9 @@
 # Managed by ansible-workstation playbooks/restic-backup.yml
 # Host metrics for TrueNAS Prometheus (job workstation_node) and the OpenClaw
 # heartbeat: default collectors (CPU, memory, filesystems, ZFS) plus systemd unit
-# states, and the Restic textfile (node_textfile_mtime_seconds of
-# /var/lib/restic/last-success.prom). LAN-bound; ufw admits only TrueNAS on 9100
-# (playbooks/harden-network.yml).
-ARGS="--collector.systemd --collector.textfile --collector.textfile.directory=/var/lib/restic --web.listen-address=172.17.0.57:9100"
+# states, the Restic textfile (node_textfile_mtime_seconds of
+# /var/lib/restic/last-success.prom) and the Debian textfile directory
+# /var/lib/prometheus/node-exporter (apt, docker-health, nvme, smartmon).
+# node_exporter >= 1.8 accepts a repeated textfile directory.
+# LAN-bound; ufw admits only TrueNAS on 9100 (playbooks/harden-network.yml).
+ARGS="--collector.systemd --collector.textfile --collector.textfile.directory=/var/lib/restic --collector.textfile.directory=/var/lib/prometheus/node-exporter --web.listen-address=172.17.0.57:9100"
