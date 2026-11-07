@@ -150,7 +150,8 @@
         line: "{{ item.key }}={{ item.value }}"
       loop:
         - { key: Server, value: "{{ harden_truenas }}" }
-        - { key: ServerActive, value: "{{ harden_truenas }}" }
+        # The TrueNAS Zabbix app listens on 30385, not 10051.
+        - { key: ServerActive, value: "{{ harden_truenas }}:30385" }
         - { key: Hostname, value: albandrieu }
       become: true
       when: harden_write

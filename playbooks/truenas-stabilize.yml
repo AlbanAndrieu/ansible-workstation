@@ -1,0 +1,181 @@
+---
+# TrueNAS stabilization (docs/stabilisation-workstation-truenas.md), through the middleware (midclt over SSH).
+# Plan only by default. Writing needs truenas_stabilize_apply AND truenas_stabilize_apply_approved.
+# Run: ansible-playbook -i truenas, playbooks/truenas-stabilize.yml (ssh alias, sudo -n).
+# Cron jobs are matched by description; undeclared ones are left alone.
+- name: Plan or explicitly apply the TrueNAS stabilization
+  hosts: truenas
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    truenas_stabilize_apply: false
+    truenas_stabilize_apply_approved: false
+    truenas_stabilize_write: "{{ truenas_stabilize_apply | bool and truenas_stabilize_apply_approved | bool }}"
+    # Stopped since the 4 Nov OOM; autostart would bring them back at boot on a host without swap.
+    truenas_vm_autostart_off:
+      - taloswk01
+      - taloswk02
+    truenas_search_domains:
+      - albandrieu.com
+    # dpool no longer exists.
+    truenas_snapshot_datasets_absent:
+      - dpool/workspace
+    truenas_cronjobs:
+      # clamscan loads a second signature database next to clamd and hits the 2 GiB app limit.
+      - description: clamav-scan
+        command: 'docker exec ix-clamav-clamav-1 clamdscan --multiscan --fdpass /scandir --log /mnt/logs/clamav-scan-$(date +\%Y-\%m-\%d_\%H-\%M).log'
+        schedule: { minute: "0", hour: "6", dom: "1", month: "*", dow: "*" }
+      # One long test per disk and week of the month; a WD30EFRX long test takes about 7 h.
+      - description: smart-long-sda
+        command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3457796
+        schedule: { minute: "0", hour: "2", dom: "7", month: "*", dow: "*" }
+      - description: smart-long-sdb
+        command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68EUZN0_WD-WX32FK2NSIGF
+        schedule: { minute: "0", hour: "2", dom: "14", month: "*", dow: "*" }
+      - description: smart-long-sdc
+        command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68EUZN0_WD-WCA2F74L52TH
+        schedule: { minute: "0", hour: "2", dom: "21", month: "*", dow: "*" }
+      - description: smart-long-sdd
+        command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3491311
+        schedule: { minute: "0", hour: "2", dom: "28", month: "*", dow: "*" }
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - truenas_stabilize_apply_approved | bool
+        fail_msg: "Apply denied: requires both truenas_stabilize_apply=true and truenas_stabilize_apply_approved=true."
+        quiet: true
+      when: truenas_stabilize_apply | bool
+
+    - name: Read the middleware state
+      ansible.builtin.command: "midclt call {{ item }}"
+      loop:
+        - vm.query
+        - network.configuration.config
+        - cronjob.query
+        - pool.snapshottask.query
+      register: truenas_state
+      changed_when: false
+      become: true
+
+    # A renewed certificate is only served after a UI restart.
+    - name: Compare the served UI certificate with the configured one
+      ansible.builtin.shell: |
+        set -o pipefail
+        cert=$(midclt call system.general.config | python3 -c 'import json,sys; print(json.load(sys.stdin)["ui_certificate"])')
+        path=$(midclt call certificate.get_instance "$cert" | python3 -c 'import json,sys; print(json.load(sys.stdin)["certificate_path"])')
+        served=$(echo | openssl s_client -connect 127.0.0.1:7000 2>/dev/null | openssl x509 -noout -enddate)
+        [ "$served" = "$(openssl x509 -noout -enddate -in "$path")" ] && echo current || echo stale
+      args:
+        executable: /bin/bash
+      register: truenas_ui_cert
+      changed_when: false
+      become: true
+
+    - name: List the failed core dump units
+      ansible.builtin.shell: set -o pipefail; systemctl list-units --failed --plain --no-legend 'systemd-coredump@*' | awk '{print $1}'
+      args:
+        executable: /bin/bash
+      register: truenas_coredumps
+      changed_when: false
+
+    - name: Compute the stabilization plan
+      ansible.builtin.set_fact:
+        truenas_plan: >-
+          {%- set vms = truenas_state.results[0].stdout | from_json -%}
+          {%- set net = truenas_state.results[1].stdout | from_json -%}
+          {%- set crons = truenas_state.results[2].stdout | from_json -%}
+          {%- set snaps = truenas_state.results[3].stdout | from_json -%}
+          {%- set by_desc = dict(crons | map(attribute='description') | zip(crons)) -%}
+          {%- set ns = namespace(cron=[]) -%}
+          {%- for job in truenas_cronjobs -%}
+          {%- set want = {'description': job.description, 'command': job.command, 'schedule': job.schedule, 'enabled': true, 'user': 'root'} -%}
+          {%- set row = by_desc.get(job.description) -%}
+          {%- if row is none -%}
+          {%- set ns.cron = ns.cron + [{'action': 'create', 'want': want}] -%}
+          {%- elif row.command != want.command or row.schedule != want.schedule or not row.enabled -%}
+          {%- set ns.cron = ns.cron + [{'action': 'update', 'id': row.id, 'want': want}] -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ {'vm_autostart_off': vms | selectattr('name', 'in', truenas_vm_autostart_off) | selectattr('autostart') | map(attribute='id') | list,
+              'domains': (net.domains | sort != truenas_search_domains | sort) | ternary(truenas_search_domains, none),
+              'snapshot_tasks_delete': snaps | selectattr('dataset', 'in', truenas_snapshot_datasets_absent) | map(attribute='id') | list,
+              'cron': ns.cron,
+              'ui_restart': truenas_ui_cert.stdout == 'stale',
+              'coredumps_reset': truenas_coredumps.stdout_lines} | to_json }}
+
+    - name: Report the TrueNAS stabilization plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if truenas_stabilize_write else 'check_only' }}"
+          plan: "{{ truenas_plan | from_json }}"
+
+    - name: Disable autostart of the stopped Talos workers
+      ansible.builtin.command:
+        argv: [midclt, call, vm.update, "{{ item }}", '{"autostart": false}']
+      loop: "{{ (truenas_plan | from_json).vm_autostart_off }}"
+      become: true
+      when: truenas_stabilize_write
+
+    - name: Fix the search domains
+      ansible.builtin.command:
+        argv:
+          [
+            midclt,
+            call,
+            network.configuration.update,
+            "{{ {'domains': truenas_search_domains} | to_json }}",
+          ]
+      become: true
+      when: truenas_stabilize_write and (truenas_plan | from_json).domains is not none
+
+    - name: Delete the snapshot tasks of the removed pool
+      ansible.builtin.command:
+        argv: [midclt, call, pool.snapshottask.delete, "{{ item }}"]
+      loop: "{{ (truenas_plan | from_json).snapshot_tasks_delete }}"
+      become: true
+      when: truenas_stabilize_write
+
+    - name: Update the drifted cron jobs
+      ansible.builtin.command:
+        argv:
+          [
+            midclt,
+            call,
+            cronjob.update,
+            "{{ item.id }}",
+            "{{ item.want | to_json }}",
+          ]
+      loop: "{{ (truenas_plan | from_json).cron | selectattr('action', 'equalto', 'update') }}"
+      loop_control:
+        label: "{{ item.want.description }}"
+      become: true
+      when: truenas_stabilize_write
+
+    - name: Create the missing cron jobs
+      ansible.builtin.command:
+        argv:
+          [
+            midclt,
+            call,
+            cronjob.create,
+            "{{ item.want | combine({'stdout': true, 'stderr': false}) | to_json }}",
+          ]
+      loop: "{{ (truenas_plan | from_json).cron | selectattr('action', 'equalto', 'create') }}"
+      loop_control:
+        label: "{{ item.want.description }}"
+      become: true
+      when: truenas_stabilize_write
+
+    - name: Clear the failed core dump units
+      ansible.builtin.command:
+        argv: "{{ ['systemctl', 'reset-failed'] + (truenas_plan | from_json).coredumps_reset }}"
+      become: true
+      when: truenas_stabilize_write and (truenas_plan | from_json).coredumps_reset | length > 0
+
+    - name: Restart the UI to serve the renewed certificate
+      ansible.builtin.command: midclt call system.general.ui_restart
+      become: true
+      when: truenas_stabilize_write and (truenas_plan | from_json).ui_restart
