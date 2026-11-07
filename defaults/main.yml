@@ -69,7 +69,7 @@ workstation_firewall_manage_enabled: false
 # Bulk myrepos registration must be explicitly requested, never run as root.
 workstation_myrepos_autoregister_enabled: false
 workstation_myrepos_root: "/workspace/users/{{ user }}{{ shell_default_version }}"
-screensaver_enabled: true
+screensaver_enabled: false
 dash_enabled: true
 classicmenu_indicator_enabled: true
 calendar_indicator_enabled: true
@@ -93,8 +93,8 @@ atom_enabled: false
 prince_enabled: false
 bat_enabled: false
 
-# NFS mounts (nabla server). Options match /etc/fstab: nfs4 defaults,user,auto,noatime,bg,rsize=16384,wsize=16384
-mount_nfs_opts: "defaults,user,auto,noatime,bg,rsize=16384,wsize=16384"
+# NFS mounts (nabla server). Same options as stabilize_nfs_opts (playbooks/stabilize-workstation.yml).
+mount_nfs_opts: "noatime,nosuid,nodev,noexec,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,x-systemd.mount-timeout=20s"
 mount_nfs_entries:
   - { path: /media/ftp, src: nabla:/mnt/cpool/ftp }
   - { path: /media/music, src: nabla:/mnt/cpool/media/music }
@@ -136,7 +136,7 @@ cinnamon_enabled: false
 plasma_enabled: false
 xfce_enabled: false
 make_enabled: true
-bitcoinqt_enabled: true
+bitcoinqt_enabled: false
 macchanger_enabled: true
 php_enabled: true
 php_74_enabled: true

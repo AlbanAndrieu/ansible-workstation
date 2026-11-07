@@ -1,6 +1,6 @@
 ---
 # NFS4 mount points (nabla server).
-# Matches /etc/fstab: nabla:/mnt/cpool/... with defaults,user,auto,noatime,bg,rsize=16384,wsize=16384.
+# Matches /etc/fstab: nabla:/mnt/cpool/... with mount_nfs_opts (systemd automount on first access).
 # Controlled by: mount_enabled. Override mount_nfs_entries in vars if needed.
 
 - name: mount | Ensure NFS mount point directories exist
@@ -19,7 +19,8 @@
     src: "{{ item.src }}"
     fstype: nfs4
     opts: "{{ mount_nfs_opts }}"
-    state: mounted
+    # mounted would mount the share directly and bypass the automount until the next boot.
+    state: present
   become: true
   when: ansible_os_family == 'Debian' and mount_enabled
   loop: "{{ mount_nfs_entries }}"

@@ -5,6 +5,7 @@
 
 # Package conffiles modified in place (whole copy)
 /etc/apache2/apache2.conf
+/etc/apache2/conf-available/security.conf
 /etc/apache2/ports.conf
 /etc/apache2/sites-available/000-default.conf
 /etc/apache2/sites-available/default-ssl.conf
@@ -72,6 +73,7 @@
 /etc/systemd/system/litellm.service
 /etc/systemd/system/nvidia-persistence.service
 /etc/systemd/system/ollama.service
+/etc/systemd/system/ollama.service.d/workstation.conf
 /etc/systemd/system/php8.4-fpm.service.d/override.conf
 /etc/systemd/system/snmp_exporter.service
 /etc/udev/rules.d/20-hw1.rules
