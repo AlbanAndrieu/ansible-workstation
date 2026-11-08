@@ -17,7 +17,8 @@ sont pas prouvées.
 | Collecteurs SMART, NVMe et apt réinstallés ; node_exporter lit aussi `/var/lib/prometheus/node-exporter` | 263 métriques `smartmon_`, `nvme_`, `apt_` sur `172.17.0.57:9100` |
 | node_exporter : collecteurs `cpu`, `meminfo`, `loadavg`, `filesystem` et `systemd` pour le heartbeat OpenClaw et le briefing du matin ; drop-in `wait-for-lan.conf` (attend `network-online.target`, `Restart=on-failure` toutes les 5 s sans limite) codé ici | `node_scrape_collector_success` à 1 pour les six collecteurs ; `active` et `enabled` après un redémarrage |
 | Santé de postgres et redis (aucune autre sonde) : `workstation_container_healthy{container=…}`, écrit chaque minute par `docker-health-textfile.timer` ([script](../files/docker-health-textfile.sh)). Le collecteur nabla-openclaw ne la lit pas encore. | Les deux à `1` sur `172.17.0.57:9100` ; `node_textfile_mtime_seconds` signale un fichier figé |
-| Docker (`/docker`) et containerd (`/var/lib/containerd`, en bind) sur le LV NVMe `vg-docker/docker-nvme0` | 43 Go sur 144 Go ; les 12 conteneurs relancés. Les anciens dossiers restent sur `/` en sauvegarde. |
+| Docker (`/docker`) et containerd (`/var/lib/containerd`, en bind) sur le LV NVMe `vg-docker/docker-nvme0` | 43 Go sur 144 Go ; les 12 conteneurs relancés. Anciennes copies supprimées le 9/11 (`/` : 84 → 74 %). |
+| Disques durs : `apm = 254` (têtes garées sans arrêt, `sdc` au-delà de 300 000 cycles) ; écritures en attente plafonnées à 1 Gio au lieu de 15 % de 62 Go | `APM_level 254` ; `vm.dirty_bytes = 1073741824`. Suite : [roadmap stockage](roadmap-workstation.md#9-novembre-2026--stockage) |
 | Gel quand TrueNAS est arrêté ou surchargé : les 12 partages NFS étaient montés en permanence (`hard`), et `bg` faisait attendre systemd sans limite (`TimeoutSec=infinity`, `retry=10000`). Ils sont maintenant en `x-systemd.automount` : montés au premier accès, démontés après 5 min d'inactivité, abandon au bout de 20 s si TrueNAS ne répond pas. Le playbook refuse aussi de tourner si le port NFS 2049 est fermé. Détails plus bas. | 12 unités `media-*.automount` actives ; sauvegarde `/etc/fstab.1233265.2026-11-06@21:22:59~` |
 | `mongod` arrêté et désactivé : aucun client depuis le 28/11/2025, et sa collecte FTDC faisait un `statfs` par seconde sur chaque partage NFS | `strace` : 120 `statfs` sur `/media` en 8 s, 0 depuis l'arrêt. Données intactes dans `/var/lib/mongodb` ; `sudo systemctl enable --now mongod` pour le relancer. |
 | Conky orange : anneaux `/media/bitcoin` et `/media/photo` retirés. Conky les interrogeait chaque seconde (montages jamais libérés, conky figée pendant une panne). | Copie dans `~/.conky/ConkyOrange/conky_orange_4k.lua.bak-20261106` (fichier non suivi par le dépôt dotfiles) |
@@ -50,7 +51,7 @@ sudo systemctl start containerd docker && docker start $(cat running.txt)
 sudo systemctl start litellm.service   # son ExecStop a fait « compose down »
 ```
 
-Après quelques jours sans problème, supprimer les sauvegardes libère environ 43 Go sur `/` (83 %) :
+Sauvegardes supprimées le 9 novembre, après trois jours sans problème (43 Go libérés sur `/`) :
 
 ```bash
 sudo rm -rf /docker.pre-nvme /var/lib/containerd.pre-nvme

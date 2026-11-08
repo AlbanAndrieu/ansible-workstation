@@ -36,6 +36,8 @@ class StabilizeWorkstationContracts(unittest.TestCase):
             i for i, task in enumerate(play()["tasks"]) if "ansible.posix.mount" in task
         )
         self.assertLess(guard, mount)
+        probe = play()["tasks"][guard - 1]
+        self.assertIs(probe["check_mode"], False, probe["name"])
 
     def test_node_exporter_feeds_the_truenas_heartbeat(self):
         flags = play()["vars"]["stabilize_node_exporter_flags"]
@@ -104,6 +106,21 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         self.assertNotRegex(site, r"DocumentRoot /var/www/nabla-site-apache/\s")
         for name in play()["vars"]["stabilize_apache_files"]:
             self.assertTrue((apache / name).is_file(), name)
+
+    def test_writeback_is_capped_in_bytes(self):
+        conf = (ROOT / "files/etc/sysctl.d/99-ai-workstation.conf").read_text()
+        settings = dict(
+            line.replace(" ", "").split("=")
+            for line in conf.splitlines()
+            if line and not line.startswith("#")
+        )
+        self.assertLessEqual(int(settings["vm.dirty_bytes"]), 1 << 30)
+        self.assertLess(
+            int(settings["vm.dirty_background_bytes"]),
+            int(settings["vm.dirty_bytes"]),
+        )
+        # A ratio set later in the file would silently zero the byte limit.
+        self.assertNotIn("vm.dirty_ratio", settings)
 
     def test_journald_keeps_more_than_a_day(self):
         self.assertIn("SystemMaxUse=2G", JOURNALD.read_text().splitlines())

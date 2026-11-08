@@ -66,6 +66,10 @@
     # nosuid,nodev,noexec keep what the former user option implied; rsize/wsize are negotiated.
     stabilize_nfs_server: nabla
     stabilize_nfs_opts: noatime,nosuid,nodev,noexec,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,x-systemd.mount-timeout=20s
+    # APM 128 parked the heads after a few seconds idle: sdc passed its 300 000 load cycles.
+    stabilize_hdd_ids:
+      - ata-ST2000DM008-2FR102_WFL2X890
+      - ata-ST2000DM008-2UB102_ZFL8X7CP
     # Copied to /etc/apache2 as is (the site checkout was the 8082 document root).
     stabilize_apache_files:
       - apache2.conf
@@ -108,6 +112,16 @@
       become: true
 
     # apachectl graceful runs configtest first and keeps the old config if it fails.
+    - name: Apply sysctl
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-ai-workstation.conf
+      changed_when: true
+      become: true
+
+    - name: Apply hdparm
+      ansible.builtin.command: hdparm -B 254 {{ stabilize_hdd_ids | map('regex_replace', '^', '/dev/disk/by-id/') | join(' ') }}
+      changed_when: true
+      become: true
+
     - name: Reload apache
       ansible.builtin.systemd_service:
         name: apache2.service
@@ -349,6 +363,8 @@
       loop: "{{ stabilize_docker_mounts }}"
       register: stabilize_mount_state
       changed_when: false
+      # Read-only: without it --check skips the probe and the guard below always fails.
+      check_mode: false
       become: true
       when: stabilize_write
 
@@ -458,6 +474,32 @@
       become: true
       when: stabilize_write
       notify: Reload apache
+
+    - name: Cap the dirty page cache and keep the other kernel settings
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/sysctl.d/99-ai-workstation.conf"
+        dest: /etc/sysctl.d/99-ai-workstation.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify: Apply sysctl
+
+    # hdparm's udev rule applies this at boot, its system-sleep hook after resume.
+    - name: Stop the hard drives from parking their heads
+      ansible.builtin.blockinfile:
+        path: /etc/hdparm.conf
+        marker: "# {mark} ansible stabilize-workstation"
+        block: |
+          {% for id in stabilize_hdd_ids %}
+          /dev/disk/by-id/{{ id }} {
+            apm = 254
+          }
+          {% endfor %}
+      become: true
+      when: stabilize_write
+      notify: Apply hdparm
 
     - name: Report the stabilization plan
       ansible.builtin.debug:

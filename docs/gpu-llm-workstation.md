@@ -5,7 +5,8 @@ Matériel : RTX 2060 6 Go (Turing, compute 7.5, pas de bf16), pilote 595.71, i7-
 
 Chaîne : LiteLLM (conteneur `litellm-litellm-1`, config `~/.litellm/litellm_config.yaml`, liée depuis
 nabla-compose `litellm/config.yaml`, non versionnée) appelle ollama 0.40.15 sur `172.17.0.57:11434`.
-Modèles dans `/data/models/ollama` (SSD SATA). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
+Modèles dans `/data/models/ollama` (20 Go, RAID1 de deux disques durs : d'où les chargements à froid de
+12 à 17 s). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
 de TrueNAS (`fastapi-qwen`), qui relaie vers l'entrée `qwen` de ce LiteLLM.
 
 ## Constats

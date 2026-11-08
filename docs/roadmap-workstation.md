@@ -27,6 +27,7 @@
 | P1 | [Capture des fichiers /etc non par défaut et des paquets](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets expurgés, restauration en check par défaut, double approbation | **CODE ADDED** : restauration jamais appliquée |
 | P1 | [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **PARTIEL** : NFS/rpcbind/Zabbix/Datadog appliqués ; ufw bloqué par `after.rules`, corrigé, **à rejouer** |
 | P1 | [devsec os_hardening + ssh_hardening adaptés au poste](workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening) | Simulation `--check`, revue du diff, apply doublement approuvé | **SIMULATION OK** : `ok=127 changed=37 failed=0` ; aucun apply |
+| P1 | [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant tout effacement, mesure avant/après, ancienne copie gardée une semaine | **ÉTAPE 0 FAITE** ; étapes 1 à 5 à faire |
 | P2 | Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement, aucun changement firmware sans consentement | À faire |
 | P0 | [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA, package_facts et candidats APT ; installation doublement autorisée mais non exécutée | **ACCEPTED runtime (audit seul)** : 131/131 PASS, syntaxe PASS, `ok=8 changed=0 failed=0`, **7/7 paquets présents** ; aucun apply |
 | P2 | Pipeline audit → plan → apply + rétablissement éprouvé | Aucune modification système non déclarée ; rollback local testé | À faire |
@@ -75,3 +76,37 @@
 - **Suite** : valider les tests des skills, inspecter les diffs tiers
   et réaliser une comparaison expurgée des `ExecStart` effectifs
   avant toute promotion de template ou bascule du Gateway.
+
+## 9 novembre 2026 — stockage
+
+Relevé du 8 novembre (SMART, `/sys/block/*/stat`, `pidstat -d`) :
+
+| Disque | Contenu | État |
+| --- | --- | --- |
+| Samsung 860 500 Go (SATA, LUKS) | `/`, `/home` (142 Go), `/swapfile` 16 Go | **66 % d'usure** (`Wear_Leveling_Count` 34), 117 To écrits, 35 700 h ; encore 48 Gio écrits par jour, surtout les profils Chrome, Claude Desktop et ChatGPT de `/home` |
+| Samsung 970 PRO 1 To (NVMe) | `/docker`, `/workspace` ; `p2` et `p5` inutilisées | 0 % d'usure, 5,9 To écrits |
+| 2 × Seagate 2 To (RAID1 LVM) | `/data` 500 Go (modèles ollama 20 Go) ; 2,66 To non alloués dans `vg-sata` | `sdc` : 312 646 cycles de têtes (300 000 prévus), 32 000 h ; aucun secteur réalloué ni en attente |
+
+Partitions NVMe inutilisées :
+
+- `nvme0n1p2` (196 Go, ext4) : ancienne installation Ubuntu 21.04 de septembre 2021, 59 Go.
+  `workspace/users/albandrieu30` (24 Go, clones de dépôts), `home/albandrieu` (22 Go, dont
+  `Pictures` 9,8 Go : 60 fichiers sur 114 absents de l'actuel `~/Pictures`), `var` 7 Go, un
+  `swapfile` de 2 Go. Inspectée montée en lecture seule (`ro,noload`), puis démontée.
+- `nvme0n1p5` (187 Go, LUKS2) : un seul emplacement de clé, sans jeton FIDO2, absente de
+  `/etc/crypttab`, jamais ouverte dans le journal. Contenu inconnu sans sa phrase de passe.
+
+| Étape | Quoi | Gate | Statut |
+| --- | --- | --- | --- |
+| 0 | Supprimer les copies Docker d'avant la migration ; `apm = 254` sur les deux disques durs ; écritures en attente plafonnées à 1 Gio, vidage dès 256 Mio | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml), tests de contrat | **FAIT le 9/11** : `/` 84 → 74 %, `APM_level 254`, `vm.dirty_bytes` 1 Gio |
+| 1 | Archiver `p2` sur TrueNAS (`tar` en lecture seule vers `/media/backup`, somme `sha256`), vérifier les 60 photos manquantes, puis l'effacer | Liste de l'archive relue et somme contrôlée avant `wipefs` | À faire |
+| 2 | Ouvrir `p5` avec sa phrase de passe, inventorier, archiver ce qui compte ; sans phrase de passe, la considérer perdue | Décision de l'utilisateur, archive vérifiée | À faire (phrase de passe) |
+| 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | À faire |
+| 4 | Migrer `/home` sur le NVMe : session fermée (TTY root), `rsync -aHAXS`, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | À faire, devant la machine |
+| 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | À faire |
+| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà sur `:9100`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | À faire |
+| 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
+
+Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
+moins par écriture. Pas retenus : `noatime` (gain négligeable face à `relatime`), zram (aucun
+swap-out mesuré, à revoir si la swap se remet à écrire).
