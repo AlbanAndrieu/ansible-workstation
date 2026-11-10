@@ -140,7 +140,11 @@ Vérifié sain :
 
 [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml) et
 [`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml) décrivent les correctifs. Plans du
-6 novembre 2026, **pas encore appliqués** :
+6 novembre 2026, **appliqués le 10 novembre** avec l'accord de l'opérateur (stabilisation
+`changed=5`, NFS : 13 partages resserrés, 10 partages `dpool` supprimés). Avant l'apply, seule la
+workstation avait une connexion NFS ouverte. Après : les deux plans sont vides, et les 12
+automontages de la workstation et Apache (`/media/www`) répondent. Le certificat de l'UI (#2) était
+déjà le bon, et il n'y avait aucun coredump à réinitialiser (#6).
 
 | # | Problème et preuve | Plan |
 | --- | --- | --- |
