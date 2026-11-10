@@ -105,13 +105,18 @@ Partitions NVMe inutilisées :
   `workspace/users/albandrieu30` (24 Go, clones de dépôts), `home/albandrieu` (22 Go, dont
   `Pictures` 9,8 Go : 60 fichiers sur 114 absents de l'actuel `~/Pictures`), `var` 7 Go, un
   `swapfile` de 2 Go. Inspectée montée en lecture seule (`ro,noload`), puis démontée.
+  Contrôle du 10/11 : les 114 fichiers de `Pictures` (et les 1 400 du zip `Eleonore-001`) sont
+  déjà sur TrueNAS (`/media/photo`, `/media/home/albandrieu`) ou dans `/data/photo-TODELETE`
+  (sha256, ou nom et taille pour le zip), sauf trois logos publics. Reste à archiver : le `home`
+  sans photos ni caches (2 Go) et `workspace` (24 Go, quelques commits jamais poussés de 2021).
 - `nvme0n1p5` (187 Go, LUKS2) : un seul emplacement de clé, sans jeton FIDO2, absente de
-  `/etc/crypttab`, jamais ouverte dans le journal. Contenu inconnu sans sa phrase de passe.
+  `/etc/crypttab`, jamais ouverte dans le journal. D'après l'utilisateur, sauvegarde d'une
+  ancienne installation Ubuntu ; contenu à confirmer avec sa phrase de passe.
 
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
 | 0 | Supprimer les copies Docker d'avant la migration ; `apm = 254` sur les deux disques durs ; écritures en attente plafonnées à 1 Gio, vidage dès 256 Mio | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml), tests de contrat | **FAIT le 9/11** : `/` 84 → 74 %, `APM_level 254`, `vm.dirty_bytes` 1 Gio |
-| 1 | Archiver `p2` sur TrueNAS (`tar` en lecture seule vers `/media/backup`, somme `sha256`), vérifier les 60 photos manquantes, puis l'effacer | Liste de l'archive relue et somme contrôlée avant `wipefs` | À faire |
+| 1 | Archiver de `p2` le `home` sans photos ni caches et `workspace` sur TrueNAS (`tar` en lecture seule vers `/media/backup`, somme `sha256`), puis l'effacer | Liste de l'archive relue et somme contrôlée avant `wipefs` | Photos vérifiées le 10/11 ; archive à faire |
 | 2 | Ouvrir `p5` avec sa phrase de passe, inventorier, archiver ce qui compte ; sans phrase de passe, la considérer perdue | Décision de l'utilisateur, archive vérifiée | À faire (phrase de passe) |
 | 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | À faire |
 | 4 | Migrer `/home` sur le NVMe : session fermée (TTY root), `rsync -aHAXS`, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | À faire, devant la machine |
