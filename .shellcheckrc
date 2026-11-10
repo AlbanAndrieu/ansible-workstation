@@ -1,0 +1,2 @@
+# Repo policy, found before ~/.shellcheckrc so the gate does not depend on the host.
+external-sources=true

@@ -1,4 +1,5 @@
 """Offline guardrails for Ubuntu YubiKey *OS-only* package prerequisites."""
+
 from pathlib import Path
 import unittest
 
@@ -9,8 +10,13 @@ PLAYBOOK = ROOT / "playbooks/yubikey-os-prerequisites.yml"
 GENERIC = ROOT / "tasks/workstation.yml"
 LEGACY = ROOT / "tasks/yubikey.yml"
 BASE_RUNTIME = {
-    "yubikey-manager", "pcscd", "libu2f-udev", "libfido2-1",
-    "opensc", "gnupg", "scdaemon",
+    "yubikey-manager",
+    "pcscd",
+    "libu2f-udev",
+    "libfido2-1",
+    "opensc",
+    "gnupg",
+    "scdaemon",
 }
 BUILD = {"libpcsclite-dev", "pkg-config"}
 PAM_TOOLS = {"libpam-u2f"}
@@ -37,7 +43,8 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         self.assertIs(p["gather_facts"], False)
         self.assertIs(p["become"], False)
         self.assertEqual(
-            p["vars"]["ansible_python_interpreter"], "{{ ansible_playbook_python }}"
+            p["vars"]["ansible_python_interpreter"],
+            "{{ ansible_playbook_python }}",
         )
         self.assertIs(p["vars"]["yubikey_os_apply"], False)
         self.assertIs(p["vars"]["yubikey_os_apply_approved"], False)
@@ -51,11 +58,21 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         self.assertEqual(set(v["yubikey_os_pam_tools_packages"]), PAM_TOOLS)
         contents = PLAYBOOK.read_text()
         for forbidden in (
-            "apt_repository", "ppa:yubico", "apt-key", "shell:",
-            "ansible.builtin.shell", "ansible.builtin.template",
-            "/etc/pam.d", "ykman piv", "ykman otp", "ykman fido",
-            "pamu2fcfg", "gpg --card", "age-plugin-yubikey --generate",
-            "systemd:", "ansible.builtin.service",
+            "apt_repository",
+            "ppa:yubico",
+            "apt-key",
+            "shell:",
+            "ansible.builtin.shell",
+            "ansible.builtin.template",
+            "/etc/pam.d",
+            "ykman piv",
+            "ykman otp",
+            "ykman fido",
+            "pamu2fcfg",
+            "gpg --card",
+            "age-plugin-yubikey --generate",
+            "systemd:",
+            "ansible.builtin.service",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, contents)
@@ -79,15 +96,12 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         # Do not allow selecting only the apt task by --tags and skipping
         # the two approval and Ubuntu package availability guards.
         self.assertNotIn("tags", apt)
-        self.assertEqual(set(apt["when"]), {
-            "yubikey_os_apply | bool", "yubikey_os_apply_approved | bool"
-        })
-        self.assertTrue(any(
-            "second explicit approval" in t["name"] for t in tasks
-        ))
-        self.assertTrue(any(
-            "unavailable package" in t["name"] for t in tasks
-        ))
+        self.assertEqual(
+            set(apt["when"]),
+            {"yubikey_os_apply | bool", "yubikey_os_apply_approved | bool"},
+        )
+        self.assertTrue(any("second explicit approval" in t["name"] for t in tasks))
+        self.assertTrue(any("unavailable package" in t["name"] for t in tasks))
 
     def test_package_cache_probe_is_read_only_no_log(self):
         tasks = play()["tasks"]
@@ -111,12 +125,21 @@ class YubiKeyOSPrerequisitesContract(unittest.TestCase):
         self.assertIn("scripts/uv-project.sh check", cfg)
 
     def test_no_hardware_mutation_or_secret_material(self):
-        p = play()
+        play()  # the playbook must parse
         contents = PLAYBOOK.read_text().lower()
         for forbidden in (
-            "secret:", "private_key", "pin:", "puk:", "challenge_response",
-            "enrollment", "ykman fido reset", "fido2_reset", "piv reset",
-            "ssh-keygen", "scdaemon.conf", "sudoers",
+            "secret:",
+            "private_key",
+            "pin:",
+            "puk:",
+            "challenge_response",
+            "enrollment",
+            "ykman fido reset",
+            "fido2_reset",
+            "piv reset",
+            "ssh-keygen",
+            "scdaemon.conf",
+            "sudoers",
         ):
             self.assertNotIn(forbidden, contents)
         self.assertIn("hardware_accessed", contents)

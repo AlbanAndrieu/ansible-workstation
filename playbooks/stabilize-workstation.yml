@@ -1,0 +1,515 @@
+---
+# Stabilization lot 1 (docs/stabilisation-workstation-truenas.md): journal history, boot delay,
+# daily logrotate failure, units failing in loop, NFS automounts, apache exposure and log noise;
+# GPU metrics and ollama tuning (docs/gpu-llm-workstation.md).
+# Plan only by default. Writing needs stabilize_apply AND stabilize_apply_approved.
+# Run: ansible-playbook -i localhost, -c local playbooks/stabilize-workstation.yml
+- name: Plan or explicitly apply the workstation stabilization lot
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    stabilize_apply: false
+    stabilize_apply_approved: false
+    stabilize_write: "{{ stabilize_apply | bool and stabilize_apply_approved | bool }}"
+    stabilize_purge:
+      # Both declare /var/log/cloud-init*.log: logrotate exits 1 every day.
+      - cloud-init
+      - cloud-init-base
+      # Hyper-V KVP daemon waits 90 s at boot for a device that never appears on bare metal.
+      - linux-cloud-tools-common
+      # Fails under GNOME, which has its own screen locker.
+      - xscreensaver
+      - xscreensaver-data-extra
+      - xscreensaver-gl-extra
+      # Never produced a report (/var/lib/awstats empty since 2020): www-data cannot read the apache
+      # logs, and its cron job fails every 10 min.
+      - awstats
+    stabilize_system_units_off:
+      # pf_ring kernel module is not built for this kernel; the probe fails at every boot.
+      - cento.service
+      # No client since November 2025; its FTDC statfs every NFS mount each second, so they never idle out.
+      - mongod.service
+    # libminiupnpc.so.17 is gone; the timer restarts the failing service every 30 min.
+    stabilize_user_units_off:
+      - bitcoin-qt.timer
+      - bitcoin-qt.service
+    # Appended to ARGS when missing; restic-backup.yml (audit branch) owns the rest of the line.
+    # The TrueNAS heartbeat and morning brief read CPU, RAM, disk and failed units from this exporter.
+    stabilize_node_exporter_flags:
+      # smartmon, nvme and apt timers write here.
+      - --collector.textfile.directory=/var/lib/prometheus/node-exporter
+      - --collector.cpu
+      - --collector.meminfo
+      - --collector.loadavg
+      - --collector.filesystem
+      - --collector.systemd
+    # No other probe covers the workstation Redis and Postgres (nabla-compose).
+    stabilize_health_containers:
+      - postgres
+      - redis
+    # Docker data-root (/var/lib/docker -> /docker) and the containerd image store, off the worn SATA SSD.
+    stabilize_docker_lv: /dev/vg-docker/docker-nvme0
+    stabilize_docker_mounts:
+      - path: /docker
+        src: "{{ stabilize_docker_lv }}"
+        fstype: ext4
+        opts: defaults,nofail
+      - path: /var/lib/containerd
+        src: /docker/containerd
+        fstype: none
+        opts: bind,nofail,x-systemd.requires-mounts-for=/docker
+    # Hard NFS mounts kept mounted freeze PID 1 on any daemon-reload while TrueNAS is down, and bg
+    # made systemd wait for them forever. Mount on access, drop when idle, give up after 20 s.
+    # nosuid,nodev,noexec keep what the former user option implied; rsize/wsize are negotiated.
+    stabilize_nfs_server: nabla
+    stabilize_nfs_opts: noatime,nosuid,nodev,noexec,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,x-systemd.mount-timeout=20s
+    # APM 128 parked the heads after a few seconds idle: sdc passed its 300 000 load cycles.
+    stabilize_hdd_ids:
+      - ata-ST2000DM008-2FR102_WFL2X890
+      - ata-ST2000DM008-2UB102_ZFL8X7CP
+    # Copied to /etc/apache2 (the site checkout was the 8082 document root). Captures under
+    # files/etc keep @@INTERNAL@@ for private addresses; it is rendered from this value.
+    stabilize_apache_probe_source: 172.17.0.1
+    stabilize_apache_files:
+      - apache2.conf
+      - conf-available/security.conf
+      - sites-available/000-default.conf
+    # Loaded in every prefork child, used by nothing: no balancer, AJP, CONNECT, FastCGI or HTML rewriting.
+    stabilize_apache_mods_off:
+      - proxy_ajp
+      - proxy_balancer
+      - proxy_connect
+      - proxy_fcgi
+      - proxy_html
+      - xml2enc
+      - slotmem_shm
+      - vhost_alias
+
+  # Handlers run in this order: reload before restarting a unit whose drop-in changed.
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      become: true
+
+    - name: Restart journald
+      ansible.builtin.systemd_service:
+        name: systemd-journald.service
+        state: restarted
+      become: true
+
+    - name: Restart node exporter
+      ansible.builtin.systemd_service:
+        name: prometheus-node-exporter.service
+        state: restarted
+      become: true
+
+    - name: Restart ollama
+      ansible.builtin.systemd_service:
+        name: ollama.service
+        state: restarted
+      become: true
+
+    # apachectl graceful runs configtest first and keeps the old config if it fails.
+    - name: Apply sysctl
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-ai-workstation.conf
+      changed_when: true
+      become: true
+
+    - name: Apply hdparm
+      ansible.builtin.command: hdparm -B 254 {{ stabilize_hdd_ids | map('regex_replace', '^', '/dev/disk/by-id/') | join(' ') }}
+      changed_when: true
+      become: true
+
+    - name: Reload apache
+      ansible.builtin.systemd_service:
+        name: apache2.service
+        state: reloaded
+      become: true
+
+    # An automount cannot start over a live mount: swap the idle ones now, busy ones at next boot.
+    - name: Swap the idle NFS mounts for their automount
+      ansible.builtin.shell: |
+        set -o pipefail
+        findmnt --fstab -n -t nfs4 -o TARGET | while read -r path; do
+          unit="$(systemd-escape -p --suffix=automount "${path}")"
+          systemctl is-active -q "${unit}" && continue
+          if findmnt -n -t nfs4 --mountpoint "${path}" >/dev/null; then
+            umount -R "${path}" || { echo "busy, switches at next boot: ${path}"; continue; }
+          fi
+          systemctl start "${unit}"
+        done
+      args:
+        executable: /bin/bash
+      become: true
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - stabilize_apply_approved | bool
+        fail_msg: "Apply denied: requires both stabilize_apply=true and stabilize_apply_approved=true."
+        quiet: true
+      when: stabilize_apply | bool
+
+    # apt and the handlers below reload systemd, which hangs on live NFS mounts while TrueNAS is down.
+    - name: Refuse to run while TrueNAS NFS is unreachable
+      ansible.builtin.wait_for:
+        host: "{{ stabilize_nfs_server }}"
+        port: 2049
+        timeout: 5
+      when: stabilize_write
+
+    - name: Keep about two weeks of journal (300M held only 30 h)
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/systemd/journald.conf.d/size.conf"
+        dest: /etc/systemd/journald.conf.d/size.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify: Restart journald
+
+    - name: Purge the packages behind the boot delay, logrotate, screensaver and awstats failures
+      ansible.builtin.apt:
+        name: "{{ stabilize_purge }}"
+        state: absent
+        purge: true
+      become: true
+      when: stabilize_write
+
+    - name: Stop and disable the failing system units
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ stabilize_system_units_off }}"
+      become: true
+      when: stabilize_write
+
+    - name: Stop and disable the failing user units
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+        scope: user
+      loop: "{{ stabilize_user_units_off }}"
+      when: stabilize_write
+
+    - name: Install the SMART, NVMe and apt textfile collectors (timers enabled by the package)
+      ansible.builtin.apt:
+        name: prometheus-node-exporter-collectors
+        state: present
+      become: true
+      when: stabilize_write
+
+    # Whole-flag match: --collector.cpu must not be satisfied by --collector.cpu.guest.
+    - name: Enable the node exporter collectors next to the Restic metrics
+      ansible.builtin.replace:
+        path: /etc/default/prometheus-node-exporter
+        regexp: '^ARGS=(?!.*[" ]{{ item | regex_escape }}[ "])"(.*)"$'
+        replace: 'ARGS="\1 {{ item }}"'
+      loop: "{{ stabilize_node_exporter_flags }}"
+      become: true
+      when: stabilize_write
+      notify: Restart node exporter
+
+    - name: Create the node exporter drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/prometheus-node-exporter.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      become: true
+      when: stabilize_write
+
+    # It binds 172.17.0.57 only: at boot it failed before eno1 had its address and stayed failed.
+    - name: Start node exporter once the LAN is up and keep retrying
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/prometheus-node-exporter.service.d/wait-for-lan.conf
+        content: |
+          # Managed by ansible-workstation (stabilize-workstation.yml, restic-backup.yml)
+          # Binds the LAN address only: start once it exists, keep retrying if DHCP is late.
+          [Unit]
+          Wants=network-online.target
+          After=network-online.target
+          StartLimitIntervalSec=0
+
+          [Service]
+          Restart=on-failure
+          RestartSec=5s
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify:
+        - Reload systemd
+        - Restart node exporter
+
+    - name: Keep node exporter enabled at boot
+      ansible.builtin.systemd_service:
+        name: prometheus-node-exporter.service
+        enabled: true
+      become: true
+      when: stabilize_write
+
+    - name: Install the Docker health textfile writer
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/docker-health-textfile.sh"
+        dest: /usr/local/sbin/docker-health-textfile
+        owner: root
+        group: root
+        mode: "0755"
+      become: true
+      when: stabilize_write
+
+    - name: Write the container health every minute
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item.name }}"
+        content: "{{ item.content }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - name: docker-health-textfile.service
+          content: |
+            [Unit]
+            Description=Write Docker container health for node_exporter
+            After=docker.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/sbin/docker-health-textfile /var/lib/prometheus/node-exporter/docker-health.prom {{ stabilize_health_containers | join(' ') }}
+        - name: docker-health-textfile.timer
+          content: |
+            [Unit]
+            Description=Write Docker container health for node_exporter every minute
+
+            [Timer]
+            OnBootSec=1min
+            OnUnitActiveSec=1min
+
+            [Install]
+            WantedBy=timers.target
+      loop_control:
+        label: "{{ item.name }}"
+      register: stabilize_health_units
+      become: true
+      when: stabilize_write
+
+    # A daemon-reload freezes PID 1 while TrueNAS NFS is down (docs/stabilisation-workstation-truenas.md): only when needed.
+    - name: Start the container health timer
+      ansible.builtin.systemd_service:
+        name: docker-health-textfile.timer
+        enabled: true
+        state: started
+        daemon_reload: "{{ stabilize_health_units is changed }}"
+      become: true
+      when: stabilize_write
+
+    - name: Install the NVIDIA GPU textfile writer
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/nvidia-gpu-textfile.sh"
+        dest: /usr/local/sbin/nvidia-gpu-textfile
+        owner: root
+        group: root
+        mode: "0755"
+      register: stabilize_gpu_script
+      become: true
+      when: stabilize_write
+
+    # Prometheus on TrueNAS already scrapes :9100, so GPU load and VRAM need no new port or job.
+    - name: Write the GPU metrics every 15 seconds
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/nvidia-gpu-textfile.service
+        content: |
+          [Unit]
+          Description=Write NVIDIA GPU metrics for node_exporter
+
+          [Service]
+          ExecStart=/usr/local/sbin/nvidia-gpu-textfile /var/lib/prometheus/node-exporter/nvidia-gpu.prom 15
+          Restart=always
+          RestartSec=30
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: "0644"
+      register: stabilize_gpu_unit
+      become: true
+      when: stabilize_write
+
+    - name: Start the GPU metrics writer
+      ansible.builtin.systemd_service:
+        name: nvidia-gpu-textfile.service
+        enabled: true
+        state: "{{ 'restarted' if stabilize_gpu_script is changed or stabilize_gpu_unit is changed else 'started' }}"
+        daemon_reload: "{{ stabilize_gpu_unit is changed }}"
+      become: true
+      when: stabilize_write
+
+    - name: Inspect the Docker and containerd mount points
+      ansible.builtin.shell: |
+        set -o pipefail
+        mountpoint -q {{ item.path }} && echo mounted && exit 0
+        find {{ item.path }} -mindepth 1 -maxdepth 1 -print -quit | grep -q . && echo data || echo empty
+      args:
+        executable: /bin/bash
+      loop: "{{ stabilize_docker_mounts }}"
+      register: stabilize_mount_state
+      changed_when: false
+      # Read-only: without it --check skips the probe and the guard below always fails.
+      check_mode: false
+      become: true
+      when: stabilize_write
+
+    # Mounting over a non-empty directory would hide the images and volumes: copy them first.
+    - name: Refuse to mount over existing Docker data
+      ansible.builtin.assert:
+        that:
+          - stabilize_mount_state.results | map(attribute='stdout') | difference(['mounted', 'empty']) | length == 0
+        fail_msg: "Migrate /docker and /var/lib/containerd to {{ stabilize_docker_lv }} first (docs/stabilisation-workstation-truenas.md)."
+        quiet: true
+      when: stabilize_write
+
+    - name: Mount the NVMe LV on /docker and bind the containerd store from it
+      ansible.posix.mount:
+        path: "{{ item.path }}"
+        src: "{{ item.src }}"
+        fstype: "{{ item.fstype }}"
+        opts: "{{ item.opts }}"
+        state: mounted
+      loop: "{{ stabilize_docker_mounts }}"
+      become: true
+      when: stabilize_write
+      notify: Reload systemd
+
+    - name: Create the containerd and Docker drop-in directories
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}.d"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - containerd.service
+        - docker.service
+      become: true
+      when: stabilize_write
+
+    # nofail keeps the boot going; these units must not start on the empty directories instead.
+    - name: Make containerd and Docker wait for their storage
+      notify: Reload systemd
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item }}.d/10-nvme-storage.conf"
+        content: |
+          [Unit]
+          RequiresMountsFor=/docker /var/lib/containerd
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - containerd.service
+        - docker.service
+      become: true
+      when: stabilize_write
+
+    - name: Mount the TrueNAS shares on access and give up when TrueNAS does not answer
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^({{ stabilize_nfs_server }}:\S+\s+\S+\s+nfs4\s+)(?!{{ stabilize_nfs_opts | regex_escape }}\s)\S+'
+        replace: '\g<1>{{ stabilize_nfs_opts }}'
+        backup: true
+      become: true
+      when: stabilize_write
+      notify:
+        - Reload systemd
+        - Swap the idle NFS mounts for their automount
+
+    - name: Create the ollama drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/ollama.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      become: true
+      when: stabilize_write
+
+    - name: Keep the ollama GPU tuning across ollama upgrades
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/systemd/system/ollama.service.d/workstation.conf"
+        dest: /etc/systemd/system/ollama.service.d/workstation.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify:
+        - Reload systemd
+        - Restart ollama
+
+    - name: Serve only public/, never dotfiles or phpinfo, and drop the pfSense probes from the logs
+      ansible.builtin.copy:
+        content: >-
+          {{ lookup('ansible.builtin.file', playbook_dir | dirname ~ '/files/etc/apache2/' ~ item, rstrip=false)
+             | replace('@@INTERNAL@@', stabilize_apache_probe_source) }}
+        dest: "/etc/apache2/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ stabilize_apache_files }}"
+      become: true
+      when: stabilize_write
+      notify: Reload apache
+
+    - name: Disable the apache modules nothing uses
+      community.general.apache2_module:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ stabilize_apache_mods_off }}"
+      become: true
+      when: stabilize_write
+      notify: Reload apache
+
+    - name: Cap the dirty page cache and keep the other kernel settings
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/sysctl.d/99-ai-workstation.conf"
+        dest: /etc/sysctl.d/99-ai-workstation.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify: Apply sysctl
+
+    # hdparm's udev rule applies this at boot, its system-sleep hook after resume.
+    - name: Stop the hard drives from parking their heads
+      ansible.builtin.blockinfile:
+        path: /etc/hdparm.conf
+        marker: "# {mark} ansible stabilize-workstation"
+        block: |
+          {% for id in stabilize_hdd_ids %}
+          /dev/disk/by-id/{{ id }} {
+            apm = 254
+          }
+          {% endfor %}
+      become: true
+      when: stabilize_write
+      notify: Apply hdparm
+
+    - name: Report the stabilization plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if stabilize_write else 'check_only' }}"
+          journald: "{{ lookup('ansible.builtin.file', playbook_dir | dirname ~ '/files/etc/systemd/journald.conf.d/size.conf') }}"
+          purge: "{{ stabilize_purge }}"
+          system_units_off: "{{ stabilize_system_units_off }}"
+          user_units_off: "{{ stabilize_user_units_off }}"

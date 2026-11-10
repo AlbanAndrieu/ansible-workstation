@@ -1,4 +1,5 @@
 """Fail-closed DNS playbook discovery tests; no Ansible or network execution."""
+
 from __future__ import annotations
 
 import contextlib
@@ -21,7 +22,10 @@ spec.loader.exec_module(gate)
 class DNSGateTests(unittest.TestCase):
     def test_targets_dns_only_task_entrypoint(self):
         content = (ROOT / "playbooks/homelab-dns.yml").read_text()
-        self.assertIn("ansible.builtin.import_tasks: ../tasks/network_split_dns.yml", content)
+        self.assertIn(
+            "ansible.builtin.import_tasks: ../tasks/network_split_dns.yml",
+            content,
+        )
         self.assertIn("vars_files:", content)
         self.assertIn("../defaults/main.yml", content)
         self.assertIn("workstation_split_dns_enabled | bool", content)
@@ -37,17 +41,24 @@ class DNSGateTests(unittest.TestCase):
         self.assertNotIn("src: networkmanager-homelab-nta-dispatcher.sh", task)
 
     def test_test_suite_minima(self):
-        self.assertEqual(gate.TEST_SUITES, (
-            ("test_homelab_dns_guard_contract.py", 8),
-            ("test_homelab_dns_nta_dispatcher.py", 17),
-        ))
+        self.assertEqual(
+            gate.TEST_SUITES,
+            (
+                ("test_homelab_dns_guard_contract.py", 8),
+                ("test_homelab_dns_nta_dispatcher.py", 17),
+            ),
+        )
 
     def test_zero_discovered_tests_is_a_failure_even_with_exit_zero(self):
         with mock.patch.object(
-            gate, "execute", return_value=(0, "\nRan 0 tests in 0.000s\n\nOK\n")
+            gate,
+            "execute",
+            return_value=(0, "\nRan 0 tests in 0.000s\n\nOK\n"),
         ):
             with contextlib.redirect_stdout(io.StringIO()):
-                self.assertFalse(gate.run_suite("test_homelab_dns_guard_contract.py", 8))
+                self.assertFalse(
+                    gate.run_suite("test_homelab_dns_guard_contract.py", 8),
+                )
 
     def test_wrong_role_checkout_must_be_rejected(self):
         with mock.patch.object(Path, "is_file", return_value=False):
@@ -56,14 +67,18 @@ class DNSGateTests(unittest.TestCase):
 
     def test_unexpected_remote_must_be_rejected(self):
         with mock.patch.object(
-            gate, "execute", return_value=(0, "git@github.com:OtherProject/foo.git\n")
+            gate,
+            "execute",
+            return_value=(0, "git@github.com:OtherProject/foo.git\n"),
         ):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertFalse(gate.verify_workspace())
 
     def test_correct_remote_accepts_ssh_https_git(self):
         with mock.patch.object(
-            gate, "execute", return_value=(0, "git@github.com:AlbanAndrieu/ansible-workstation.git\n")
+            gate,
+            "execute",
+            return_value=(0, "git@github.com:AlbanAndrieu/ansible-workstation.git\n"),
         ):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertTrue(gate.verify_workspace())

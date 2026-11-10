@@ -74,6 +74,5 @@
     - gstreamer1.0-plugins-good
     - gstreamer1.0-plugins-bad
     - gstreamer1.0-plugins-ugly
-
 # Howdy (face unlock) left the global role: its broken boltgolt
 # PPA task was unconditional. Use playbooks/howdy-cameras.yml (opt-in, no PAM).

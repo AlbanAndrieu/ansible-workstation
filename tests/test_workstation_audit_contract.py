@@ -2,6 +2,7 @@
 
 Do not execute a playbook, access hardware or write to system locations.
 """
+
 from pathlib import Path
 import unittest
 
@@ -59,8 +60,11 @@ class WorkstationAuditContract(unittest.TestCase):
                     self.assertEqual(
                         task["ansible.builtin.command"]["argv"],
                         [
-                            "/usr/bin/systemctl", "show", "--no-pager",
-                            "--property=ActiveState", "--property=UnitFileState",
+                            "/usr/bin/systemctl",
+                            "show",
+                            "--no-pager",
+                            "--property=ActiveState",
+                            "--property=UnitFileState",
                             "{{ item }}",
                         ],
                     )
@@ -73,11 +77,19 @@ class WorkstationAuditContract(unittest.TestCase):
                 self.assertNotIn("notify", task)
         for forbidden in (
             "ansible.builtin.shell",
-            "ansible.builtin.copy", "ansible.builtin.template",
-            "ansible.builtin.apt", "ansible.builtin.systemd_service",
-            "ansible.builtin.uri", "ansible.builtin.fetch",
-            "import_tasks", "include_tasks", "include_role", "lookup(",
-            "set_stats:", "ansible.builtin.file", "become: true",
+            "ansible.builtin.copy",
+            "ansible.builtin.template",
+            "ansible.builtin.apt",
+            "ansible.builtin.systemd_service",
+            "ansible.builtin.uri",
+            "ansible.builtin.fetch",
+            "import_tasks",
+            "include_tasks",
+            "include_role",
+            "lookup(",
+            "set_stats:",
+            "ansible.builtin.file",
+            "become: true",
         ):
             self.assertNotIn(forbidden, self.source)
 
@@ -90,10 +102,16 @@ class WorkstationAuditContract(unittest.TestCase):
         self.assertEqual(
             set(report),
             {
-                "schema", "observed_at_utc", "system", "selected_services",
-                "selected_packages", "selected_sysctls",
-                "selected_mounts_present", "selected_timers",
-                "apparmor_kernel", "limitations",
+                "schema",
+                "observed_at_utc",
+                "system",
+                "selected_services",
+                "selected_packages",
+                "selected_sysctls",
+                "selected_mounts_present",
+                "selected_timers",
+                "apparmor_kernel",
+                "limitations",
             },
         )
         self.assertEqual(report["schema"], "workstation-ansible-audit/v1")
@@ -102,8 +120,15 @@ class WorkstationAuditContract(unittest.TestCase):
         self.assertNotIn("ansible_facts", str(report["apparmor_kernel"]))
         self.assertNotIn("ansible_facts", str(report["selected_packages"]))
         self.assertNotIn("ansible_facts", str(report["selected_sysctls"]))
-        for forbidden in ("hostname", "ip_address", "username", "mac_address",
-                          "serial_number", "uuid", "environment"):
+        for forbidden in (
+            "hostname",
+            "ip_address",
+            "username",
+            "mac_address",
+            "serial_number",
+            "uuid",
+            "environment",
+        ):
             self.assertNotIn(forbidden, report["system"])
 
     def test_gather_subset_excludes_unneeded_minimum_and_network(self):
@@ -119,8 +144,10 @@ class WorkstationAuditContract(unittest.TestCase):
     def test_whitelists_are_explicit_and_small(self):
         allowlists = self.play["vars"]
         expected = {
-            "audit_service_allowlist", "audit_timer_allowlist",
-            "audit_package_allowlist", "audit_sysctl_allowlist",
+            "audit_service_allowlist",
+            "audit_timer_allowlist",
+            "audit_package_allowlist",
+            "audit_sysctl_allowlist",
             "audit_mount_allowlist",
         }
         self.assertEqual(set(allowlists), expected | {"ansible_python_interpreter"})
@@ -130,14 +157,14 @@ class WorkstationAuditContract(unittest.TestCase):
                 self.assertEqual(len(values), len(set(values)))
                 self.assertTrue(0 < len(values) <= 15)
                 self.assertTrue(all(isinstance(item, str) for item in values))
-        self.assertIn("net.ipv4.ip_forward",
-                      allowlists["audit_sysctl_allowlist"])
+        self.assertIn("net.ipv4.ip_forward", allowlists["audit_sysctl_allowlist"])
         self.assertIn("ufw.service", allowlists["audit_service_allowlist"])
         self.assertIn("/", allowlists["audit_mount_allowlist"])
 
     def test_apparmor_kernel_status_is_distinct_from_service_facts(self):
         probe = next(
-            task for task in self.tasks
+            task
+            for task in self.tasks
             if task["name"] == "Read AppArmor kernel switch without inspecting profiles"
         )
         self.assertEqual(
@@ -156,23 +183,36 @@ class WorkstationAuditContract(unittest.TestCase):
             set(self.play["vars"]["audit_timer_allowlist"]),
             {"apt-daily.timer", "apt-daily-upgrade.timer", "fstrim.timer"},
         )
-        self.assertFalse(any(
-            item.endswith(".timer")
-            for item in self.play["vars"]["audit_service_allowlist"]
-        ))
-        self.assertTrue(all(
-            item.endswith(".service")
-            for item in self.play["vars"]["audit_service_allowlist"]
-        ))
+        self.assertFalse(
+            any(
+                item.endswith(".timer")
+                for item in self.play["vars"]["audit_service_allowlist"]
+            ),
+        )
+        self.assertTrue(
+            all(
+                item.endswith(".service")
+                for item in self.play["vars"]["audit_service_allowlist"]
+            ),
+        )
 
     def test_no_file_output_or_secret_material(self):
         for token in (
-            "/etc/shadow", "/etc/ssh/", "/etc/pam.d", "/home/",
-            "/root/", "vault", "ssh_host_key", "machine_id",
-            "ansible_env", "ansible_all_ipv4_addresses", "getent",
-            "serial", "ansible.builtin.stat:\n    path: /etc",
+            "/etc/shadow",
+            "/etc/ssh/",
+            "/etc/pam.d",
+            "/home/",
+            "/root/",
+            "vault",
+            "ssh_host_key",
+            "machine_id",
+            "ansible_env",
+            "ansible_all_ipv4_addresses",
+            "getent",
+            "serial",
+            "ansible.builtin.stat:\n    path: /etc",
         ):
-            if token == "serial":
+            if token == "serial":  # nosec B105 - word, not a secret
                 # Wording in the public limitations is not a collection.
                 continue
             self.assertNotIn(token, self.source)

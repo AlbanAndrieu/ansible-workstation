@@ -77,12 +77,48 @@ Le playbook sauvegarde chaque fichier remplacé (`backup: true`), n'affiche jama
 cloudflared, litellm, nvidia-persistence, ollama et snmp_exporter. **PAM** (`pam.conf`, `pam.d/common-*`)
 n'est écrit qu'avec `-e etc_restore_pam=true`, console locale ouverte.
 
-**À restaurer hors Git** (Restic ou à la main) : valeurs masquées `@@SECRET@@` de `odbc.ini`,
-`glances.conf`, `torrc`, `ollama.service` (fichiers ignorés par le playbook tant qu'ils les contiennent) ;
+**À restaurer hors Git** (Restic ou à la main) : fichiers dont une ligne **active** porte
+`@@SECRET@@` (`odbc.ini`, `glances.conf`, `torrc`, `ollama.service`) ou `@@INTERNAL@@`
+(`crontab`, `docker/daemon.json`, `resolvconf/resolv.conf.d/head`, `rsyslog.d/00-workstation.conf`,
+`rsyslog.d/99-workstation-forward.conf`, `systemd/resolved.conf.d/99-workstation.conf`,
+`zabbix/zabbix_agent2.conf`) ; le playbook les ignore. Un marqueur seulement en commentaire ne
+bloque pas la restauration ;
 `GeoIP.conf`, `apt/auth.conf.d`, credentials crowdsec, config et credentials cloudflared,
 `EnvironmentFile` de litellm, `docker/key.json`, letsencrypt (ou réémission certbot),
 `NetworkManager/system-connections`. **Non capturés faute de lecture sans sudo** : règles ufw,
 `crowdsec/config.yaml`, `sudoers.d`.
+
+#### Garde-fous de `scripts/capture-etc.sh` (1er novembre 2026)
+
+Les règles de masquage vivent dans [`scripts/capture-common.sh`](../scripts/capture-common.sh),
+partagé avec `capture-packages.sh`. Elles masquent aussi les **lignes commentées** (un ancien mot
+de passe commenté reste un secret), les clés préfixées (`db_password`, `client_secret`), le JSON,
+les identifiants d'URL `user:pass@`, chaque variable sensible d'une ligne `Environment=`, les
+directives `netcam_userpass`/`*_authentication` de motion et la section `[passwords]` de glances.
+Les clés qui nomment un fichier, un chemin ou un répertoire gardent leur valeur.
+
+**Adresses et noms internes** (`scrub_internal`, marqueur `@@INTERNAL@@`) : adresses RFC 1918,
+CGNAT/Tailscale et IPv6 ULA avec leur préfixe, noms sous `int.albandrieu.com`, `.lan`,
+`.internal` ou `.home.arpa`, valeurs `Hostname=`/`HostName`. Sont conservés : les blocs
+génériques `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` des règles ufw, le loopback, les
+résolveurs publics et les vhosts publics `*.albandrieu.com`, déjà visibles dans les journaux
+Certificate Transparency. **Exposition résiduelle** : l'historique Git contient toujours les
+valeurs d'avant le 1er novembre 2026, et `defaults/main.yml`, `tasks/network_split_dns.yml`,
+`policies/home-desktop.yml` et la documentation citent encore le résolveur et la zone privée.
+Réécrire l'historique (force-push) exige une décision explicite.
+
+Quel que soit le manifeste, le script **refuse** (code retour 1, copie du dépôt conservée) :
+magasins de secrets (`shadow`, `ssh_host_*`, `system-connections`, `*.key`, `*.pem`…), chemins
+non canoniques ou hors `/etc`, liens symboliques sortant de `/etc` ou visant un secret,
+répertoires, binaires autres que des clés OpenPGP **publiques**, et fichiers portant encore une
+signature de secret après masquage (clé privée PEM, jetons GitHub/GitLab/Slack/AWS, JWT). Le
+masquage se fait hors du dépôt, puis l'écriture remplace la cible par renommage sans suivre de
+lien symbolique planté dans `files/etc`. Les entrées absentes du manifeste sont **signalées**,
+jamais supprimées. `capture-packages.sh` applique les mêmes contrôles aux keyrings.
+
+`tests/test_capture_scripts_contract.py` vérifie ces refus sur des arborescences temporaires et
+impose que chaque capture commitée soit un **point fixe** du masquage (`redact | scrub_internal`) :
+une règle ajoutée plus tard oblige à re-masquer et relire les captures.
 
 ### Paquets
 

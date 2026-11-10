@@ -1,0 +1,20 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+[Unit]
+Description=Restic repository integrity check (5% of the data)
+RequiresMountsFor={{ restic_repository }}
+OnFailure=restic-notify@%n.service
+
+[Service]
+Type=oneshot
+User={{ restic_user }}
+LoadCredentialEncrypted=restic.password:/etc/credstore.encrypted/restic.password
+Environment=RESTIC_REPOSITORY={{ restic_repository }}
+Environment=RESTIC_PASSWORD_FILE=%d/restic.password
+Environment=RESTIC_CACHE_DIR=%C/restic
+CacheDirectory=restic
+ProtectSystem=strict
+ReadWritePaths={{ restic_repository }}
+PrivateTmp=yes
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/bin/restic check --read-data-subset=5%%

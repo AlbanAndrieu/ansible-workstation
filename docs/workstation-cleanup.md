@@ -58,7 +58,7 @@ sélectionnées que si l'outil est dans le `PATH`.
 | `~/.config/variety/Downloaded/*/` | `workstation_dev.variety_downloads` (opt-in) |
 | `~/.local/share/Trash/*` | `system.trash` (opt-in : dernière chance de récupération) |
 | `apt-get clean`, snaps désactivés, `refresh.retain=2` | `apply-system` : `apt.clean`, `apt.autoclean`, `snap.disabled` |
-| `journalctl --vacuum-size=300M` | `apply-system` : `JOURNAL_MAX` (500M par défaut) |
+| `journalctl --vacuum-size=300M` | `apply-system` : `JOURNAL_MAX` (2G par défaut, comme `SystemMaxUse`) |
 | `flatpak uninstall --unused` | `apply-system`, **sans** `--delete-data` |
 | `rm /workspace/Dropbox/motion/*.{jpg,mkv}` | `apply-system` avec `MOTION_RETENTION_DAYS` (les captures récentes restent) |
 

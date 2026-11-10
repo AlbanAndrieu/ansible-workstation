@@ -1,0 +1,20 @@
+# The workstation as a host of the TrueNAS Zabbix server.
+# Import: playbooks/zabbix-workstation-host.yml. The Restic template and its link
+# belong to nabla-compose (just zabbix-templates --apply), run after this import.
+zabbix_export:
+  version: "7.0"
+  host_groups:
+    - uuid: dc579cd7a1a34222933f24f52a68bcd8
+      name: Linux servers
+  hosts:
+    - host: albandrieu
+      name: albandrieu
+      templates:
+        # Active checks: the agent pushes to 172.17.0.24:30385, no inbound port needed.
+        - name: Linux by Zabbix agent active
+      groups:
+        - name: Linux servers
+      interfaces:
+        - ip: 172.17.0.57
+          interface_ref: if1
+      inventory_mode: DISABLED

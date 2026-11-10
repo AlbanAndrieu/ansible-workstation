@@ -1,0 +1,89 @@
+---
+# Declare the workstation in the TrueNAS Zabbix server from files/zabbix/albandrieu-host.yaml.
+# Plan only by default. Writing needs zabbix_host_apply AND zabbix_host_apply_approved.
+# Needs ZABBIX_API_TOKEN in the environment (Vaultwarden); it is never printed.
+- name: Plan or explicitly apply the workstation Zabbix host
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    zabbix_host_apply: false
+    zabbix_host_apply_approved: false
+    zabbix_url: "{{ lookup('ansible.builtin.env', 'ZABBIX_URL', default='http://172.17.0.24:30386') }}"
+    zabbix_token: "{{ lookup('ansible.builtin.env', 'ZABBIX_API_TOKEN') }}"
+    zabbix_host_file: "{{ playbook_dir }}/../files/zabbix/albandrieu-host.yaml"
+    zabbix_host_name: albandrieu
+    zabbix_host_write: "{{ zabbix_host_apply | bool and zabbix_host_apply_approved | bool }}"
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - zabbix_host_apply_approved | bool
+        fail_msg: "Apply denied: requires both zabbix_host_apply=true and zabbix_host_apply_approved=true."
+        quiet: true
+      when: zabbix_host_apply | bool
+
+    - name: Require an API token
+      ansible.builtin.assert:
+        that:
+          - zabbix_token | length > 0
+        fail_msg: "Export ZABBIX_API_TOKEN (Vaultwarden) before running this playbook."
+        quiet: true
+
+    - name: Read the host from Zabbix
+      ansible.builtin.uri:
+        url: "{{ zabbix_url }}/api_jsonrpc.php"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ zabbix_token }}"
+        body_format: json
+        body:
+          jsonrpc: "2.0"
+          method: host.get
+          id: 1
+          params:
+            filter: { host: ["{{ zabbix_host_name }}"] }
+            output: [hostid, status]
+            selectParentTemplates: [name]
+            selectInterfaces: [ip, port]
+            selectHostGroups: [name]
+      register: zabbix_before
+      failed_when: zabbix_before.status != 200 or 'error' in zabbix_before.json
+      # The request carries the token.
+      no_log: true
+
+    - name: Import the host definition
+      ansible.builtin.uri:
+        url: "{{ zabbix_url }}/api_jsonrpc.php"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ zabbix_token }}"
+        body_format: json
+        body:
+          jsonrpc: "2.0"
+          method: configuration.import
+          id: 1
+          params:
+            format: yaml
+            source: "{{ lookup('ansible.builtin.file', zabbix_host_file) }}"
+            rules:
+              host_groups: { createMissing: true }
+              hosts: { createMissing: true, updateExisting: true }
+              # deleteMissing stays false: the Restic template link comes from nabla-compose.
+              templateLinkage: { createMissing: true }
+      register: zabbix_import
+      failed_when: zabbix_import.status != 200 or 'error' in zabbix_import.json
+      no_log: true
+      when: zabbix_host_write
+
+    - name: Report the Zabbix host plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if zabbix_host_write else 'check_only' }}"
+          server: "{{ zabbix_url }}"
+          host_before: "{{ zabbix_before.json.result | default([]) }}"
+          declared: "{{ (lookup('ansible.builtin.file', zabbix_host_file) | from_yaml).zabbix_export.hosts[0] }}"
+          next: "just zabbix-templates --apply in nabla-compose links the Restic template"

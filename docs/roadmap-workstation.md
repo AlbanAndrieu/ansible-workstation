@@ -2,48 +2,61 @@
 
 **Périmètre :** seulement `ansible-workstation`. Contrat : [Option A](workstation-ownership-option-a.md). La vue homelab/YubiKey reste dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/blob/master/docs/roadmap-workstation-yubikey.md) ; shell utilisateur dans [dotfiles](https://github.com/AlbanAndrieu/dotfiles/blob/main/docs/roadmap-workstation.md).
 
-| Priorité | Livrable | Gate de validation | Statut |
-| --- | --- | --- | --- |
-| P0 | Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | **ACCEPTED** : ancien PPA + templates PAM retirés ; couverture des dépendances OS restaurée séparément en mode opt-in |
-| P0 | Nouveau [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + exécution avec `changed=0` | **ACCEPTED runtime** : 60/60, `ok=14 changed=0`, noyau AppArmor enabled, 3 timers actifs ; [preuves](audit-workstation.md) |
-| P0 | [Visibilité Docker/nftables/iptables sans privilèges](audit-workstation-network.md) | 8 tests ciblés, lecture locale, résultat `not_verified` si accès refusé, aucune donnée brute | **ACCEPTED runtime** : 68/68 tests, 3 sondes `access_denied`, forwarding IPv4/IPv6 activé, filtrage `not_verified` |
-| P0 | [Lecture privilégiée **optionnelle** des métadonnées réseau](audit-workstation-network.md) | Aucun script Python root ; commandes fixes `sudo -n`, données brutes non publiées | **ACCEPTED runtime** : 77/77 tests et 3 sondes `ok`, 79+10 règles filter et 151 nft ; politiques observées ACCEPT |
-| P0 | [Sauts DOCKER-USER et verdicts explicites](audit-workstation-network.md) | Compter ACCEPT/DROP/REJECT et prouver le saut FORWARD vers DOCKER-USER sans exposer de règle | **CODE ADDED / RUNTIME NOT VERIFIED** |
-| P0 | [Sockets TCP/UDP par portée d'écoute](audit-workstation-network.md) | Lecture de la colonne locale, IPv6 zoné, rapport agrégé sans ports ni adresses | **ACCEPTED runtime** : 95/95 tests, `ok=2 changed=0` ; TCP 54 et UDP 135, `unknown=0` |
-| P0 | Motifs UDP `unknown` et contrôle des formats `ss` | `malformed_row` / `unparsed_local_endpoint` uniquement, aucun endpoint affiché | **CLOS** : 32 inconnues reclassées, 0 restant au dernier audit |
-| P0 | [Parsing IPv6 avec zone d'interface après le crochet](audit-workstation-network.md) | Scénarios `[IPv6]%iface:port`, `[IPv6%iface]:port` et refus des formats invalides | **ACCEPTED runtime** : 95/95 tests, 32 UDP reclassées dans `interface_specific` |
-| P0 | [Contrat de preuves LAN/WAN, publications Docker et firewall](workstation-network-exposure-plan.md) | Plan de vérification depuis des origines autorisées, inventaire privé, résultat expurgé, rollback avant apply | **PLAN DOCUMENTÉ, EXÉCUTION NON FAITE** ; `not_verified` |
-| P0 | [Mesures TCP par allowlist privée : local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, aucune découverte ; observateurs séparés requis | **LOCAL ACCEPTED** : 2/2 attendus ; **LAN TWO TARGETS OBSERVED** : 2/2 `refused` depuis TrueNAS déclaré ; autres ports LAN et WAN `not_verified` |
-| P0 | [Observateur Docker local, optionnel](workstation-network-measurement.md) | Collecte `docker container ls` expurgée après autorisation explicite | **ACCEPTED runtime (collecte)** : 12 conteneurs, 9 segments publiés TCP IPv4 wildcard, 3 exposed-only ; exposition WAN `not_verified` |
-| P0 | [Exécuteur de contrats Python isolé](../mise.toml) | `mise run test-offline` vérifie puis utilise `.venv/bin/python` avec PyYAML ; aucun fallback global | **ACCEPTED runtime** : 116/116 PASS sur `23f5628`, 0 erreur PyYAML ; aucune CI payante |
-| P0 | Audit **effectif** des flux LAN, des publications Docker, de SSH et de Fail2ban | Mesures allowlist sur chaque exposition approuvée, revue du pare-feu sans modification | **P0 PARTIEL** : 2 ports TCP LAN refusés depuis observateur TrueNAS déclaré ; **9 segments Docker wildcard encore non testés depuis LAN** |
-| P0 | Accessibilité WAN **facultative** en l'absence d'observateur extérieur | Téléphone en données cellulaires pour HTTP(S) autorisé, ou origine externe contrôlée ; vérifications NAT/IPv6/Cloudflare en attendant | **DIFFÉRÉ / WAN NOT VERIFIED** : aucun autre ordinateur disponible hors LAN ; ne bloque pas P0 LAN |
-| P0 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; profil OS explicite, aucun apply global | À faire |
-| P1 | Transférer l'inventaire JSON v1 de dotfiles ici | Contrat JSON équivalent et collecteur unique ; date/source par champ | À faire |
-| P1 | [Comparer état observé et politique `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Drift classé attendu/inconnu/non conforme, sans secrets | **CODE ADDED / RUNTIME NOT VERIFIED** : chemins `/etc`, unités systemd et DNS `eno1` ; sysctl et montages restent dans `audit-workstation.yml`, sans comparaison |
-| P1 | Profil minimal des paquets/services opt-in ; retirer vieilles distributions | `--check` non destructif, tasks idempotentes, rollback | À faire |
-| P1 | Restic : configuration chiffrée hors Git, sauvegarde /etc ciblée + état privé | `restic check` + restauration isolée réussie + copie indépendante | À faire |
-| P1 | Nettoyer `tasks/security.yml` et mises à jour unattended | Pas de `dpkg-reconfigure` non conditionné ni écrasement de config arbitraire | À faire |
-| P1 | [Capture des fichiers /etc non par défaut et des paquets](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets expurgés, restauration en check par défaut, double approbation | **CODE ADDED** : restauration jamais appliquée |
-| P1 | [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **PARTIEL** : NFS/rpcbind/Zabbix/Datadog appliqués ; ufw bloqué par `after.rules`, corrigé, **à rejouer** |
-| P1 | [devsec os_hardening + ssh_hardening adaptés au poste](workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening) | Simulation `--check`, revue du diff, apply doublement approuvé | **SIMULATION OK** : `ok=127 changed=37 failed=0` ; aucun apply |
-| P2 | Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement, aucun changement firmware sans consentement | À faire |
-| P0 | [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA, package_facts et candidats APT ; installation doublement autorisée mais non exécutée | **ACCEPTED runtime (audit seul)** : 131/131 PASS, syntaxe PASS, `ok=8 changed=0 failed=0`, **7/7 paquets présents** ; aucun apply |
-| P2 | Pipeline audit → plan → apply + rétablissement éprouvé | Aucune modification système non déclarée ; rollback local testé | À faire |
+**Consolidée le 10 novembre 2026** (rebase de la PR #20 sur `master` après la PR #18).
+Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté sur la station ;
+**CODE ADDED** = code et contrats offline, runtime non vérifié ; **À faire**.
 
-**Faits ne sont pas sauvegardes.** Les snapshots machine restent hors Git avec rétention ; Restic assure la conservation chiffrée et la restauration. Il faut conserver une copie indépendante de TrueNAS.
+## P0 — sécurité et exposition
 
-**Déjà livré :** PR #13 fusionnée (mise/uv/Direnv, DNS opt-in, règles fail-safe), 49/49 contrats locaux PASS. Ces preuves ne démontrent pas le playbook d'installation complet.
+| Livrable | Gate de validation | Statut |
+| --- | --- | --- |
+| Retirer le bundle YubiKey/PAM historique du rôle global | Aucune importation `yubikey.yml`, aucune mutation PAM, aucune action matériel | **ACCEPTED** : ancien PPA + templates PAM retirés ; dépendances OS restaurées en opt-in |
+| [Prérequis OS YubiKey Ubuntu autonomes](yubikey-os-prerequisites.md) | Audit sans sudo/PAM/PPA ; installation doublement autorisée | **ACCEPTED (audit seul)** : 131/131 PASS, `ok=8 changed=0`, 7/7 paquets présents ; aucun apply |
+| [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + `changed=0` | **ACCEPTED** : 60/60, `ok=14 changed=0` ; sondes passées par un exécuteur unique fail-closed ; [preuves](audit-workstation.md) |
+| [Visibilité Docker/nftables/iptables sans privilèges, lecture privilégiée optionnelle](audit-workstation-network.md) | Lecture locale, `sudo -n` fixe, aucune donnée brute | **ACCEPTED** : 68/68 et 77/77 tests ; sauts DOCKER-USER : **CODE ADDED** |
+| [Sockets TCP/UDP par portée d'écoute, IPv6 zoné](audit-workstation-network.md) | Rapport agrégé sans ports ni adresses | **ACCEPTED** : 95/95 tests, `unknown=0` |
+| [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ** : ufw actif au boot (3/11), INPUT/FORWARD en DROP ; règles historiques ouvertes à tous et synergy/deskflow limités au LAN dans le code, **à rejouer** |
+| Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **PARTIEL** : postgres/redis publiés sur `127.0.0.1` par nabla-compose ; LiteLLM 4000 et Grafana 3009 restent sur toutes les interfaces ; WAN `not_verified` |
+| [Mesures TCP par allowlist privée local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, observateurs séparés | **LOCAL ACCEPTED** 2/2 ; LAN partiel ; WAN différé (aucun observateur externe) |
+| Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; aucun apply global | À faire |
 
-**YubiKey :** l'opérateur a validé le nouveau playbook Ubuntu OS : **131/131 contrats offline PASS**, syntaxe Ansible PASS, audit `ok=8 changed=0 failed=0 skipped=3`. Les 7 prérequis runtime sont tous installés et disponibles en APT ; **pas d'installation nécessaire**. Aucun apply ni mutation PAM/carte effectuée. Le signalement `mise WARN missing` concerne des outils de développement supplémentaires, pas une absence de paquets YubiKey ; [détails](yubikey-os-prerequisites.md).
+## P1 — configuration, sauvegarde, stabilité
 
-**Pas de CI payante ni de fusion automatique.** Preuves du 27 octobre : audit système 60/60 ; réseau sans privilèges 68/68 ; lecture filtrage avec autorisation 77/77 et 3 sondes `ok` ; sockets 90/90, `ok=2 changed=0 failed=0`. IPv4/IPv6 forwarding actif, politiques de base ACCEPT. **Suivant :** rapprocher les **9 segments Docker TCP IPv4 wildcard** des services réellement autorisés, créer une allowlist privée, puis vérifier uniquement ces chemins depuis TrueNAS. Deux ports LAN (OpenClaw et SSH) ont déjà produit `refused` ; le reste du LAN est `not_verified`. Aucun observateur WAN disponible : WAN reste `not_verified` sans bloquer la suite. [Procédure](workstation-network-measurement.md). Les **116/116 contrats** sont validés sur la `.venv` ; le localhost **2/2** et la collecte Docker ont déjà réussi. Ne pas relancer ces vérifications sans raison. Les 95 tests du parseur et le relevé sans sudo sont désormais **validés**. Le comptage des verdicts Docker existe dans le code mais n'a pas été réexécuté avec l'audit privilégié. Les protections réseau effectives restent `not_verified`.
+| Livrable | Gate de validation | Statut |
+| --- | --- | --- |
+| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)** ; étapes 1 à 7 à faire |
+| [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **CODE ADDED** ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement |
+| Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** |
+| [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **CODE ADDED** : timer quotidien, alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter |
+| [Capture /etc et paquets, restauration](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets et adresses internes expurgés (`@@SECRET@@`, `@@INTERNAL@@`), point fixe testé | **CODE ADDED** : restauration jamais appliquée |
+| [Comparer état observé et `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Dérive classée, sans secrets | **CODE ADDED** |
+| Nettoyer `tasks/security.yml` et unattended-upgrades | Pas de `dpkg-reconfigure` ni écrasement de conffile | **CODE ADDED** : drop-in `52unattended-upgrades-workstation`, tâches apt modernes |
+| [devsec os_hardening + ssh_hardening adaptés au poste](workstation-network-hardening.md#durcissement-os--devsechardeningos_hardening) | Simulation, revue du diff, double approbation | **SIMULATION OK** (`ok=127 changed=37`) ; aucun apply |
+| [Howdy et motion : une caméra chacun](howdy-cameras.md) | Audit sans sudo ; PAM jamais modifié | **CODE ADDED** : Howdy retiré du rôle global ; ACL motion restaurée ; activation PAM laissée à nabla-yubikey |
+| [Nettoyage BleachBit](workstation-cleanup.md) | Caches régénérables uniquement, `check` par défaut | **CODE ADDED** : nettoyeur CleanerML validé par XSD ; journald aligné sur `SystemMaxUse=2G` |
+| [Réparation de la toolchain utilisateur](user-toolchain-recovery.md) | `check` par défaut, OpenClaw épinglé | **CODE ADDED** |
+| [OpenClaw : audit de la source Workstation, cible TrueNAS](openclaw-workstation-to-truenas.md) | Contrats offline, aucune mutation | **CODE ADDED** ; gateway cible géré par `nabla-openclaw` |
+| [Extraire le code Workstation de nabla-compose](migration-from-nabla-compose-20261030.md) | Équivalence des sondes, secrets hors dépôt | **PREPARED / NO CUTOVER** |
+| Transférer l'inventaire JSON v1 de dotfiles ici | Collecteur unique, date/source par champ | À faire |
+| Profil minimal des paquets/services opt-in ; retirer les vieilles distributions | `--check` non destructif, idempotence, rollback | À faire |
 
-| P1 | [Extraire le code Workstation de nabla-compose](migration-from-nabla-compose-20261030.md) | Test d'équivalence des sondes, versions mise/Node/systemd, secrets hors dépôt, contrat OpenClaw 2026.10.7 | **PREPARED / NO CUTOVER** : fichier de migration et garde sur ancien template Node25 ; pas de code déplacé |
-| P2 | Transférer les contrats matériels vers `nabla-yubikey` | Dossier migratoire avec scripts + tests hermétiques, aucun secret/PAM, règles NFS séparées | **DÉPÔT CRÉÉ / PREMIER LOT EN PR DRAFT** ; pas de PAM ou d'actions matérielles |
+## P2
 
-| P1 | [OpenClaw : audit de la Workstation source, cible TrueNAS](openclaw-workstation-to-truenas.md) | Contrats offline, syntaxe Ansible, aucune mutation, état CLI/unit sans secrets | **CODE ADDED / RUNTIME NOT VERIFIED** ; Gateway cible géré par `nabla-openclaw`, pas Ansible |
-| P2 | Découpler les scripts OpenClaw/TrueNAS | Définir API de sonde entre `nabla-openclaw` et `nabla-compose`, wrappers temporaires | **À FAIRE** après image/dataset/modèles validés |
+| Livrable | Gate de validation | Statut |
+| --- | --- | --- |
+| Auditer Secure Boot / TPM / module NVIDIA | Diagnostic seulement | À faire |
+| Transférer les contrats matériels vers `nabla-yubikey` | Tests hermétiques, aucun secret/PAM | **PREMIER LOT EN PR DRAFT** |
+| Découpler les scripts OpenClaw/TrueNAS | API de sonde entre `nabla-openclaw` et `nabla-compose` | À faire |
+| Pipeline audit → plan → apply + rétablissement éprouvé | Rollback local testé | À faire |
+
+## Règles
+
+- **Les faits ne sont pas des sauvegardes.** Snapshots machine hors Git ; Restic assure la
+  conservation chiffrée ; garder une copie indépendante de TrueNAS.
+- **Pas de CI payante ni de fusion automatique.** Tests de contrat en local (`mise run test-offline`),
+  PR revues par l'opérateur.
+- **Suivant :** rejouer `harden-network.yml` (règles historiques), mesurer depuis TrueNAS les ports
+  Docker encore publiés sur toutes les interfaces, puis l'étape 1 du stockage.
 
 ## 30 octobre 2026 — skills Ansible et acceptation DNS
 
@@ -75,3 +88,37 @@
 - **Suite** : valider les tests des skills, inspecter les diffs tiers
   et réaliser une comparaison expurgée des `ExecStart` effectifs
   avant toute promotion de template ou bascule du Gateway.
+
+## 9 novembre 2026 — stockage
+
+Relevé du 8 novembre (SMART, `/sys/block/*/stat`, `pidstat -d`) :
+
+| Disque | Contenu | État |
+| --- | --- | --- |
+| Samsung 860 500 Go (SATA, LUKS) | `/`, `/home` (142 Go), `/swapfile` 16 Go | **66 % d'usure** (`Wear_Leveling_Count` 34), 117 To écrits, 35 700 h ; encore 48 Gio écrits par jour, surtout les profils Chrome, Claude Desktop et ChatGPT de `/home` |
+| Samsung 970 PRO 1 To (NVMe) | `/docker`, `/workspace` ; `p2` et `p5` inutilisées | 0 % d'usure, 5,9 To écrits |
+| 2 × Seagate 2 To (RAID1 LVM) | `/data` 500 Go (modèles ollama 20 Go) ; 2,66 To non alloués dans `vg-sata` | `sdc` : 312 646 cycles de têtes (300 000 prévus), 32 000 h ; aucun secteur réalloué ni en attente |
+
+Partitions NVMe inutilisées :
+
+- `nvme0n1p2` (196 Go, ext4) : ancienne installation Ubuntu 21.04 de septembre 2021, 59 Go.
+  `workspace/users/albandrieu30` (24 Go, clones de dépôts), `home/albandrieu` (22 Go, dont
+  `Pictures` 9,8 Go : 60 fichiers sur 114 absents de l'actuel `~/Pictures`), `var` 7 Go, un
+  `swapfile` de 2 Go. Inspectée montée en lecture seule (`ro,noload`), puis démontée.
+- `nvme0n1p5` (187 Go, LUKS2) : un seul emplacement de clé, sans jeton FIDO2, absente de
+  `/etc/crypttab`, jamais ouverte dans le journal. Contenu inconnu sans sa phrase de passe.
+
+| Étape | Quoi | Gate | Statut |
+| --- | --- | --- | --- |
+| 0 | Supprimer les copies Docker d'avant la migration ; `apm = 254` sur les deux disques durs ; écritures en attente plafonnées à 1 Gio, vidage dès 256 Mio | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml), tests de contrat | **FAIT le 9/11** : `/` 84 → 74 %, `APM_level 254`, `vm.dirty_bytes` 1 Gio |
+| 1 | Archiver `p2` sur TrueNAS (`tar` en lecture seule vers `/media/backup`, somme `sha256`), vérifier les 60 photos manquantes, puis l'effacer | Liste de l'archive relue et somme contrôlée avant `wipefs` | À faire |
+| 2 | Ouvrir `p5` avec sa phrase de passe, inventorier, archiver ce qui compte ; sans phrase de passe, la considérer perdue | Décision de l'utilisateur, archive vérifiée | À faire (phrase de passe) |
+| 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | À faire |
+| 4 | Migrer `/home` sur le NVMe : session fermée (TTY root), `rsync -aHAXS`, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | À faire, devant la machine |
+| 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | À faire |
+| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà sur `:9100`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | À faire |
+| 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
+
+Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
+moins par écriture. Pas retenus : `noatime` (gain négligeable face à `relatime`), zram (aucun
+swap-out mesuré, à revoir si la swap se remet à écrire).

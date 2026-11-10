@@ -64,7 +64,8 @@ class HowdyCamerasContracts(unittest.TestCase):
     def test_cameras_must_be_stable_and_distinct(self):
         source = PLAYBOOK.read_text()
         self.assertIn(
-            "motion_camera_device is match('^/dev/v4l/by-(path|id)/')", source
+            "motion_camera_device is match('^/dev/v4l/by-(path|id)/')",
+            source,
         )
         self.assertIn("howdy_camera_device is match('^/dev/v4l/by-(path|id)/')", source)
         self.assertIn(

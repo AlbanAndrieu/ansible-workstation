@@ -1,4 +1,5 @@
 """Hermetic, read-only contracts for repository-scoped Ansible agent skills."""
+
 from __future__ import annotations
 
 import importlib.util
@@ -25,7 +26,10 @@ def fixture(root: Path, installed: bool = True) -> None:
     for name, source_path in SKILLS.EXPECTED.items():
         canonical = root / ".agents/skills" / name
         canonical.mkdir(parents=True)
-        (canonical / "SKILL.md").write_text("# synthetic skill fixture\n", encoding="utf-8")
+        (canonical / "SKILL.md").write_text(
+            "# synthetic skill fixture\n",
+            encoding="utf-8",
+        )
         data["skills"][name] = {
             "source": SKILLS.SOURCE,
             "sourceType": "github",
@@ -53,7 +57,9 @@ class AgentSkillsContract(unittest.TestCase):
             fixture(root, installed=False)
             state, issues = SKILLS.audit(root)
             self.assertEqual(state, "missing_manifest")
-            self.assertTrue(any("required pinned skills manifest missing" in x for x in issues))
+            self.assertTrue(
+                any("required pinned skills manifest missing" in x for x in issues),
+            )
             self.assertEqual(SKILLS.main(["--root", str(root)]), 2)
 
     def test_installed_without_lock_fails(self):
@@ -61,15 +67,18 @@ class AgentSkillsContract(unittest.TestCase):
             root = Path(d)
             fixture(root)
             (root / "skills-lock.json").unlink()
-            self.assertTrue(any("without skills-lock" in x for x in SKILLS.audit(root)[1]))
+            self.assertTrue(
+                any("without skills-lock" in x for x in SKILLS.audit(root)[1]),
+            )
 
     def test_orphan_alias_without_lock_fails(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             fixture(root)
             (root / "skills-lock.json").unlink()
-            self.assertTrue(any("alias without skills-lock" in x
-                                for x in SKILLS.audit(root)[1]))
+            self.assertTrue(
+                any("alias without skills-lock" in x for x in SKILLS.audit(root)[1]),
+            )
 
     def test_missing_and_wrong_aliases_fail(self):
         with tempfile.TemporaryDirectory() as d:
@@ -81,7 +90,9 @@ class AgentSkillsContract(unittest.TestCase):
             wrong.symlink_to("../../../tmp/elsewhere")
             issues = SKILLS.audit(root)[1]
             self.assertTrue(any("skills/ansible-validator" in x for x in issues))
-            self.assertTrue(any(".claude/skills/ansible-generator" in x for x in issues))
+            self.assertTrue(
+                any(".claude/skills/ansible-generator" in x for x in issues),
+            )
 
     def test_alias_directory_is_not_accepted_as_symlink(self):
         with tempfile.TemporaryDirectory() as d:
@@ -90,8 +101,12 @@ class AgentSkillsContract(unittest.TestCase):
             alias = root / ".hermes/skills/ansible-generator"
             alias.unlink()
             alias.mkdir()
-            self.assertTrue(any(".hermes/skills/ansible-generator" in x
-                                for x in SKILLS.audit(root)[1]))
+            self.assertTrue(
+                any(
+                    ".hermes/skills/ansible-generator" in x
+                    for x in SKILLS.audit(root)[1]
+                ),
+            )
 
     def test_unknown_source_and_bad_hash_fail(self):
         with tempfile.TemporaryDirectory() as d:
@@ -122,7 +137,9 @@ class AgentSkillsContract(unittest.TestCase):
             fixture(root)
             path = root / "docs/agent-skills-workstation.md"
             path.write_text(path.read_text().replace("no automatic apply", "apply"))
-            self.assertTrue(any("no automatic apply" in x for x in SKILLS.audit(root)[1]))
+            self.assertTrue(
+                any("no automatic apply" in x for x in SKILLS.audit(root)[1]),
+            )
 
     def test_invalid_manifest_fails(self):
         with tempfile.TemporaryDirectory() as d:
@@ -136,11 +153,17 @@ class AgentSkillsContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             fixture(root)
-            before = {str(p.relative_to(root)): p.read_bytes()
-                      for p in root.rglob("*") if p.is_file()}
+            before = {
+                str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*")
+                if p.is_file()
+            }
             self.assertEqual(SKILLS.audit(root), ("installed", []))
-            after = {str(p.relative_to(root)): p.read_bytes()
-                     for p in root.rglob("*") if p.is_file()}
+            after = {
+                str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*")
+                if p.is_file()
+            }
             self.assertEqual(before, after)
 
 

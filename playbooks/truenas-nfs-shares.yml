@@ -1,0 +1,161 @@
+---
+# Declare the TrueNAS NFS shares and converge them through the middleware (midclt over SSH).
+# Plan only by default. Writing needs truenas_nfs_apply AND truenas_nfs_apply_approved.
+# Run: ansible-playbook -i truenas, playbooks/truenas-nfs-shares.yml (ssh alias, sudo -n).
+# Managed fields: comment, enabled, ro, networks, hosts. Only shares declared with state: absent
+# are deleted; undeclared shares are reported and left alone.
+- name: Plan or explicitly apply the TrueNAS NFS shares
+  hosts: truenas
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    truenas_nfs_apply: false
+    truenas_nfs_apply_approved: false
+    truenas_nfs_write: "{{ truenas_nfs_apply | bool and truenas_nfs_apply_approved | bool }}"
+    # TrueNAS only sits on this LAN; hosts would add nothing once networks covers it.
+    nfs_lan:
+      - 172.17.0.0/24
+    # Defaults: enabled true, ro false, comment "", networks [] and hosts [] (both empty = anyone).
+    truenas_nfs_shares:
+      # Mounted by the workstation (/etc/fstab).
+      - path: /mnt/cpool/ftp
+        comment: ftp
+        networks: "{{ nfs_lan }}"
+      - path: /mnt/cpool/backup
+        comment: backup
+        networks: "{{ nfs_lan }}"
+      - path: /mnt/cpool/bitcoin
+        comment: bitcoin
+        networks: "{{ nfs_lan }}"
+      - path: /mnt/cpool/www
+        comment: www
+        networks: "{{ nfs_lan }}"
+      - { path: /mnt/cpool/share, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/media/photo, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/media/music, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/model, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/nexus, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/nexus3, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/bababou, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/home, networks: "{{ nfs_lan }}" }
+      # Enabled, not mounted by the workstation.
+      - path: /mnt/cpool/archive
+        comment: archive
+        networks: "{{ nfs_lan }}"
+      - path: /mnt/cpool/workspace
+        comment: workspace
+        networks: "{{ nfs_lan }}"
+      - { path: /mnt/cpool/backup/lab, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/jenkins-slave, networks: "{{ nfs_lan }}" }
+      # Disabled.
+      - path: /mnt/cpool/jenkins
+        comment: jenkins
+        enabled: false
+        networks: "{{ nfs_lan }}"
+      - { path: /mnt/cpool/media, enabled: false, networks: "{{ nfs_lan }}" }
+      - { path: /mnt/cpool/bower, enabled: false, networks: "{{ nfs_lan }}" }
+      # dpool no longer exists (dataset null).
+      - { path: /mnt/dpool/image, state: absent }
+      - { path: /mnt/dpool/media/music, state: absent }
+      - { path: /mnt/dpool/media/photo, state: absent }
+      - { path: /mnt/dpool/media/video, state: absent }
+      - { path: /mnt/dpool/owncloud, state: absent }
+      - { path: /mnt/dpool/media/movie, state: absent }
+      - { path: /mnt/dpool/media/download, state: absent }
+      - { path: /mnt/dpool/media/torrentfile, state: absent }
+      - { path: /mnt/dpool/media/serie, state: absent }
+      - { path: /mnt/dpool/games, state: absent }
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - truenas_nfs_apply_approved | bool
+        fail_msg: "Apply denied: requires both truenas_nfs_apply=true and truenas_nfs_apply_approved=true."
+        quiet: true
+      when: truenas_nfs_apply | bool
+
+    - name: Read the NFS shares
+      ansible.builtin.command: midclt call sharing.nfs.query
+      register: nfs_query
+      changed_when: false
+      become: true
+
+    # Lists compare as sorted sets: TrueNAS keeps duplicates (movie lists 10.20.0.0/24 twice).
+    - name: Compare the declared shares with TrueNAS
+      ansible.builtin.set_fact:
+        nfs_plan: >-
+          {%- set rows = nfs_query.stdout | from_json -%}
+          {%- set by_path = dict(rows | map(attribute='path') | zip(rows)) -%}
+          {%- set ns = namespace(changes=[]) -%}
+          {%- for share in truenas_nfs_shares -%}
+          {%- set row = by_path.get(share.path) -%}
+          {%- if share.state | default('present') == 'absent' -%}
+          {%- if row is not none -%}
+          {%- set ns.changes = ns.changes + [{'action': 'delete', 'id': row.id, 'path': share.path}] -%}
+          {%- endif -%}
+          {%- else -%}
+          {%- set want = {'comment': share.comment | default(''), 'enabled': share.enabled | default(true),
+                          'ro': share.ro | default(false), 'networks': share.networks | default([]) | unique | sort,
+                          'hosts': share.hosts | default([]) | unique | sort} -%}
+          {%- if row is none -%}
+          {%- set ns.changes = ns.changes + [{'action': 'create', 'path': share.path, 'want': want}] -%}
+          {%- else -%}
+          {%- set have = {'comment': row.comment, 'enabled': row.enabled, 'ro': row.ro,
+                          'networks': row.networks | unique | sort, 'hosts': row.hosts | unique | sort} -%}
+          {%- if have != want -%}
+          {%- set ns.changes = ns.changes + [{'action': 'update', 'id': row.id, 'path': share.path, 'have': have, 'want': want}] -%}
+          {%- endif -%}
+          {%- endif -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ {'changes': ns.changes, 'undeclared': rows | map(attribute='path') | difference(truenas_nfs_shares | map(attribute='path'))} | to_json }}
+
+    - name: Report the NFS share plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if truenas_nfs_write else 'check_only' }}"
+          declared: "{{ truenas_nfs_shares | length }}"
+          changes: "{{ (nfs_plan | from_json).changes }}"
+          undeclared_left_untouched: "{{ (nfs_plan | from_json).undeclared }}"
+
+    - name: Update the drifted shares
+      ansible.builtin.command:
+        argv:
+          - midclt
+          - call
+          - sharing.nfs.update
+          - "{{ item.id }}"
+          - "{{ item.want | to_json }}"
+      loop: "{{ (nfs_plan | from_json).changes | selectattr('action', 'equalto', 'update') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      become: true
+      when: truenas_nfs_write
+
+    - name: Create the missing shares
+      ansible.builtin.command:
+        argv:
+          - midclt
+          - call
+          - sharing.nfs.create
+          - "{{ item.want | combine({'path': item.path}) | to_json }}"
+      loop: "{{ (nfs_plan | from_json).changes | selectattr('action', 'equalto', 'create') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      become: true
+      when: truenas_nfs_write
+
+    - name: Delete the shares declared absent
+      ansible.builtin.command:
+        argv:
+          - midclt
+          - call
+          - sharing.nfs.delete
+          - "{{ item.id }}"
+      loop: "{{ (nfs_plan | from_json).changes | selectattr('action', 'equalto', 'delete') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      become: true
+      when: truenas_nfs_write

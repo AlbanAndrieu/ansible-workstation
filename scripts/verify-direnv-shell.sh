@@ -15,8 +15,11 @@ _nabla_verify_direnv_shell() {
   declaration="$(declare -p PROMPT_COMMAND 2>/dev/null || true)"
 
   case "$-" in
-    *i*) ;;
-    *) echo "FAIL: shell is not interactive" >&2; failure=1 ;;
+  *i*) ;;
+  *)
+    echo "FAIL: shell is not interactive" >&2
+    failure=1
+    ;;
   esac
 
   # Refuse substring-only matches from quoted messages and longer names.
@@ -24,35 +27,38 @@ _nabla_verify_direnv_shell() {
   if [[ "$declaration" == "declare -a"* ]]; then
     prompt_items=("${PROMPT_COMMAND[@]}")
   elif [[ "$declaration" != "declare -A"* &&
-          -n "${PROMPT_COMMAND+x}" ]]; then
+    -n "${PROMPT_COMMAND+x}" ]]; then
     prompt_items=("$PROMPT_COMMAND")
   fi
   for item in "${prompt_items[@]}"; do
     quote=''
     segment=''
     escaped=0
-    for ((i=0; i<${#item}; i++)); do
+    for ((i = 0; i < ${#item}; i++)); do
       char="${item:i:1}"
-      if (( escaped )); then
+      if ((escaped)); then
         segment+="$char"
         escaped=0
         continue
       fi
-      if [[ "$char" == '\' && "$quote" != "'" ]]; then
+      if [[ "$char" == "\\" && "$quote" != "'" ]]; then
         segment+="$char"
         escaped=1
         continue
       fi
       if [[ -z "$quote" ]]; then
         case "$char" in
-          "'"|'"') quote="$char"; segment+="$char" ;;
-          ';'|$'\n')
-            if [[ "$segment" =~ ^[[:space:]]*_direnv_hook[[:space:]]*$ ]]; then
-              hook_present=1
-            fi
-            segment=''
-            ;;
-          *) segment+="$char" ;;
+        "'" | '"')
+          quote="$char"
+          segment+="$char"
+          ;;
+        ';' | $'\n')
+          if [[ "$segment" =~ ^[[:space:]]*_direnv_hook[[:space:]]*$ ]]; then
+            hook_present=1
+          fi
+          segment=''
+          ;;
+        *) segment+="$char" ;;
         esac
       else
         segment+="$char"
@@ -60,24 +66,24 @@ _nabla_verify_direnv_shell() {
       fi
     done
     if [[ -z "$quote" &&
-          "$segment" =~ ^[[:space:]]*_direnv_hook[[:space:]]*$ ]]; then
+      "$segment" =~ ^[[:space:]]*_direnv_hook[[:space:]]*$ ]]; then
       hook_present=1
     fi
   done
 
   if ! declare -F _direnv_hook >/dev/null 2>&1 ||
-     (( hook_present == 0 )); then
+    [ "$hook_present" -eq 0 ]; then
     echo "FAIL: Direnv is not registered as a standalone Bash prompt command" >&2
     failure=1
   fi
   if [[ "$declaration" == *"_mise_hookhistory"* ||
-        "${PS1:-}" == *"_mise_hookhistory"* ]]; then
+    "${PS1:-}" == *"_mise_hookhistory"* ]]; then
     echo "FAIL: malformed mise/history token in prompt" >&2
     failure=1
   fi
 
   if [[ -L "$root/.venv" || ! -f "$root/.venv/pyvenv.cfg" ||
-        ! -x "$root/.venv/bin/python" || ! -x "$root/.venv/bin/ansible" ]]; then
+    ! -x "$root/.venv/bin/python" || ! -x "$root/.venv/bin/ansible" ]]; then
     echo "FAIL: missing, invalid or symlinked project .venv" >&2
     failure=1
   fi
@@ -98,7 +104,7 @@ _nabla_verify_direnv_shell() {
     failure=1
   fi
 
-  if (( failure )); then
+  if ((failure)); then
     echo "Shell verification failed. See scripts/diagnose-direnv-shell.sh." >&2
     return 1
   fi

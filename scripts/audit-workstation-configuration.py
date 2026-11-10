@@ -5,14 +5,21 @@ No sudo, no reading /etc file contents or systemd Environment/ExecStart,
 no sockets besides opt-in DNS resolution via getent/dig. Observations are
 compared to the declared policies/home-desktop.yml; only outcomes are printed.
 """
+
 from __future__ import annotations
 
 import argparse
 from collections import Counter
-import json
+import importlib.util
 from pathlib import Path
 import re
-import subprocess
+
+_COMMON = importlib.util.spec_from_file_location(
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
+common = importlib.util.module_from_spec(_COMMON)
+_COMMON.loader.exec_module(common)
 
 ETC_PATHS = (
     "NetworkManager/NetworkManager.conf",
@@ -42,22 +49,41 @@ ETC_PATHS = (
 )
 USER_UNITS = ("openclaw-gateway.service", "litellm.service", "reactive.service")
 SYSTEM_UNITS = (
-    "NetworkManager.service", "systemd-resolved.service",
-    "ssh.service", "docker.service", "containerd.service",
-    "fail2ban.service", "ufw.service",
-    "boot-ip.service", "boot-update.service", "hide-location.service",
-    "hide-mac.service", "conky.service", "maj0.service",
+    "NetworkManager.service",
+    "systemd-resolved.service",
+    "ssh.service",
+    "docker.service",
+    "containerd.service",
+    "fail2ban.service",
+    "ufw.service",
+    "boot-ip.service",
+    "boot-update.service",
+    "hide-location.service",
+    "hide-mac.service",
+    "conky.service",
+    "maj0.service",
 )
 ALLOWED_SYSTEMD_KEYS = ("LoadState", "ActiveState", "UnitFileState")
 METADATA_SYSTEMD_KEYS = ("FragmentPath", "DropInPaths")
 PRIVATE_DOMAIN = "~int.albandrieu.com"
 EXPECTED_DNS = "172.17.0.1"
 DNS_INTERFACE = "eno1"
+# Absolute paths: a user PATH entry cannot substitute these probes.
+SYSTEMCTL = "/usr/bin/systemctl"
+RESOLVECTL = "/usr/bin/resolvectl"
+NMCLI = "/usr/bin/nmcli"
 
 POLICY_SCHEMA = "workstation-os-policy/v1"
 DEFAULT_POLICY = Path(__file__).resolve().parents[1] / "policies/home-desktop.yml"
-POLICY_KEYS = {"schema", "profile", "dns", "etc_paths", "system_units",
-               "user_units", "never_capture"}
+POLICY_KEYS = {
+    "schema",
+    "profile",
+    "dns",
+    "etc_paths",
+    "system_units",
+    "user_units",
+    "never_capture",
+}
 LEVELS = ("required", "baseline", "review")
 # Policy kinds map onto inventory() statuses; symlinks are never followed.
 ETC_KINDS = {
@@ -73,12 +99,11 @@ class PolicyError(ValueError):
 
 
 def run(argv: list[str], timeout: int = 5) -> tuple[int, str]:
-    try:
-        p = subprocess.run(argv, capture_output=True, text=True, check=False,
-                           stdin=subprocess.DEVNULL, timeout=timeout)
-        return p.returncode, p.stdout[:8192] if p.returncode == 0 else ""
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        return 127, ""
+    # systemctl --user needs the caller's session bus: inherit the environment
+    # only for it. Output above 8 KiB is refused, never truncated.
+    env = None if "--user" in argv else common.FIXED_ENV
+    status, out = common.run_fixed(argv, timeout=timeout, max_bytes=8192, env=env)
+    return (0, out) if status == "ok" else (127 if status == "missing" else 1, "")
 
 
 def inventory(root: Path) -> dict[str, str]:
@@ -118,7 +143,7 @@ def _source_category(fragment: str, user: bool) -> str:
 
 def unit_status(name: str, user: bool) -> dict[str, str]:
     # Never request ExecStart, Environment or EnvironmentFile.
-    argv = ["systemctl"] + (["--user"] if user else []) + ["show", name]
+    argv = [SYSTEMCTL] + (["--user"] if user else []) + ["show", name]
     for key in ALLOWED_SYSTEMD_KEYS + METADATA_SYSTEMD_KEYS:
         argv += ["-p", key]
     rc, output = run(argv)
@@ -129,7 +154,7 @@ def unit_status(name: str, user: bool) -> dict[str, str]:
             if not sep or key not in ALLOWED_SYSTEMD_KEYS + METADATA_SYSTEMD_KEYS:
                 continue
             if key in ALLOWED_SYSTEMD_KEYS:
-                if re.fullmatch(r"[a-z-]{1,40}", value):
+                if STATE.fullmatch(value):
                     fields[key] = value
             else:
                 # Values are kept in memory only, never returned to the caller.
@@ -140,7 +165,8 @@ def unit_status(name: str, user: bool) -> dict[str, str]:
     )
     result["dropins"] = (
         ("present_review_required" if fields["DropInPaths"] else "none")
-        if rc == 0 and "DropInPaths" in fields else "unknown"
+        if rc == 0 and "DropInPaths" in fields
+        else "unknown"
     )
     result["effective_execstart_alignment"] = "not_verified"
     return result
@@ -149,19 +175,23 @@ def unit_status(name: str, user: bool) -> dict[str, str]:
 def audit_dns(interface: str) -> dict[str, object]:
     if not re.fullmatch(r"[a-zA-Z0-9_.-]{1,32}", interface):
         raise ValueError("invalid interface")
-    rc_dns, dns = run(["resolvectl", "dns", interface])
-    rc_domain, domain = run(["resolvectl", "domain", interface])
-    rc_nm, nm = run(["nmcli", "-g", "IP4.DNS", "device", "show", interface])
+    rc_dns, dns = run([RESOLVECTL, "dns", interface])
+    rc_domain, domain = run([RESOLVECTL, "domain", interface])
+    rc_nm, nm = run([NMCLI, "-g", "IP4.DNS", "device", "show", interface])
     # Token comparisons, not substring matching on arbitrary addresses.
     ip_tokens = re.findall(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])", dns)
     domain_tokens = domain.split()
-    effective = rc_dns == 0 and EXPECTED_DNS in ip_tokens and set(ip_tokens) == {EXPECTED_DNS}
+    effective = (
+        rc_dns == 0 and EXPECTED_DNS in ip_tokens and set(ip_tokens) == {EXPECTED_DNS}
+    )
     route_only = rc_domain == 0 and PRIVATE_DOMAIN in domain_tokens
     return {
         "interface": interface,
         "resolved_link_dns": "expected" if effective else "drift_or_unverified",
         "private_route_domain": "expected" if route_only else "drift_or_unverified",
-        "networkmanager_dns": "observed" if rc_nm == 0 and bool(nm.strip()) else "unverified",
+        "networkmanager_dns": "observed"
+        if rc_nm == 0 and bool(nm.strip())
+        else "unverified",
         "dns_resolution": "not_tested",
         # Separates a failed probe (unknown) from an observed drift.
         "link_probes": {
@@ -192,9 +222,16 @@ def validate_policy(policy: object) -> dict:
     if not set(policy) <= POLICY_KEYS:
         raise PolicyError("unknown top-level policy key")
     dns = policy.get("dns")
-    if not isinstance(dns, dict) or dns.get("level") not in LEVELS[:2] or (
-        dns.get("interface"), dns.get("resolver"), dns.get("route_domain")
-    ) != (DNS_INTERFACE, EXPECTED_DNS, PRIVATE_DOMAIN):
+    if (
+        not isinstance(dns, dict)
+        or dns.get("level") not in LEVELS[:2]
+        or (
+            dns.get("interface"),
+            dns.get("resolver"),
+            dns.get("route_domain"),
+        )
+        != (DNS_INTERFACE, EXPECTED_DNS, PRIVATE_DOMAIN)
+    ):
         raise PolicyError("dns: differs from the pinned LAN contract")
     for entry in _entries(policy, "etc_paths", ETC_PATHS).values():
         expect = entry.get("expect")
@@ -210,14 +247,17 @@ def validate_policy(policy: object) -> dict:
                 valid = states == [None, None]
             else:
                 valid = isinstance(states[0], str) and bool(STATE.fullmatch(states[0]))
-                valid = valid and (states[1] is None or (
-                    isinstance(states[1], str) and bool(STATE.fullmatch(states[1]))
-                ))
+                valid = valid and (
+                    states[1] is None
+                    or (isinstance(states[1], str) and bool(STATE.fullmatch(states[1])))
+                )
             if not valid:
                 raise PolicyError(f"{section}: invalid expected unit state")
     never = policy.get("never_capture")
-    if not isinstance(never, list) or not never or not all(
-        isinstance(item, str) and item for item in never
+    if (
+        not isinstance(never, list)
+        or not never
+        or not all(isinstance(item, str) and item for item in never)
     ):
         raise PolicyError("never_capture: must be a non-empty list")
     if any(path.startswith(prefix) for path in ETC_PATHS for prefix in never):
@@ -252,8 +292,10 @@ def compare(report: dict, policy: dict) -> dict[str, object]:
         observed = report["etc"].get(path, "unknown")
         known = observed in ETC_KINDS.values()
         matches = known and ETC_KINDS.get(entry.get("expect")) == observed
-        findings[f"etc/{path}"] = {"level": entry["level"],
-                                   "outcome": _outcome(entry["level"], known, matches)}
+        findings[f"etc/{path}"] = {
+            "level": entry["level"],
+            "outcome": _outcome(entry["level"], known, matches),
+        }
     for section in ("system_units", "user_units"):
         for unit, entry in policy[section].items():
             observed = report[section].get(unit, {})
@@ -268,12 +310,17 @@ def compare(report: dict, policy: dict) -> dict[str, object]:
             }
     dns = report["dns"]
     probes = dns.get("link_probes", {})
-    for name, field, probe in (("resolver", "resolved_link_dns", "dns"),
-                               ("route_domain", "private_route_domain", "domain")):
+    for name, field, probe in (
+        ("resolver", "resolved_link_dns", "dns"),
+        ("route_domain", "private_route_domain", "domain"),
+    ):
         findings[f"dns/{name}"] = {
             "level": policy["dns"]["level"],
-            "outcome": _outcome(policy["dns"]["level"], probes.get(probe) == "ok",
-                                dns.get(field) == "expected"),
+            "outcome": _outcome(
+                policy["dns"]["level"],
+                probes.get(probe) == "ok",
+                dns.get(field) == "expected",
+            ),
         }
     counts = Counter((f["level"], f["outcome"]) for f in findings.values())
     if counts[("required", "drift")]:
@@ -326,13 +373,21 @@ def audit() -> dict[str, object]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json", action="store_true", help="Print redacted JSON report")
-    parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY,
-                        help="Declared OS policy (default: policies/home-desktop.yml)")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print redacted JSON report",
+    )
+    parser.add_argument(
+        "--policy",
+        type=Path,
+        default=DEFAULT_POLICY,
+        help="Declared OS policy (default: policies/home-desktop.yml)",
+    )
     args = parser.parse_args()
     result = audit()
     result["policy"] = evaluate_policy(result, args.policy)
-    print(json.dumps(result, sort_keys=True, indent=2 if args.json else None))
+    common.emit(result, indent=2 if args.json else None)
     # Unknowns are informative; report is not a pass for DNS or runtime unit parity.
     # Policy status is reported in JSON; exit code stays 0 (report, not a gate).
     return 0

@@ -1,6 +1,8 @@
 # Read by the bandit pre-commit hook (args: -c .bandit.yml).
 exclude_dirs: [".venv", ".agents", "files"]
 # Scripts and tests run fixed argv lists without a shell; B602 (shell=True) stays active.
-skips: ["B404", "B603"]
+# B607: fixed argv (bash, git, systemctl...) resolved through a fixed PATH (FIXED_ENV) or
+# isolated test fixtures; a bare name is intended there.
+skips: ["B404", "B603", "B607"]
 assert_used:
   skips: ["*/test_*.py", "test_*.py"]

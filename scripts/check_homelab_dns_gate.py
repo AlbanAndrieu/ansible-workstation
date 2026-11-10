@@ -5,6 +5,7 @@ Default: run two offline test suites, then list ONLY DNS tasks.
 --dry-run adds an Ansible --check --diff, never an apply.
 No GitHub Actions, checkout mutation, git fetch, or DNS changes.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,8 +37,12 @@ EXTRA_VARS = (
 def execute(argv: list[str], timeout: int = 90) -> tuple[int, str]:
     try:
         result = subprocess.run(
-            argv, cwd=ROOT, capture_output=True, text=True,
-            check=False, timeout=timeout,
+            argv,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         return 2, type(exc).__name__
@@ -53,7 +58,8 @@ def verify_workspace() -> bool:
         return False
     rc, remote = execute(["git", "remote", "get-url", "origin"])
     if rc != 0 or not re.search(
-        r"(?:[:/])AlbanAndrieu/ansible-workstation(?:\.git)?\s*$", remote.strip()
+        r"(?:[:/])AlbanAndrieu/ansible-workstation(?:\.git)?\s*$",
+        remote.strip(),
     ):
         print("FAIL: this checkout is not the expected ansible-workstation origin")
         return False
@@ -63,8 +69,17 @@ def verify_workspace() -> bool:
 
 def run_suite(pattern: str, minimum: int) -> bool:
     rc, out = execute(
-        [sys.executable, "-m", "unittest", "discover", "-s", "tests",
-         "-p", pattern, "-v"],
+        [
+            sys.executable,
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-p",
+            pattern,
+            "-v",
+        ],
         timeout=30,
     )
     counts = re.findall(r"\bRan\s+(\d+)\s+tests?\b", out)
@@ -79,8 +94,12 @@ def run_suite(pattern: str, minimum: int) -> bool:
 
 def command(mode: str) -> list[str]:
     args = [
-        "ansible-playbook", "-i", "localhost,",
-        str(PLAYBOOK), "--tags", "dns",
+        "ansible-playbook",
+        "-i",
+        "localhost,",
+        str(PLAYBOOK),
+        "--tags",
+        "dns",
     ]
     if mode == "list":
         args.append("--list-tasks")
@@ -108,8 +127,10 @@ def task_list() -> bool:
 def dry_run() -> bool:
     rc, output = execute(command("check"), timeout=120)
     # Even when exit=0, require evidence that at least one real DNS task ran.
-    markers = ("Validate opt-in split DNS parameters",
-               "Read active NetworkManager profile")
+    markers = (
+        "Validate opt-in split DNS parameters",
+        "Read active NetworkManager profile",
+    )
     if rc or "TASK [" not in output or not all(m in output for m in markers):
         print("FAIL: Ansible check-mode did not execute expected DNS tasks")
         print(output[-5000:])
@@ -122,7 +143,8 @@ def dry_run() -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Also execute Ansible --check --diff after successful tests/list-tasks",
     )
     opts = parser.parse_args()

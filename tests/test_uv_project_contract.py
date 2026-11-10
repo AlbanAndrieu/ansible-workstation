@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Offline contracts: project locking, non-destructive shells, secure Ansible."""
+
 from pathlib import Path
 import configparser
 import os
@@ -21,7 +22,7 @@ class UvAndAnsibleContract(unittest.TestCase):
             any(
                 name.startswith("ansible-core>=2.21")
                 for name in project["dependencies"]
-            )
+            ),
         )
 
     def test_no_empty_lockfile_can_be_committed(self):
@@ -77,7 +78,7 @@ class UvAndAnsibleContract(unittest.TestCase):
         self.assertIn('PYTHON="$ROOT/.venv/bin/python"', contents)
         self.assertIn("linked worktree shares hooks", contents)
         self.assertIn('if [ ! -x "$PYTHON" ]', contents)
-        self.assertIn('pathlib.Path(sys.prefix).resolve() != venv', contents)
+        self.assertIn("pathlib.Path(sys.prefix).resolve() != venv", contents)
         self.assertIn('"pre-commit==$PIN"', contents)
         self.assertIn('uv pip install --python "$PYTHON"', contents)
         self.assertNotIn("uv sync", contents.split("uv pip install")[1])

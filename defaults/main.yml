@@ -69,7 +69,7 @@ workstation_firewall_manage_enabled: false
 # Bulk myrepos registration must be explicitly requested, never run as root.
 workstation_myrepos_autoregister_enabled: false
 workstation_myrepos_root: "/workspace/users/{{ user }}{{ shell_default_version }}"
-screensaver_enabled: true
+screensaver_enabled: false
 dash_enabled: true
 classicmenu_indicator_enabled: true
 calendar_indicator_enabled: true
@@ -93,19 +93,16 @@ atom_enabled: false
 prince_enabled: false
 bat_enabled: false
 
-# NFS mounts (nabla server). Options match /etc/fstab: nfs4 defaults,user,auto,noatime,bg,rsize=16384,wsize=16384
-mount_nfs_opts: "defaults,user,auto,noatime,bg,rsize=16384,wsize=16384"
+# NFS mounts (nabla server). Same options as stabilize_nfs_opts (playbooks/stabilize-workstation.yml).
+mount_nfs_opts: "noatime,nosuid,nodev,noexec,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,x-systemd.mount-timeout=20s"
+# The 12 shares active in /etc/fstab; archive, jenkins, workspace and bower stay commented out there.
 mount_nfs_entries:
   - { path: /media/ftp, src: nabla:/mnt/cpool/ftp }
   - { path: /media/music, src: nabla:/mnt/cpool/media/music }
   - { path: /media/photo, src: nabla:/mnt/cpool/media/photo }
-  - { path: /media/archive, src: nabla:/mnt/cpool/archive }
   - { path: /media/backup, src: nabla:/mnt/cpool/backup }
-  - { path: /media/jenkins, src: nabla:/mnt/cpool/jenkins }
-  - { path: /workspace-backup, src: nabla:/mnt/cpool/workspace }
   - { path: /media/bitcoin, src: nabla:/mnt/cpool/bitcoin }
   - { path: /media/www, src: nabla:/mnt/cpool/www }
-  - { path: /media/bower, src: nabla:/mnt/cpool/bower }
   - { path: /media/nexus, src: nabla:/mnt/cpool/nexus }
   - { path: /media/nexus3, src: nabla:/mnt/cpool/nexus3 }
   - { path: /media/home/albandrieu, src: nabla:/mnt/cpool/home/albandrieu }
@@ -130,14 +127,13 @@ plank_enabled: true
 android_enabled: true
 docker_enabled: true
 podman_enabled: true
-backbox_enabled: true
 smb_enabled: true
 grub_customizer_enabled: true
 cinnamon_enabled: false
 plasma_enabled: false
 xfce_enabled: false
 make_enabled: true
-bitcoinqt_enabled: true
+bitcoinqt_enabled: false
 macchanger_enabled: true
 php_enabled: true
 php_74_enabled: true

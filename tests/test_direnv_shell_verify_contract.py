@@ -27,33 +27,52 @@ class DirenvShellVerifyContracts(unittest.TestCase):
             command.write_text("#!/bin/sh\nexit 0\n")
             command.chmod(0o755)
 
-    def run_shell(self, *, interactive=True, define_hook=True,
-                  venv=True, venv_on_path=True, bad_prompt=False, source=True,
-                  prompt_statement="PROMPT_COMMAND='_direnv_hook'"):
+    def run_shell(
+        self,
+        *,
+        interactive=True,
+        define_hook=True,
+        venv=True,
+        venv_on_path=True,
+        bad_prompt=False,
+        source=True,
+        prompt_statement="PROMPT_COMMAND='_direnv_hook'",
+    ):
         env = os.environ.copy()
         env["HOME"] = self.tmp.name
         env["BASH_ENV"] = "/dev/null"
         env["PATH"] = (
-            (str(self.venv / "bin") + os.pathsep if venv_on_path else "")
-            + "/usr/bin:/bin"
-        )
+            str(self.venv / "bin") + os.pathsep if venv_on_path else ""
+        ) + "/usr/bin:/bin"
         if venv:
             env["VIRTUAL_ENV"] = str(self.venv)
         else:
             env.pop("VIRTUAL_ENV", None)
         pre = "_direnv_hook() { :; }\n" if define_hook else ""
         cmd = (
-            pre + prompt_statement + "\n"
+            pre
+            + prompt_statement
+            + "\n"
             + ("PS1='_mise_hookhistory'\n" if bad_prompt else "PS1='$ '\n")
-            + ("source scripts/verify-direnv-shell.sh\n" if source
-               else "bash scripts/verify-direnv-shell.sh\n")
+            + (
+                "source scripts/verify-direnv-shell.sh\n"
+                if source
+                else "bash scripts/verify-direnv-shell.sh\n"
+            )
         )
         argv = ["/bin/bash", "--noprofile", "--norc"]
         if interactive:
             argv.append("-i")
         argv += ["-c", cmd]
-        return subprocess.run(argv, cwd=self.root, env=env, text=True,
-                              capture_output=True, check=False, timeout=10)
+        return subprocess.run(
+            argv,
+            cwd=self.root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
 
     def test_valid_interactive_shell(self):
         result = self.run_shell()
@@ -81,41 +100,39 @@ class DirenvShellVerifyContracts(unittest.TestCase):
         self.assertIn("malformed mise/history token", result.stderr)
 
     def test_direnv_name_inside_other_identifier_is_not_accepted(self):
-        result = self.run_shell(
-            prompt_statement="PROMPT_COMMAND='_direnv_hook_legacy'"
-        )
+        result = self.run_shell(prompt_statement="PROMPT_COMMAND='_direnv_hook_legacy'")
         self.assertEqual(result.returncode, 1)
         self.assertIn("Direnv is not registered", result.stderr)
 
     def test_direnv_name_inside_quoted_echo_is_not_accepted(self):
         result = self.run_shell(
-            prompt_statement='PROMPT_COMMAND=\'printf "_direnv_hook"\''
+            prompt_statement="PROMPT_COMMAND='printf \"_direnv_hook\"'",
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("Direnv is not registered", result.stderr)
 
     def test_direnv_name_inside_quoted_semicolons_is_not_accepted(self):
         result = self.run_shell(
-            prompt_statement="PROMPT_COMMAND=\"printf '_direnv_hook;hello'\""
+            prompt_statement="PROMPT_COMMAND=\"printf '_direnv_hook;hello'\"",
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("Direnv is not registered", result.stderr)
 
     def test_explicit_semicolon_delimited_scalar_is_accepted(self):
         result = self.run_shell(
-            prompt_statement="PROMPT_COMMAND='history -a; _direnv_hook'"
+            prompt_statement="PROMPT_COMMAND='history -a; _direnv_hook'",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_exact_array_entry_is_accepted(self):
         result = self.run_shell(
-            prompt_statement="PROMPT_COMMAND=('history -a' '_direnv_hook')"
+            prompt_statement="PROMPT_COMMAND=('history -a' '_direnv_hook')",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_array_message_cannot_spoof_direnv(self):
         result = self.run_shell(
-            prompt_statement="PROMPT_COMMAND=('history -a' 'echo _direnv_hook')"
+            prompt_statement="PROMPT_COMMAND=('history -a' 'echo _direnv_hook')",
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("Direnv is not registered", result.stderr)
@@ -130,9 +147,7 @@ class DirenvShellVerifyContracts(unittest.TestCase):
 
     def test_prompt_commands_are_never_executed_by_verifier(self):
         marker = self.root / "prompt-was-run"
-        statement = (
-            "PROMPT_COMMAND='touch " + str(marker) + "; _direnv_hook'"
-        )
+        statement = "PROMPT_COMMAND='touch " + str(marker) + "; _direnv_hook'"
         result = self.run_shell(prompt_statement=statement)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(marker.exists())
@@ -149,9 +164,16 @@ class DirenvShellVerifyContracts(unittest.TestCase):
 
     def test_source_does_not_invoke_install_or_mutate_files(self):
         source = HELPER.read_text()
-        for forbidden in ("uv sync", "mise install", "git reset",
-                          "rm -rf", "ansible-playbook", "curl ",
-                          "direnv allow", "eval $(direnv"):
+        for forbidden in (
+            "uv sync",
+            "mise install",
+            "git reset",
+            "rm -rf",
+            "ansible-playbook",
+            "curl ",
+            "direnv allow",
+            "eval $(direnv",
+        ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, source)
         result = self.run_shell()

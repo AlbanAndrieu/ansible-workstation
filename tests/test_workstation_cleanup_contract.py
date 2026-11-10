@@ -9,7 +9,7 @@ import tempfile
 import time
 import tomllib
 import unittest
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405 - parses the repository's own CleanerML only
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/workstation-cleanup.sh"
@@ -76,7 +76,7 @@ PROCESS_ALLOWLIST = {
 
 
 def custom_ids():
-    root = ET.parse(CLEANER).getroot()
+    root = ET.parse(CLEANER).getroot()  # nosec B314 - repository file
     return [f"{root.get('id')}.{o.get('id')}" for o in root.findall("option")]
 
 
@@ -175,7 +175,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
 
     def test_unavailable_options_are_skipped(self):
         (self.state / "available.txt").write_text(
-            BUILTIN.replace("google_chrome.ai\n", "")
+            BUILTIN.replace("google_chrome.ai\n", ""),
         )
         result = self.run_helper("apply")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -184,11 +184,12 @@ class WorkstationCleanupContracts(unittest.TestCase):
 
     def test_extra_opt_ins_and_denylist(self):
         result = self.run_helper(
-            "apply", EXTRA_CLEANERS="system.trash workstation_dev.maven_repository"
+            "apply",
+            EXTRA_CLEANERS="system.trash workstation_dev.maven_repository",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(
-            {"system.trash", "workstation_dev.maven_repository"} <= self.clean_args()
+            {"system.trash", "workstation_dev.maven_repository"} <= self.clean_args(),
         )
         for denied in (
             "google_chrome.passwords",
@@ -208,9 +209,10 @@ class WorkstationCleanupContracts(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         calls = self.calls()
         self.assertIn(
-            "sudo bleachbit --clean apt.clean apt.autoclean snap.disabled", calls
+            "sudo bleachbit --clean apt.clean apt.autoclean snap.disabled",
+            calls,
         )
-        self.assertIn("sudo journalctl --vacuum-size=500M", calls)
+        self.assertIn("sudo journalctl --vacuum-size=2G", calls)
         self.assertNotIn("autoremove", calls)
         self.assertNotIn("find", calls)
 
@@ -243,7 +245,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
                 self.assertEqual(self.run_helper("apply-system", **extra).returncode, 2)
 
     def test_cleaner_targets_only_regenerable_caches(self):
-        root = ET.parse(CLEANER).getroot()
+        root = ET.parse(CLEANER).getroot()  # nosec B314 - repository file
         self.assertEqual(root.get("id"), "workstation_dev")
         commands = set()
         for option in root.findall("option"):
@@ -291,7 +293,8 @@ class WorkstationCleanupContracts(unittest.TestCase):
         ):
             with self.subTest(task=name):
                 self.assertEqual(
-                    tasks[name]["run"], f"bash scripts/workstation-cleanup.sh {action}"
+                    tasks[name]["run"],
+                    f"bash scripts/workstation-cleanup.sh {action}",
                 )
 
 

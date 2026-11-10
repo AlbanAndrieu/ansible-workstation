@@ -271,7 +271,8 @@ repos:
     hooks:
       - id: bashate
         name: "🐚 shell · Check shell script code style"
-        args: [-i, "E003,E006"]
+        # E011: shfmt keeps multi-line `if a ||\n b; then` conditions; both tools must agree.
+        args: [-i, "E003,E006,E011"]
         exclude: >
           (?x)^(
             \.agents/skills/.*|

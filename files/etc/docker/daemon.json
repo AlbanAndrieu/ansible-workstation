@@ -2,7 +2,7 @@
     "debug": false,
     "default-address-pools": [
         {
-            "base": "172.17.0.0/12",
+            "base": "@@INTERNAL@@",
             "size": 24
         }
     ],
@@ -21,7 +21,7 @@
     },
     "dns": [
         "9.9.9.9",
-        "172.17.0.24"
+        "@@INTERNAL@@"
     ],
     "exec-opts": [
         "native.cgroupdriver=systemd"
