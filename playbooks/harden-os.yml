@@ -17,10 +17,26 @@
     os_pam_enabled: false
     # Single local user: no forced password expiry.
     os_user_pw_ageing: false
+    # 0700 on /home/albandrieu stops motion reaching ~/Dropbox/motion, and the role would
+    # create missing homes of service accounts (bitcoin, snmp_exporter).
+    os_chmod_home_folders: false
     # Deletes every user's .netrc without backup.
     os_netrc_enabled: false
     # ufw belongs to harden-network.yml.
     ufw_manage_defaults: false
+    # Role default minus squashfs (every snap) and vfat (/boot/efi, USB keys): its own
+    # exclusion only covers what is mounted at apply time.
+    os_unused_filesystems:
+      - cramfs
+      - freevxfs
+      - jffs2
+      - hfs
+      - hfsplus
+      - udf
+      - dccp
+      - rds
+      - sctp
+      - tipc
     # hidepid=2 hides processes from polkit and GNOME tools.
     hidepid_option: "0"
     # Keep Docker/libvirt routing, VPN-friendly rp_filter, IPv6 SLAAC and SysRq as they are today.

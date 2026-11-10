@@ -93,6 +93,8 @@ vrais. Même la simulation demande sudo. Réglages adaptés à la workstation :
 | Réglage dev-sec | Choix | Raison |
 | --- | --- | --- |
 | PAM (`os_pam_enabled`) | désactivé | YubiKey et howdy, gérés par nabla-yubikey |
+| Modules de systèmes de fichiers bloqués | liste du rôle sans `squashfs` ni `vfat` | snaps, `/boot/efi`, clés USB ; le rôle n'exclut que ce qui est monté au moment de l'apply |
+| Dossiers personnels en 0700 (`os_chmod_home_folders`) | désactivé | motion écrit sous `/home/albandrieu` ; le rôle créerait aussi les homes absents de comptes de service |
 | Expiration du mot de passe utilisateur | désactivée | poste mono-utilisateur |
 | Suppression des `.netrc` | désactivée | effacement sans sauvegarde |
 | `/etc/default/ufw` | non géré | appartient à `harden-network.yml` |
@@ -120,3 +122,7 @@ mise run harden-os-check   # simulation --diff, sudo demandé
 
 Retour arrière : pas de rollback automatique ; les fichiers de `/etc` capturés dans `files/etc`
 servent de référence. **RUNTIME NOT VERIFIED** : simulation seulement.
+
+Simulation du 10 novembre 2026, avec les deux réglages ci-dessus : `ok=125 changed=35 failed=0`. Les
+dossiers personnels ne changent plus ; `/etc/modprobe.d/dev-sec.conf` ne bloque plus que les modules
+listés.
