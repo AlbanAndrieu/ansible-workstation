@@ -20,7 +20,8 @@ CLEANER_SRC="$ROOT/files/bleachbit/workstation_dev.xml"
 CLEANER_DST="${XDG_CONFIG_HOME:-$HOME/.config}/bleachbit/cleaners/workstation_dev.xml"
 # Space-separated opt-ins, e.g. "system.trash workstation_dev.maven_repository".
 EXTRA_CLEANERS="${EXTRA_CLEANERS:-}"
-JOURNAL_MAX="${JOURNAL_MAX:-500M}"
+# Matches SystemMaxUse in files/etc/systemd/journald.conf.d/size.conf.
+JOURNAL_MAX="${JOURNAL_MAX:-2G}"
 APT_AUTOREMOVE="${APT_AUTOREMOVE:-0}"
 MOTION_DIR="${MOTION_DIR:-/workspace/Dropbox/motion}"
 MOTION_RETENTION_DAYS="${MOTION_RETENTION_DAYS:-}"

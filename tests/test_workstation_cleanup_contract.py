@@ -212,7 +212,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
             "sudo bleachbit --clean apt.clean apt.autoclean snap.disabled",
             calls,
         )
-        self.assertIn("sudo journalctl --vacuum-size=500M", calls)
+        self.assertIn("sudo journalctl --vacuum-size=2G", calls)
         self.assertNotIn("autoremove", calls)
         self.assertNotIn("find", calls)
 
