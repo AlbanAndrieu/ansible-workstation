@@ -75,6 +75,9 @@ $node/lib/node_modules/openclaw/openclaw.mjs gateway --port 18789"
   "--user is-active --quiet openclaw-gateway.service")
     [ -e "$STUB_STATE/restarted" ] || exit 3
     ;;
+  "--user is-enabled --quiet openclaw-gateway.service")
+    [ -z "$STUB_DISABLED" ] || exit 1
+    ;;
   "--user --failed --no-legend --plain")
     [ -n "$STUB_NO_FAILED" ] || echo "bitcoin-qt.service loaded failed failed x"
     ;;
@@ -159,6 +162,15 @@ class UserToolchainRepairContracts(unittest.TestCase):
         self.assertLess(calls.index("npm install"), calls.index("--user restart"))
         self.assertIn("PASS: gateway OpenClaw entrypoint present", result.stdout)
         self.assertIn("PASS: starship resolved by mise", result.stdout)
+
+    def test_disabled_gateway_is_expected_and_never_restarted(self):
+        check = self.run_helper("check", STUB_DISABLED="1")
+        self.assertIn("disabled: the gateway runs on TrueNAS", check.stdout)
+        self.assertNotIn("openclaw-gateway.service not active", check.stdout)
+        result = self.run_helper("apply", STUB_DISABLED="1", STUB_NO_FAILED="1")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("--user restart", self.calls())
+        self.assertNotIn("npm install", self.calls())
 
     def test_refuses_unpinned_or_wildcard_inputs(self):
         for extra in (

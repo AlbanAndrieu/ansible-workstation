@@ -122,6 +122,34 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         # A ratio set later in the file would silently zero the byte limit.
         self.assertNotIn("vm.dirty_ratio", settings)
 
+    def test_zram_swap_is_used_before_the_ssd_swapfile(self):
+        conf = (ROOT / "files/etc/default/zramswap").read_text()
+        settings = dict(
+            line.split("=")
+            for line in conf.splitlines()
+            if line and not line.startswith("#")
+        )
+        # /swapfile keeps the kernel's default negative priority.
+        self.assertGreater(int(settings["PRIORITY"]), 0)
+        self.assertLessEqual(int(settings["PERCENT"]), 50)
+        self.assertIn("default/zramswap", PLAYBOOK.read_text())
+
+    def test_root_crontab_scan_is_idle_and_duplicates_go(self):
+        tasks = {t["name"]: t for t in play()["tasks"]}
+        scan = tasks["Run the nightly ClamTk scan at idle CPU and disk priority"]
+        rule = scan["ansible.builtin.replace"]
+        line = "0 0 * * * /usr/bin/clamscan -r /home"
+        once = re.sub(rule["regexp"], rule["replace"].replace("\\1", "\\g<1>"), line)
+        self.assertEqual(
+            once,
+            "0 0 * * * nice -n 19 ionice -c3 /usr/bin/clamscan -r /home",
+        )
+        self.assertEqual(re.sub(rule["regexp"], "", once), once)
+        drop = tasks["Drop the broken maldet and the duplicate chkrootkit cron lines"]
+        report = "0 0 * * * /usr/sbin/chkrootkit | ansi2html -l > /var/www/report.html"
+        self.assertTrue(any(re.search(r, report) for r in drop["loop"]))
+        self.assertFalse(any(re.search(r, once) for r in drop["loop"]))
+
     def test_journald_keeps_more_than_a_day(self):
         self.assertIn("SystemMaxUse=2G", JOURNALD.read_text().splitlines())
         self.assertIn("journald.conf.d/size.conf", PLAYBOOK.read_text())

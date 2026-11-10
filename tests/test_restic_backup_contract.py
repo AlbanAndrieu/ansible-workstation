@@ -60,6 +60,25 @@ class ResticBackupContract(unittest.TestCase):
         rule = next(r for r in harden[0]["vars"]["harden_rules"] if r["port"] == "9100")
         self.assertEqual(rule["from"], "{{ harden_truenas }}")
 
+    def test_node_exporter_keeps_the_stabilization_flags(self):
+        args = (UNITS / "prometheus-node-exporter.default").read_text()
+        stabilize = yaml.safe_load(
+            (ROOT / "playbooks/stabilize-workstation.yml").read_text(),
+        )
+        for flag in stabilize[0]["vars"]["stabilize_node_exporter_flags"]:
+            with self.subTest(flag=flag):
+                self.assertIn(f"{flag} ", args.replace('"', " "))
+
+    def test_restore_test_stays_in_a_private_tmp(self):
+        unit = (UNITS / "restic-restore-test.service.j2").read_text()
+        dests = [t["dest"] for t in play()["vars"]["restic_templates"]]
+        self.assertIn("/etc/systemd/system/restic-restore-test.service", dests)
+        self.assertIn("PrivateTmp=yes", unit)
+        self.assertIn("ProtectSystem=strict", unit)
+        self.assertIn("--target /tmp/restore", unit)
+        self.assertIn("ExecStart=/usr/bin/diff -r", unit)
+        self.assertNotIn("AmbientCapabilities=CAP_DAC_OVERRIDE", unit)
+
     def test_init_never_overwrites_a_repository(self):
         init = (UNITS / "restic-init.service.j2").read_text()
         self.assertIn("ConditionPathExists=!{{ restic_repository }}/config", init)

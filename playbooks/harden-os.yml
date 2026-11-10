@@ -17,10 +17,26 @@
     os_pam_enabled: false
     # Single local user: no forced password expiry.
     os_user_pw_ageing: false
+    # 0700 on /home/albandrieu stops motion reaching ~/Dropbox/motion, and the role would
+    # create missing homes of service accounts (bitcoin, snmp_exporter).
+    os_chmod_home_folders: false
     # Deletes every user's .netrc without backup.
     os_netrc_enabled: false
     # ufw belongs to harden-network.yml.
     ufw_manage_defaults: false
+    # Role default minus squashfs (every snap) and vfat (/boot/efi, USB keys): its own
+    # exclusion only covers what is mounted at apply time.
+    os_unused_filesystems:
+      - cramfs
+      - freevxfs
+      - jffs2
+      - hfs
+      - hfsplus
+      - udf
+      - dccp
+      - rds
+      - sctp
+      - tipc
     # hidepid=2 hides processes from polkit and GNOME tools.
     hidepid_option: "0"
     # Keep Docker/libvirt routing, VPN-friendly rp_filter, IPv6 SLAAC and SysRq as they are today.
@@ -45,6 +61,8 @@
       net.ipv6.conf.default.max_addresses: 16
     # sshd is installed but unused: harden its config, keep the service off.
     ssh_server_service_enabled: false
+    # Its "Restart sshd" handler started sshd on the 10 Nov apply: no restart at all.
+    ssh_server_enabled: false
     # Client config is the ssh_config.d drop-in (FIDO keys, agent): not rewritten.
     ssh_client_hardening: false
 
@@ -60,3 +78,10 @@
   roles:
     - devsec.hardening.os_hardening
     - devsec.hardening.ssh_hardening
+
+  post_tasks:
+    # The role only sets the boot state: an sshd started earlier keeps running.
+    - name: Keep sshd stopped
+      ansible.builtin.systemd_service:
+        name: ssh.service
+        state: stopped

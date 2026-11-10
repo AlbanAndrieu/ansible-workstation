@@ -13,26 +13,22 @@
           - ansible_os_family in ['Debian', 'RedHat', 'CentOS', 'Windows', 'Solaris']
           - ansible_architecture in ['x86_64']
 
-- hosts: all
+# A version floor instead of a list of releases: a new Ubuntu must not fail as unsupported.
+- name: Fail for an unsupported distribution
+  hosts: all
   gather_facts: true
-  tasks:
-    - name: group hosts by distribution
-      group_by: key="{{ ansible_distribution }}-{{ ansible_distribution_version }}"
+  tags: [platform]
 
-- hosts: RedHat-7*:RedHat-6*:CentOS-7*:CentOS-6*:Ubuntu-25*:Ubuntu-24*:Ubuntu-23*:Ubuntu-22*:Ubuntu-21*:Ubuntu-20*:Ubuntu-19*:Ubuntu-18*:Ubuntu-17*:Ubuntu-16*:Ubuntu-15*:Ubuntu-14*:Ubuntu-13*:Ubuntu-12*
-  gather_facts: false
   tasks:
-    - name: group hosts for supported distributions
-      group_by: key="supported"
-
-- hosts: "!supported"
-  gather_facts: false
-  tasks:
-    - name: fail for unsupported distribution
-      fail:
-        msg="{{ ansible_distribution }} {{ ansible_distribution_version }} is not a supported OS for a Tower installation.  Supported OSes include Red Hat
-        Enterprise Linux 6/7, CentOS 6/7, or Ubuntu 12.04/12.04/14.04/16.04/17.04/18.04/19.04/20.04/21.04/22.04/23.04/24.04/25.04"
-    - debug: msg="Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
+    - name: Fail for an unsupported distribution
+      ansible.builtin.assert:
+        that: >-
+          (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('12.04', '>='))
+          or (ansible_distribution in ['RedHat', 'CentOS'] and ansible_distribution_major_version in ['6', '7'])
+        fail_msg: >-
+          {{ ansible_distribution }} {{ ansible_distribution_version }} is not supported:
+          Ubuntu 12.04 or later, Red Hat Enterprise Linux or CentOS 6/7
+        success_msg: "Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
 
 - hosts: all
   tasks:

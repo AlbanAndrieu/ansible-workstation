@@ -124,6 +124,13 @@
       changed_when: true
       become: true
 
+    - name: Restart zramswap
+      ansible.builtin.systemd_service:
+        name: zramswap.service
+        state: restarted
+        enabled: true
+      become: true
+
     - name: Reload apache
       ansible.builtin.systemd_service:
         name: apache2.service
@@ -505,6 +512,45 @@
       when: stabilize_write
       notify: Apply hdparm
 
+    - name: Install zram swap
+      ansible.builtin.apt:
+        name: zram-tools
+        state: present
+      become: true
+      when: stabilize_write
+
+    - name: Swap to compressed RAM before the worn SSD
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/default/zramswap"
+        dest: /etc/default/zramswap
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify: Restart zramswap
+
+    # ClamTk wrote root's crontab: its midnight clamscan held a core at 100 % for 1 h 40.
+    - name: Run the nightly ClamTk scan at idle CPU and disk priority
+      ansible.builtin.replace:
+        path: /var/spool/cron/crontabs/root
+        regexp: '^((?:\S+\s+){5})/usr/bin/clamscan '
+        replace: '\1nice -n 19 ionice -c3 /usr/bin/clamscan '
+      become: true
+      when: stabilize_write
+
+    # maldet is uninstalled (empty report); chkrootkit.timer already runs every night.
+    - name: Drop the broken maldet and the duplicate chkrootkit cron lines
+      ansible.builtin.lineinfile:
+        path: /var/spool/cron/crontabs/root
+        regexp: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/local/sbin/maldet -a /
+        - '^\S+(\s+\S+){4}\s+/usr/sbin/chkrootkit '
+      become: true
+      when: stabilize_write
+
     - name: Report the stabilization plan
       ansible.builtin.debug:
         msg:
@@ -513,3 +559,4 @@
           purge: "{{ stabilize_purge }}"
           system_units_off: "{{ stabilize_system_units_off }}"
           user_units_off: "{{ stabilize_user_units_off }}"
+          root_crontab: clamscan under nice/ionice, maldet and duplicate chkrootkit lines removed

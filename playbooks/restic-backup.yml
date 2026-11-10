@@ -17,11 +17,15 @@
     restic_user: albandrieu
     restic_uid: 1000
     restic_home: /home/albandrieu
+    # Written only by this playbook, so the latest snapshot must match it byte for byte.
+    restic_restore_sample: /etc/restic
     restic_templates:
       - src: restic-backup.service.j2
         dest: /etc/systemd/system/restic-backup.service
       - src: restic-check.service.j2
         dest: /etc/systemd/system/restic-check.service
+      - src: restic-restore-test.service.j2
+        dest: /etc/systemd/system/restic-restore-test.service
       - src: restic-init.service.j2
         dest: /etc/systemd/system/restic-init.service
       - src: restic-notify@.service.j2
@@ -169,4 +173,5 @@
           retention: 7 daily, 4 weekly, 12 monthly
           alert: Prometheus ResticBackupStale (26 h), backup Zabbix restic.last_success_age, both in nabla-compose
           first_run: sudo systemctl start restic-backup.service
+          restore_test: sudo systemctl start restic-restore-test.service
           password_offsite: sudo systemd-creds decrypt /etc/credstore.encrypted/restic.password -

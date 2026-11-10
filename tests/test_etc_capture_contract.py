@@ -199,6 +199,20 @@ class NetworkHardeningContract(unittest.TestCase):
             )
             self.assertIn(rule["proto"], {"tcp", "udp"})
 
+    def test_docker_routes_admit_only_truenas_and_deny_the_lan(self):
+        routes = self.play["vars"]["harden_docker_routes"]
+        for route in routes:
+            with self.subTest(route=route["comment"]):
+                expected = (
+                    "{{ harden_truenas }}"
+                    if route["rule"] == "allow"
+                    else "{{ harden_lan }}"
+                )
+                self.assertEqual(route["from"], expected)
+        # ufw keeps insertion order: the TrueNAS allow must precede the LAN deny.
+        litellm = [r["rule"] for r in routes if r["port"] == "4000"]
+        self.assertEqual(litellm, ["allow", "deny"])
+
 
 class OsHardeningContract(unittest.TestCase):
     def setUp(self):
@@ -215,10 +229,22 @@ class OsHardeningContract(unittest.TestCase):
         v = self.play["vars"]
         self.assertIs(v["os_pam_enabled"], False)
         self.assertIs(v["os_netrc_enabled"], False)
+        self.assertIs(v["os_chmod_home_folders"], False)
         self.assertIs(v["ufw_manage_defaults"], False)
         self.assertEqual(v["sysctl_overwrite"]["net.ipv4.ip_forward"], 1)
         self.assertIs(v["ssh_server_service_enabled"], False)
         self.assertIs(v["ssh_client_hardening"], False)
+
+    def test_sshd_is_never_started(self):
+        self.assertIs(self.play["vars"]["ssh_server_enabled"], False)
+        stop = self.play["post_tasks"][0]["ansible.builtin.systemd_service"]
+        self.assertEqual(stop, {"name": "ssh.service", "state": "stopped"})
+
+    def test_snaps_and_efi_filesystems_stay_loadable(self):
+        blocked = self.play["vars"]["os_unused_filesystems"]
+        self.assertNotIn("squashfs", blocked)
+        self.assertNotIn("vfat", blocked)
+        self.assertIn("cramfs", blocked)
 
     def test_collection_is_pinned(self):
         req = yaml.safe_load((ROOT / "requirements.yml").read_text())

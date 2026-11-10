@@ -1,0 +1,21 @@
+# Managed by ansible-workstation playbooks/restic-backup.yml
+# Acceptance gate: restore a sample of the latest snapshot into a private /tmp and compare it
+# with the live files. Manual: sudo systemctl start restic-restore-test.service
+[Unit]
+Description=Restic restore test of {{ restic_restore_sample }} from the latest snapshot
+RequiresMountsFor={{ restic_repository }}
+
+[Service]
+Type=oneshot
+User={{ restic_user }}
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+LoadCredentialEncrypted=restic.password:/etc/credstore.encrypted/restic.password
+Environment=RESTIC_REPOSITORY={{ restic_repository }}
+Environment=RESTIC_PASSWORD_FILE=%d/restic.password
+Environment=RESTIC_CACHE_DIR=%C/restic
+CacheDirectory=restic
+ProtectSystem=strict
+ReadWritePaths={{ restic_repository }}
+PrivateTmp=yes
+ExecStart=/usr/bin/restic restore latest --target /tmp/restore --include {{ restic_restore_sample }}
+ExecStart=/usr/bin/diff -r {{ restic_restore_sample }} /tmp/restore{{ restic_restore_sample }}

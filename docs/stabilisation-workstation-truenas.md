@@ -115,12 +115,12 @@ Non corrigé : `/api/` est relayé vers `albandrieu.albandrieu.com:80` (`127.0.0
 | 1 | LiteLLM vers Redis : 360 erreurs `invalid username-password pair` en 6 h. Cache et suivi des dépenses hors service. Cause (7/11) : le mot de passe de `REDIS_URL` diffère du `requirepass` du conteneur `redis`, qui utilise la valeur par défaut écrite dans `compose.redis.yml`. LiteLLM est son seul client. | Nouveau mot de passe aléatoire dans `REDIS_AUTH` (`.env` de nabla-compose) et dans `REDIS_URL` (`~/.litellm/.env`), puis recréer les deux conteneurs (secret : à faire à la main) | nabla-compose, `~/.litellm/.env` |
 | 2 | Grafana local : 13 036 erreurs en 6 h. Ses règles visent `prometheus` et `loki`, qui n'existent pas en local. | Pointer vers Prometheus et Loki de TrueNAS, ou mettre les règles en pause | nabla-compose |
 | 3 | doco-cd : le sous-module `apps/fastapi-sample` est en SSH, sans clé. | Passer en HTTPS | nabla-compose |
-| 4 | `restic-backup.yml` (branche d'audit) écrit `ARGS` et `wait-for-lan.conf` de node_exporter. | À la fusion, garder les options de `stabilize_node_exporter_flags` et `Restart=on-failure` | Branche d'audit |
+| 4 | ~~`restic-backup.yml` réécrivait `ARGS` de node_exporter sans les collecteurs `cpu`, `meminfo`, `loadavg` et `filesystem` de `stabilize_node_exporter_flags`.~~ Corrigé le 10/11 : son fichier porte les mêmes options (test de contrat). | — | — |
 | 5 | `/home` occupe 141 Go sur `/`. | Inventaire avec `mise run cleanup-check` | `scripts/workstation-cleanup.sh` |
 | 6 | Un `daemon-reload` pendant une panne de TrueNAS a figé PID 1 le 6/11, avec des partages montés. Les tests du 7/11 ne reproduisent pas ce gel (voir plus bas) : la condition exacte reste inconnue. | Ne pas lancer apt pendant un arrêt de TrueNAS. `softreval` n'aide pas (testé le 7/11). | `/etc/fstab` |
 | 7 | Les conteneurs résolvent par `9.9.9.9` puis Pi-hole sur TrueNAS (`/etc/docker/daemon.json`) : 27 échecs vers `9.9.9.9` en 24 h. | Passer à `172.17.0.1` comme l'hôte (redémarrage de Docker et recréation des conteneurs) | `/etc/docker/daemon.json` |
 | 8 | msmtp n'a aucune configuration : chaque sortie de cron finit en `status 0x004e from MTA` (awstats toutes les 10 min jusqu'au 7/11, `wacli` et `vdirsyncer` chaque heure). La sortie est perdue. | Configurer `/etc/msmtprc`, ou `MAILTO=""` et rediriger vers `logger` | crontab utilisateur, `/etc/msmtprc` |
-| 9 | Crontab root (ClamTk) : `clamscan -r /home/albandrieu` à minuit, plus de 1 h 40 à 100 % d'un cœur, sans `nice`. `maldet -a /` appelle un binaire désinstallé et publie un rapport vide. `chkrootkit` tourne deux fois (crontab et `chkrootkit.service`). | `nice -n 19 ionice -c3` devant `clamscan` (ou `clamdscan` avec `clamd`) ; retirer les lignes `maldet` et `chkrootkit` de la crontab | `sudo crontab -e` |
+| 9 | Crontab root (ClamTk) : `clamscan -r /home/albandrieu` à minuit, plus de 1 h 40 à 100 % d'un cœur, sans `nice`. `maldet -a /` appelle un binaire désinstallé et publie un rapport vide. `chkrootkit` tourne deux fois (crontab et `chkrootkit.timer`). | **Codé le 10/11**, apply à faire : `nice -n 19 ionice -c3` devant `clamscan`, lignes `maldet` et `chkrootkit` retirées (le rapport HTML de chkrootkit disparaît avec). `--check` : seules ces 2 tâches changent | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml) |
 | 10 | Port USB `1-1.3` : un périphérique refuse l'énumération (`error -71`), le 6/11 à 16:41. | Changer de câble ou de port | Matériel |
 
 Suspecté :
@@ -140,7 +140,11 @@ Vérifié sain :
 
 [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml) et
 [`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml) décrivent les correctifs. Plans du
-6 novembre 2026, **pas encore appliqués** :
+6 novembre 2026, **appliqués le 10 novembre** avec l'accord de l'opérateur (stabilisation
+`changed=5`, NFS : 13 partages resserrés, 10 partages `dpool` supprimés). Avant l'apply, seule la
+workstation avait une connexion NFS ouverte. Après : les deux plans sont vides, et les 12
+automontages de la workstation et Apache (`/media/www`) répondent. Le certificat de l'UI (#2) était
+déjà le bon, et il n'y avait aucun coredump à réinitialiser (#6).
 
 | # | Problème et preuve | Plan |
 | --- | --- | --- |

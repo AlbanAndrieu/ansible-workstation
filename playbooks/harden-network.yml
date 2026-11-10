@@ -2,7 +2,7 @@
 # Network hardening: close unneeded listeners at the source, then enable ufw with allowlists.
 # Check-only by default (prints the plan, no sudo). Writing needs harden_apply AND harden_apply_approved.
 # Apply from the local console. Rollback: sudo ufw disable
-# Docker published ports bypass ufw (DNAT before INPUT): not covered here.
+# Docker published ports bypass ufw INPUT (DNAT): harden_docker_routes filters them in DOCKER-USER.
 - name: Plan or explicitly apply the workstation network hardening
   hosts: localhost
   connection: local
@@ -93,6 +93,25 @@
         port: "11434"
         proto: tcp
         comment: ollama from local containers
+    # ufw-docker returns every private source, the LAN included, before its deny rules;
+    # its first jump is ufw-user-forward, so route rules decide first. Ports are container side.
+    harden_docker_routes:
+      - rule: allow
+        from: "{{ harden_truenas }}"
+        port: "4000"
+        comment: litellm from TrueNAS
+      - rule: deny
+        from: "{{ harden_lan }}"
+        port: "4000"
+        comment: litellm from the LAN
+      - rule: deny
+        from: "{{ harden_lan }}"
+        port: "3000"
+        comment: grafana from the LAN
+      - rule: deny
+        from: "{{ harden_lan }}"
+        port: "8125"
+        comment: telegraf statsd from the LAN
     # Pre-existing open-to-anywhere rules found when ufw was first enabled (31 Oct 2026).
     # 24800 stays reachable, but only from the LAN (see harden_rules).
     harden_legacy_rules:
@@ -198,6 +217,20 @@
       become: true
       when: harden_write
 
+    - name: Keep the published Docker ports to their intended sources
+      community.general.ufw:
+        route: true
+        rule: "{{ item.rule }}"
+        from_ip: "{{ item.from }}"
+        to_port: "{{ item.port }}"
+        proto: tcp
+        comment: "{{ item.comment }}"
+      loop: "{{ harden_docker_routes }}"
+      loop_control:
+        label: "{{ item.rule }} {{ item.from }} -> {{ item.port }}/tcp {{ item.comment }}"
+      become: true
+      when: harden_write
+
     - name: Delete legacy rules open to anywhere
       community.general.ufw:
         rule: allow
@@ -249,6 +282,7 @@
           mask: [rpcbind.socket, rpcbind.service]
           zabbix_server: "{{ harden_truenas }}"
           ufw_allow: "{{ harden_rules | map(attribute='comment') | zip(harden_rules | map(attribute='port')) | map('join', ':') | list }}"
+          docker_routes: "{{ harden_docker_routes | map(attribute='rule') | zip(harden_docker_routes | map(attribute='comment')) | map('join', ': ') | list }}"
           everything_else_inbound: deny
           rollback: sudo ufw disable
           verify: sudo ufw status verbose
