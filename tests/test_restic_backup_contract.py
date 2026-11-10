@@ -69,6 +69,16 @@ class ResticBackupContract(unittest.TestCase):
             with self.subTest(flag=flag):
                 self.assertIn(f"{flag} ", args.replace('"', " "))
 
+    def test_restore_test_stays_in_a_private_tmp(self):
+        unit = (UNITS / "restic-restore-test.service.j2").read_text()
+        dests = [t["dest"] for t in play()["vars"]["restic_templates"]]
+        self.assertIn("/etc/systemd/system/restic-restore-test.service", dests)
+        self.assertIn("PrivateTmp=yes", unit)
+        self.assertIn("ProtectSystem=strict", unit)
+        self.assertIn("--target /tmp/restore", unit)
+        self.assertIn("ExecStart=/usr/bin/diff -r", unit)
+        self.assertNotIn("AmbientCapabilities=CAP_DAC_OVERRIDE", unit)
+
     def test_init_never_overwrites_a_repository(self):
         init = (UNITS / "restic-init.service.j2").read_text()
         self.assertIn("ConditionPathExists=!{{ restic_repository }}/config", init)
