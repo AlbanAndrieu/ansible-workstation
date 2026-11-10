@@ -152,6 +152,10 @@ check_openclaw() {
     info "${OPENCLAW_UNIT} not installed for this user; skipped"
     return
   fi
+  if ! systemctl --user is-enabled --quiet "${OPENCLAW_UNIT}"; then
+    info "${OPENCLAW_UNIT} disabled: the gateway runs on TrueNAS (nabla-openclaw)"
+    return
+  fi
   if ! parse_openclaw; then
     warn "${OPENCLAW_UNIT} has no effective ExecStart"
     return
@@ -221,6 +225,11 @@ repair_openclaw() {
   local node_dir
   if ! have systemctl || ! systemctl --user cat "${OPENCLAW_UNIT}" >/dev/null 2>&1; then
     info "${OPENCLAW_UNIT} not installed for this user; nothing to repair"
+    return
+  fi
+  # A restart would start a second gateway polling the same Telegram and WhatsApp accounts.
+  if ! systemctl --user is-enabled --quiet "${OPENCLAW_UNIT}"; then
+    info "${OPENCLAW_UNIT} disabled (gateway on TrueNAS); not modified"
     return
   fi
   parse_openclaw || refuse "${OPENCLAW_UNIT} has no effective ExecStart"

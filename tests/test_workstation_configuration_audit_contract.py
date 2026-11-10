@@ -132,7 +132,7 @@ class TestDeclaredPolicy(unittest.TestCase):
 
     def test_baseline_change_is_not_non_compliance(self):
         report = matching_report(self.policy)
-        report["user_units"]["openclaw-gateway.service"]["ActiveState"] = "inactive"
+        report["user_units"]["openclaw-gateway.service"]["ActiveState"] = "active"
         result = audit.compare(report, self.policy)
         self.assertEqual(result["status"], "changed_since_baseline")
 
