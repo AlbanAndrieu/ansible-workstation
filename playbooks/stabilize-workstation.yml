@@ -70,7 +70,9 @@
     stabilize_hdd_ids:
       - ata-ST2000DM008-2FR102_WFL2X890
       - ata-ST2000DM008-2UB102_ZFL8X7CP
-    # Copied to /etc/apache2 as is (the site checkout was the 8082 document root).
+    # Copied to /etc/apache2 (the site checkout was the 8082 document root). Captures under
+    # files/etc keep @@INTERNAL@@ for private addresses; it is rendered from this value.
+    stabilize_apache_probe_source: 172.17.0.1
     stabilize_apache_files:
       - apache2.conf
       - conf-available/security.conf
@@ -456,7 +458,9 @@
 
     - name: Serve only public/, never dotfiles or phpinfo, and drop the pfSense probes from the logs
       ansible.builtin.copy:
-        src: "{{ playbook_dir | dirname }}/files/etc/apache2/{{ item }}"
+        content: >-
+          {{ lookup('ansible.builtin.file', playbook_dir | dirname ~ '/files/etc/apache2/' ~ item, rstrip=false)
+             | replace('@@INTERNAL@@', stabilize_apache_probe_source) }}
         dest: "/etc/apache2/{{ item }}"
         owner: root
         group: root
