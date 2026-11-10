@@ -26,6 +26,9 @@
       - nvidia-persistence.service
       - ollama.service
       - snmp_exporter.service
+    # Git keeps no mode and the checkout umask gives 0664: /etc modes are set here instead.
+    etc_restore_modes:
+      ufw/after.rules: "0640"
     # target_dir of /etc/motion/motion.conf; the motion user is not in its owning group.
     etc_restore_motion_target_dir: /home/albandrieu/Dropbox/motion
     etc_restore_write: "{{ etc_restore_apply | bool and etc_restore_apply_approved | bool }}"
@@ -79,7 +82,7 @@
         dest: "/etc/{{ item }}"
         owner: root
         group: root
-        mode: preserve
+        mode: "{{ etc_restore_modes[item] | default('0644') }}"
         backup: true
       loop: "{{ etc_restore_files }}"
       register: etc_restore_copy

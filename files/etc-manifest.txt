@@ -19,6 +19,7 @@
 /etc/crowdsec/console.yaml
 /etc/default/grub
 /etc/default/ufw
+/etc/default/zramswap
 /etc/ufw/after.rules
 /etc/gdm3/custom.conf
 /etc/glances/glances.conf
