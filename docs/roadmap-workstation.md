@@ -15,8 +15,8 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + `changed=0` | **ACCEPTED** : 60/60, `ok=14 changed=0` ; sondes passées par un exécuteur unique fail-closed ; [preuves](audit-workstation.md) |
 | [Visibilité Docker/nftables/iptables sans privilèges, lecture privilégiée optionnelle](audit-workstation-network.md) | Lecture locale, `sudo -n` fixe, aucune donnée brute | **ACCEPTED** : 68/68 et 77/77 tests ; sauts DOCKER-USER : **CODE ADDED** |
 | [Sockets TCP/UDP par portée d'écoute, IPv6 zoné](audit-workstation-network.md) | Rapport agrégé sans ports ni adresses | **ACCEPTED** : 95/95 tests, `unknown=0` |
-| [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ** : ufw actif au boot (3/11), INPUT/FORWARD en DROP ; règles historiques ouvertes à tous et synergy/deskflow limités au LAN dans le code, **à rejouer** |
-| Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **PARTIEL** : postgres/redis publiés sur `127.0.0.1` par nabla-compose ; LiteLLM 4000 et Grafana 3009 restent sur toutes les interfaces ; WAN `not_verified` |
+| [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ** : ufw actif au boot (3/11), INPUT/FORWARD en DROP ; relevé du 10/11 : 18 règles, aucune ouverte à tous, synergy/deskflow limités au LAN |
+| Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **PARTIEL** : postgres/redis publiés sur `127.0.0.1` par nabla-compose ; LiteLLM 4000 et Grafana 3009 restent sur `0.0.0.0` (revu le 10/11) ; WAN `not_verified` |
 | [Mesures TCP par allowlist privée local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, observateurs séparés | **LOCAL ACCEPTED** 2/2 ; LAN partiel ; WAN différé (aucun observateur externe) |
 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; aucun apply global | À faire |
 
@@ -27,7 +27,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)**, vérifiée le 10/11 ; 4 bis (zram) appliquée le 10/11 ; étapes 1 à 7 à faire |
 | [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **CODE ADDED** ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement |
 | Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** |
-| [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **CODE ADDED** : timer quotidien, alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter |
+| [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **APPLIQUÉ** : timer quotidien, dernière sauvegarde réussie le 10/11 à 00:39, `restic check` hebdomadaire réussi le 9/11 ; alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter ; restauration isolée et copie indépendante à prouver |
 | [Capture /etc et paquets, restauration](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets et adresses internes expurgés (`@@SECRET@@`, `@@INTERNAL@@`), point fixe testé | **CODE ADDED** : restauration jamais appliquée |
 | [Comparer état observé et `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Dérive classée, sans secrets | **CODE ADDED** |
 | Nettoyer `tasks/security.yml` et unattended-upgrades | Pas de `dpkg-reconfigure` ni écrasement de conffile | **CODE ADDED** : drop-in `52unattended-upgrades-workstation`, tâches apt modernes |
@@ -55,8 +55,8 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
   conservation chiffrée ; garder une copie indépendante de TrueNAS.
 - **Pas de CI payante ni de fusion automatique.** Tests de contrat en local (`mise run test-offline`),
   PR revues par l'opérateur.
-- **Suivant :** rejouer `harden-network.yml` (règles historiques), mesurer depuis TrueNAS les ports
-  Docker encore publiés sur toutes les interfaces, puis l'étape 1 du stockage.
+- **Suivant :** mesurer depuis TrueNAS LiteLLM 4000 et Grafana 3009, encore publiés sur toutes les
+  interfaces, finir la mesure zram sur 24 h, puis l'étape 1 du stockage.
 
 ## 30 octobre 2026 — skills Ansible et acceptation DNS
 
@@ -137,4 +137,4 @@ de 312 646 à 312 856 cycles de têtes depuis le 8/11 ; reste à mesurer le ryth
 
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
-| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter) |
+| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter ; 5,6 Gio le soir du 10/11, zram 10 Gio) |
