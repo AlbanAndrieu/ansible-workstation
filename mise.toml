@@ -108,6 +108,10 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook
 description = "Read-only redacted /etc presence, DNS link and systemd unit status audit; no sudo or apply"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-configuration.py --json"
 
+[tasks.audit-inventory]
+description = "Read-only system inventory JSON v1 with source and UTC date per field; no sudo"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-inventory.py --format json"
+
 [tasks.capture-etc]
 description = "Copy /etc files listed in files/etc-manifest.txt into files/etc with secrets redacted; no sudo"
 run = "bash scripts/capture-etc.sh"

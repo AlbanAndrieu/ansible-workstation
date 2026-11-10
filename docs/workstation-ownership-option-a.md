@@ -27,7 +27,7 @@ inventaire observé (facts filtrés) ─────┘          │
 
 L'inventaire contient *seulement* les attributs allowlistés. Les faits complets Ansible ou les fichiers `/etc` bruts peuvent dévoiler identité, adresses, secrets et tokens : ils ne doivent jamais être committés, envoyés en CI ou inclus dans un rapport public.
 
-Le prototype `dotfiles/bin/inspect-workstation-system.py` est conservé comme compatibilité. Le collecteur canonique sera déplacé ici après un test d'équivalence JSON v1, puis `dotfiles` pourra fournir un wrapper. Ne pas dupliquer des sondes Python si `ansible.builtin.setup`, `package_facts`, `service_facts` ou `stat` fournissent déjà la valeur.
+Le collecteur canonique de l'inventaire JSON v1 est [`scripts/audit-workstation-inventory.py`](../scripts/audit-workstation-inventory.py) depuis le 10 novembre 2026 ; sa sortie est identique à celle du prototype `dotfiles/bin/inspect-workstation-system.py`, plus la source et la date de chaque champ. Le prototype reste dans `dotfiles` jusqu'à ce qu'un wrapper le remplace. Ne pas dupliquer des sondes Python si `ansible.builtin.setup`, `package_facts`, `service_facts` ou `stat` fournissent déjà la valeur.
 
 ## YubiKey : frontière clarifiée
 

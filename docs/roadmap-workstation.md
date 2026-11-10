@@ -37,7 +37,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [Réparation de la toolchain utilisateur](user-toolchain-recovery.md) | `check` par défaut, OpenClaw épinglé | **ACCEPTED (10/11)** : `toolchain-check` sans problème ; une gateway désactivée n'est plus une erreur, et `toolchain-repair` ne la redémarre plus (deux gateways interrogeraient les mêmes comptes Telegram et WhatsApp) |
 | [OpenClaw : audit de la source Workstation, cible TrueNAS](openclaw-workstation-to-truenas.md) | Contrats offline, aucune mutation | **BASCULE FAITE le 3/11** par `nabla-openclaw` : gateway de la station arrêtée et désactivée, gardée pour le retour arrière |
 | [Extraire le code Workstation de nabla-compose](migration-from-nabla-compose-20261030.md) | Équivalence des sondes, secrets hors dépôt | **PREPARED / NO CUTOVER** |
-| Transférer l'inventaire JSON v1 de dotfiles ici | Collecteur unique, date/source par champ | À faire |
+| [Transférer l'inventaire JSON v1 de dotfiles ici](audit-workstation.md#inventaire-système-json-v1) | Collecteur unique, date/source par champ | **CODE ADDED (10/11)** : `mise run audit-inventory`, sans sudo ; sur la station, même JSON v1 que dotfiles, plus `provenance` (source et date UTC de chaque champ, vérifiées par test de contrat). Reste : remplacer le collecteur dotfiles par un wrapper, pour qu'il n'en reste qu'un |
 | Profil minimal des paquets/services opt-in ; retirer les vieilles distributions | `--check` non destructif, idempotence, rollback | À faire |
 
 ## P2

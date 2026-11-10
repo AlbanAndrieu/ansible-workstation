@@ -21,6 +21,7 @@ SPEC.loader.exec_module(COMMON)
 RUNNERS = (
     "audit-openclaw-source.py",
     "audit-workstation-configuration.py",
+    "audit-workstation-inventory.py",
     "audit-workstation-listeners.py",
     "audit-workstation-network.py",
     "audit-workstation-network-privileged.py",

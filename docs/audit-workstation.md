@@ -80,6 +80,34 @@ avec Docker. `ip_forward=1` est une observation, pas une instruction de
 désactivation. Un montage présent ne prouve ni RAID1 sain ni sauvegarde.
 Une version de paquet installée ne prouve pas l'absence de vulnérabilité.
 
+## Inventaire système JSON v1
+
+[`scripts/audit-workstation-inventory.py`](../scripts/audit-workstation-inventory.py)
+est le collecteur canonique du schéma `workstation-system-inventory/v1`, porté
+de `dotfiles/bin/inspect-workstation-system.py` le 10 novembre 2026 : mêmes
+champs (OS, matériel, montages attendus, LUKS, UEFI/Secure Boot/TPM, sysctl,
+unités systemd, versions de paquets), sans sudo, sortie sur le terminal seulement.
+
+```bash
+mise run audit-inventory
+.venv/bin/python -B scripts/audit-workstation-inventory.py
+```
+
+La première commande sort le JSON, la seconde un résumé lisible. La clé
+`provenance` reprend l'arborescence des champs v1 et donne pour chacun `source`
+(fichier lu ou commande exacte) et `observed_at` (UTC, à la seconde) ;
+[`tests/test_workstation_inventory_contract.py`](../tests/test_workstation_inventory_contract.py)
+vérifie que chaque champ en a une. Les commandes passent par
+`audit_common.run_fixed` ; l'état des unités vient de `systemctl show`
+(`ActiveState`, `UnitFileState`), qui donne les mêmes valeurs que
+`is-active`/`is-enabled`.
+
+Équivalence vérifiée le 10/11 sur la station : hors `provenance`, sortie
+identique à celle du collecteur dotfiles. Limites conservées du v1 : un `lsblk`
+en échec donne des montages à `false`, pas `unknown`, et un paquet supprimé dont
+la configuration reste (`rc`) garde sa version. Services, paquets, sysctl et
+montages recoupent ce playbook.
+
 ## Sécurité et limites
 
 - L'audit **n'exécute pas** `workstation.yml` ni de playbook d'apply.
