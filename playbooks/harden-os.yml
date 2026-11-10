@@ -61,6 +61,8 @@
       net.ipv6.conf.default.max_addresses: 16
     # sshd is installed but unused: harden its config, keep the service off.
     ssh_server_service_enabled: false
+    # Its "Restart sshd" handler started sshd on the 10 Nov apply: no restart at all.
+    ssh_server_enabled: false
     # Client config is the ssh_config.d drop-in (FIDO keys, agent): not rewritten.
     ssh_client_hardening: false
 
@@ -76,3 +78,10 @@
   roles:
     - devsec.hardening.os_hardening
     - devsec.hardening.ssh_hardening
+
+  post_tasks:
+    # The role only sets the boot state: an sshd started earlier keeps running.
+    - name: Keep sshd stopped
+      ansible.builtin.systemd_service:
+        name: ssh.service
+        state: stopped

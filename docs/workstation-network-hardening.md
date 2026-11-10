@@ -121,8 +121,29 @@ mise run harden-os-check   # simulation --diff, sudo demandé
 ```
 
 Retour arrière : pas de rollback automatique ; les fichiers de `/etc` capturés dans `files/etc`
-servent de référence. **RUNTIME NOT VERIFIED** : simulation seulement.
+servent de référence. Appliqué le 10 novembre 2026 (voir plus bas).
 
 Simulation du 10 novembre 2026, avec les deux réglages ci-dessus : `ok=125 changed=35 failed=0`. Les
 dossiers personnels ne changent plus ; `/etc/modprobe.d/dev-sec.conf` ne bloque plus que les modules
 listés.
+
+**Appliqué le 10 novembre 2026 à 22:18** : `ok=130 changed=38 failed=0 ignored=1`. La tâche ignorée
+(« Find files with write-permissions for group ») l'est par le rôle lui-même. Vérifié juste après :
+
+- `nis` et `ypserv` purgés, auditd actif ;
+- `/dev` et `/dev/shm` en `nosuid,noexec` ;
+- les 35 montages squashfs et `snap run` fonctionnent ; `dev-sec.conf` ne bloque ni `squashfs` ni `vfat` ;
+- sysctl gardés (`ip_forward=1`, `rp_filter=2`, `unprivileged_userns_clone=1`, `sysrq=176`) ;
+- aucune unité en échec ; Apache, ollama, node_exporter, LiteLLM, Grafana et les 11 conteneurs répondent ;
+- journald toujours à `SystemMaxUse=2G` ;
+- `--check` avec les drapeaux d'apply : `changed=1`, seulement « Keep sshd stopped » (point suivant).
+
+Deux suites :
+
+- **sshd démarré à tort** : le handler « Restart sshd » du rôle tourne tant que `ssh_server_enabled`
+  est vrai, même avec le service désactivé au boot. sshd écoutait sur `0.0.0.0:22` (bloqué par ufw).
+  Le playbook fixe maintenant `ssh_server_enabled: false` et arrête `ssh.service` en `post_tasks`.
+- **`UMASK 027`** (`login.defs`, appliqué par `pam_umask` à la prochaine connexion) : les nouveaux
+  fichiers seront en `0640` dans le groupe de l'utilisateur. La racine Apache
+  (`/media/www/nabla-site-apache`, groupe `www-data`, sans setgid) ne pourra plus les lire : poser le
+  bit setgid sur ses dossiers, ou y travailler en `umask 002`.

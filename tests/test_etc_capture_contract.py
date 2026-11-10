@@ -235,6 +235,11 @@ class OsHardeningContract(unittest.TestCase):
         self.assertIs(v["ssh_server_service_enabled"], False)
         self.assertIs(v["ssh_client_hardening"], False)
 
+    def test_sshd_is_never_started(self):
+        self.assertIs(self.play["vars"]["ssh_server_enabled"], False)
+        stop = self.play["post_tasks"][0]["ansible.builtin.systemd_service"]
+        self.assertEqual(stop, {"name": "ssh.service", "state": "stopped"})
+
     def test_snaps_and_efi_filesystems_stay_loadable(self):
         blocked = self.play["vars"]["os_unused_filesystems"]
         self.assertNotIn("squashfs", blocked)
