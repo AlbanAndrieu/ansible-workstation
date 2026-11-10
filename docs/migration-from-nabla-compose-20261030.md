@@ -123,8 +123,8 @@ Comparés par `ast.dump`, `recover-split-dns-nta.py`, `accept-private-nta-dispat
 Les trois autres ne diffèrent que sur la forme : `homelab-split-dns.py` renvoie à
 `mise run workstation-nss-path` au lieu de `just`, `diagnose-nss-resolution.py` remplace une
 lambda par un `def`, et `diagnose-dnssec-chain.py` extrait deux variables pour la même sortie.
-Prochaine étape, dans nabla-compose : retirer ces six scripts et leurs recettes, en renvoyant vers
-ce dépôt.
+Côté nabla-compose, la [PR #346](https://github.com/AlbanAndrieu/nabla-compose/pull/346) retire
+ces six scripts et leurs recettes en renvoyant vers ce dépôt (rebasée le 11 novembre, à fusionner).
 
 Restent dans Compose : LiteLLM/FastAPI, CrowdSec/pfSense, DefectDojo,
 Nexus et les scripts OpenClaw (cible `nabla-openclaw`).
