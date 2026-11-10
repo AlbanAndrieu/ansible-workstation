@@ -71,6 +71,24 @@ choisie (question 4).
 
 Attendu au `--check` : `changed=1`, seul `52unattended-upgrades-workstation` est créé.
 
+### Retour arrière ciblé (P2, pipeline audit → plan → apply)
+
+`restore-etc.yml` prend `etc_restore_only` : il restaure ces seuls fichiers depuis la capture,
+garde une copie datée de ce qu'il remplace, et ne touche ni aux unités ni à motion. Test sur un
+fichier sans risque : on dérègle la taille de journald, puis on la rétablit.
+
+```bash
+sudo sed -i 's/^SystemMaxUse=2G$/SystemMaxUse=1G/' /etc/systemd/journald.conf.d/size.conf
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-etc.yml -e '{"etc_restore_only": ["systemd/journald.conf.d/size.conf"]}'
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-etc.yml -e '{"etc_restore_only": ["systemd/journald.conf.d/size.conf"]}' -e etc_restore_apply=true -e etc_restore_apply_approved=true -K
+grep SystemMaxUse /etc/systemd/journald.conf.d/size.conf
+```
+
+Attendu :
+- la première passe liste le fichier dans `would_change_or_changed` ;
+- après l'apply, `SystemMaxUse=2G` est revenu, et une seconde passe rend une liste vide ;
+- la copie datée (`size.conf.<horodatage>~`) reste à côté : journald ne lit que les `*.conf`.
+
 ### Hôte Zabbix de la workstation
 
 `ZABBIX_API_TOKEN` n'est pas exporté dans le shell : `zabbix-host-check` ne peut pas lire l'API.
@@ -105,19 +123,26 @@ mise run zabbix-host-check
    choisir), ou `MAILTO=""` et rediriger vers `logger` ?
 9. **Howdy** : l'apply écrit `disabled = true` dans sa configuration ; l'activation PAM reste à
    nabla-yubikey. Appliquer ?
-10. **Lot « vieilles distributions »** : 49 fichiers indexés dans ce checkout, à relire puis
-    commiter (le commit n'est pas le mien).
+10. **Lot « vieilles distributions »** : 51 fichiers indexés dans ce checkout (dont le correctif du
+    cron clamav-cleanup d'une autre session), à relire puis commiter (le commit n'est pas le mien).
+11. **Profil minimal opt-in** : `tasks/workstation.yml` importe sans condition ses 50 fichiers de
+    tâches, et chacun dépend de ses propres `*_enabled` (68 dans `defaults/main.yml`). Proposition :
+    une variable `workstation_profile: minimal` qui n'importe que sécurité, réseau, git, éditeur,
+    Python, conteneurs, sauvegarde et réglages système, tout le reste restant opt-in. Quel
+    périmètre ? Ces fichiers sont dans le lot de la question 10 : il faut le commiter d'abord.
+12. **Scripts OpenClaw de nabla-compose** : 59 scripts restent dans `scripts/workstation/` (et 3
+    dans `scripts/truenas/`). Ils servent la gateway du poste, arrêtée depuis la bascule du 3/11 et
+    gardée seulement pour le retour arrière. Les retirer de nabla-compose une fois ce retour arrière
+    abandonné, ou porter ceux qui servent encore vers `nabla-openclaw` ?
 
 ## 3. Hors de ce dépôt
 
-- **dotfiles** : remplacer `bin/inspect-workstation-system.py` par un wrapper vers
-  `scripts/audit-workstation-inventory.py`, pour qu'il ne reste qu'un collecteur. Le checkout
-  `~` est sur `chore/workstation-agents-20261031`, avec des changements non commités de
-  l'opérateur : à faire sur une branche propre.
+- **dotfiles** : `bin/inspect-workstation-system.py` est devenu un wrapper vers
+  `scripts/audit-workstation-inventory.py` (même JSON, `provenance` en plus, et même résumé), avec
+  ses tests et ses docs. Le travail est indexé, pas commité, sur la branche
+  `refactor/inventory-wrapper-20261111`, créée depuis `main` ; tes changements non commités l'ont
+  suivie tels quels. Reste à commiter puis ouvrir la PR.
 - **nabla-compose PR #346** : rebasée le 11/11. Elle retire les six diagnostics du lot 1, qui ne
   vivront plus qu'ici. À relire puis fusionner.
-- **P2, scripts OpenClaw/TrueNAS** : l'API de sonde entre `nabla-openclaw` et `nabla-compose` se
-  décide dans ces deux dépôts.
-- **P2, pipeline audit → plan → apply** : chaque playbook a déjà son plan par défaut et sa double
-  approbation. Il manque un retour arrière éprouvé, ce qui demande un apply réel puis un
-  `git revert` réappliqué : à planifier avec l'opérateur.
+- **P2, scripts OpenClaw/TrueNAS** : voir la question 12. L'API de sonde entre `nabla-openclaw`
+  et `nabla-compose` se décide dans ces deux dépôts.

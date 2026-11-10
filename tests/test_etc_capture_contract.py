@@ -139,6 +139,21 @@ class EtcCaptureContract(unittest.TestCase):
         self.assertIs(copy["ansible.builtin.copy"]["backup"], True)
         self.assertEqual(copy["check_mode"], "{{ not etc_restore_write }}")
 
+    def test_targeted_rollback_touches_nothing_else(self):
+        p = play()
+        self.assertEqual(p["vars"]["etc_restore_only"], [])
+        for task in p["tasks"]:
+            if task.get("become") is True:
+                with self.subTest(task=task["name"]):
+                    self.assertIn("etc_restore_only | length == 0", task["when"])
+        names = [t["name"] for t in p["tasks"]]
+        self.assertLess(
+            names.index("Refuse a requested path that is not restorable"),
+            names.index(
+                "Restore files, keeping a timestamped backup of what they replace",
+            ),
+        )
+
     def test_not_imported_by_legacy_playbook(self):
         legacy = (ROOT / "playbooks/workstation.yml").read_text()
         self.assertNotIn("restore-etc", legacy)
