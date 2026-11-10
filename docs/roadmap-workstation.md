@@ -2,7 +2,8 @@
 
 **Périmètre :** seulement `ansible-workstation`. Contrat : [Option A](workstation-ownership-option-a.md). La vue homelab/YubiKey reste dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/blob/master/docs/roadmap-workstation-yubikey.md) ; shell utilisateur dans [dotfiles](https://github.com/AlbanAndrieu/dotfiles/blob/main/docs/roadmap-workstation.md).
 
-**Consolidée le 10 novembre 2026** (rebase de la PR #20 sur `master` après la PR #18).
+**Consolidée le 10 novembre 2026** (rebase de la PR #20 sur `master` après la PR #18, puis
+application de `restic-backup`, `harden-network` et `stabilize-workstation` le même jour).
 Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté sur la station ;
 **CODE ADDED** = code et contrats offline, runtime non vérifié ; **À faire**.
 
@@ -15,7 +16,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [`playbooks/audit-workstation.yml`](../playbooks/audit-workstation.yml), distinct de `workstation.yml` | Tests Python + `mise run audit-syntax` + `changed=0` | **ACCEPTED** : 60/60, `ok=14 changed=0` ; sondes passées par un exécuteur unique fail-closed ; [preuves](audit-workstation.md) |
 | [Visibilité Docker/nftables/iptables sans privilèges, lecture privilégiée optionnelle](audit-workstation-network.md) | Lecture locale, `sudo -n` fixe, aucune donnée brute | **ACCEPTED** : 68/68 et 77/77 tests ; sauts DOCKER-USER : **CODE ADDED** |
 | [Sockets TCP/UDP par portée d'écoute, IPv6 zoné](audit-workstation-network.md) | Rapport agrégé sans ports ni adresses | **ACCEPTED** : 95/95 tests, `unknown=0` |
-| [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ** : ufw actif au boot (3/11), INPUT/FORWARD en DROP ; règles historiques ouvertes à tous et synergy/deskflow limités au LAN dans le code, **à rejouer** |
+| [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ, rejoué le 10/11** (`changed=1`) : ufw actif au boot, INPUT/FORWARD en DROP ; règles historiques ouvertes à tous supprimées, synergy/deskflow limités au LAN, 9100 réservé à TrueNAS |
 | Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **PARTIEL** : postgres/redis publiés sur `127.0.0.1` par nabla-compose ; LiteLLM 4000 et Grafana 3009 restent sur toutes les interfaces ; WAN `not_verified` |
 | [Mesures TCP par allowlist privée local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, observateurs séparés | **LOCAL ACCEPTED** 2/2 ; LAN partiel ; WAN différé (aucun observateur externe) |
 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; aucun apply global | À faire |
@@ -24,10 +25,10 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 
 | Livrable | Gate de validation | Statut |
 | --- | --- | --- |
-| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)** ; étapes 1 à 7 à faire |
-| [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **CODE ADDED** ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement |
-| Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** |
-| [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **CODE ADDED** : timer quotidien, alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter |
+| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)** ; [relevé du 10/11](#10-novembre-2026--disques-et-montages-nfs) : la swap devient le premier chantier |
+| [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **APPLIQUÉ (10/11)** (`changed=2`) ; 12 automounts `media-*` actifs ; `ARGS` de node_exporter partagé avec `restic-backup.yml` sans aller-retour (contrat) |
+| Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** : plans du 6/11 jamais appliqués (accès SSH TrueNAS requis) |
+| [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **APPLIQUÉ** : dernière réussite le 10/11 à 00:39 (dépôt 12,7 Gio) ; Prometheus TrueNAS `up=1`, `ResticBackupStale` inactive ; heartbeat OpenClaw (hôte, postgres/redis, âge du backup). Restauration isolée et copie indépendante **à faire** |
 | [Capture /etc et paquets, restauration](workstation-configuration-capture.md#capture-du-contenu-31-octobre-2026) | Secrets et adresses internes expurgés (`@@SECRET@@`, `@@INTERNAL@@`), point fixe testé | **CODE ADDED** : restauration jamais appliquée |
 | [Comparer état observé et `policies/home-desktop.yml`](workstation-configuration-capture.md#politique-déclarée-et-dérive) | Dérive classée, sans secrets | **CODE ADDED** |
 | Nettoyer `tasks/security.yml` et unattended-upgrades | Pas de `dpkg-reconfigure` ni écrasement de conffile | **CODE ADDED** : drop-in `52unattended-upgrades-workstation`, tâches apt modernes |
@@ -55,8 +56,9 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
   conservation chiffrée ; garder une copie indépendante de TrueNAS.
 - **Pas de CI payante ni de fusion automatique.** Tests de contrat en local (`mise run test-offline`),
   PR revues par l'opérateur.
-- **Suivant :** rejouer `harden-network.yml` (règles historiques), mesurer depuis TrueNAS les ports
-  Docker encore publiés sur toutes les interfaces, puis l'étape 1 du stockage.
+- **Suivant :** zram à la place de la swap sur `sda` (étape S1), purge des dossiers `*-TODELETE`
+  de `/data` (S2), appliquer `truenas-nfs-shares.yml`, puis l'étape 1 du stockage. Mesurer depuis
+  TrueNAS les ports Docker encore publiés sur toutes les interfaces.
 
 ## 30 octobre 2026 — skills Ansible et acceptation DNS
 
@@ -122,3 +124,72 @@ Partitions NVMe inutilisées :
 Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
 moins par écriture. Pas retenus : `noatime` (gain négligeable face à `relatime`), zram (aucun
 swap-out mesuré, à revoir si la swap se remet à écrire).
+
+## 10 novembre 2026 — disques et montages NFS
+
+Relevé après 158 h de fonctionnement (`/sys/block/*/stat`, `/proc/vmstat`, `du -x`, métriques
+`smartmon_` et `nvme_` de `:9100`). En rouge ce qui use ou encombre, en vert l'espace libre.
+
+```mermaid
+flowchart LR
+  subgraph SDA["sda · Samsung 860 500 Go SATA · usure 66 % · 117 To écrits · 46,6 Gio/jour"]
+    sda1["sda1 vfat 512 Mo · ancien EFI, non monté"]
+    sda2["sda2 /boot 704 Mo · 38 %"]
+    subgraph ROOT["sda3 LUKS → vgubuntu/root · / 456 Go · 75 %"]
+      home["/home 148 Go · .config/Claude 23 Go dont vm_bundles 21 Go · .cache 25 Go dont pre-commit 15 Go · profils Chrome, Claude, ChatGPT"]
+      usr["/usr 71 Go · /opt 17 Go"]
+      var["/var 40 Go · flatpak 17 Go · snapd 7,5 Go"]
+      swap["/swapfile 16 Go · 7,4 Go utilisés · 3,5 Gio écrits par jour → S1 zram"]
+      mnt["/mnt 16 Go · sauvegardes Jenkins 2021 · /mnt/cpool 1,2 Go hors NFS"]
+    end
+  end
+  subgraph NVME["nvme0n1 · Samsung 970 PRO 1 To · usure 0 % · 5,9 To écrits · 10 Gio/jour"]
+    p1["p1 /boot/efi 512 Mo"]
+    p2["p2 196 Go ext4 · Ubuntu 21.04 de 2021, non monté"]
+    p3["p3 → vg-nvme0n1 · /workspace 297 Go · 64 % · non chiffré"]
+    p4["p4 → vg-docker · /docker et containerd 144 Go · 32 % · non chiffré"]
+    p5["p5 187 Go LUKS2 · jamais ouvert, phrase inconnue"]
+  end
+  subgraph HDD["sdb + sdc · 2 × Seagate 2 To · vg-sata RAID1"]
+    data["/data 500 Go · 36 % · music-TODELETE 95 Go · photo-TODELETE 53 Go · models/ollama 20 Go"]
+    free["2,66 To non alloués"]
+  end
+  subgraph NAS["TrueNAS nabla · cpool · NFSv4 automount, 5 min d'inactivité, 20 s de délai"]
+    nfs["12 partages : backup, model, www, home, share, photo, music, ftp, bitcoin, nexus, nexus3, bababou"]
+  end
+  data -. "S2 : déjà sur cpool ?" .-> nfs
+  p2 -. "étapes 1 et 3 : /home sur le NVMe" .-> home
+  nfs -. "S6 : restic copy" .-> free
+
+  classDef hot fill:#f8d7da,stroke:#b02a37,color:#000
+  classDef spare fill:#d1e7dd,stroke:#146c43,color:#000
+  class swap,home,mnt,data hot
+  class p2,p5,free spare
+```
+
+| Disque | Constat du 10/11 | Écart avec le 8/11 |
+| --- | --- | --- |
+| `sda` | 46,6 Gio écrits par jour ; la swap en écrit 3,5 (`pswpout`) alors que 41 Gio de RAM restent disponibles (`swappiness` 10) | Toujours 48 Gio/jour : l'étape 0 a libéré de la place, pas des écritures |
+| `nvme0n1` | 10 Gio/jour ; `p3` et `p4` (`/workspace`, `/docker`) sont en LVM sans LUKS : dépôts, `.env` et volumes Docker en clair | `p2` et `p5` toujours inutilisées (382 Go) |
+| `sdb` | 3 166 h seulement : disque récent, contrairement à `sdc` (32 103 h) | Le RAID1 n'est pas « deux vieux disques » |
+| `sdc` | 312 856 cycles de têtes, **+1 en 24 h** : `apm = 254` a arrêté le parcage | Corrigé par l'étape 0 |
+| `/data` | 148 Go sur 166 sont `music-TODELETE` et `photo-TODELETE` (2020) ; le reste, les modèles ollama | — |
+
+Montages NFS : les 12 entrées de `fstab` sont en `x-systemd.automount` ; seuls `/media/backup`
+(restic), `/media/www` (apache, via `/var/www/nabla-site-*`) et `/media/model` étaient montés.
+`/media/model/ollama` (36 Go) double `/data/models/ollama` (20 Go). `showmount` ne répond plus
+(NFSv4 seul) : l'état des partages côté TrueNAS reste celui du plan du 6/11, non appliqué.
+
+| Étape | Quoi | Gain | Gate | Statut |
+| --- | --- | --- | --- | --- |
+| S1 | zram (`zram-generator`, zstd, 16 Gio, priorité 100) ; `/swapfile` retiré ensuite | −3,5 Gio/jour sur `sda`, 16 Go rendus à `/` | `pswpout` du `/swapfile` à 0 sur 7 jours, aucun OOM | À faire |
+| S2 | Vérifier `music-TODELETE` et `photo-TODELETE` contre `cpool/media/{music,photo}` (`rsync -n --checksum`), puis les supprimer | 148 Go sur `/data` | Aucun fichier propre à la copie locale | À faire |
+| S3 | Caches régénérables de `/home` : `~/.cache/pre-commit` (15 Go), `flatpak uninstall --unused` (17 Go dans `/var/lib/flatpak`) | ~20 Go sur `/` | [`workstation-cleanup.sh`](../scripts/workstation-cleanup.sh) en `check` d'abord | À faire |
+| S4 | Archiver `/mnt/jenkins-15-06-2021` et `/mnt/jenkins` (15 Go) sur `/media/backup`, vider `/mnt/cpool` (1,2 Go écrits hors NFS) | 16 Go sur `/` | Somme `sha256` relue avant effacement | À faire |
+| S5 | Modèles : source sur TrueNAS (`/media/model`), copie de travail sur le LV `models` NVMe (étape 5) ; `/data/models` retiré | Chargement à froid plus rapide | Mesure `qwen3.5:4b` avant/après | À faire, après l'étape 3 |
+| S6 | Copie restic indépendante de TrueNAS : `restic copy` vers un LV de `vg-sata` (2,66 To libres, RAID1) | Répond à la règle « copie indépendante » | `restic check` sur les deux dépôts, restauration isolée | À faire |
+| S7 | Chiffrer `/workspace` et `/docker` : à l'étape 3, déplacer leurs LV dans `vg-nvme-crypt` (`pvmove`), puis passer `p3` et `p4` en LUKS | Plus de secrets en clair sur le NVMe | `lsblk` : chaque LV sous un `crypt` | À faire, devant la machine |
+
+Ordre proposé : S1, S2 et S3 tout de suite (sans risque, réversibles) ; puis les étapes 1 à 4 du
+9/11 avec S7 ; S5 et S6 ensuite. Après S1 et l'étape 4, `sda` ne devrait plus écrire que pour le
+système.

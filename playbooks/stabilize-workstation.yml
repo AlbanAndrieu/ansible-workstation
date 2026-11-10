@@ -40,11 +40,8 @@
     # The TrueNAS heartbeat and morning brief read CPU, RAM, disk and failed units from this exporter.
     stabilize_node_exporter_flags:
       # smartmon, nvme and apt timers write here.
+      # cpu, meminfo, loadavg and filesystem are defaults since restic-backup.yml dropped disable-defaults.
       - --collector.textfile.directory=/var/lib/prometheus/node-exporter
-      - --collector.cpu
-      - --collector.meminfo
-      - --collector.loadavg
-      - --collector.filesystem
       - --collector.systemd
     # No other probe covers the workstation Redis and Postgres (nabla-compose).
     stabilize_health_containers:

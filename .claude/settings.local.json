@@ -1,1 +1,8 @@
-{ "sandbox": { "enabled": false } }
+{
+	"sandbox": {
+		"enabled": false
+	},
+	"permissions": {
+		"allow": ["Read(//workspace/users/albandrieu30/nabla-compose/**)"]
+	}
+}

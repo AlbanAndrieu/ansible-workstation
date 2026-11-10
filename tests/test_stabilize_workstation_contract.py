@@ -41,8 +41,12 @@ class StabilizeWorkstationContracts(unittest.TestCase):
 
     def test_node_exporter_feeds_the_truenas_heartbeat(self):
         flags = play()["vars"]["stabilize_node_exporter_flags"]
-        for collector in ("cpu", "meminfo", "loadavg", "filesystem", "systemd"):
-            self.assertIn(f"--collector.{collector}", flags)
+        self.assertIn("--collector.systemd", flags)
+        # Both playbooks write ARGS: each flag here must already be in the restic file.
+        restic = (ROOT / "files/restic/prometheus-node-exporter.default").read_text()
+        self.assertNotIn("--collector.disable-defaults", restic)
+        for flag in flags:
+            self.assertRegex(restic, rf'[" ]{re.escape(flag)}[ "]')
 
     def test_nfs_mounts_on_access_and_gives_up_when_truenas_is_down(self):
         opts = play()["vars"]["stabilize_nfs_opts"].split(",")
