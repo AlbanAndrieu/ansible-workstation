@@ -52,7 +52,15 @@
       - redis
     # Docker data-root (/var/lib/docker -> /docker) and the containerd image store, off the worn SATA SSD.
     stabilize_docker_lv: /dev/vg-docker/docker-nvme0
-    stabilize_docker_mounts:
+    # LUKS2 on nvme0n1p2 and p5, unlocked at boot by a key kept on the encrypted root (copy in the
+    # escrow USB key, luks-escrow/); together they form vg-nvme-crypt.
+    stabilize_nvme_crypt:
+      - name: nvme2_crypt
+        uuid: 1eb6adbd-7202-4824-a1f0-7d934bc07aa0
+      - name: nvme5_crypt
+        uuid: a2635fed-7768-46e1-8dbb-c444783dbc42
+    stabilize_nvme_crypt_key: /etc/cryptsetup-keys.d/nvme_crypt.key
+    stabilize_nvme_mounts:
       - path: /docker
         src: "{{ stabilize_docker_lv }}"
         fstype: ext4
@@ -61,6 +69,10 @@
         src: /docker/containerd
         fstype: none
         opts: bind,nofail,x-systemd.requires-mounts-for=/docker
+      - path: /data/models/ollama
+        src: /dev/vg-nvme-crypt/models
+        fstype: ext4
+        opts: defaults,nofail,x-systemd.device-timeout=30s
     # Hard NFS mounts kept mounted freeze PID 1 on any daemon-reload while TrueNAS is down, and bg
     # made systemd wait for them forever. Mount on access, drop when idle, give up after 20 s.
     # nosuid,nodev,noexec keep what the former user option implied; rsize/wsize are negotiated.
@@ -362,14 +374,26 @@
       become: true
       when: stabilize_write
 
-    - name: Inspect the Docker and containerd mount points
+    # nofail: without its key the boot goes on, only the services that need these mounts wait.
+    - name: Unlock the NVMe LUKS volumes at boot
+      ansible.builtin.lineinfile:
+        path: /etc/crypttab
+        regexp: '^{{ item.name }}\s'
+        line: "{{ item.name }} UUID={{ item.uuid }} {{ stabilize_nvme_crypt_key }} luks,discard,nofail"
+        backup: true
+      loop: "{{ stabilize_nvme_crypt }}"
+      become: true
+      when: stabilize_write
+      notify: Reload systemd
+
+    - name: Inspect the NVMe mount points
       ansible.builtin.shell: |
         set -o pipefail
         mountpoint -q {{ item.path }} && echo mounted && exit 0
         find {{ item.path }} -mindepth 1 -maxdepth 1 -print -quit | grep -q . && echo data || echo empty
       args:
         executable: /bin/bash
-      loop: "{{ stabilize_docker_mounts }}"
+      loop: "{{ stabilize_nvme_mounts }}"
       register: stabilize_mount_state
       changed_when: false
       # Read-only: without it --check skips the probe and the guard below always fails.
@@ -377,23 +401,23 @@
       become: true
       when: stabilize_write
 
-    # Mounting over a non-empty directory would hide the images and volumes: copy them first.
-    - name: Refuse to mount over existing Docker data
+    # Mounting over a non-empty directory would hide the images, volumes or models: copy them first.
+    - name: Refuse to mount over existing data
       ansible.builtin.assert:
         that:
           - stabilize_mount_state.results | map(attribute='stdout') | difference(['mounted', 'empty']) | length == 0
-        fail_msg: "Migrate /docker and /var/lib/containerd to {{ stabilize_docker_lv }} first (docs/stabilisation-workstation-truenas.md)."
+        fail_msg: "Copy the data onto its NVMe LV first: {{ stabilize_mount_state.results | selectattr('stdout', 'equalto', 'data') | map(attribute='item.path') | join(', ') }} (docs/roadmap-workstation.md)."
         quiet: true
       when: stabilize_write
 
-    - name: Mount the NVMe LV on /docker and bind the containerd store from it
+    - name: Mount the NVMe LVs (Docker, containerd, ollama models)
       ansible.posix.mount:
         path: "{{ item.path }}"
         src: "{{ item.src }}"
         fstype: "{{ item.fstype }}"
         opts: "{{ item.opts }}"
         state: mounted
-      loop: "{{ stabilize_docker_mounts }}"
+      loop: "{{ stabilize_nvme_mounts }}"
       become: true
       when: stabilize_write
       notify: Reload systemd
