@@ -4,6 +4,7 @@
 This script does NOT prove effective systemd ExecStart/node alignment or model
 readiness. Those require separate runtime probes in Compose until migrated.
 """
+
 from __future__ import annotations
 import importlib.util
 import json
@@ -11,7 +12,9 @@ from pathlib import Path
 import re
 
 _COMMON = importlib.util.spec_from_file_location(
-    "audit_common", Path(__file__).with_name("audit_common.py"))
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
 common = importlib.util.module_from_spec(_COMMON)
 _COMMON.loader.exec_module(common)
 
@@ -33,19 +36,39 @@ def major(stdout):
 
 def _report(policy, host, verdict, **observed):
     """Fixed-key report: no paths, raw versions, unit body, env or identities."""
-    return {"schema": policy["schema"], "host": host, "source_audit": verdict,
-            "read_only": True, "target": "truenas_not_examined", **observed}
+    return {
+        "schema": policy["schema"],
+        "host": host,
+        "source_audit": verdict,
+        "read_only": True,
+        "target": "truenas_not_examined",
+        **observed,
+    }
 
 
 def _unit_states(unit_name):
-    rc, unit = run(["/usr/bin/systemctl", "--user", "show", unit_name,
-                    "-p", "LoadState", "-p", "ActiveState"])
+    rc, unit = run(
+        [
+            "/usr/bin/systemctl",
+            "--user",
+            "show",
+            unit_name,
+            "-p",
+            "LoadState",
+            "-p",
+            "ActiveState",
+        ],
+    )
     fields = {}
     if rc == 0:
         for line in unit.splitlines():
             key, sep, value = line.partition("=")
-            if (sep and "=" not in value and key in ("LoadState", "ActiveState")
-                    and re.fullmatch("[a-z-]{1,30}", value)):
+            if (
+                sep
+                and "=" not in value
+                and key in ("LoadState", "ActiveState")
+                and re.fullmatch("[a-z-]{1,30}", value)
+            ):
                 fields[key] = value
     return fields
 
@@ -68,14 +91,16 @@ def audit(home=None):
     orc, openclaw = run(["openclaw", "--version"])
     expected_cli = re.escape(policy["expected_openclaw_cli_version"])
     version_seen = bool(
-        orc == 0 and re.search(r"(?<!\d)" + expected_cli + r"(?!\d)", openclaw)
+        orc == 0 and re.search(r"(?<!\d)" + expected_cli + r"(?!\d)", openclaw),
     )
     node_seen = nrc == 0 and major(node) == policy["expected_node_major"]
-    unit_seen = (fields.get("LoadState") == "loaded"
-                 and fields.get("ActiveState") == "active")
+    unit_seen = (
+        fields.get("LoadState") == "loaded" and fields.get("ActiveState") == "active"
+    )
     observed = node_seen and version_seen and unit_seen
     return _report(
-        policy, "workstation",
+        policy,
+        "workstation",
         "source_cli_and_unit_observed" if observed else "source_drift_or_unverified",
         node_cli_major="expected" if node_seen else "drift_or_unverified",
         openclaw_cli_version="expected" if version_seen else "drift_or_unverified",
@@ -95,5 +120,5 @@ def main():
     return 0 if result.get("source_audit") == "source_cli_and_unit_observed" else 2
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     raise SystemExit(main())

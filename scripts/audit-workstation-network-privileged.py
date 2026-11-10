@@ -5,13 +5,16 @@ Root may execute only three fixed system binaries via sudo -n. Never pass
 repository scripts, user-supplied arguments, a shell or file paths to sudo.
 No rules, addresses, stderr or ports are printed or saved.
 """
+
 import argparse
 import importlib.util
 import os
 from pathlib import Path
 
 _COMMON = importlib.util.spec_from_file_location(
-    "audit_common", Path(__file__).with_name("audit_common.py"))
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
 common = importlib.util.module_from_spec(_COMMON)
 _COMMON.loader.exec_module(common)
 
@@ -35,7 +38,9 @@ def privileged_probe(name, executor=None):
         return "missing", ""
     # run_fixed refuses a missing sudo and never returns stderr or partial output.
     status, raw = common.run_fixed(
-        [SUDO, "-n", "--", *args], timeout=5, max_bytes=MAX_RAW_BYTES,
+        [SUDO, "-n", "--", *args],
+        timeout=5,
+        max_bytes=MAX_RAW_BYTES,
         executor=executor,
     )
     return common.public_status(status), raw
@@ -44,7 +49,8 @@ def privileged_probe(name, executor=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--ack-privileged-readonly", action="store_true",
+        "--ack-privileged-readonly",
+        action="store_true",
         help="Explicit authorization to run only fixed read-only system commands",
     )
     args = parser.parse_args()

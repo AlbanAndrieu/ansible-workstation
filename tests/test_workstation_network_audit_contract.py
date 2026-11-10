@@ -1,4 +1,5 @@
 """Offline contract for the read-only, privacy-preserving network gate."""
+
 from contextlib import redirect_stdout
 import importlib.util
 import io
@@ -26,32 +27,67 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
                 self.assertTrue(all("docker" not in part for part in argv))
         source = SCRIPT.read_text()
         for forbidden in (
-            "shell=True", "sudo ", "sudo -n", "subprocess.Popen", "os.system",
-            "socket.connect", "/var/run/docker.sock", "docker info",
-            "iptables -P", "nft add", "nft flush", "iptables -A",
-            "write_text(", "write_bytes(", "chmod(", "mkdir(",
+            "shell=True",
+            "sudo ",
+            "sudo -n",
+            "subprocess.Popen",
+            "os.system",
+            "socket.connect",
+            "/var/run/docker.sock",
+            "docker info",
+            "iptables -P",
+            "nft add",
+            "nft flush",
+            "iptables -A",
+            "write_text(",
+            "write_bytes(",
+            "chmod(",
+            "mkdir(",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, source)
 
     def test_nft_aggregates_without_exposing_rules_or_names(self):
-        raw = json.dumps({"nftables": [
-            {"table": {"family": "ip", "name": "docker-bridges"}},
-            {"chain": {"family": "inet", "table": "private_secret",
-                       "name": "CUSTOM_PRIVATE", "type": "filter",
-                       "hook": "forward", "policy": "drop"}},
-            {"chain": {"family": "inet", "type": "nat", "hook": "prerouting",
-                       "policy": "accept"}},
-            {"rule": {"family": "ip", "table": "docker-bridges",
-                      "expr": [{"match": {"right": "192.0.2.15"}}],
-                      "comment": "MY_SECRET"}},
-        ]})
+        raw = json.dumps(
+            {
+                "nftables": [
+                    {"table": {"family": "ip", "name": "docker-bridges"}},
+                    {
+                        "chain": {
+                            "family": "inet",
+                            "table": "private_secret",
+                            "name": "CUSTOM_PRIVATE",
+                            "type": "filter",
+                            "hook": "forward",
+                            "policy": "drop",
+                        },
+                    },
+                    {
+                        "chain": {
+                            "family": "inet",
+                            "type": "nat",
+                            "hook": "prerouting",
+                            "policy": "accept",
+                        },
+                    },
+                    {
+                        "rule": {
+                            "family": "ip",
+                            "table": "docker-bridges",
+                            "expr": [{"match": {"right": "192.0.2.15"}}],
+                            "comment": "MY_SECRET",
+                        },
+                    },
+                ],
+            },
+        )
         result = AUDIT.parse_nft(raw)
         self.assertEqual(result["total_rules_seen"], 1)
         self.assertTrue(result["docker_table_present"])
-        self.assertEqual(result["filter_base_chains"], [
-            {"family": "inet", "hook": "forward", "policy": "drop"}
-        ])
+        self.assertEqual(
+            result["filter_base_chains"],
+            [{"family": "inet", "hook": "forward", "policy": "drop"}],
+        )
         self.assertNotIn("MY_SECRET", json.dumps(result))
         self.assertNotIn("192.0.2.15", json.dumps(result))
         self.assertNotIn("CUSTOM_PRIVATE", json.dumps(result))
@@ -110,16 +146,25 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
         )
 
     def test_nft_direct_verdicts_do_not_disclose_rule_data(self):
-        raw = json.dumps({"nftables": [
-            {"rule": {"expr": [
-                {"match": {"right": "192.0.2.101"}},
-                {"drop": None},
-            ], "comment": "SECRET_REMARK"}},
-            {"rule": {"expr": [{"reject": {"type": "icmpx"}}]}},
-            {"rule": {"expr": [{"accept": None}]}},
-            {"rule": {"expr": [{"verdict": {"kind": "drop"}}]}},
-            {"rule": {"expr": [{"verdict": {"kind": []}}]}},
-        ]})
+        raw = json.dumps(
+            {
+                "nftables": [
+                    {
+                        "rule": {
+                            "expr": [
+                                {"match": {"right": "192.0.2.101"}},
+                                {"drop": None},
+                            ],
+                            "comment": "SECRET_REMARK",
+                        },
+                    },
+                    {"rule": {"expr": [{"reject": {"type": "icmpx"}}]}},
+                    {"rule": {"expr": [{"accept": None}]}},
+                    {"rule": {"expr": [{"verdict": {"kind": "drop"}}]}},
+                    {"rule": {"expr": [{"verdict": {"kind": []}}]}},
+                ],
+            },
+        )
         result = AUDIT.parse_nft(raw)
         self.assertEqual(
             result["explicit_terminal_verdict_rules"],
@@ -130,26 +175,28 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
         self.assertNotIn("192.0.2.101", json.dumps(result))
 
     def test_access_denied_does_not_mean_empty_firewall(self):
-        with mock.patch.object(
-            AUDIT, "forwarding_state", return_value="unknown"
-        ):
+        with mock.patch.object(AUDIT, "forwarding_state", return_value="unknown"):
             result = AUDIT.inspect(probe=lambda name: ("access_denied", ""))
         self.assertEqual(result["effective_filtering"], "not_verified")
         self.assertFalse(result["docker_socket_queried"])
-        self.assertTrue(all(
-            v["status"] == "access_denied" and v["summary"] is None
-            for v in result["firewall_probes"].values()
-        ))
+        self.assertTrue(
+            all(
+                v["status"] == "access_denied" and v["summary"] is None
+                for v in result["firewall_probes"].values()
+            ),
+        )
 
     def test_missing_or_malformed_nft_data_is_not_a_success(self):
         self.assertIsNone(AUDIT.parse_nft(""))
         self.assertIsNone(AUDIT.parse_nft("{broken"))
         with mock.patch.object(AUDIT, "forwarding_state", return_value="enabled"):
             result = AUDIT.inspect(probe=lambda _: ("ok", ""))
-        self.assertTrue(all(
-            r["status"] == "error" and r["summary"] is None
-            for r in result["firewall_probes"].values()
-        ))
+        self.assertTrue(
+            all(
+                r["status"] == "error" and r["summary"] is None
+                for r in result["firewall_probes"].values()
+            ),
+        )
 
     def test_json_cli_only_contains_allowlisted_results(self):
         fixture = {
@@ -189,9 +236,11 @@ class WorkstationNetworkAuditContract(unittest.TestCase):
         self.assertEqual(
             cmd["ansible.builtin.command"]["argv"],
             [
-                "{{ ansible_playbook_python }}", "-B",
+                "{{ ansible_playbook_python }}",
+                "-B",
                 "{{ playbook_dir }}/../scripts/audit-workstation-network.py",
-                "--format", "json",
+                "--format",
+                "json",
             ],
         )
         self.assertIs(cmd["changed_when"], False)

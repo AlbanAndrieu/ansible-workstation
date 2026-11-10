@@ -9,7 +9,7 @@ import tempfile
 import time
 import tomllib
 import unittest
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405 - parses the repository's own CleanerML only
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/workstation-cleanup.sh"
@@ -76,7 +76,7 @@ PROCESS_ALLOWLIST = {
 
 
 def custom_ids():
-    root = ET.parse(CLEANER).getroot()
+    root = ET.parse(CLEANER).getroot()  # nosec B314 - repository file
     return [f"{root.get('id')}.{o.get('id')}" for o in root.findall("option")]
 
 
@@ -245,7 +245,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
                 self.assertEqual(self.run_helper("apply-system", **extra).returncode, 2)
 
     def test_cleaner_targets_only_regenerable_caches(self):
-        root = ET.parse(CLEANER).getroot()
+        root = ET.parse(CLEANER).getroot()  # nosec B314 - repository file
         self.assertEqual(root.get("id"), "workstation_dev")
         commands = set()
         for option in root.findall("option"):

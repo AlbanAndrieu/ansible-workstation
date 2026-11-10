@@ -5,6 +5,7 @@ Output contains only aggregate policies and observation statuses, never rules,
 addresses, ports, interfaces, system identities or Docker socket information.
 An unprivileged failure is UNKNOWN, not evidence of an empty firewall.
 """
+
 import argparse
 import importlib.util
 import json
@@ -13,7 +14,9 @@ import re
 import shlex
 
 _COMMON = importlib.util.spec_from_file_location(
-    "audit_common", Path(__file__).with_name("audit_common.py"))
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
 common = importlib.util.module_from_spec(_COMMON)
 _COMMON.loader.exec_module(common)
 
@@ -79,14 +82,14 @@ def parse_nft(raw):
         if isinstance(chain, dict):
             family = chain.get("family")
             hook = chain.get("hook")
-            if (
-                chain.get("type") == "filter"
-                and family in FAMILIES and hook in HOOKS
-            ):
-                chains.append({
-                    "family": family, "hook": hook,
-                    "policy": _policy(chain.get("policy", "unknown")),
-                })
+            if chain.get("type") == "filter" and family in FAMILIES and hook in HOOKS:
+                chains.append(
+                    {
+                        "family": family,
+                        "hook": hook,
+                        "policy": _policy(chain.get("policy", "unknown")),
+                    },
+                )
         if isinstance(entry.get("rule"), dict):
             rules += 1
             # Only count explicit terminal verdict expressions; a count is
@@ -107,7 +110,8 @@ def parse_nft(raw):
                     direct_verdicts[kind] += 1
     return {
         "filter_base_chains": sorted(
-            chains, key=lambda x: (x["family"], x["hook"], x["policy"])
+            chains,
+            key=lambda x: (x["family"], x["hook"], x["policy"]),
         )[:32],
         "total_rules_seen": rules,
         "explicit_terminal_verdict_rules": direct_verdicts,
@@ -171,6 +175,7 @@ def parse_iptables(raw):
         "docker_user_jump_in_forward": docker_user_jump,
         "docker_user_explicit_verdict_rules": docker_user_verdicts,
     }
+
 
 def inspect(probe=run_probe):
     result = {

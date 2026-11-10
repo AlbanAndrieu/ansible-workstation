@@ -15,7 +15,9 @@ from pathlib import Path
 import re
 
 _COMMON = importlib.util.spec_from_file_location(
-    "audit_common", Path(__file__).with_name("audit_common.py"))
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
 common = importlib.util.module_from_spec(_COMMON)
 _COMMON.loader.exec_module(common)
 

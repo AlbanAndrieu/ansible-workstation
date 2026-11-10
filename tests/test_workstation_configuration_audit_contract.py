@@ -1,4 +1,5 @@
 """Offline regression contracts for redacted workstation configuration audit."""
+
 import copy
 import importlib.util
 from pathlib import Path
@@ -17,6 +18,7 @@ spec.loader.exec_module(audit)
 
 def matching_report(policy):
     """Synthetic observation that satisfies every non-review expectation."""
+
     def units(section):
         return {
             unit: {
@@ -26,6 +28,7 @@ def matching_report(policy):
             }
             for unit, entry in policy[section].items()
         }
+
     return {
         "etc": {
             path: audit.ETC_KINDS[entry.get("expect", "absent")]
@@ -153,10 +156,12 @@ class TestDeclaredPolicy(unittest.TestCase):
 
 class TestConfigurationAudit(unittest.TestCase):
     def test_inventory_never_reads_contents(self):
-        with patch.object(Path, "is_symlink", return_value=False), \
-             patch.object(Path, "is_dir", return_value=False), \
-             patch.object(Path, "is_file", return_value=True), \
-             patch.object(Path, "read_text", side_effect=AssertionError("content read")):
+        with (
+            patch.object(Path, "is_symlink", return_value=False),
+            patch.object(Path, "is_dir", return_value=False),
+            patch.object(Path, "is_file", return_value=True),
+            patch.object(Path, "read_text", side_effect=AssertionError("content read")),
+        ):
             result = audit.inventory(Path("/etc"))
         self.assertEqual(result["ssh/sshd_config"], "file_present_review_required")
 
@@ -172,6 +177,7 @@ class TestConfigurationAudit(unittest.TestCase):
             if argv[:2] == [audit.RESOLVECTL, "domain"]:
                 return 0, "Link 2 (eno1): ~int.albandrieu.com"
             return 0, "172.17.0.1"
+
         with patch.object(audit, "run", side_effect=fake):
             status = audit.audit_dns("eno1")
         self.assertEqual(status["resolved_link_dns"], "expected")
@@ -198,16 +204,27 @@ class TestConfigurationAudit(unittest.TestCase):
         self.assertEqual(status["link_probes"], {"dns": "failed", "domain": "failed"})
 
     def test_dns_unexpected_extra_resolver(self):
-        with patch.object(audit, "run", side_effect=[
-            (0, "Link 2: 172.17.0.1 9.9.9.9"),
-            (0, "Link 2: ~int.albandrieu.com"),
-            (0, "172.17.0.1"),
-        ]):
+        with patch.object(
+            audit,
+            "run",
+            side_effect=[
+                (0, "Link 2: 172.17.0.1 9.9.9.9"),
+                (0, "Link 2: ~int.albandrieu.com"),
+                (0, "172.17.0.1"),
+            ],
+        ):
             status = audit.audit_dns("eno1")
         self.assertEqual(status["resolved_link_dns"], "drift_or_unverified")
 
     def test_unit_environment_never_requested(self):
-        with patch.object(audit, "run", return_value=(0, "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\n")) as run:
+        with patch.object(
+            audit,
+            "run",
+            return_value=(
+                0,
+                "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\n",
+            ),
+        ) as run:
             status = audit.unit_status("openclaw-gateway.service", True)
         self.assertEqual(status["ActiveState"], "active")
         args = run.call_args.args[0]
@@ -222,8 +239,10 @@ class TestConfigurationAudit(unittest.TestCase):
             f"FragmentPath={private}/openclaw-gateway.service\n"
             f"DropInPaths={private}/openclaw-gateway.service.d/override.conf\n"
         )
-        with patch.object(Path, "home", return_value=Path("/home/example")), \
-             patch.object(audit, "run", return_value=(0, output)) as runner:
+        with (
+            patch.object(Path, "home", return_value=Path("/home/example")),
+            patch.object(audit, "run", return_value=(0, output)) as runner,
+        ):
             result = audit.unit_status("openclaw-gateway.service", True)
         self.assertEqual(result["fragment_source"], "user_config")
         self.assertEqual(result["dropins"], "present_review_required")
@@ -236,9 +255,14 @@ class TestConfigurationAudit(unittest.TestCase):
         self.assertNotIn("Environment", command)
 
     def test_system_unit_source_is_classified_without_raw_path(self):
-        with patch.object(audit, "run", return_value=(
-            0, "FragmentPath=/etc/systemd/system/hide-mac.service\nDropInPaths=\n"
-        )):
+        with patch.object(
+            audit,
+            "run",
+            return_value=(
+                0,
+                "FragmentPath=/etc/systemd/system/hide-mac.service\nDropInPaths=\n",
+            ),
+        ):
             status = audit.unit_status("hide-mac.service", False)
         self.assertEqual(status["fragment_source"], "etc")
         self.assertEqual(status["dropins"], "none")

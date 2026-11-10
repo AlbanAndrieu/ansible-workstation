@@ -5,6 +5,7 @@ This validates layout, provenance metadata and local policy. The skills CLI's
 computedHash is treated as provenance *metadata*; it is NOT a SHA256 of SKILL.md
 and this check does not claim to reproduce or attest that hash.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,7 +29,12 @@ ALIASES = {
 POLICIES = {
     "AGENTS.md": (
         "## Workstation skill precedence",
-        ("ansible-workstation", "project policy", "external skills", "explicit approval"),
+        (
+            "ansible-workstation",
+            "project policy",
+            "external skills",
+            "explicit approval",
+        ),
     ),
     "docs/agent-skills-workstation.md": (
         "## Security boundary",
@@ -85,7 +91,9 @@ def audit(root: Path) -> tuple[str, list[str]]:
     try:
         manifest = json.loads(lock.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError):
-        return "invalid_manifest", issues + ["skills-lock.json: unreadable or invalid JSON"]
+        return "invalid_manifest", issues + [
+            "skills-lock.json: unreadable or invalid JSON",
+        ]
 
     if not isinstance(manifest, dict) or manifest.get("version") != 1:
         return "invalid_manifest", issues + ["skills-lock.json: unsupported schema"]
@@ -104,9 +112,11 @@ def audit(root: Path) -> tuple[str, list[str]]:
         if not isinstance(metadata, dict):
             issues.append(f"{name}: invalid metadata")
             continue
-        if (metadata.get("source"), metadata.get("sourceType"), metadata.get("skillPath")) != (
-            SOURCE, "github", source_path
-        ):
+        if (
+            metadata.get("source"),
+            metadata.get("sourceType"),
+            metadata.get("skillPath"),
+        ) != (SOURCE, "github", source_path):
             issues.append(f"{name}: provenance mismatch")
         digest = metadata.get("computedHash")
         if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
@@ -138,15 +148,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     state, issues = audit(args.root)
-    print(json.dumps({
-        "schema": "workstation-agent-skills-policy/v1",
-        "read_only": True,
-        "installation": state,
-        "reviewed_skills": sorted(EXPECTED),
-        "computed_hash_verification": "metadata_format_only",
-        "status": "drift" if issues else "pass",
-        "issues": issues,
-    }, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "schema": "workstation-agent-skills-policy/v1",
+                "read_only": True,
+                "installation": state,
+                "reviewed_skills": sorted(EXPECTED),
+                "computed_hash_verification": "metadata_format_only",
+                "status": "drift" if issues else "pass",
+                "issues": issues,
+            },
+            sort_keys=True,
+        ),
+    )
     return 2 if issues else 0
 
 

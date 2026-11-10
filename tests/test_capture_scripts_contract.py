@@ -23,7 +23,8 @@ PEM_PRIVATE = "-----BEGIN " + "OPENSSH PRIVATE KEY-----\nAAAA\n"
 PGP_PUBLIC = bytes([0x99, 0x01, 0x0D, 0x04, 0x00, 0x00, 0x00, 0x00])
 PGP_SECRET = bytes([0x95, 0x01, 0x0D, 0x04, 0x00, 0x00, 0x00, 0x00])
 
-SECRET_SHAPES = """\
+SECRET_SHAPES = (  # nosec B105 - fake values the redaction must catch
+    """\
 password = fixture-one
 db_password: fixture-two
   "client_secret": "fixture-three",
@@ -41,6 +42,7 @@ PasswordAuthentication no
 password [success=1 default=ignore] pam_unix.so obscure yescrypt
 max_retries = 3
 """
+)
 INTERNAL_SHAPES = """\
 DNS=172.31.250.1
 Server = 10.123.45.67
@@ -108,8 +110,12 @@ class Fixture:
         return path
 
     def capture(self, *entries):
-        require_overrides(CAPTURE_ETC, "CAPTURE_ETC_SOURCE", "CAPTURE_ETC_MANIFEST",
-                          "CAPTURE_ETC_DEST")
+        require_overrides(
+            CAPTURE_ETC,
+            "CAPTURE_ETC_SOURCE",
+            "CAPTURE_ETC_MANIFEST",
+            "CAPTURE_ETC_DEST",
+        )
         self.manifest.write_text("# fixture\n" + "".join(f"{e}\n" for e in entries))
         env = {
             **os.environ,
@@ -152,20 +158,34 @@ class CaptureEtcScript(unittest.TestCase):
         result = self.fx.capture("/etc/net.conf")
         self.assertEqual(result.returncode, 0, result.stderr)
         captured = (self.fx.dest / "net.conf").read_text()
-        for value in ("172.31.", "10.123.", "172.30.", "192.168.77", "100.101.",
-                      "fd12:", " int.albandrieu",
-                      "nas.lan", "fixture-host"):
+        for value in (
+            "172.31.",
+            "10.123.",
+            "172.30.",
+            "192.168.77",
+            "100.101.",
+            "fd12:",
+            " int.albandrieu",
+            "nas.lan",
+            "fixture-host",
+        ):
             with self.subTest(value=value):
                 self.assertNotIn(value, captured)
         self.assertEqual(captured.count(INTERNAL), 9)
         self.assertTrue(captured.endswith(INTERNAL_KEPT), captured)
         self.assertIn("search @@INTERNAL@@ albandrieu.com", captured)
-        self.assertIn("internal address(es) or hostname(s) removed: /etc/net.conf",
-                      result.stderr)
+        self.assertIn(
+            "internal address(es) or hostname(s) removed: /etc/net.conf",
+            result.stderr,
+        )
 
     def test_refuses_secret_stores_and_paths_outside_etc(self):
-        for rel in ("shadow", "ssh/ssh_host_ed25519_key", "server.key",
-                    "NetworkManager/system-connections/home.nmconnection"):
+        for rel in (
+            "shadow",
+            "ssh/ssh_host_ed25519_key",
+            "server.key",
+            "NetworkManager/system-connections/home.nmconnection",
+        ):
             self.fx.host(rel, "fixture-secret\n")
         result = self.fx.capture(
             "/etc/shadow",
@@ -173,7 +193,7 @@ class CaptureEtcScript(unittest.TestCase):
             "/etc/server.key",
             "/etc/NetworkManager/system-connections/home.nmconnection",
             "/etc/../outside.conf",
-            "/tmp/outside.conf",
+            "/tmp/outside.conf",  # nosec B108 - fixture path, never created
         )
         self.assertEqual(result.returncode, 1)
         self.assertEqual(list(self.fx.dest.rglob("*")), [])
@@ -189,8 +209,10 @@ class CaptureEtcScript(unittest.TestCase):
         result = self.fx.capture("/etc/escape.conf", "/etc/alias.conf")
         self.assertEqual(result.returncode, 1)
         self.assertIn("refused (symlink leaves /etc): /etc/escape.conf", result.stderr)
-        self.assertIn("refused (symlink to a secret store): /etc/alias.conf",
-                      result.stderr)
+        self.assertIn(
+            "refused (symlink to a secret store): /etc/alias.conf",
+            result.stderr,
+        )
         self.assertEqual(list(self.fx.dest.rglob("*")), [])
 
     def test_never_writes_through_symlinks_planted_in_the_repository(self):
@@ -221,7 +243,8 @@ class CaptureEtcScript(unittest.TestCase):
         self.assertEqual((self.fx.dest / "key.conf").read_text(), "previous\n")
         self.assertFalse((self.fx.dest / "token.conf").exists())
         self.assertEqual(
-            result.stderr.count("refused (secret signature left after redaction)"), 2
+            result.stderr.count("refused (secret signature left after redaction)"),
+            2,
         )
         self.assertNotIn(token, result.stdout + result.stderr)
 
@@ -235,8 +258,10 @@ class CaptureEtcScript(unittest.TestCase):
             "/etc/blob.bin",
         )
         self.assertEqual(result.returncode, 1)
-        self.assertEqual((self.fx.dest / "apt/keyrings/public.gpg").read_bytes(),
-                         PGP_PUBLIC)
+        self.assertEqual(
+            (self.fx.dest / "apt/keyrings/public.gpg").read_bytes(),
+            PGP_PUBLIC,
+        )
         self.assertFalse((self.fx.dest / "apt/keyrings/secret.gpg").exists())
         self.assertFalse((self.fx.dest / "blob.bin").exists())
         self.assertEqual(result.stderr.count("binary other than a public OpenPGP"), 2)
@@ -249,10 +274,14 @@ class CaptureEtcScript(unittest.TestCase):
         self.assertEqual((self.fx.dest / "gone.conf").read_text(), "kept\n")
         self.assertTrue((self.fx.dest / "orphan.conf").exists())
         self.assertIn("absent, kept repo copy: /etc/gone.conf", result.stderr)
-        self.assertIn("duplicate manifest entry, ignored: /etc/gone.conf",
-                      result.stderr)
-        self.assertIn("not in manifest, review or delete: /etc/orphan.conf",
-                      result.stderr)
+        self.assertIn(
+            "duplicate manifest entry, ignored: /etc/gone.conf",
+            result.stderr,
+        )
+        self.assertIn(
+            "not in manifest, review or delete: /etc/orphan.conf",
+            result.stderr,
+        )
 
     def test_shebang_scripts_keep_exec_bit(self):
         hook = self.fx.host("dispatcher.d/90-hook", "#!/bin/sh\nexit 0\n")
@@ -260,8 +289,10 @@ class CaptureEtcScript(unittest.TestCase):
         self.fx.host("plain.conf", "a = 1\n")
         result = self.fx.capture("/etc/dispatcher.d/90-hook", "/etc/plain.conf")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual((self.fx.dest / "dispatcher.d/90-hook").stat().st_mode & 0o777,
-                         0o755)
+        self.assertEqual(
+            (self.fx.dest / "dispatcher.d/90-hook").stat().st_mode & 0o777,
+            0o755,
+        )
         self.assertEqual((self.fx.dest / "plain.conf").stat().st_mode & 0o777, 0o644)
 
 
@@ -277,7 +308,10 @@ class CommittedCaptures(unittest.TestCase):
         files = sorted(str(p) for p in (ROOT / "files/etc").rglob("*") if p.is_file())
         result = subprocess.run(
             ["bash", "-c", script, "redact", str(COMMON), *files],
-            capture_output=True, text=True, timeout=120, check=True,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=True,
         )
         self.assertEqual(result.stdout, "")
 
@@ -290,20 +324,23 @@ class CommittedCaptures(unittest.TestCase):
         self.assertTrue(files)
         result = subprocess.run(
             ["bash", "-c", script, "pgp", str(COMMON), *files],
-            capture_output=True, text=True, timeout=60, check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
         )
         self.assertEqual(result.stdout, "")
 
 
 STUBS = {
-    "apt-mark": 'echo vim; echo redis-server; echo linux-image-7.0.0-27-generic; '
-                'echo gnome-shell; echo localtool',
+    "apt-mark": "echo vim; echo redis-server; echo linux-image-7.0.0-27-generic; "
+    "echo gnome-shell; echo localtool",
     "apt": 'printf "Listing...\\nlocaltool/now 1.0 amd64 [installed,local]\\n"',
     "apt-cache": 'echo gnome-shell; echo "  Depends: libc6"',
     "snap": 'printf "Name Version Rev Tracking Publisher Notes\\n'
-            'core22 1 1 latest canonical base\\ncode 1 1 latest vscode classic\\n'
-            'firefox 1 1 latest mozilla -\\n"',
-    "flatpak": 'echo org.example.App',
+    "core22 1 1 latest canonical base\\ncode 1 1 latest vscode classic\\n"
+    'firefox 1 1 latest mozilla -\\n"',
+    "flatpak": "echo org.example.App",
 }
 
 
@@ -334,12 +371,20 @@ class CapturePackagesScript(unittest.TestCase):
         self._tmp.cleanup()
 
     def run_capture(self):
-        require_overrides(CAPTURE_PACKAGES, "CAPTURE_PACKAGES_OUT",
-                          "CAPTURE_KEYRINGS_DEST", "CAPTURE_SOURCES_DIR",
-                          "CAPTURE_KEYRING_ROOT")
+        require_overrides(
+            CAPTURE_PACKAGES,
+            "CAPTURE_PACKAGES_OUT",
+            "CAPTURE_KEYRINGS_DEST",
+            "CAPTURE_SOURCES_DIR",
+            "CAPTURE_KEYRING_ROOT",
+        )
         return subprocess.run(
             ["bash", str(CAPTURE_PACKAGES)],
-            env=self.env, capture_output=True, text=True, timeout=60, check=False,
+            env=self.env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
         )
 
     def read(self, name):
@@ -356,11 +401,11 @@ class CapturePackagesScript(unittest.TestCase):
 
     def test_only_public_keyrings_are_copied(self):
         (self.sources / "a.sources").write_text(
-            "Signed-By: /usr/share/keyrings/public.gpg\n"
+            "Signed-By: /usr/share/keyrings/public.gpg\n",
         )
         (self.sources / "b.list").write_text(
             "deb [signed-by=/usr/share/keyrings/secret.gpg]"
-            " https://x.invalid stable main\n"
+            " https://x.invalid stable main\n",
         )
         (self.keyring_root / "public.gpg").write_bytes(PGP_PUBLIC)
         (self.keyring_root / "secret.gpg").write_bytes(PGP_SECRET)

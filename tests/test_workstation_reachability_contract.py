@@ -1,8 +1,8 @@
 """Offline contract: only private allowlisted, bounded TCP measurements."""
+
 import importlib.util
 import ipaddress
 import json
-import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -31,21 +31,23 @@ class WorkstationReachabilityContract(unittest.TestCase):
         self.path = Path(self.temp.name) / "private-allowlist.json"
 
     def save(self, targets, mode=0o600):
-        self.path.write_text(json.dumps({
-            "schema": AUDIT.MANIFEST_SCHEMA, "targets": targets
-        }))
+        self.path.write_text(
+            json.dumps({"schema": AUDIT.MANIFEST_SCHEMA, "targets": targets}),
+        )
         self.path.chmod(mode)
 
     def read(self, observer):
         return AUDIT.read_manifest(str(self.path), observer, repo_root=ROOT)
 
     def test_valid_private_local_lan_and_wan_allowlist(self):
-        self.save([
-            target("local", "127.0.0.1", 1234, "allow"),
-            target("lan", "172.17.0.57", 2345, "deny"),
-            target("lan", "fd00::123", 2346, "allow"),
-            target("wan", "1.1.1.1", 1234, "deny"),
-        ])
+        self.save(
+            [
+                target("local", "127.0.0.1", 1234, "allow"),
+                target("lan", "172.17.0.57", 2345, "deny"),
+                target("lan", "fd00::123", 2346, "allow"),
+                target("wan", "1.1.1.1", 1234, "deny"),
+            ],
+        )
         selected = self.read("lan")
         self.assertEqual(len(selected), 2)
         self.assertEqual([x[2] for x in selected], ["deny", "allow"])
@@ -67,8 +69,14 @@ class WorkstationReachabilityContract(unittest.TestCase):
             self.read("local")
 
     def test_scope_limited_no_wildcards_dns_multicast_or_public_lan(self):
-        for bad in ("0.0.0.0", "example.com", "224.0.0.1",
-                    "1.1.1.1", "169.254.1.9", "127.0.0.1"):
+        for bad in (
+            "0.0.0.0",  # nosec B104 - rejected target fixture
+            "example.com",
+            "224.0.0.1",
+            "1.1.1.1",
+            "169.254.1.9",
+            "127.0.0.1",
+        ):
             with self.subTest(ip=bad):
                 self.save([target("lan", bad, 443, "allow")])
                 with self.assertRaises(AUDIT.InvalidManifest):
@@ -78,10 +86,12 @@ class WorkstationReachabilityContract(unittest.TestCase):
             self.read("wan")
 
     def test_no_unbounded_multi_target_scan(self):
-        self.save([
-            target("lan", f"192.168.10.{i}", 8000+i, "deny")
-            for i in range(1, AUDIT.MAX_TARGETS + 2)
-        ])
+        self.save(
+            [
+                target("lan", f"192.168.10.{i}", 8000 + i, "deny")
+                for i in range(1, AUDIT.MAX_TARGETS + 2)
+            ],
+        )
         with self.assertRaisesRegex(AUDIT.InvalidManifest, "bound"):
             self.read("lan")
 
@@ -111,19 +121,26 @@ class WorkstationReachabilityContract(unittest.TestCase):
             (ipaddress.ip_address("172.17.0.60"), 20504, "allow"),
             (ipaddress.ip_address("172.17.0.61"), 20505, "deny"),
         ]
-        observations = iter([
-            "connected", "refused", "refused", "timed_out", "unreachable"
-        ])
+        observations = iter(
+            ["connected", "refused", "refused", "timed_out", "unreachable"],
+        )
         outcome = AUDIT.summarize(
-            targets, "lan", active=True,
+            targets,
+            "lan",
+            active=True,
             connector=lambda *args: next(observations),
         )
         self.assertEqual(outcome["attempts"], 5)
-        self.assertEqual(outcome["outcomes"], {
-            "expected_allowed": 0, "expected_denied": 1,
-            "unexpected_open": 1, "unexpected_closed": 1,
-            "inconclusive": 2,
-        })
+        self.assertEqual(
+            outcome["outcomes"],
+            {
+                "expected_allowed": 0,
+                "expected_denied": 1,
+                "unexpected_open": 1,
+                "unexpected_closed": 1,
+                "inconclusive": 2,
+            },
+        )
         self.assertEqual(outcome["overall_reachability"], "unexpected_open")
         summary = json.dumps(outcome)
         for secret in ("172.17.0.", "20501", "20502", "20503", "20504", "20505"):
@@ -132,9 +149,17 @@ class WorkstationReachabilityContract(unittest.TestCase):
     def test_tcp_handshake_no_shell_dns_or_privilege(self):
         source = SOURCE.read_text()
         for forbidden in (
-            "subprocess.", "shell=True", "os.system(", "getaddrinfo(",
-            "gethostbyname(", "socket.AF_PACKET", "sudo -", "docker.sock",
-            "write_text(", "write_bytes(", "mkdir(",
+            "subprocess.",
+            "shell=True",
+            "os.system(",
+            "getaddrinfo(",
+            "gethostbyname(",
+            "socket.AF_PACKET",
+            "sudo -",
+            "docker.sock",
+            "write_text(",
+            "write_bytes(",
+            "mkdir(",
         ):
             self.assertNotIn(forbidden, source)
         self.assertEqual(AUDIT.MAX_TARGETS, 12)

@@ -36,11 +36,26 @@ class SharedRunnerSource(unittest.TestCase):
     def test_no_shell_write_privilege_or_socket_primitive(self):
         source = COMMON_PATH.read_text()
         for token in (
-            "shell=True", "Popen", "os.system", "os.exec", "os.environ",
-            "seteuid", "setuid", "/usr/bin/sudo", '"sudo"', "import socket",
-            "socket.", "docker.sock",
-            "write_text(", "write_bytes(", "open(", "chmod(", "chown(",
-            "mkdir(", "unlink(", "sys.path",
+            "shell=True",
+            "Popen",
+            "os.system",
+            "os.exec",
+            "os.environ",
+            "seteuid",
+            "setuid",
+            "/usr/bin/sudo",
+            '"sudo"',
+            "import socket",
+            "socket.",
+            "docker.sock",
+            "write_text(",
+            "write_bytes(",
+            "open(",
+            "chmod(",
+            "chown(",
+            "mkdir(",
+            "unlink(",
+            "sys.path",
         ):
             with self.subTest(token=token):
                 self.assertNotIn(token, source)
@@ -71,8 +86,11 @@ class RunFixed(unittest.TestCase):
 
         with mock.patch.object(COMMON.Path, "is_file", return_value=True):
             result = COMMON.run_fixed(
-                ("/usr/bin/tool", "--flag"), timeout=3, max_bytes=16,
-                executor=executor, **kwargs,
+                ("/usr/bin/tool", "--flag"),
+                timeout=3,
+                max_bytes=16,
+                executor=executor,
+                **kwargs,
             )
         return result, calls
 
@@ -111,8 +129,12 @@ class RunFixed(unittest.TestCase):
     def test_missing_absolute_binary_is_not_executed(self):
         executor = mock.Mock()
         with mock.patch.object(COMMON.Path, "is_file", return_value=False):
-            result = COMMON.run_fixed(("/usr/bin/absent",), timeout=1,
-                                      max_bytes=1, executor=executor)
+            result = COMMON.run_fixed(
+                ("/usr/bin/absent",),
+                timeout=1,
+                max_bytes=1,
+                executor=executor,
+            )
         self.assertEqual(result, ("missing", ""))
         executor.assert_not_called()
 
@@ -126,9 +148,13 @@ class RunFixed(unittest.TestCase):
 class BindScope(unittest.TestCase):
     def test_scopes(self):
         cases = {
-            "0.0.0.0": "wildcard", "::": "wildcard", "::ffff:0.0.0.0": "wildcard",
-            "127.0.0.1": "loopback", "::1": "loopback",
-            "::ffff:127.0.0.1": "loopback", "192.0.2.10": "interface_specific",
+            "0.0.0.0": "wildcard",  # nosec B104 - parser fixture
+            "::": "wildcard",
+            "::ffff:0.0.0.0": "wildcard",
+            "127.0.0.1": "loopback",
+            "::1": "loopback",
+            "::ffff:127.0.0.1": "loopback",
+            "192.0.2.10": "interface_specific",
             "2001:db8::1": "interface_specific",
         }
         for address, scope in cases.items():
@@ -143,7 +169,9 @@ class BindScope(unittest.TestCase):
 class NetworkProbeSizing(unittest.TestCase):
     def test_network_probe_refuses_oversized_ruleset(self):
         spec = importlib.util.spec_from_file_location(
-            "network_audit", ROOT / "scripts/audit-workstation-network.py")
+            "network_audit",
+            ROOT / "scripts/audit-workstation-network.py",
+        )
         network = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(network)
         big = completed(stdout="-A INPUT -j ACCEPT\n" * 70000)

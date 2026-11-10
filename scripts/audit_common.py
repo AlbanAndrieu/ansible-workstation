@@ -16,10 +16,19 @@ from pathlib import Path
 # Minimal environment: no HOME, user PATH, DOCKER_HOST, proxies or credentials.
 FIXED_ENV = {"LC_ALL": "C", "PATH": "/usr/sbin:/usr/bin:/sbin:/bin"}
 DENIED_MARKERS = (
-    "permission denied", "operation not permitted", "not permitted",
-    "permission error", "must be root", "requires root", "you must be root",
-    "password is required", "a terminal is required", "not in the sudoers",
-    "not allowed to execute", "authentication is required", "no tty present",
+    "permission denied",
+    "operation not permitted",
+    "not permitted",
+    "permission error",
+    "must be root",
+    "requires root",
+    "you must be root",
+    "password is required",
+    "a terminal is required",
+    "not in the sudoers",
+    "not allowed to execute",
+    "authentication is required",
+    "no tty present",
 )
 # Statuses the reports expose; everything else collapses to "error".
 PUBLIC_STATUSES = ("ok", "missing", "timed_out", "access_denied")
@@ -39,8 +48,13 @@ def run_fixed(argv, *, timeout, max_bytes, env=FIXED_ENV, executor=None):
         executor = subprocess.run
     try:
         result = executor(
-            argv, input="", capture_output=True, text=True, check=False,
-            timeout=timeout, env=env,
+            argv,
+            input="",
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         return "timed_out", ""

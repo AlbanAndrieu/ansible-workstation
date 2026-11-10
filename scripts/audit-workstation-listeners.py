@@ -4,13 +4,16 @@
 No sudo, no container API, no port/address/process output; not an exposure
 test. Docker DNAT-published ports may not appear as host listening sockets.
 """
+
 import argparse
 import importlib.util
 import json
 from pathlib import Path
 
 _COMMON = importlib.util.spec_from_file_location(
-    "audit_common", Path(__file__).with_name("audit_common.py"))
+    "audit_common",
+    Path(__file__).with_name("audit_common.py"),
+)
 common = importlib.util.module_from_spec(_COMMON)
 _COMMON.loader.exec_module(common)
 
@@ -37,7 +40,7 @@ def binding_scope(address):
         end = host.find("]")
         if end == -1:
             return "unknown"
-        suffix = host[end + 1:]
+        suffix = host[end + 1 :]
         if suffix and (not suffix.startswith("%") or len(suffix) == 1):
             return "unknown"
         host = host[1:end]
@@ -83,7 +86,10 @@ def probe(protocol, executor=None):
     if protocol not in COMMANDS:
         raise ValueError("unexpected listener protocol")
     status, raw = common.run_fixed(
-        COMMANDS[protocol], timeout=4, max_bytes=MAX_BYTES, executor=executor,
+        COMMANDS[protocol],
+        timeout=4,
+        max_bytes=MAX_BYTES,
+        executor=executor,
     )
     status = common.public_status(status)
     return {"status": status, "summary": summarize_ss(raw) if status == "ok" else None}

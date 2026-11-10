@@ -30,7 +30,7 @@ jobs:
       - name: Offline contracts
         run: .venv/bin/python -m unittest discover -s tests -p 'test_*contract.py' -v
       - name: Ruff
-        run: .venv/bin/ruff check tests
+        run: .venv/bin/ruff check scripts tests && .venv/bin/ruff format --check scripts tests
       - name: YAML lint
         run: .venv/bin/yamllint -d relaxed tasks/network_split_dns.yml tasks/runtime_mise_uv.yml
 

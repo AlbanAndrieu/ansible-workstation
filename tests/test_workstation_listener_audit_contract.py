@@ -1,4 +1,5 @@
 """Offline privacy/security contracts for the host listening bind-scope audit."""
+
 from contextlib import redirect_stdout
 import importlib.util
 import io
@@ -62,13 +63,22 @@ class ListenerAuditContract(unittest.TestCase):
         )
         report = AUDIT.summarize_ss(fixture)
         self.assertEqual(report["count"], 4)
-        self.assertEqual(report["bind_scopes"], {
-            "wildcard": 1, "loopback": 1,
-            "interface_specific": 2, "unknown": 0,
-        })
-        self.assertEqual(report["unknown_reasons"], {
-            "malformed_row": 0, "unparsed_local_endpoint": 0,
-        })
+        self.assertEqual(
+            report["bind_scopes"],
+            {
+                "wildcard": 1,
+                "loopback": 1,
+                "interface_specific": 2,
+                "unknown": 0,
+            },
+        )
+        self.assertEqual(
+            report["unknown_reasons"],
+            {
+                "malformed_row": 0,
+                "unparsed_local_endpoint": 0,
+            },
+        )
         for forbidden in ("5353", "fe80", "ff02", "wlx0", "lo"):
             # Check only the source endpoint values, not generic words
             # such as loopback which are approved schema vocabulary.
@@ -115,25 +125,29 @@ class ListenerAuditContract(unittest.TestCase):
         )
         summary = AUDIT.summarize_ss(fixture)
         self.assertEqual(summary["count"], 4)
-        self.assertEqual(summary["bind_scopes"], {
-            "wildcard": 1,
-            "loopback": 2,
-            "interface_specific": 1,
-            "unknown": 0,
-        })
+        self.assertEqual(
+            summary["bind_scopes"],
+            {
+                "wildcard": 1,
+                "loopback": 2,
+                "interface_specific": 1,
+                "unknown": 0,
+            },
+        )
         self.assertNotIn("192.0.2.42", json.dumps(summary))
         self.assertNotIn("8443", json.dumps(summary))
 
     def test_local_field_malformed_stays_unknown_even_if_peer_is_wildcard(self):
-        summary = AUDIT.summarize_ss(
-            "LISTEN 0 128 not-an-address 0.0.0.0:*\n"
+        summary = AUDIT.summarize_ss("LISTEN 0 128 not-an-address 0.0.0.0:*\n")
+        self.assertEqual(
+            summary["bind_scopes"],
+            {
+                "wildcard": 0,
+                "loopback": 0,
+                "interface_specific": 0,
+                "unknown": 1,
+            },
         )
-        self.assertEqual(summary["bind_scopes"], {
-            "wildcard": 0,
-            "loopback": 0,
-            "interface_specific": 0,
-            "unknown": 1,
-        })
 
     def test_unknown_malformed_line_never_defaults_to_wildcard(self):
         data = AUDIT.summarize_ss("unexpected malformed row\n")
@@ -152,10 +166,13 @@ class ListenerAuditContract(unittest.TestCase):
         self.assertEqual(data["count"], 3)
         self.assertEqual(data["bind_scopes"]["unknown"], 2)
         self.assertEqual(data["bind_scopes"]["loopback"], 1)
-        self.assertEqual(data["unknown_reasons"], {
-            "malformed_row": 1,
-            "unparsed_local_endpoint": 1,
-        })
+        self.assertEqual(
+            data["unknown_reasons"],
+            {
+                "malformed_row": 1,
+                "unparsed_local_endpoint": 1,
+            },
+        )
         self.assertEqual(
             sum(data["unknown_reasons"].values()),
             data["bind_scopes"]["unknown"],
@@ -165,13 +182,15 @@ class ListenerAuditContract(unittest.TestCase):
 
     def test_no_unknown_reasons_when_all_local_fields_are_valid(self):
         data = AUDIT.summarize_ss(
-            "LISTEN 0 128 0.0.0.0:80 0.0.0.0:*\n"
-            "UNCONN 0 0 [::1]:53 [::]:*\n"
+            "LISTEN 0 128 0.0.0.0:80 0.0.0.0:*\nUNCONN 0 0 [::1]:53 [::]:*\n",
         )
-        self.assertEqual(data["unknown_reasons"], {
-            "malformed_row": 0,
-            "unparsed_local_endpoint": 0,
-        })
+        self.assertEqual(
+            data["unknown_reasons"],
+            {
+                "malformed_row": 0,
+                "unparsed_local_endpoint": 0,
+            },
+        )
         self.assertEqual(data["bind_scopes"]["unknown"], 0)
 
     def test_fixed_local_ss_args_no_privileges_or_docker(self):
@@ -184,17 +203,28 @@ class ListenerAuditContract(unittest.TestCase):
         )
         script = SOURCE.read_text()
         for disallowed in (
-            "sudo ", "shell=True", "docker.sock", "socket.connect",
-            "subprocess.Popen", "ss -p", "write_text(", "write_bytes(",
-            "chmod(", "ip addr", "os.environ", "subprocess.call",
+            "sudo ",
+            "shell=True",
+            "docker.sock",
+            "socket.connect",
+            "subprocess.Popen",
+            "ss -p",
+            "write_text(",
+            "write_bytes(",
+            "chmod(",
+            "ip addr",
+            "os.environ",
+            "subprocess.call",
         ):
             self.assertNotIn(disallowed, script)
 
     def test_capture_only_and_fixed_args(self):
         calls = []
+
         def executor(argv, **kwargs):
             calls.append((argv, kwargs))
             return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
         with mock.patch.object(AUDIT.Path, "is_file", return_value=True):
             result = AUDIT.probe("tcp", executor=executor)
         self.assertEqual(result["status"], "ok")
@@ -208,10 +238,16 @@ class ListenerAuditContract(unittest.TestCase):
 
     def test_failure_or_oversize_never_leaks(self):
         denied = subprocess.CompletedProcess(
-            [], 1, stdout="192.0.2.22:6543", stderr="permission denied"
+            [],
+            1,
+            stdout="192.0.2.22:6543",
+            stderr="permission denied",
         )
         huge = subprocess.CompletedProcess(
-            [], 0, stdout="x" * (AUDIT.MAX_BYTES + 1), stderr=""
+            [],
+            0,
+            stdout="x" * (AUDIT.MAX_BYTES + 1),
+            stderr="",
         )
         with mock.patch.object(AUDIT.Path, "is_file", return_value=True):
             a = AUDIT.probe("tcp", executor=lambda *args, **kw: denied)
@@ -253,9 +289,11 @@ class ListenerAuditContract(unittest.TestCase):
         self.assertEqual(
             tasks[0]["ansible.builtin.command"]["argv"],
             [
-                "{{ ansible_playbook_python }}", "-B",
+                "{{ ansible_playbook_python }}",
+                "-B",
                 "{{ playbook_dir }}/../scripts/audit-workstation-listeners.py",
-                "--format", "json",
+                "--format",
+                "json",
             ],
         )
         self.assertIs(tasks[0]["changed_when"], False)

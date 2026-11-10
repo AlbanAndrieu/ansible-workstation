@@ -1,4 +1,5 @@
 """Offline-only Docker metadata contracts; daemon is never contacted."""
+
 import importlib.util
 import json
 from pathlib import Path
@@ -15,25 +16,48 @@ SPEC.loader.exec_module(AUDIT)
 
 class DockerPublicationsContract(unittest.TestCase):
     def test_docker_command_is_fixed_and_read_only(self):
-        self.assertEqual(AUDIT.ARGV, (
-            "/usr/bin/docker", "--host", "unix:///var/run/docker.sock",
-            "container", "ls", "--format", "{{json .Ports}}",
-        ))
-        self.assertFalse(any(x in AUDIT.ARGV for x in
-            ("run", "exec", "start", "stop", "inspect", "build", "rm")))
+        self.assertEqual(
+            AUDIT.ARGV,
+            (
+                "/usr/bin/docker",
+                "--host",
+                "unix:///var/run/docker.sock",
+                "container",
+                "ls",
+                "--format",
+                "{{json .Ports}}",
+            ),
+        )
+        self.assertFalse(
+            any(
+                x in AUDIT.ARGV
+                for x in ("run", "exec", "start", "stop", "inspect", "build", "rm")
+            ),
+        )
         source = SOURCE.read_text()
-        for forbidden in ("sudo -", "shell=True", "write_text(",
-                          "chmod(", "chown(", "groupadd", "usermod",
-                          "subprocess.Popen", "os.system("):
+        for forbidden in (
+            "sudo -",
+            "shell=True",
+            "write_text(",
+            "chmod(",
+            "chown(",
+            "groupadd",
+            "usermod",
+            "subprocess.Popen",
+            "os.system(",
+        ):
             self.assertNotIn(forbidden, source)
 
     def test_published_bind_scope_aggregates_only(self):
-        output = "\n".join(json.dumps(x) for x in [
-            "0.0.0.0:8080->80/tcp, [::]:8080->80/tcp",
-            "127.0.0.1:3000->3000/tcp, 192.0.2.1:443->443/udp",
-            "8000/tcp, 9000-9002/tcp",
-            "",
-        ])
+        output = "\n".join(
+            json.dumps(x)
+            for x in [
+                "0.0.0.0:8080->80/tcp, [::]:8080->80/tcp",
+                "127.0.0.1:3000->3000/tcp, 192.0.2.1:443->443/udp",
+                "8000/tcp, 9000-9002/tcp",
+                "",
+            ]
+        )
         summary = AUDIT.summarize(output)
         self.assertEqual(summary["running_containers_reported"], 4)
         self.assertEqual(summary["published_binding_segments"], 4)
@@ -41,14 +65,15 @@ class DockerPublicationsContract(unittest.TestCase):
         self.assertEqual(summary["published_bindings"]["ipv4"]["tcp"]["wildcard"], 1)
         self.assertEqual(summary["published_bindings"]["ipv6"]["tcp"]["wildcard"], 1)
         self.assertEqual(summary["published_bindings"]["ipv4"]["tcp"]["loopback"], 1)
-        self.assertEqual(summary["published_bindings"]["ipv4"]["udp"]["interface_specific"], 1)
+        self.assertEqual(
+            summary["published_bindings"]["ipv4"]["udp"]["interface_specific"],
+            1,
+        )
         for secret in ("8080", "192.0.2.1", "3000", "443", "9000"):
             self.assertNotIn(secret, json.dumps(summary))
 
     def test_unknown_mapping_is_not_claimed_as_secure(self):
-        result = AUDIT.summarize(
-            json.dumps("192.0.2.1:bad->80/tcp") + "\n"
-        )
+        result = AUDIT.summarize(json.dumps("192.0.2.1:bad->80/tcp") + "\n")
         self.assertEqual(result["published_bindings"]["unknown"]["tcp"]["unknown"], 1)
 
     def test_invalid_json_fails_closed(self):
@@ -63,9 +88,16 @@ class DockerPublicationsContract(unittest.TestCase):
 
     def test_capture_only_fixed_docker_local_host(self):
         calls = []
+
         def executor(argv, **kwargs):
             calls.append((argv, kwargs))
-            return subprocess.CompletedProcess(argv, 0, stdout=json.dumps(""), stderr="")
+            return subprocess.CompletedProcess(
+                argv,
+                0,
+                stdout=json.dumps(""),
+                stderr="",
+            )
+
         with (
             mock.patch.object(AUDIT.os, "geteuid", return_value=1000),
             mock.patch.object(AUDIT.Path, "is_file", return_value=True),
@@ -82,9 +114,12 @@ class DockerPublicationsContract(unittest.TestCase):
     def test_permission_errors_are_sanitized(self):
         def denied(argv, **kwargs):
             return subprocess.CompletedProcess(
-                argv, 1, stdout="192.0.2.1:9999",
+                argv,
+                1,
+                stdout="192.0.2.1:9999",
                 stderr="permission denied for name secret token",
             )
+
         with (
             mock.patch.object(AUDIT.os, "geteuid", return_value=1000),
             mock.patch.object(AUDIT.Path, "is_file", return_value=True),
@@ -101,9 +136,7 @@ class DockerPublicationsContract(unittest.TestCase):
         self.assertEqual(context.exception.code, 2)
 
     def test_ranges_are_segments_not_individual_ports(self):
-        summary = AUDIT.summarize(json.dumps(
-            "0.0.0.0:2000-2020->3000-3020/tcp"
-        ))
+        summary = AUDIT.summarize(json.dumps("0.0.0.0:2000-2020->3000-3020/tcp"))
         self.assertEqual(summary["published_binding_segments"], 1)
         self.assertIn("segments", summary["count_unit"])
 

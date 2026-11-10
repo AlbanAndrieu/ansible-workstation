@@ -46,7 +46,7 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B -m uni
 
 [tasks.lint]
 description = "Run Ruff in the existing, verified project environment"
-run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check tests"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ruff check scripts tests && .venv/bin/ruff format --check scripts tests"
 
 [tasks.syntax]
 description = "Use only project Ansible for syntax checking"
@@ -224,3 +224,7 @@ run = "bash scripts/workstation-cleanup.sh apply"
 [tasks.cleanup-apply-system]
 description = "Explicit sudo cleanup: apt caches, disabled snaps, journald size, unused flatpaks"
 run = "bash scripts/workstation-cleanup.sh apply-system"
+
+[tasks.quality]
+description = "Local quality gate: offline contracts, Ruff, yamllint, then every pre-commit hook on the files changed since origin/master"
+run = "mise run test-offline && mise run lint && .venv/bin/yamllint --strict playbooks tasks defaults && .venv/bin/pre-commit run --from-ref origin/master --to-ref HEAD"

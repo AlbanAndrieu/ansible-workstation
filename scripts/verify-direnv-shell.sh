@@ -38,7 +38,7 @@ _nabla_verify_direnv_shell() {
         escaped=0
         continue
       fi
-      if [[ "$char" == '\' && "$quote" != "'" ]]; then
+      if [[ "$char" == "\\" && "$quote" != "'" ]]; then
         segment+="$char"
         escaped=1
         continue
@@ -66,7 +66,7 @@ _nabla_verify_direnv_shell() {
   done
 
   if ! declare -F _direnv_hook >/dev/null 2>&1 ||
-     (( hook_present == 0 )); then
+    [ "$hook_present" -eq 0 ]; then
     echo "FAIL: Direnv is not registered as a standalone Bash prompt command" >&2
     failure=1
   fi
