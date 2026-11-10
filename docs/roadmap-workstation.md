@@ -16,8 +16,8 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [Visibilité Docker/nftables/iptables sans privilèges, lecture privilégiée optionnelle](audit-workstation-network.md) | Lecture locale, `sudo -n` fixe, aucune donnée brute | **ACCEPTED** : 68/68 et 77/77 tests ; sauts DOCKER-USER : **CODE ADDED** |
 | [Sockets TCP/UDP par portée d'écoute, IPv6 zoné](audit-workstation-network.md) | Rapport agrégé sans ports ni adresses | **ACCEPTED** : 95/95 tests, `unknown=0` |
 | [ufw par allowlist, NFS serveur retiré, Zabbix vers TrueNAS](workstation-network-hardening.md) | Double approbation, `ufw status verbose` | **APPLIQUÉ** : ufw actif au boot (3/11), INPUT/FORWARD en DROP ; relevé du 10/11 : 18 règles, aucune ouverte à tous, synergy/deskflow limités au LAN ; `--check` avec les drapeaux d'apply : `changed=0` |
-| Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **CODE ADDED (10/11), apply à faire** : le bloc ufw-docker laisse passer toute source privée, LAN compris. Depuis TrueNAS, Grafana 3009 répond sans règle qui l'autorise. `harden_docker_routes` réserve LiteLLM 4000 à TrueNAS et ferme Grafana et telegraf au LAN (`--check` : 4 règles de routage) ; postgres/redis restent sur `127.0.0.1` ; WAN `not_verified` |
-| [Mesures TCP par allowlist privée local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, observateurs séparés | **LOCAL ACCEPTED** 2/2 ; LAN depuis TrueNAS le 10/11 : 4000, 11434, 9100, 8082 ouverts comme prévu, 3009 ouvert à tort (voir ligne précédente) ; WAN différé (aucun observateur externe) |
+| Ports Docker publiés (DNAT avant ufw) | Mesure depuis TrueNAS de chaque port publié | **APPLIQUÉ le 10/11** : le bloc ufw-docker laissait passer toute source privée, LAN compris (Grafana 3009 répondait à TrueNAS). `harden_docker_routes` : 4 règles `FWD`, l'ACCEPT de TrueNAS sur 4000 avant les DROP du LAN, `--check` ensuite `changed=0`. Depuis TrueNAS : 3009 fermé, 4000 ouvert (`/health/liveliness` 200) ; en local, Grafana et LiteLLM répondent toujours. Pas mesuré : le DROP sur 4000 depuis une autre machine du LAN (aucun observateur) ; postgres/redis restent sur `127.0.0.1` ; WAN `not_verified` |
+| [Mesures TCP par allowlist privée local/LAN/WAN](workstation-network-measurement.md) | Cibles préautorisées, observateurs séparés | **LOCAL ACCEPTED** 2/2 ; LAN depuis TrueNAS le 10/11, après les routes Docker : 4000, 11434, 9100, 8082 et 10050 ouverts comme prévu, 3009 et 8126 fermés ; WAN différé (aucun observateur externe) |
 | Corriger le périmètre Ubuntu 26.04 du playbook historique | Plus de faux « unsupported » ; aucun apply global | **ACCEPTED (10/11)** : plancher de version au lieu de la liste qui s'arrêtait à 25 ; la seule porte (tag `platform`) rend « Ubuntu 26.04 x86_64 » ; test de contrat |
 
 ## P1 — configuration, sauvegarde, stabilité
@@ -55,9 +55,8 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
   conservation chiffrée ; garder une copie indépendante de TrueNAS.
 - **Pas de CI payante ni de fusion automatique.** Tests de contrat en local (`mise run test-offline`),
   PR revues par l'opérateur.
-- **Suivant :** appliquer `harden-network.yml` (routes Docker), puis vérifier depuis TrueNAS que 3009
-  est fermé et 4000 encore ouvert ; relire le diff devsec avant son apply ; finir la mesure zram sur
-  24 h et l'étape 1 du stockage.
+- **Suivant :** relire le diff devsec (`UMASK 027` et Apache) avant son apply ; finir la mesure zram
+  sur 24 h et l'étape 1 du stockage.
 
 ## 30 octobre 2026 — skills Ansible et acceptation DNS
 
