@@ -175,7 +175,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
 
     def test_unavailable_options_are_skipped(self):
         (self.state / "available.txt").write_text(
-            BUILTIN.replace("google_chrome.ai\n", "")
+            BUILTIN.replace("google_chrome.ai\n", ""),
         )
         result = self.run_helper("apply")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -184,11 +184,12 @@ class WorkstationCleanupContracts(unittest.TestCase):
 
     def test_extra_opt_ins_and_denylist(self):
         result = self.run_helper(
-            "apply", EXTRA_CLEANERS="system.trash workstation_dev.maven_repository"
+            "apply",
+            EXTRA_CLEANERS="system.trash workstation_dev.maven_repository",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(
-            {"system.trash", "workstation_dev.maven_repository"} <= self.clean_args()
+            {"system.trash", "workstation_dev.maven_repository"} <= self.clean_args(),
         )
         for denied in (
             "google_chrome.passwords",
@@ -208,7 +209,8 @@ class WorkstationCleanupContracts(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         calls = self.calls()
         self.assertIn(
-            "sudo bleachbit --clean apt.clean apt.autoclean snap.disabled", calls
+            "sudo bleachbit --clean apt.clean apt.autoclean snap.disabled",
+            calls,
         )
         self.assertIn("sudo journalctl --vacuum-size=500M", calls)
         self.assertNotIn("autoremove", calls)
@@ -291,7 +293,8 @@ class WorkstationCleanupContracts(unittest.TestCase):
         ):
             with self.subTest(task=name):
                 self.assertEqual(
-                    tasks[name]["run"], f"bash scripts/workstation-cleanup.sh {action}"
+                    tasks[name]["run"],
+                    f"bash scripts/workstation-cleanup.sh {action}",
                 )
 
 

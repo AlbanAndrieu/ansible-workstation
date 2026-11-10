@@ -120,7 +120,17 @@
 
     - name: Read motion service state
       ansible.builtin.command:
-        argv: [systemctl, show, motion.service, -p, UnitFileState, -p, ActiveState, --value]
+        argv:
+          [
+            systemctl,
+            show,
+            motion.service,
+            -p,
+            UnitFileState,
+            -p,
+            ActiveState,
+            --value,
+          ]
       register: howdy_cameras_motion_state
       changed_when: false
       failed_when: false
@@ -304,8 +314,14 @@
         line: "{{ item.line }}"
         backup: true
       loop:
-        - { regexp: '^\s*device_path\s*=', line: "device_path = {{ howdy_camera_device }}" }
-        - { regexp: '^\s*certainty\s*=', line: "certainty = {{ howdy_certainty }}" }
+        - {
+            regexp: '^\s*device_path\s*=',
+            line: "device_path = {{ howdy_camera_device }}",
+          }
+        - {
+            regexp: '^\s*certainty\s*=',
+            line: "certainty = {{ howdy_certainty }}",
+          }
         # disabled = true: the PAM module ignores Howdy even if a PAM line exists.
         - { regexp: '^\s*disabled\s*=', line: "disabled = true" }
       become: true

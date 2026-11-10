@@ -62,19 +62,19 @@ refuse() {
 have() { command -v "$1" >/dev/null 2>&1; }
 
 case "$ACTION" in
-  check | apply | apply-system) ;;
-  *)
-    printf 'Usage: %s {check|apply|apply-system}\n' "$0" >&2
-    exit 2
-    ;;
+check | apply | apply-system) ;;
+*)
+  printf 'Usage: %s {check|apply|apply-system}\n' "$0" >&2
+  exit 2
+  ;;
 esac
 
 if [ "$(id -u)" -eq 0 ]; then
   refuse "run as your user; apply-system calls sudo for each system step"
 fi
 for id in $EXTRA_CLEANERS; do
-  [[ "$id" =~ ^[a-z0-9_]+\.[a-z0-9_]+$ ]] \
-    || refuse "EXTRA_CLEANERS entries must be cleaner.option ids"
+  [[ "$id" =~ ^[a-z0-9_]+\.[a-z0-9_]+$ ]] ||
+    refuse "EXTRA_CLEANERS entries must be cleaner.option ids"
   if [[ "$id" =~ $DENIED_REGEX ]]; then
     refuse "$id is never allowed by this tool"
   fi
@@ -82,8 +82,8 @@ done
 [[ "$JOURNAL_MAX" =~ ^[0-9]+[KMG]$ ]] || refuse "JOURNAL_MAX must look like 500M"
 [[ "$APT_AUTOREMOVE" =~ ^[01]$ ]] || refuse "APT_AUTOREMOVE must be 0 or 1"
 if [ -n "$MOTION_RETENTION_DAYS" ]; then
-  [[ "$MOTION_RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]] \
-    || refuse "MOTION_RETENTION_DAYS must be a positive integer"
+  [[ "$MOTION_RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]] ||
+    refuse "MOTION_RETENTION_DAYS must be a positive integer"
 fi
 
 AVAILABLE=""
@@ -139,8 +139,8 @@ check_cleaner_install() {
   if [ ! -f "$CLEANER_DST" ]; then
     info "custom cleaner not installed yet (apply installs it): $CLEANER_DST"
     echo "--- custom cleaner targets (read-only sizes)"
-    grep -oE 'path="[^"]+"' "$CLEANER_SRC" | sed -E 's/^path="(.*)"$/\1/' \
-      | while read -r target; do
+    grep -oE 'path="[^"]+"' "$CLEANER_SRC" | sed -E 's/^path="(.*)"$/\1/' |
+      while read -r target; do
         target="${target/#\~/$HOME}"
         [ -e "$target" ] && du -sh -- "$target" 2>/dev/null || true
       done
@@ -180,12 +180,12 @@ check_system() {
     journalctl --disk-usage 2>/dev/null || true
   fi
   if have snap; then
-    info "disabled snap revisions: $(LC_ALL=C snap list --all 2>/dev/null \
-      | awk '$NF ~ /disabled/' | wc -l)"
+    info "disabled snap revisions: $(LC_ALL=C snap list --all 2>/dev/null |
+      awk '$NF ~ /disabled/' | wc -l)"
   fi
   if have apt-get; then
-    info "apt autoremove candidates: $(apt-get -s autoremove 2>/dev/null \
-      | grep -c '^Remv' || true) (removed only with APT_AUTOREMOVE=1)"
+    info "apt autoremove candidates: $(apt-get -s autoremove 2>/dev/null |
+      grep -c '^Remv' || true) (removed only with APT_AUTOREMOVE=1)"
   fi
   if [ -n "$MOTION_RETENTION_DAYS" ] && [ -d "$MOTION_DIR" ]; then
     info "motion captures older than ${MOTION_RETENTION_DAYS}d: $(find "$MOTION_DIR" \
@@ -207,8 +207,8 @@ run_system() {
   fi
   if have snap; then
     if ! printf '%s\n' "$AVAILABLE" | grep -qxF snap.disabled; then
-      LC_ALL=C snap list --all | awk '$NF ~ /disabled/ {print $1, $3}' \
-        | while read -r name revision; do
+      LC_ALL=C snap list --all | awk '$NF ~ /disabled/ {print $1, $3}' |
+        while read -r name revision; do
           sudo snap remove "$name" --revision="$revision"
         done
     fi
@@ -231,22 +231,22 @@ run_system() {
 }
 
 case "$ACTION" in
-  check)
-    echo "=== workstation cleanup: check (read-only) ==="
-    report_usage
-    check_cleaner_install
-    run_user
-    check_system
-    ;;
-  apply)
-    echo "=== workstation cleanup: apply (user caches, no sudo) ==="
-    install -D -m 0644 -- "$CLEANER_SRC" "$CLEANER_DST"
-    run_user
-    df -h "$HOME" | tail -n 1
-    ;;
-  apply-system)
-    echo "=== workstation cleanup: apply-system (sudo) ==="
-    run_system
-    df -h / | tail -n 1
-    ;;
+check)
+  echo "=== workstation cleanup: check (read-only) ==="
+  report_usage
+  check_cleaner_install
+  run_user
+  check_system
+  ;;
+apply)
+  echo "=== workstation cleanup: apply (user caches, no sudo) ==="
+  install -D -m 0644 -- "$CLEANER_SRC" "$CLEANER_DST"
+  run_user
+  df -h "$HOME" | tail -n 1
+  ;;
+apply-system)
+  echo "=== workstation cleanup: apply-system (sudo) ==="
+  run_system
+  df -h / | tail -n 1
+  ;;
 esac
