@@ -24,7 +24,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 
 | Livrable | Gate de validation | Statut |
 | --- | --- | --- |
-| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)** ; étapes 1 à 7 à faire |
+| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)**, vérifiée le 10/11 ; étapes 1 à 7 et 4 bis (swap) à faire |
 | [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **CODE ADDED** ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement |
 | Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** |
 | [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **CODE ADDED** : timer quotidien, alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter |
@@ -120,5 +120,14 @@ Partitions NVMe inutilisées :
 | 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
 
 Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
-moins par écriture. Pas retenus : `noatime` (gain négligeable face à `relatime`), zram (aucun
-swap-out mesuré, à revoir si la swap se remet à écrire).
+moins par écriture. Pas retenu : `noatime` (gain négligeable face à `relatime`).
+
+Relevé du 10 novembre (6,7 jours sans redémarrage) : l'étape 0 tient (`vm.dirty_bytes` 1 Gio,
+`APM_level` 254 sur `sdb` et `sdc`), mais rien n'a encore réduit les écritures sur `sda` :
+48 Gio/jour, `Wear_Leveling_Count` normalisé 34 → 33. La swap écrit maintenant : 6,3 Gio occupés
+sur `/swapfile`, 23,6 Gio écrits depuis le démarrage (environ 3,5 Gio/jour sur `sda`). `sdc` est passé
+de 312 646 à 312 856 cycles de têtes depuis le 8/11 ; reste à mesurer le rythme après le réglage du 9/11.
+
+| Étape | Quoi | Gate | Statut |
+| --- | --- | --- | --- |
+| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | `pswpout` de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | À faire |
