@@ -1,0 +1,5 @@
+# Managed by playbooks/stabilize-workstation.yml.
+# Compressed swap in RAM, used before /swapfile (default negative priority) on the worn SATA SSD.
+ALGO=zstd
+PERCENT=25
+PRIORITY=100

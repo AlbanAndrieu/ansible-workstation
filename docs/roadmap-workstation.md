@@ -24,7 +24,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 
 | Livrable | Gate de validation | Statut |
 | --- | --- | --- |
-| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)**, vérifiée le 10/11 ; étapes 1 à 7 et 4 bis (swap) à faire |
+| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)**, vérifiée le 10/11 ; 4 bis (zram) appliquée le 10/11 ; étapes 1 à 7 à faire |
 | [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **CODE ADDED** ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement |
 | Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **CODE ADDED** |
 | [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **CODE ADDED** : timer quotidien, alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter |
@@ -130,4 +130,4 @@ de 312 646 à 312 856 cycles de têtes depuis le 8/11 ; reste à mesurer le ryth
 
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
-| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | `pswpout` de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | À faire |
+| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter) |

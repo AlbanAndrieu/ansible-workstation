@@ -122,6 +122,18 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         # A ratio set later in the file would silently zero the byte limit.
         self.assertNotIn("vm.dirty_ratio", settings)
 
+    def test_zram_swap_is_used_before_the_ssd_swapfile(self):
+        conf = (ROOT / "files/etc/default/zramswap").read_text()
+        settings = dict(
+            line.split("=")
+            for line in conf.splitlines()
+            if line and not line.startswith("#")
+        )
+        # /swapfile keeps the kernel's default negative priority.
+        self.assertGreater(int(settings["PRIORITY"]), 0)
+        self.assertLessEqual(int(settings["PERCENT"]), 50)
+        self.assertIn("default/zramswap", PLAYBOOK.read_text())
+
     def test_journald_keeps_more_than_a_day(self):
         self.assertIn("SystemMaxUse=2G", JOURNALD.read_text().splitlines())
         self.assertIn("journald.conf.d/size.conf", PLAYBOOK.read_text())

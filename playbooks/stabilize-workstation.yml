@@ -124,6 +124,13 @@
       changed_when: true
       become: true
 
+    - name: Restart zramswap
+      ansible.builtin.systemd_service:
+        name: zramswap.service
+        state: restarted
+        enabled: true
+      become: true
+
     - name: Reload apache
       ansible.builtin.systemd_service:
         name: apache2.service
@@ -504,6 +511,24 @@
       become: true
       when: stabilize_write
       notify: Apply hdparm
+
+    - name: Install zram swap
+      ansible.builtin.apt:
+        name: zram-tools
+        state: present
+      become: true
+      when: stabilize_write
+
+    - name: Swap to compressed RAM before the worn SSD
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/default/zramswap"
+        dest: /etc/default/zramswap
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: stabilize_write
+      notify: Restart zramswap
 
     - name: Report the stabilization plan
       ansible.builtin.debug:
