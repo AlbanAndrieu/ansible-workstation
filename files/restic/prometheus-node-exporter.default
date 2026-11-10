@@ -6,4 +6,5 @@
 # /var/lib/prometheus/node-exporter (apt, docker-health, nvme, smartmon).
 # node_exporter >= 1.8 accepts a repeated textfile directory.
 # LAN-bound; ufw admits only TrueNAS on 9100 (playbooks/harden-network.yml).
-ARGS="--collector.systemd --collector.textfile --collector.textfile.directory=/var/lib/restic --collector.textfile.directory=/var/lib/prometheus/node-exporter --web.listen-address=172.17.0.57:9100"
+# Carries stabilize_node_exporter_flags (stabilize-workstation.yml) so neither playbook drops the other's.
+ARGS="--collector.systemd --collector.textfile --collector.textfile.directory=/var/lib/restic --collector.textfile.directory=/var/lib/prometheus/node-exporter --web.listen-address=172.17.0.57:9100 --collector.cpu --collector.meminfo --collector.loadavg --collector.filesystem"
