@@ -1,5 +1,6 @@
 # Managed by playbooks/stabilize-workstation.yml.
 # Compressed swap in RAM, used before /swapfile (default negative priority) on the worn SATA SSD.
 ALGO=zstd
-PERCENT=25
+# 25 % was full after one day (idle desktop apps, about 3:1 with zstd): 50 % costs at most ~10 GiB of RAM.
+PERCENT=50
 PRIORITY=100
