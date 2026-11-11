@@ -112,6 +112,10 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B script
 description = "Read-only system inventory JSON v1 with source and UTC date per field; no sudo"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-workstation-inventory.py --format json"
 
+[tasks.audit-boot]
+description = "Read-only Secure Boot, TPM and NVIDIA module signature audit; exit 2 when Secure Boot would block the GPU; no sudo"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-boot-integrity.py"
+
 [tasks.capture-etc]
 description = "Copy /etc files listed in files/etc-manifest.txt into files/etc with secrets redacted; no sudo"
 run = "bash scripts/capture-etc.sh"

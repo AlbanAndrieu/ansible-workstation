@@ -29,9 +29,9 @@ class StabilizeWorkstationContracts(unittest.TestCase):
                 with self.subTest(task=task["name"]):
                     self.assertEqual(task.get("when"), "stabilize_write")
 
-    def test_never_mounts_over_existing_docker_data(self):
+    def test_never_mounts_over_existing_data(self):
         names = [task["name"] for task in play()["tasks"]]
-        guard = names.index("Refuse to mount over existing Docker data")
+        guard = names.index("Refuse to mount over existing data")
         mount = next(
             i for i, task in enumerate(play()["tasks"]) if "ansible.posix.mount" in task
         )
@@ -149,6 +149,20 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         report = "0 0 * * * /usr/sbin/chkrootkit | ansi2html -l > /var/www/report.html"
         self.assertTrue(any(re.search(r, report) for r in drop["loop"]))
         self.assertFalse(any(re.search(r, once) for r in drop["loop"]))
+
+    def test_nvme_volumes_never_block_the_boot(self):
+        doc = play()
+        line = next(
+            t["ansible.builtin.lineinfile"]["line"]
+            for t in doc["tasks"]
+            if "crypttab" in str(t.get("ansible.builtin.lineinfile", ""))
+        )
+        self.assertIn("nofail", line)
+        self.assertTrue(doc["vars"]["stabilize_nvme_crypt_key"].startswith("/etc/"))
+        for mount in doc["vars"]["stabilize_nvme_mounts"]:
+            self.assertIn("nofail", mount["opts"])
+        dropin = ROOT / "files/etc/systemd/system/ollama.service.d/workstation.conf"
+        self.assertIn("RequiresMountsFor=/data/models/ollama", dropin.read_text())
 
     def test_journald_keeps_more_than_a_day(self):
         self.assertIn("SystemMaxUse=2G", JOURNALD.read_text().splitlines())

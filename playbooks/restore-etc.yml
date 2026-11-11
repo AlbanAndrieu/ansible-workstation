@@ -31,6 +31,8 @@
       ufw/after.rules: "0640"
     # target_dir of /etc/motion/motion.conf; the motion user is not in its owning group.
     etc_restore_motion_target_dir: /home/albandrieu/Dropbox/motion
+    # Paths under /etc to restore alone (a one-file rollback): no unit or motion step then.
+    etc_restore_only: []
     etc_restore_write: "{{ etc_restore_apply | bool and etc_restore_apply_approved | bool }}"
 
   tasks:
@@ -64,6 +66,19 @@
              | reject('in', etc_restore_manual | default([]))
              | reject('match', '^pam' if not (etc_restore_pam | bool) else '^$')
              | sort }}
+
+    - name: Keep only the requested paths for a targeted rollback
+      ansible.builtin.set_fact:
+        etc_restore_files: "{{ etc_restore_files | select('in', etc_restore_only) | list }}"
+      when: etc_restore_only | length > 0
+
+    - name: Refuse a requested path that is not restorable
+      ansible.builtin.assert:
+        that:
+          - etc_restore_files | length == etc_restore_only | unique | length
+        fail_msg: "Not captured, PAM or holding a redacted value: {{ etc_restore_only | difference(etc_restore_files) }}"
+        quiet: true
+      when: etc_restore_only | length > 0
 
     - name: Ensure parent directories exist
       ansible.builtin.file:
@@ -100,6 +115,7 @@
       become: true
       when:
         - etc_restore_write
+        - etc_restore_only | length == 0
         - ('systemd/system/' + item) not in (etc_restore_manual | default([]))
 
     - name: Create the motion target directory
@@ -109,7 +125,9 @@
         owner: albandrieu
         mode: "0775"
       become: true
-      when: etc_restore_write
+      when:
+        - etc_restore_write
+        - etc_restore_only | length == 0
 
     # Without it motion fails with "Permission denied" on its first event and stops capturing.
     - name: Let motion write there, and keep the owner's access to what it creates
@@ -130,7 +148,9 @@
       loop_control:
         label: "{{ item.entity }} default={{ item.default }}"
       become: true
-      when: etc_restore_write
+      when:
+        - etc_restore_write
+        - etc_restore_only | length == 0
 
     - name: Report what changed and what is left to do by hand
       ansible.builtin.debug:
