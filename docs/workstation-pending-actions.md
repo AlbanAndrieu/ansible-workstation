@@ -139,10 +139,9 @@ mise run zabbix-host-check
 
 - **dotfiles** : `bin/inspect-workstation-system.py` est devenu un wrapper vers
   `scripts/audit-workstation-inventory.py` (même JSON, `provenance` en plus, et même résumé), avec
-  ses tests et ses docs. Le travail est indexé, pas commité, sur la branche
-  `refactor/inventory-wrapper-20261111`, créée depuis `main` ; tes changements non commités l'ont
-  suivie tels quels. Reste à commiter puis ouvrir la PR.
-- **nabla-compose PR #346** : rebasée le 11/11. Elle retire les six diagnostics du lot 1, qui ne
-  vivront plus qu'ici. À relire puis fusionner.
+  ses tests et ses docs. Commité (`5f5d47d`) sur `refactor/inventory-wrapper-20261111` :
+  [dotfiles#5](https://github.com/AlbanAndrieu/dotfiles/pull/5), à relire puis fusionner.
+- ~~**nabla-compose PR #346**~~ : fusionnée le 11/11 (`30d1958b`) ; les six diagnostics du lot 1
+  ne vivent plus qu'ici.
 - **P2, scripts OpenClaw/TrueNAS** : voir la question 12. L'API de sonde entre `nabla-openclaw`
   et `nabla-compose` se décide dans ces deux dépôts.
