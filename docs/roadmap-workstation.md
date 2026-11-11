@@ -96,8 +96,8 @@ Relevé du 8 novembre (SMART, `/sys/block/*/stat`, `pidstat -d`) :
 | Disque | Contenu | État |
 | --- | --- | --- |
 | Samsung 860 500 Go (SATA, LUKS) | `/`, `/home` (142 Go), `/swapfile` 16 Go | **66 % d'usure** (`Wear_Leveling_Count` 34), 117 To écrits, 35 700 h ; encore 48 Gio écrits par jour, surtout les profils Chrome, Claude Desktop et ChatGPT de `/home` |
-| Samsung 970 PRO 1 To (NVMe) | `/docker`, `/workspace` ; `p2` et `p5` inutilisées | 0 % d'usure, 5,9 To écrits |
-| 2 × Seagate 2 To (RAID1 LVM) | `/data` 500 Go (modèles ollama 20 Go) ; 2,66 To non alloués dans `vg-sata` | `sdc` : 312 646 cycles de têtes (300 000 prévus), 32 000 h ; aucun secteur réalloué ni en attente |
+| Samsung 970 PRO 1 To (NVMe) | `/docker`, `/workspace` ; `p2` et `p5` en LUKS2 dans `vg-nvme-crypt` (modèles ollama, `/home` à venir) depuis le 11/11 ; 98 Gio non partitionnés entre `p3` et `p4` | 0 % d'usure, 5,9 To écrits |
+| 2 × Seagate 2 To (RAID1 LVM) | `/data` 500 Go ; 2,66 To non alloués dans `vg-sata` | `sdc` : 312 646 cycles de têtes (300 000 prévus), 32 000 h ; aucun secteur réalloué ni en attente |
 
 Partitions NVMe inutilisées :
 
@@ -117,13 +117,13 @@ Partitions NVMe inutilisées :
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
 | 0 | Supprimer les copies Docker d'avant la migration ; `apm = 254` sur les deux disques durs ; écritures en attente plafonnées à 1 Gio, vidage dès 256 Mio | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml), tests de contrat | **FAIT le 9/11** : `/` 84 → 74 %, `APM_level 254`, `vm.dirty_bytes` 1 Gio |
-| 1 | Effacer `p2` (`wipefs`), rien à archiver | Photos retrouvées ailleurs (fait) | Prête, effacement à valider |
-| 1 bis | Comparer `/data/photo-TODELETE` (53 Go sur le RAID1 de disques durs) à `/media/photo` sur TrueNAS, fichier par fichier (`sha256`), puis le supprimer | 0 fichier absent de TrueNAS | Comparé le 10/11 : 18 671 fichiers sur 18 673 identiques (les deux restants : config de l'éditeur `ee`). `Eleonore/Eleonore/IMG-20200210-WA0000.jpg` est corrompu sur TrueNAS (octets aléatoires) ; la bonne version y est deux fois dans `google/Takeout`. **SUPPRIMÉ le 10/11** : `/data` 36 → 25 % (166 → 114 Go) |
+| 1 | Effacer `p2` (`wipefs`), rien à archiver | Photos retrouvées ailleurs (fait) | **FAIT le 11/11** : `wipefs -a` et `blkdiscard` sur `p2` et `p5` |
+| 1 bis | Comparer `/data/photo-TODELETE` (53 Go sur le RAID1 de disques durs) à `/media/photo` sur TrueNAS, fichier par fichier (`sha256`), puis le supprimer | 0 fichier absent de TrueNAS | Comparé le 10/11 : 18 671 fichiers sur 18 673 identiques (les deux restants : config de l'éditeur `ee`). `Eleonore/Eleonore/IMG-20200210-WA0000.jpg` est corrompu sur TrueNAS (octets aléatoires) ; la bonne version y est deux fois dans `google/Takeout`, recopiée à sa place le 11/11. **SUPPRIMÉ le 10/11** : `/data` 36 → 25 % (166 → 114 Go) |
 | 2 | Ouvrir `p5` avec sa phrase de passe, inventorier, archiver ce qui compte | Volume vide, rien à archiver | **FAIT le 10/11** : libre pour l'étape 3 |
-| 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | À faire |
-| 4 | Migrer `/home` sur le NVMe : session fermée (TTY root), `rsync -aHAXS`, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | À faire, devant la machine |
-| 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | À faire |
-| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà sur `:9100`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | À faire |
+| 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | **FAIT le 11/11** : clé `/etc/cryptsetup-keys.d/nvme_crypt.key`, copie et en-têtes LUKS sur la clé USB d'escrow (`luks-escrow/`) ; `/etc/crypttab` en `nofail`, ouverture par `systemd-cryptsetup@` vérifiée ; 92 Go libres dans le VG. Reste à voir un boot à froid ([runbook](runbook-storage-nvme.md)) |
+| 4 | Migrer `/home` sur le NVMe : session fermée (TTY root), `rsync -aHAXS`, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | Pré-copie à chaud faite le 11/11 (145 Go sur le LV `home`) ; bascule devant la machine ([runbook](runbook-storage-nvme.md), § 1) |
+| 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | **FAIT le 11/11** : LV monté sur `/data/models/ollama` (chemin inchangé), `RequiresMountsFor` dans le drop-in ; **17 s → 5,7 s**. Ancienne copie dans `/data/models/ollama.hdd-20261111`, à supprimer après une semaine |
+| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà exportées, job `workstation_node`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | Règles rédigées dans le [runbook](runbook-storage-nvme.md) § 2 ; à poser dans `nabla-compose` |
 | 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
 
 Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
@@ -133,8 +133,13 @@ Relevé du 10 novembre (6,7 jours sans redémarrage) : l'étape 0 tient (`vm.dir
 `APM_level` 254 sur `sdb` et `sdc`), mais rien n'a encore réduit les écritures sur `sda` :
 48 Gio/jour, `Wear_Leveling_Count` normalisé 34 → 33. La swap écrit maintenant : 6,3 Gio occupés
 sur `/swapfile`, 23,6 Gio écrits depuis le démarrage (environ 3,5 Gio/jour sur `sda`). `sdc` est passé
-de 312 646 à 312 856 cycles de têtes depuis le 8/11 ; reste à mesurer le rythme après le réglage du 9/11.
+de 312 646 à 312 856 cycles de têtes depuis le 8/11 ; toujours 312 856 le 11/11 : `APM_level` 254
+a arrêté le parcage des têtes.
+
+Vitesses de lecture séquentielle mesurées le 10/11 (`hdparm -t --direct`) : NVMe 1 956 Mo/s (une
+seule file d'attente, lien PCIe 3.0 x4 complet), SSD 860 451 Mo/s, disques durs 214 et 219 Mo/s,
+clé USB 36 Mo/s.
 
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
-| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter ; 5,6 Gio le soir du 10/11, zram 10 Gio) |
+| 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter ; 5,6 Gio le soir du 10/11, zram 10 Gio). 11/11 : zram plein (15,6 Gio, compressés 3:1, surtout les pages inactives de Claude Desktop, Chrome et des terminaux), `/swapfile` 5,7 Gio : la gate tient. zram passé à `PERCENT=50` (31,4 Gio) |
