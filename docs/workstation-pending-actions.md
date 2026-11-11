@@ -6,6 +6,14 @@ section donne le contrôle, la commande et la vérification. Rayer une section u
 
 ## 1. Commandes sudo prêtes
 
+### Reboot et bascule de `/home` sur le NVMe
+
+Noyau 7.0.0-43, NVIDIA et initramfs vérifiés le 11/11. Installer `home-nvme-switch.service` puis
+redémarrer : quatre commandes et les contrôles d'après dans le
+[runbook stockage](runbook-storage-nvme.md#1-reboot-et-bascule-de-home-sur-le-nvme). Pour enrôler
+la clé DKMS (section Secure Boot plus bas), lancer `mokutil --import` avant ce reboot : MokManager
+s'affiche au même redémarrage.
+
 ### Restauration Restic isolée
 
 Installe `restic-restore-test.service`, puis restaure `/etc/restic` dans un `/tmp` privé et le
