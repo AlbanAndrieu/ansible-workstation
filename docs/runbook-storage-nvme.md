@@ -41,7 +41,16 @@ le LV (`/mnt/home-nvme`) ; la passe finale ne recopie que ce qui a changé.
    systemctl daemon-reload && mount /home
    ```
 
-4. Redémarrer, ouvrir la session : `findmnt /home` doit montrer `vg--nvme--crypt-home`.
+4. Redémarrer (premier boot à froid avec `/etc/crypttab` : seule la phrase de passe de `sda3_crypt`
+   doit être demandée), ouvrir la session, puis :
+
+   ```bash
+   systemctl status systemd-cryptsetup@nvme2_crypt systemd-cryptsetup@nvme5_crypt --no-pager
+   findmnt /home /data/models/ollama
+   ```
+
+   Les deux volumes doivent être `active (exited)`, `/home` sur `vg--nvme--crypt-home` et les
+   modèles sur `vg--nvme--crypt-models`.
 5. Une semaine plus tard, si tout va bien : `rm -rf /home.sda-old` (environ 150 Go libérés sur
    `sda`), puis ajouter `/home` à `stabilize_nvme_mounts`.
 
