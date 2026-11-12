@@ -113,8 +113,8 @@ Non corrigé : `/api/` est relayé vers `albandrieu.albandrieu.com:80` (`127.0.0
 | # | Problème et preuve | Correctif proposé | Où |
 | --- | --- | --- | --- |
 | 1 | LiteLLM vers Redis : 360 erreurs `invalid username-password pair` en 6 h. Cache et suivi des dépenses hors service. Cause (7/11) : le mot de passe de `REDIS_URL` diffère du `requirepass` du conteneur `redis`, qui utilise la valeur par défaut écrite dans `compose.redis.yml`. LiteLLM est son seul client. | Nouveau mot de passe aléatoire dans `REDIS_AUTH` (`.env` de nabla-compose) et dans `REDIS_URL` (`~/.litellm/.env`), puis recréer les deux conteneurs (secret : à faire à la main) | nabla-compose, `~/.litellm/.env` |
-| 2 | Grafana local : 13 036 erreurs en 6 h. Ses règles visent `prometheus` et `loki`, qui n'existent pas en local. | Pointer vers Prometheus et Loki de TrueNAS, ou mettre les règles en pause | nabla-compose |
-| 3 | doco-cd : le sous-module `apps/fastapi-sample` est en SSH, sans clé. | Passer en HTTPS | nabla-compose |
+| 2 | ~~Grafana local : 13 036 erreurs en 6 h. Ses règles visent `prometheus` et `loki`, qui n'existent pas en local.~~ Codé le 10/11 (nabla-compose PR #346) : `GF_UNIFIED_ALERTING_EXECUTE_ALERTS=false`. Les règles Temporal n'ont rien à surveiller, ni ici ni sur TrueNAS. | Recréer le conteneur après la fusion : sa base `grafana.db` n'a pas de volume et sera perdue | nabla-compose |
+| 3 | ~~doco-cd : le sous-module `apps/fastapi-sample` est en SSH, sans clé.~~ `.gitmodules` est en HTTPS depuis le 6/11 (`512aad42`) ; seul le cache arrêté de doco-cd garde l'URL SSH (`/mnt/cpool/dococd/…/mirror/config`). | Corriger ce cache seulement si doco-cd revient sur la station | — |
 | 4 | ~~`restic-backup.yml` réécrivait `ARGS` de node_exporter sans les collecteurs `cpu`, `meminfo`, `loadavg` et `filesystem` de `stabilize_node_exporter_flags`.~~ Corrigé le 10/11 : son fichier porte les mêmes options (test de contrat). | — | — |
 | 5 | `/home` occupe 141 Go sur `/`. | Inventaire avec `mise run cleanup-check` | `scripts/workstation-cleanup.sh` |
 | 6 | Un `daemon-reload` pendant une panne de TrueNAS a figé PID 1 le 6/11, avec des partages montés. Les tests du 7/11 ne reproduisent pas ce gel (voir plus bas) : la condition exacte reste inconnue. | Ne pas lancer apt pendant un arrêt de TrueNAS. `softreval` n'aide pas (testé le 7/11). | `/etc/fstab` |
@@ -174,7 +174,7 @@ Reste hors de ces playbooks :
 | L'app `homarr` est `CRASHED` : `homarr-sync` sort en code 2 (`HOMARR_API_KEY is required`). | Fournir la clé, ou sortir en code 0 avec un avertissement | nabla-compose `apps/homarr/` |
 | `PiHoleAdsBlockedTooLow` toujours active : `rate()` sur une jauge journalière ; `PiHoleQueryCountHigh` a le même défaut. | `pihole_ads_percentage_today < 1`, `for: 1h` | nabla-compose `apps/prometheus/rules/pihole.rules.yml` |
 | Profil de mise à jour `EARLY_ADOPTER` (26.0.0-BETA.2), qui propose la RC 27. | `GENERAL` n'est pas proposé sur ce train (`available: false`). Garder la vérification automatique coupée et ne pas prendre la RC. | UI |
-| Le cron `clamav-cleanup` cherche `clamav-scan-*-.log` : ce motif ne correspond à aucun journal. | `clamav-scan-*.log` (supprime ceux de plus de 90 jours) | Cron TrueNAS |
+| Le cron `clamav-cleanup` cherche `clamav-scan-*-.log` : ce motif ne correspond à aucun journal. | `clamav-scan-*.log` (supprime ceux de plus de 90 jours). Déclaré dans `truenas-stabilize.yml` le 11/11 : le plan ne contient que cette mise à jour (cron 5), **apply à faire** | `truenas-stabilize.yml` |
 
 Suspecté :
 
@@ -183,7 +183,10 @@ Suspecté :
 
 Déjà suivi dans nabla-compose :
 
-- PSI `io full` à 14 % ;
+- PSI `io full` à 14 % le 4/11, ~50 % le 11/11 vers 00:10 (charge 19) : `cpool` encaisse ~670
+  écritures/s à 61 ms pour 14 Mo/s, et les imports Python de FastAPI Sample ont dépassé 4 min le
+  10/11 à 17:06 UTC, d'où l'échec de sa mise à jour par le cron. Le 11/11 à 11:45 UTC, après l'arrêt
+  des boucles de `pihole-dns-sync` et de Pyroscope : ~30 %, charge 5,8, ~300 écritures/s à 55 ms ;
 - 12 360 snapshots ;
 - 679 volumes Docker orphelins ;
 - 5 cibles Prometheus DOWN et Alertmanager sans récepteur ;

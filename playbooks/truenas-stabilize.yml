@@ -26,6 +26,10 @@
       - description: clamav-scan
         command: 'docker exec ix-clamav-clamav-1 clamdscan --multiscan --fdpass /scandir --log /mnt/logs/clamav-scan-$(date +\%Y-\%m-\%d_\%H-\%M).log'
         schedule: { minute: "0", hour: "6", dom: "1", month: "*", dow: "*" }
+      # The old pattern clamav-scan-*-.log matched no log, so none was ever removed.
+      - description: clamav-cleanup
+        command: 'docker exec ix-clamav-clamav-1 find /mnt/logs -type f -name "clamav-scan-*.log" -mtime +90 -exec rm {} \;'
+        schedule: { minute: "50", hour: "4", dom: "1", month: "*", dow: "*" }
       # One long test per disk and week of the month; a WD30EFRX long test takes about 7 h.
       - description: smart-long-sda
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3457796
