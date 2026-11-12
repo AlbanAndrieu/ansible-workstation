@@ -17,6 +17,8 @@
     restic_user: albandrieu
     restic_uid: 1000
     restic_home: /home/albandrieu
+    # ~/.m2 is a symlink to this directory, and Restic stores a symlink, not its target.
+    restic_maven_dir: /workspace/users/albandrieu30/.m2
     # Written only by this playbook, so the latest snapshot must match it byte for byte.
     restic_restore_sample: /etc/restic
     restic_templates:

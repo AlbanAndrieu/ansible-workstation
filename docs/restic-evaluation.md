@@ -33,7 +33,7 @@ credentials crowdsec, etc.
 
 | Inclure | Exclure |
 | --- | --- |
-| `/etc` complet, `~/.ssh`, `~/.gnupg`, `~/.config`, `~/.local/share/keyrings`, `/var/lib/` choisis | caches, `.venv`, `node_modules`, images Docker, modèles ollama (re-téléchargeables), `/media` (déjà sur TrueNAS) |
+| `/etc` complet, `~/.ssh`, `~/.gnupg`, `~/.config`, `~/.local/share/keyrings`, la config Maven (`settings.xml`, `settings-security.xml`, `toolchains.xml` du dossier réel de `~/.m2`, qui est un lien), `/var/lib/` choisis | caches, `.venv`, `node_modules`, images Docker, modèles ollama (re-téléchargeables), `/media` (déjà sur TrueNAS) |
 
 Rétention proposée : 7 quotidiens, 4 hebdomadaires, 12 mensuels.
 
