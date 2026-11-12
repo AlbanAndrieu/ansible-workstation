@@ -7,7 +7,7 @@
     classic: true
   become: true
   when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=') and
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     postman_enabled
   tags: package
 
@@ -16,7 +16,7 @@
     name: insomnia
     classic: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and  ansible_distribution_version is version_compare(19.04, '>=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
 
 - name: workstation | Install bash tools
@@ -132,7 +132,7 @@
     url: http://linuxg.net/how-to-install-peazip-5-3-1-on-ubuntu-14-04-linux-mint-17-elementary-os-0-3-and-pinguy-os-14-04/
     dest: "{{ home }}/Downloads/"
   when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     peazip_enabled
   become: true
   changed_when: false
@@ -144,7 +144,7 @@
   ansible.builtin.command: gdebi {{ home }}/Downloads/peazip_5.3.1.LINUX.Qt-2_i386.deb
   become: true
   when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     githubdesktop_enabled
   tags:
     - peazip
@@ -159,7 +159,7 @@
     url: https://github.com/shiftkey/desktop/releases/download/release-2.9.3-linux3/GitHubDesktop-linux-2.9.3-linux3.deb
     dest: "{{ home }}/Downloads/"
   when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     githubdesktop_enabled
   become: true
   changed_when: false
@@ -171,7 +171,7 @@
   ansible.builtin.command: gdebi {{ home }}/Downloads/GitHubDesktop-linux-2.9.3-linux3.deb
   become: true
   when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>=')) and
+    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
     githubdesktop_enabled
 
 - name: workstation | Install python utilities tools

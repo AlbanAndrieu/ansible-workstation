@@ -23,11 +23,11 @@
     - name: Fail for an unsupported distribution
       ansible.builtin.assert:
         that: >-
-          (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('12.04', '>='))
+          (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>='))
           or (ansible_distribution in ['RedHat', 'CentOS'] and ansible_distribution_major_version in ['6', '7'])
         fail_msg: >-
           {{ ansible_distribution }} {{ ansible_distribution_version }} is not supported:
-          Ubuntu 12.04 or later, Red Hat Enterprise Linux or CentOS 6/7
+          Ubuntu 20.04 or later, Red Hat Enterprise Linux or CentOS 6/7
         success_msg: "Version {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_architecture }}"
 
 - hosts: all
@@ -150,7 +150,6 @@
 
       vars:
         dash_enabled: false
-        webapps_enabled: false
         apache_create_vhosts: false
 
   # roles:

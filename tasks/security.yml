@@ -158,7 +158,8 @@
       APT::Periodic::AutocleanInterval "7";
   become: true
   when: ansible_os_family == 'Debian'
-  tags: [unattended-upgrades, vm]
+  # Own tag: it overwrites the cadence set in "Software & Updates", unlike the drop-in below.
+  tags: [apt-periodic, vm]
 
 # Drop-in instead of overwriting the 50unattended-upgrades package conffile,
 # whose default origins already cover the release and -security pockets.

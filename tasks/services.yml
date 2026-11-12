@@ -64,7 +64,7 @@
     state: started
     scope: user
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04']) and bitcoinqt_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and bitcoinqt_enabled
   tags: service
   become: false
   become_user: "{{ lookup('env', 'USER') }}"
@@ -107,7 +107,7 @@
     state: started
     scope: user
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and macchanger_enabled
   tags: service
   become: false
   become_user: "{{ lookup('env', 'USER') }}"
@@ -152,7 +152,6 @@
     enabled: true
   when: >-
     (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-    and (ansible_distribution_version not in ['16.04'])
     and macchanger_enabled
     and workstation_hide_location_dns_override_enabled | bool
   tags: service
@@ -169,7 +168,6 @@
     enabled: false
   when: >-
     (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-    and (ansible_distribution_version not in ['16.04'])
     and macchanger_enabled
     and not (workstation_hide_location_dns_override_enabled | bool)
   tags: service
@@ -184,7 +182,6 @@
     enabled: false
   when: >-
     (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
-    and (ansible_distribution_version not in ['16.04'])
     and macchanger_enabled
     and not (workstation_hide_location_dns_override_enabled | bool)
   tags: service
@@ -221,7 +218,7 @@
     daemon_reload: true
     state: started
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and macchanger_enabled
   tags: service
   become: true
   # ignore_errors: true
@@ -283,7 +280,7 @@
     state: started
     scope: user
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04']) and macchanger_enabled
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and macchanger_enabled
   tags: service
   become: false
   become_user: "{{ lookup('env', 'USER') }}"
@@ -310,7 +307,7 @@
     state: started
     scope: user
     enabled: true
-  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and (ansible_distribution_version not in ['16.04'])
+  when: ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' )
   tags: service
   become: false
   become_user: "{{ lookup('env', 'USER') }}"

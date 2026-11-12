@@ -1,42 +1,4 @@
 ---
-- name: workstation | Install nemo tools PPA
-  ansible.builtin.apt_repository:
-    repo: "ppa:webupd8team/nemo"
-    update_cache: "yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  tags: nemo
-
-- name: workstation | Install desktop tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  tags: nemo
-  with_items:
-    - nemo
-    # Check for the best file manager at
-    # https://artfulrobot.uk/blog/whats-best-file-manager-ubuntu-gnome-1404-trusty
-    # Install nemo
-    # http://www.webupd8.org/2013/10/install-nemo-with-unity-patches-and.html
-    # TODO
-    # sudo add-apt-repository ppa:webupd8team/nemo
-    # sudo apt-get update
-    # sudo apt-get install nemo nemo-fileroller
-    # sudo apt-get install nemo-compare nemo-dropbox nemo-media-columns nemo-pastebin nemo-seahorse nemo-share nemo-emblems nemo-image-converter nemo-audio-tab
-    - nemo-fileroller
-    - nemo-compare
-    - nemo-dropbox
-    - nemo-media-columns
-    - nemo-pastebin
-    - nemo-seahorse
-    - nemo-share
-    - nemo-emblems
-    - nemo-image-converter
-    - nemo-audio-tab
-    # rabbitvcs is using too much resources
-    #   - nemo-rabbitvcs
-    - nemo-terminal
-
 # Fix issues with python-nemo
 # sudo ln -s /usr/lib/x86_64-linux-gnu/libpython2.7.so.1 /usr/lib/libpython2.7.so.1
 # sudo ln -s /usr/lib/libpython2.7.so.1 /usr/lib/libpython2.7.so.1.0
@@ -94,53 +56,6 @@
     - unity-scope-manpages
     - unity-scope-virtualbox
 
-# http://linuxfr.org/news/integration-des-web-apps-dont-linuxfr-org-dans-unity
-- name: webapps | Add webapps repo for unity-webapps-preview packages
-  ansible.builtin.apt_repository:
-    repo: "ppa:webapps/preview"
-    state: "{{"
-    update_cache: "yes"
-    cmd: util_repository_state | default('present') }}
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and webapps_enabled
-  tags: webapps_setup
-
-- name: webapps | Install unity-webapps-preview packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and webapps_enabled
-  tags: webapps_setup
-  with_items:
-    - unity-webapps-preview
-    - unity-webapps-common
-    - unity-chromium-extension
-    - unity-webapps-googlecalendar
-    - unity-webapps-gmail
-    - unity-webapps-googledocs
-    - unity-webapps-googleplus
-    - unity-webapps-twitter
-    - unity-webapps-facebookmessenger
-    - xul-ext-unity
-
-- name: dash | Add dash repo for unity-lens history packages
-  ansible.builtin.apt_repository:
-    repo: "ppa:markjtully/ppa"
-    state: "{{"
-    update_cache: "yes"
-    cmd: util_repository_state | default('present') }}
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' ) and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-
-- name: dash | Install unity-lens history packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-web-history-lens
-    - zeitgeist-datasource-firefox
-
 # - name: dash | Add dash repo for unity-lens grooveshark packages
 #   apt_repository: repo="ppa:scopes-packagers/ppa" state={{ util_repository_state | default('present') }} update_cache=yes
 #   become: true
@@ -154,24 +69,6 @@
 #   tags: dash_setup
 #   with_items:
 #   - unity-scope-grooveshark
-
-- name: dash | Add dash repo for unity-lens google docs packages
-  ansible.builtin.apt_repository:
-    repo: "ppa:nilarimogard/webupd8"
-    state: "{{"
-    update_cache: "yes"
-    cmd: util_repository_state | default('present') }}
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-
-- name: dash | Install unity-lens google docs packages
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04'] and dash_enabled
-  tags: dash_setup
-  with_items:
-    - unity-lens-gdocs
 
 # sudo add-apt-repository ppa:nilarimogard/webupd8
 # sudo apt-get update
@@ -190,7 +87,7 @@
     update_cache: "yes"
     cmd: util_repository_state | default('present') }}
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and calendar_indicator_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and calendar_indicator_enabled
   tags: calendar_indicator_setup
 
 - name: indicator calendar | Install calendar-indicator packages
@@ -208,7 +105,7 @@
     update_cache: "yes"
     cmd: util_repository_state | default('present') }}
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and weather_indicator_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and weather_indicator_enabled
   tags: weather_indicator_setup
 
 - name: indicator weather | Install my-weather-indicator packages
@@ -283,23 +180,6 @@
     - libcanberra-gtk3-module
 
 # See https://tic-et-net.org/2018/05/10/comment-installer-gksu-sur-ubuntu-bionic-18-04-lts/
-
-- name: workstation | Make sure artful is enabled for gksudo tools
-  ansible.builtin.apt_repository:
-    repo: "deb http://archive.ubuntu.com/ubuntu/ artful universe"
-    state: present
-    update_cache: "yes"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
-  become: true
-  ignore_errors: true
-
-- name: workstation | Install gksudo tools
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['18.04']
-  tags: package
-  with_items:
-    - gksu
 
 - name: workstation | Enable lock-screen
   ansible.builtin.command: gsettings set org.gnome.desktop.lockdown disable-lock-screen 'false'

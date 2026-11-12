@@ -60,19 +60,6 @@
     - package
     - gedit
 
-- name: workstation | Install editor gedit tools (2)
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when:
-    (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04','16.04','18.04'] and
-    gedit_enabled
-  with_items:
-    - gconf-editor
-    - dconf-tools
-  tags:
-    - package
-    - gedit
-
 # TODO
 # https://codetree.com.au/projects/imitation/
 # cd /workspace
@@ -87,52 +74,12 @@
 # sudo cp -r imitation/ /usr/lib/gedit/plugins/
 # sudo cp imitation.plugin /usr/lib/gedit/plugins/
 
-- name: workstation | Install editor gedit-gmate tools PPA
-  ansible.builtin.apt_repository:
-    repo: "ppa:ubuntu-on-rails/ppa"
-    update_cache: "yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gedit_enabled
-  tags:
-    - package
-    - gedit
-
-- name: workstation | Install editor gedit-gmate plugin
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['12.04','14.04'] and gedit_enabled
-  with_items:
-    - gedit-gmate
-  tags:
-    - package
-    - gedit
-
-- name: workstation | Install editor atom tools PPA
-  ansible.builtin.apt_repository:
-    repo: "ppa:webupd8team/atom"
-    update_cache: "yes"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  tags:
-    - package
-    - atom
-
-- name: workstation | Install editor atom
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version in ['16.04']
-  with_items:
-    - atom
-  tags:
-    - package
-    - atom
-
 - name: workstation | Install editor atom
   snap:
     name: atom
     classic: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and atom_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and atom_enabled
   tags:
     - package
     - atom
@@ -141,7 +88,7 @@
   ansible.builtin.apt:
     deb: https://www.princexml.com/download/prince_{{ prince_version }}_amd64.deb
     when:
-      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and
+      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
       prince_enabled
   tags:
     - package
@@ -151,7 +98,7 @@
   ansible.builtin.apt:
     deb: https://github.com/sharkdp/bat/releases/download/v{{ bat_version }}/bat_{{ bat_version }}_amd64.deb
     when:
-      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=') and
+      (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and
       bat_enabled
   tags:
     - package
@@ -164,7 +111,7 @@
 - name: workstation | Refresh snap once a week
   ansible.builtin.command: snap set system refresh.timer=sat,10:00~12:00
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version('19.04', '>=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags:
     - snap
     - refresh

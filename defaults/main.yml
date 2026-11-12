@@ -73,16 +73,13 @@ screensaver_enabled: false
 dash_enabled: true
 classicmenu_indicator_enabled: true
 calendar_indicator_enabled: true
-pidgin_indicator_enabled: false
 weather_indicator_enabled: true
 cpufreq_indicator_enabled: true
 tlp_enabled: true
 tweak_enabled: true
 compizconfig_enabled: true
-gstreamer_enabled: true
 # Howdy: see playbooks/howdy-cameras.yml (never installed by this role).
 skype_enabled: false
-webapps_enabled: true
 pidgin_enabled: false
 nodejs_enabled: false
 mount_enabled: false
@@ -119,7 +116,6 @@ ansigenome_enabled: true
 glances_enabled: true
 apache_create_vhosts: true
 webcam_enabled: true
-keepass2_enabled: true
 # Legacy PAM YubiKey handler removed; never opt in implicitly.
 pam_enabled: false
 variety_enabled: true

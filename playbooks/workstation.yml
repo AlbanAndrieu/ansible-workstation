@@ -6,9 +6,9 @@
   become: true
 
   roles:
-    - role: ../
+    # Ansible resolves "../" against playbooks/roles/ first, i.e. playbooks/ itself: an empty role.
+    - role: "{{ playbook_dir | dirname }}"
       dash_enabled: false
-      webapps_enabled: false
       apache_create_vhosts: false
 # - name: Increase SWAP
 #   hosts: localhost

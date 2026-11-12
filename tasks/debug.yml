@@ -118,7 +118,7 @@
     dest: /usr/share/keyrings/lens-archive-keyring.gpg
     mode: "0644"
     force: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and lens_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and lens_enabled
   tags:
     - package
     - lens
@@ -129,7 +129,7 @@
     state: present
     update_cache: true
     filename: lens.list
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and lens_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and lens_enabled
   become: true
   ignore_errors: true
   tags:
@@ -139,7 +139,7 @@
 - name: workstation | Install lens tools
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04'] and lens_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and lens_enabled
   tags:
     - package
     - lens

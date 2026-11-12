@@ -7,7 +7,7 @@
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and docker_enabled
+  when: ansible_os_family == 'Debian' and docker_enabled
   loop:
     - auditd
     - cpuset
@@ -18,7 +18,7 @@
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04'] and docker_enabled
+  when: ansible_os_family == 'Debian' and docker_enabled
   loop:
     - libopenscap8
     - lynx
@@ -29,7 +29,7 @@
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04', '14.04']
+  when: ansible_os_family == 'Debian'
   loop:
     - apparmor-utils
     - cgroup-tools
@@ -40,7 +40,7 @@
     name: "{{ item }}"
     state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version not in ['12.04', '14.04']
+  when: ansible_os_family == 'Debian'
   loop:
     - amazon-ecr-credential-helper
     - golang-docker-credential-helpers

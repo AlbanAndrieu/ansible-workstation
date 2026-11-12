@@ -27,7 +27,7 @@
 
 - name: brew | Uninstall homebrew on Ubuntu
   ansible.builtin.apt: pkg={{ item }} state=absent
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04', '13.04', '14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - linuxbrew-wrapper
   become: true

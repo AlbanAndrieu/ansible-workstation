@@ -4,22 +4,15 @@
 - name: workstation | Install editor gnome-tweaks
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '>=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - gnome-tweaks
-
-- name: workstation | Install editor gnome-tweaks
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(18.04, '<')
-  with_items:
-    - gnome-tweak-tool # fix for meld, for For older Debian and Ubuntu versions, install GNOME Tweaks Tool using the command
 
 # See https://www.linuxuprising.com/2020/04/top-things-to-do-after-installing.html
 - name: workstation | Install editor gnome extensions
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version not in ['12.04','14.04']
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - gnome-shell-extensions
     - chrome-gnome-shell
@@ -29,7 +22,7 @@
     name: gnome-calculator
     classic: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and ansible_distribution_version is version_compare(19.04, '>=')
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: package
 
 - name: workstation | Install utilities tools
