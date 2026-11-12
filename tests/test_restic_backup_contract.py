@@ -83,6 +83,15 @@ class ResticBackupContract(unittest.TestCase):
         init = (UNITS / "restic-init.service.j2").read_text()
         self.assertIn("ConditionPathExists=!{{ restic_repository }}/config", init)
 
+    def test_maven_settings_come_from_the_real_directory(self):
+        include = (UNITS / "include.txt.j2").read_text().splitlines()
+        self.assertIn("{{ restic_maven_dir }}/settings.xml", include)
+        self.assertIn("{{ restic_maven_dir }}/settings-security.xml", include)
+        p = play()
+        self.assertFalse(
+            p["vars"]["restic_maven_dir"].startswith(p["vars"]["restic_home"]),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
