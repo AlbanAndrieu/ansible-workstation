@@ -49,23 +49,6 @@
     job: sudo docker system prune -a -f --volumes && sudo docker volume prune --all --force > /var/log/cron-docker-cleaning.log 2>&1
   tags: [cron, docker, cleaning]
 
-- name: Clamscan check
-  # become_user: ubuntu
-  user: root
-  become: true
-  ansible.builtin.cron:
-    name: Clamscan check
-    minute: "0"
-    hour: "2"
-    day: "*"
-    month: "*"
-    weekday: "0"
-    job:
-      sudo /usr/bin/clamscan --exclude-dir=/home/albandrieu/.clamtk/viruses --exclude-dir=smb4k --exclude-dir=/run/user/albandrieu/gvfs
-      --exclude-dir=/home/albandrieu/.gvfs --exclude-dir=.thunderbird --exclude-dir=.mozilla-thunderbird --exclude-dir=.evolution --exclude-dir=Mail
-      --exclude-dir=kmail -i -r /home/albandrieu --log="$HOME/.clamtk/history/$(date +\%b-\%d-\%Y).log" 2>/dev/null
-  tags: [cron, clamscan, security]
-
 - name: Speedtest check
   # become_user: ubuntu
   user: root

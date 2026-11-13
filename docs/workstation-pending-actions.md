@@ -28,18 +28,21 @@ systemctl show restic-restore-test.service -p Result
 
 Attendu : `Result=success`.
 
-### Crontab root : scan ClamTk au repos, doublons retirés
+### Crontab root : scan ClamAV hebdomadaire des disques locaux, doublons retirés
 
-Le `--check` ne change que ces deux tâches : `nice -n 19 ionice -c3` devant `clamscan`, et les
-lignes maldet (cassée) et chkrootkit (en double) retirées.
+Les lignes ClamTk (`clamscan -r /home/albandrieu` chaque nuit, 16 h 40 le 12/11), maldet (cassée)
+et chkrootkit (en double) sont retirées. `clamav-local-disks` scanne chaque samedi à 01:00, au
+repos, les systèmes de fichiers locaux (`/`, `/boot`, `/data`, `/workspace`, `/docker`…) avec
+`--cross-fs=no` : les partages TrueNAS (NFS sous `/media`) sont scannés sur TrueNAS.
 
 ```bash
 mise run stabilize-check
 .venv/bin/ansible-playbook -i localhost, -c local playbooks/stabilize-workstation.yml -e stabilize_apply=true -e stabilize_apply_approved=true -K
-sudo crontab -l | grep -cE 'maldet|nice -n 19 ionice -c3 /usr/bin/clamscan'
+sudo crontab -l | grep -cE 'maldet|chkrootkit|-r /home/albandrieu'
+sudo crontab -l | grep -c clamav-scan-local-disks
 ```
 
-Attendu : `1` (seule la ligne ClamTk, réécrite).
+Attendu : `0`, puis `1`. Journal : `/var/log/clamav/local-disks-<date>.log`.
 
 ### Secure Boot : enrôler la clé DKMS avant de l'activer
 

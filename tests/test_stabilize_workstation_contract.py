@@ -1,7 +1,10 @@
 """Offline guardrails for the workstation stabilization playbook."""
 
+import os
 from pathlib import Path
 import re
+import subprocess
+import tempfile
 import unittest
 
 import yaml
@@ -134,21 +137,54 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         self.assertLessEqual(int(settings["PERCENT"]), 50)
         self.assertIn("default/zramswap", PLAYBOOK.read_text())
 
-    def test_root_crontab_scan_is_idle_and_duplicates_go(self):
+    def test_root_crontab_drops_clamtk_maldet_and_duplicates(self):
         tasks = {t["name"]: t for t in play()["tasks"]}
-        scan = tasks["Run the nightly ClamTk scan at idle CPU and disk priority"]
-        rule = scan["ansible.builtin.replace"]
-        line = "0 0 * * * /usr/bin/clamscan -r /home"
-        once = re.sub(rule["regexp"], rule["replace"].replace("\\1", "\\g<1>"), line)
-        self.assertEqual(
-            once,
-            "0 0 * * * nice -n 19 ionice -c3 /usr/bin/clamscan -r /home",
+        drop = tasks[
+            "Drop the ClamTk, broken maldet and duplicate chkrootkit cron lines"
+        ]
+        clamtk = (
+            "0 0 * * * /usr/bin/clamscan --exclude-dir=smb4k -i -r /home/albandrieu "
+            '--log="/var/log/clamav/history/x.log"'
         )
-        self.assertEqual(re.sub(rule["regexp"], "", once), once)
-        drop = tasks["Drop the broken maldet and the duplicate chkrootkit cron lines"]
         report = "0 0 * * * /usr/sbin/chkrootkit | ansi2html -l > /var/www/report.html"
+        local = "0 1 * * 6 /usr/local/sbin/clamav-scan-local-disks"
+        self.assertTrue(any(re.search(r, clamtk) for r in drop["loop"]))
         self.assertTrue(any(re.search(r, report) for r in drop["loop"]))
-        self.assertFalse(any(re.search(r, once) for r in drop["loop"]))
+        self.assertFalse(any(re.search(r, local) for r in drop["loop"]))
+        cron = tasks["Scan the local disks with ClamAV every Saturday night"]
+        self.assertEqual(
+            cron["ansible.builtin.cron"]["job"],
+            "/usr/local/sbin/clamav-scan-local-disks",
+        )
+
+    def test_local_disk_scan_skips_truenas_mounts(self):
+        mounts = "\n".join(
+            [
+                "/ /",
+                "/var/snap/firefox/common/host-hunspell /usr/share/hunspell",
+                "/data /",
+                "/workspace /",
+                "/run/media/albandrieu/NABLA_ESCROW /",
+                "/var/lib/containerd /containerd",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            bin_dir = Path(tmp)
+            (bin_dir / "findmnt").write_text(f"#!/bin/sh\nprintf '%s\\n' '{mounts}'\n")
+            # nice stands in for the whole command line, so nothing is scanned.
+            (bin_dir / "nice").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
+            for stub in bin_dir.iterdir():
+                stub.chmod(0o755)
+            env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}"}
+            argv = subprocess.run(
+                ["bash", ROOT / "files/clamav-scan-local-disks.sh"],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.splitlines()
+        self.assertIn("--cross-fs=no", argv)
+        self.assertEqual(argv[-3:], ["/", "/data", "/workspace"])
 
     def test_nvme_volumes_never_block_the_boot(self):
         doc = play()
