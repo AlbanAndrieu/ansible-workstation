@@ -92,13 +92,12 @@ bat_enabled: false
 
 # NFS mounts (nabla server). Same options as stabilize_nfs_opts (playbooks/stabilize-workstation.yml).
 mount_nfs_opts: "noatime,nosuid,nodev,noexec,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,x-systemd.mount-timeout=20s"
-# The 12 shares active in /etc/fstab; archive, jenkins, workspace and bower stay commented out there.
+# The 11 shares active in /etc/fstab; archive, jenkins, workspace and bower stay commented out there.
 mount_nfs_entries:
   - { path: /media/ftp, src: nabla:/mnt/cpool/ftp }
   - { path: /media/music, src: nabla:/mnt/cpool/media/music }
   - { path: /media/photo, src: nabla:/mnt/cpool/media/photo }
   - { path: /media/backup, src: nabla:/mnt/cpool/backup }
-  - { path: /media/bitcoin, src: nabla:/mnt/cpool/bitcoin }
   - { path: /media/www, src: nabla:/mnt/cpool/www }
   - { path: /media/nexus, src: nabla:/mnt/cpool/nexus }
   - { path: /media/nexus3, src: nabla:/mnt/cpool/nexus3 }

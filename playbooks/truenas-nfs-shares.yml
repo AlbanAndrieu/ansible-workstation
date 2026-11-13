@@ -25,9 +25,6 @@
       - path: /mnt/cpool/backup
         comment: backup
         networks: "{{ nfs_lan }}"
-      - path: /mnt/cpool/bitcoin
-        comment: bitcoin
-        networks: "{{ nfs_lan }}"
       - path: /mnt/cpool/www
         comment: www
         networks: "{{ nfs_lan }}"
