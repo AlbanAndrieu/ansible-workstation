@@ -12,10 +12,8 @@
     truenas_stabilize_apply: false
     truenas_stabilize_apply_approved: false
     truenas_stabilize_write: "{{ truenas_stabilize_apply | bool and truenas_stabilize_apply_approved | bool }}"
-    # Stopped since the 4 Nov OOM; autostart would bring them back at boot on a host without swap.
-    truenas_vm_autostart_off:
-      - taloswk01
-      - taloswk02
+    # The Talos workers autostart on purpose: the homelab reboot waits for all three VMs.
+    truenas_vm_autostart_off: []
     truenas_search_domains:
       - albandrieu.com
     # dpool no longer exists.
