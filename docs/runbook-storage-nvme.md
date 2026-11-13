@@ -46,13 +46,22 @@ Retour arrière (TTY root, session fermée) :
 retirer la ligne `/home` de `/etc/fstab`, redémarrer. Ce qui a été écrit dans `/home` depuis la
 bascule reste sur le LV (`mount /dev/vg-nvme-crypt/home /mnt/home-nvme` pour le récupérer).
 
-## 2. Alertes SMART et usure — en PR le 13/11
+## 2. Alertes SMART et usure — déployées le 13/11
 
 Règles `WorkstationSsdWearHigh`, `WorkstationDiskSectorsFailing` et `WorkstationNvmeDegraded`
 dans `apps/prometheus/rules/node-exporter.rules.yml` de `nabla-compose`
-([PR #371](https://github.com/AlbanAndrieu/nabla-compose/pull/371)) : promtool valide, les trois
-expressions renvoient les disques attendus sur le Prometheus de TrueNAS, aucune ne se déclenche.
+([PR #371](https://github.com/AlbanAndrieu/nabla-compose/pull/371), fusionnée) : promtool valide,
+les trois expressions renvoient les disques attendus sur le Prometheus de TrueNAS.
 
-Reste à faire après la fusion : faire relire ses règles à Prometheus (skill `truenas-ops`), puis
-envoyer une alerte de test (`amtool alert add WorkstationSsdWearHigh disk=/dev/sda`), qui doit
-arriver.
+Déployées le 13/11 (`redeploy-impacted-apps.py --apply`, LiteLLM puis Prometheus) : groupe
+`WorkstationDisks` chargé, les trois règles évaluées toutes les 15 s, `health=ok`, inactives.
+Alerte de test envoyée dans le conteneur `ix-prometheus-alertmanager-1` (routée vers le receiver
+`slack`, 0 notification en échec) :
+
+```bash
+sudo docker exec ix-prometheus-alertmanager-1 amtool --alertmanager.url=http://127.0.0.1:9093 \
+  alert add WorkstationSsdWearHigh disk=/dev/sda severity=warning test=d11 --end=<RFC3339 +10 min>
+```
+
+Sous `systemd-run`, passer `--setenv=HOME=/root` : sans `HOME`, git ignore le `safe.directory`
+de root et le script échoue sur `git rev-parse`.
