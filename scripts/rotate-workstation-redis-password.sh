@@ -9,6 +9,14 @@ ll_env=$HOME/.litellm/.env
 stamp=$(date +%Y%m%d-%H%M%S)
 url_re="^REDIS_URL=([\"']?)redis://([^:@/]*):[^@]*@"
 
+# Compose prefers exported variables to .env: an exported value would silently win over the rotation.
+for var in REDIS_AUTH REDIS_URL DATABASE_URL; do
+  [ -z "${!var:-}" ] || {
+    echo "$var is exported by this shell and overrides the .env files: run from a shell without it" >&2
+    exit 1
+  }
+done
+
 [ "$(grep -cE "$url_re" "$ll_env")" = 1 ] || {
   echo "REDIS_URL in $ll_env is not a single redis://[user]:password@host line: nothing changed" >&2
   exit 1
