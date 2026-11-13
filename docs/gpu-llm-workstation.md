@@ -173,3 +173,25 @@ Vérifié le 14/11 :
   outil `patch_resume`, `bonsai-2:9b` réussit 3 modifications sur 3 (remplacer, ajouter avec `-`,
   supprimer), `qwen2.5:3b` 2 sur 3 (aucun appel pour un ajout). Sortie JSON structurée correcte pour
   les deux. Les deux modèles ne tiennent pas ensemble sur le GPU : alterner les routes les recharge.
+
+## Un seul modèle de chat sur le GPU (14/11)
+
+Règle : toute route LiteLLM vers l'ollama de la workstation utilise `bonsai-2:9b` avec
+`num_ctx: 32768`. `think` ne recharge pas le modèle, un autre modèle ou un autre `num_ctx` si.
+
+| Route | Réglage | Clients |
+| --- | --- | --- |
+| `qwen` | `think: false` | Open WebUI, OpenRAG, FastAPI Sample (`fastapi-qwen`), Homarr, Langfuse |
+| `qwen-think` | `think: true`, environ 3 fois plus lent | à choisir dans Open WebUI pour les questions difficiles |
+| `rr-json` | `think: false`, température 0 | Reactive Resume |
+| `embedding` | `nomic-embed-text`, 2e modèle autorisé (`OLLAMA_MAX_LOADED_MODELS=2`) | RAG, mémoire d'OpenClaw |
+
+- Workstation (`~/.litellm/litellm_config.yaml`, sauvegarde `-2026-11-14`) : `qwen-think` ajoutée,
+  `llama3.2` et `gemma3` retirées avec leurs replis. En alternant `qwen`, `qwen-think` et `rr-json`
+  à travers LiteLLM : aucun chargement de modèle dans le journal d'ollama, une seule instance.
+- TrueNAS ([nabla-compose#374](https://github.com/AlbanAndrieu/nabla-compose/pull/374)) : mêmes
+  routes, et `default_fallbacks` passe de `llama3.2` à `qwen` (toute route en échec chargeait
+  `llama3.2` sur le GPU). Un test vérifie la règle sur chaque route vers `172.17.0.57:11434`.
+- OpenClaw n'utilise aucun modèle de chat local : `gpt-4.1` et l'embedding seulement.
+- Non vérifié : les flows Langflow (choix du modèle stocké dans sa base) ; les appels directs à
+  ollama, hors LiteLLM, peuvent toujours demander un autre modèle tant qu'il est installé.
