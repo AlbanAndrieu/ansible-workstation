@@ -104,7 +104,7 @@ injectées (nabla-compose `docs/runbooks/fastapi-sample-litellm.md`).
 | 2 | Mettre ollama à jour | Fait : 0.40.15, aucun gain de vitesse mesuré |
 | 3 | `qwen` → `qwen3.5:4b`, 32k, réflexion coupée | Fait, testé avec FastAPI Sample |
 | 4 | Code : `qwen3.5:4b` à la place de `qwen2.5-coder:7b` | Aucune entrée LiteLLM ni outil n'utilise `qwen2.5-coder:7b` (4,7 Go) ; gardé, à supprimer si inutile |
-| 5 | Retirer les `num_ctx` sous 8192 et les entrées qui débordent sur le CPU | Fait côté workstation. Le LiteLLM de TrueNAS (nabla-compose `apps/litellm/config.yaml`) garde `llama3.1`, `llama3.8b` et `deepseek-coder-v2`, qui renvoient maintenant 404 : à retirer puis redéployer |
+| 5 | Retirer les `num_ctx` sous 8192 et les entrées qui débordent sur le CPU | Fait côté workstation. Le LiteLLM de TrueNAS (nabla-compose `apps/litellm/config.yaml`) gardait `llama3.1`, `llama3.8b` et `deepseek-coder-v2`, qui renvoient 404 : **retirés le 13/11** ([nabla-compose#371](https://github.com/AlbanAndrieu/nabla-compose/pull/371)), redéploiement après la fusion. La route `qwen` de TrueNAS utilise toujours `qwen3:4b` : ne pas le supprimer |
 | 6 | Supprimer les 6 modèles trop gros | Fait, 64 Go libérés |
 | 7 | Embedding `qwen3-embedding:0.6b` | Abandonné : 30 fois plus lent, ne tient pas à côté du modèle de chat |
 | 8 | `qwen3.5:35b-a3b` (MoE) avec les experts en RAM via `llama-server --n-cpu-moe` ; estimation non mesurée : 12 à 22 tok/s | Pas fait (22 Go à télécharger, llama.cpp à installer) |
@@ -115,6 +115,15 @@ Vu pendant les tests, non corrigé :
   pair », 5 048 fois avant le redémarrage du 7/11) : cache et compteurs de dépenses inactifs. Cause
   et correctif : [stabilisation](stabilisation-workstation-truenas.md#workstation-reste-à-faire), n° 1.
 - `fastapi-sample/promptfooconfig.yaml` évalue encore `ollama:chat:llama3:8b`, supprimé.
+
+Relevé du 13/11 : GPU à 43 °C, sans ralentissement, 0,7 Go de VRAM pris par Claude Desktop, Chrome
+et Slack ; aucun modèle chargé. En 14 jours, ollama a reçu 55 `/api/generate`, 5 `/api/chat` et
+7 `/api/embed` ; LiteLLM, 27 requêtes de chat en 24 h, dont 2 en erreur 500 : les routes Azure
+`gpt-4.1` et `gpt-4.1-mini` répondent « Connection error » après 5 essais, et les replis de
+`llama3.2` et `gemma3` envoient vers elles les requêtes locales qui échouent. Ces endpoints
+appartiennent à une autre organisation : à retirer, ou à confirmer par l'opérateur.
+`qwen2.5-coder:7b` s'est chargé avec 0 couche sur 29 sur le GPU, donc sur le CPU seul.
+`~/.litellm/litellm_config.yaml` n'est ni versionné ni sauvegardé par Restic.
 
 Pour refaire la mesure : `/api/generate` avec `"think": false`, `num_predict: 256`, température 0,
 puis `ollama ps` pour le placement CPU/GPU.
