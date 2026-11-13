@@ -24,7 +24,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 
 | Livrable | Gate de validation | Statut |
 | --- | --- | --- |
-| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPE 0 APPLIQUÉE (9/11)**, vérifiée le 10/11 ; 4 bis (zram) appliquée le 10/11 ; étapes 1 à 7 à faire |
+| [Stockage : sortir les écritures du SSD SATA usé, récupérer 382 Go de NVMe](#9-novembre-2026--stockage) | Archive vérifiée avant effacement, mesure avant/après | **ÉTAPES 0 À 5 FAITES** : `/home` sur le NVMe le 13/11, `sda` écrit 74 % de moins ; 4 bis (zram) acceptée le 11/11 ; restent les étapes 6 et 7 et les [propositions D1 à D12 du 13/11](#13-novembre-2026--après-la-bascule-de-home) |
 | [Stabilisation workstation/TrueNAS](stabilisation-workstation-truenas.md) : automontages NFS, métriques GPU, Apache durci, journald 2G | `--check`, double approbation | **APPLIQUÉ** : `--check` avec les drapeaux d'apply le 10/11, `ok=31 changed=0` ; partages NFS actifs limités aux 12 de `fstab` ; adresse de sonde Apache rendue au déploiement ; `restic-backup.yml` ne retire plus les collecteurs de node_exporter. Crontab root ClamTk (scan en `nice`/`ionice`, lignes maldet et chkrootkit en double retirées) codée le 10/11, **apply à faire** : `--check` ne change que ces 2 tâches |
 | Partages NFS TrueNAS et hôte Zabbix en code ([`truenas-nfs-shares.yml`](../playbooks/truenas-nfs-shares.yml), [`zabbix-workstation-host.yml`](../playbooks/zabbix-workstation-host.yml), [`truenas-stabilize.yml`](../playbooks/truenas-stabilize.yml)) | Plan seul par défaut (`mise run truenas-nfs-check`, `zabbix-host-check`) | **APPLIQUÉ le 10/11** avec l'accord de l'opérateur, plans vides ensuite. NFS : 13 partages resserrés sur le LAN, 10 partages `dpool` supprimés ; seule la workstation était connectée, ses 12 automontages répondent. Stabilisation : 5 crons (clamdscan, 4 tests SMART longs), domaine de recherche corrigé, tâche de snapshot 11 supprimée, autostart coupé sur les VM 5 et 7. `zabbix-host-check` pas lancé (jeton API) |
 | [Restic](restic-evaluation.md) : sauvegarde quotidienne chiffrée vers TrueNAS | `restic check` + restauration isolée + copie indépendante | **APPLIQUÉ** : timer quotidien, dernière sauvegarde réussie le 10/11 à 00:39, `restic check` hebdomadaire réussi le 9/11 ; alerte Zabbix à 26 h, dernière réussite exposée à Prometheus via node_exporter. Restauration isolée : `restic-restore-test.service` codée le 10/11 (restaure `/etc/restic` dans un `/tmp` privé puis `diff -r`), **à installer et lancer** ; copie hors site : fournisseur et budget à décider |
@@ -123,7 +123,7 @@ Partitions NVMe inutilisées :
 | 1 ter | Comparer `/data/music-TODELETE` (94 Gio, bibliothèque `iTunes`) à `/media/music` sur TrueNAS (`sha256`), puis le supprimer | 0 fichier absent ou différent sur TrueNAS | Comparé le 11/11 : 26 329 fichiers sur 26 329 identiques ; seul écart, `.windows-serial` (2 octets, absent de TrueNAS). **SUPPRIMÉ le 11/11** par l'utilisateur : `/data` 25 → 5 % (114 → 20 Gio, reste l'ancienne copie des modèles ollama) |
 | 2 | Ouvrir `p5` avec sa phrase de passe, inventorier, archiver ce qui compte | Volume vide, rien à archiver | **FAIT le 10/11** : libre pour l'étape 3 |
 | 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | **FAIT le 11/11** : clé `/etc/cryptsetup-keys.d/nvme_crypt.key`, copie et en-têtes LUKS sur la clé USB d'escrow (`luks-escrow/`) ; `/etc/crypttab` en `nofail`, ouverture par `systemd-cryptsetup@` vérifiée ; 92 Go libres dans le VG. Reste à voir un boot à froid ([runbook](runbook-storage-nvme.md)) |
-| 4 | Migrer `/home` sur le NVMe : passe finale `rsync -aHAXS` sans session ouverte, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | **PRÊT AU REBOOT (11/11)** : copie à chaud resynchronisée ; la bascule se fait au prochain boot, avant GDM, Docker et cron, par [`home-nvme-switch.service`](../files/home-nvme-switch.service) (une seule fois, l'ancien `/home` remis en place si le montage échoue ; 5 tests de contrat). Unité à installer par l'opérateur avant le reboot ([runbook](runbook-storage-nvme.md), § 1) |
+| 4 | Migrer `/home` sur le NVMe : passe finale `rsync -aHAXS` sans session ouverte, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | **FAIT le 13/11** : bascule au boot de 10:33 par l'unité ponctuelle `home-nvme-switch.service` (passe finale 5 min 14 s) ; `/home` sur `vg--nvme--crypt-home`, 160,6 Go, aucune unité en échec ; `sda` de 11:00 à 16:00 : écritures 5,3 → 1,4 Gio, lectures 29,7 → 0,1 Gio ([relevé](#13-novembre-2026--après-la-bascule-de-home)). Montage codifié dans `stabilize_nvme_mounts`, unité retirée du dépôt et du système. Reste : supprimer `/home.sda-old` le 20/11 ([runbook](runbook-storage-nvme.md), § 1) |
 | 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | **FAIT le 11/11** : LV monté sur `/data/models/ollama` (chemin inchangé), `RequiresMountsFor` dans le drop-in ; **17 s → 5,7 s**. Ancienne copie dans `/data/models/ollama.hdd-20261111`, à supprimer après une semaine |
 | 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà exportées, job `workstation_node`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | Règles rédigées dans le [runbook](runbook-storage-nvme.md) § 2 ; à poser dans `nabla-compose` |
 | 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
@@ -145,3 +145,77 @@ clé USB 36 Mo/s.
 | Étape | Quoi | Gate | Statut |
 | --- | --- | --- | --- |
 | 4 bis | Swap hors de `sda` : zram (`zram-tools`, `PERCENT=25`, priorité 100) devant le `/swapfile`, gardé en secours à priorité basse | Utilisation de `/swapfile` stable sur 24 h (`/proc/swaps`), aucun OOM | **APPLIQUÉ le 10/11** ([`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml)) : `/dev/zram0` zstd 15,7 Gio, priorité 100 ; reste la mesure sur 24 h (`/swapfile` : 6,3 Gio utilisés au départ, ne doit pas monter ; 5,6 Gio le soir du 10/11, zram 10 Gio). 11/11 : zram plein (15,6 Gio, compressés 3:1, surtout les pages inactives de Claude Desktop, Chrome et des terminaux), `/swapfile` 5,7 Gio : la gate tient. zram passé à `PERCENT=50` (31,4 Gio). **ACCEPTED le 11/11 à 12:45** : `/swapfile` 5,7 Gio (6,3 au départ, n'a pas monté), zram 6 Gio utilisés sur 31,4 (compression 3,3:1), aucun OOM dans le journal noyau depuis le 10/11 |
+
+## 13 novembre 2026 — après la bascule de `/home`
+
+Relevé de 16:00 à 16:15, poste démarré à 10:50.
+
+**Bascule.** Au boot de 10:33, `home-nvme-switch.service` a tourné de 10:33:24 à 10:38:38, avant
+GDM. `findmnt /home` : `/dev/mapper/vg--nvme--crypt-home`, ext4 ; `/etc/fstab` porte la ligne
+`/home` (`nofail,x-systemd.device-timeout=30s`) ; `lvs` : LV `home` de 250 Gio sur tout
+`nvme2_crypt` et le début de `nvme5_crypt`. L'ancien emplacement, `/home.sda-old` sur `/`, n'est
+ouvert par aucun processus (`lsof`). Boot de 10:50 : `systemctl --failed` vide,
+`journalctl -b -p warning` sans erreur de disque, de LVM ni d'ext4 (restent les avertissements
+connus : rasdaemon `cxl`, générateur SysV, `nf_conntrack_max`) ; 17,7 s d'espace utilisateur,
+`systemd-cryptsetup@nvme5_crypt` 3,6 s et `@nvme2_crypt` 1,9 s.
+
+| Contrôle des données | Ancienne copie (`/home.sda-old`) | LV NVMe (`/home`) |
+| --- | --- | --- |
+| Taille apparente de `albandrieu` | 160,23 Go | 160,60 Go (écritures depuis 10:38) |
+| Entrées (`find -xdev`) | 3 993 156 | 4 000 615 |
+| `jenkins` et `nexus` | 495 264 et 15 544 octets | identiques |
+| `.bashrc`, `.gitconfig`, `.ssh/config`, `.ssh/known_hosts`, `.gnupg/pubring.kbx` | — | identiques (`cmp`) |
+| Fichiers modifiés après 10:33:24 et absents du LV | 47 images `motion` (10:38:06 à 10:38:27) | non recopiées, inutiles d'après l'opérateur |
+
+Effet sur les disques (Prometheus, job `workstation_node`, de 11:00 à 16:00, le 12/11 puis le
+13/11) :
+
+| Disque | Écrit | Lu | Temps occupé |
+| --- | --- | --- | --- |
+| `sda` (SSD 860 usé) | 5,3 → 1,4 Gio | 29,7 → 0,1 Gio | 319 → 36 s |
+| `nvme0n1` | 0,9 → 5,2 Gio | 0,0 → 1,5 Gio | 213 → 291 s |
+
+Sur une minute (16:12), `sda` a écrit 7,6 Mio, soit environ 11 Gio/jour contre 48 le 10/11 :
+Chrome et Claude Desktop, premiers écrivains (`pidstat -d`), écrivent maintenant sur le NVMe ;
+restent surtout journald, Grafana et le journal ext4 de `/`.
+
+État des disques :
+
+- SMART : `sda` `Wear_Leveling_Count` 33 (inchangé depuis le 10/11), 117 To écrits ; NVMe 0 %
+  d'usure, 0 erreur média, 42 °C, 746 entrées au journal d'erreurs, toutes
+  `Invalid Field in Command` (commandes d'administration des sondes) ; `sdb` et `sdc` : aucun
+  secteur réalloué ni en attente, `sdc` à 32 178 h.
+- Alignement : toutes les partitions sur 1 Mio. TRIM : `discard` traverse LUKS (`allow_discards`),
+  `fstrim.timer` hebdomadaire (683 Gio le 9/11, 1 h 09 à cause des disques durs) ; `/home` et
+  `models` seront taillés pour la première fois le 16/11.
+- Ordonnanceurs d'E/S : `none` sur le NVMe, `mq-deadline` sur le SSD et les disques durs.
+- Swap : zram 31,4 Gio (priorité 100) devant `/swapfile` 16 Gio sur `sda` (priorité -1), 0 octet
+  utilisé ; pas d'hibernation (`resume` absent de la ligne de commande du noyau).
+- Place libre : 92 Gio dans `vg-nvme-crypt`, 122,5 Gio non partitionnés sur le NVMe (98,1 entre
+  `p3` et `p4`, 24,5 en fin de disque), 2,66 Tio dans `vg-sata`, 1 Gio dans `vgubuntu`.
+  Remplissage : `/` 77 % (dont les 160 Go de l'ancienne copie), `/docker` 75 %, `/home` 67 %,
+  `/workspace` 65 %, `/data` 5 %. Réserve root ext4 de 5 % sur chaque volume.
+- Restic : `/etc`, quatre dossiers de `~` (`.ssh`, `.gnupg`, `.config`, `.local/share/keyrings`) et
+  trois fichiers Maven, chaque nuit ; dernière sauvegarde le 13/11 à 00:31, avant la bascule. Le
+  reste de `~` n'est pas dans Restic.
+
+Propositions, rien n'est appliqué :
+
+| # | Proposition | Mesure | Gain attendu | Risque |
+| --- | --- | --- | --- | --- |
+| D1 | Verrouiller le point de montage vide de `/home` sur `/` (`chattr +i`, posé à travers un `mount --bind /` temporaire) | `/home` en `nofail` et autologin GDM : si `vg-nvme-crypt` ne s'ouvre pas, la session s'ouvre sur un `/home` vide de `sda` et y recrée des profils | Plus de session sur un `/home` vide : la connexion échoue visiblement | Faible, réversible (`chattr -i`) ; retirer `nofail` serait plus strict mais mène au shell de secours |
+| D2 | Supprimer `/home.sda-old` le 20/11, après une sauvegarde Restic réussie ([runbook](runbook-storage-nvme.md), § 1) | 160 Go sur `/`, scannés en double par ClamAV chaque samedi | `/` de 77 % à environ 42 % : plus de cellules libres pour répartir l'usure du SSD ; scan ClamAV raccourci | Plus de retour arrière vers l'ancienne copie |
+| D3 | Supprimer `/data/models/ollama.hdd-20261111` le 18/11 | 20 Gio sur le RAID1 de disques durs | `/data` de 5 à 1 % | Nul : modèles retéléchargeables |
+| D4 | Remplacer `/swapfile` par un LV swap chiffré de 8 Gio dans `vg-nvme-crypt`, priorité basse derrière zram | 16 Gio sur `sda`, 0 octet utilisé ; 5,7 Gio utilisés le 11/11, avant zram à `PERCENT=50` | 16 Gio libérés sur `/`, plus aucune écriture de swap sur `sda` | Faible ; supprimer la swap disque sans la remplacer avancerait l'OOM quand zram est plein |
+| D5 | Réserve ext4 de 5 à 1 % sur `/home`, `/workspace`, `/docker` et `/data` (`tune2fs -m 1`), 5 % gardés sur `/` | 64,3 Go réservés à root sur ces quatre volumes | +51 Go utilisables (`/home` +10,7, `/workspace` +13, `/docker` +6,3, `/data` +21,4) | Faible, réversible à chaud ; plus de marge pour root sur ces volumes |
+| D6 | Purger Docker : images inutilisées et cache de build (`docker image prune -a`, `docker builder prune`) | `/docker` à 75 %, 36 Go libres ; `docker system df` : 79,6 Go d'images et 25,3 Go de cache récupérables | Jusqu'à une centaine de Go libérés (couches partagées : à mesurer après) | Images retéléchargées et premiers builds plus lents |
+| D7 | dm-crypt NVMe sans files de travail : `no-read-workqueue,no-write-workqueue` dans `/etc/crypttab` par `stabilize_nvme_crypt` | `nvme2_crypt` et `nvme5_crypt` n'ont que le drapeau `discards` | Latence de lecture aléatoire plus basse sur `/home`, à mesurer (`fio` 4 Kio QD1 avant/après) | Faible, réversible au boot suivant |
+| D8 | `/tmp` en tmpfs (`tmp.mount` de systemd, `size=8G`) | `/tmp` sur `/` (`sda`), 31 Mo à 16:00 | Petit, à mesurer : les fichiers temporaires ne touchent plus le SSD usé | Gros fichiers temporaires en RAM ; `/tmp` vidé au reboot |
+| D9 | Allouer les 98,1 Gio libres entre `p3` et `p4` : `p6` en LUKS2, PV de `vg-nvme-crypt` | 122,5 Gio non partitionnés | `vg-nvme-crypt` à 190 Gio libres, de quoi accueillir `/` (environ 171 Go après D2) | Moyen : table de partitions du disque en service modifiée ; sauvegarder les en-têtes LUKS avant |
+| D10 | Étape 7 : déplacer `vgubuntu-root` sur le NVMe par `pvmove` (PV NVMe chiffré ajouté à `vgubuntu`, initramfs qui l'ouvre), puis `/boot` | `sda` : environ 11 Gio/jour, `Wear_Leveling_Count` 33 | Plus aucune écriture sur le SSD usé ; `/` sur le NVMe (1 956 contre 451 Mo/s en lecture) | Élevé : racine et initramfs ; sauvegarde complète et clé d'escrow avant ; après D2 et D9 |
+| D11 | Étape 6 : poser les alertes SMART dans `nabla-compose` ([runbook](runbook-storage-nvme.md), § 2) | `sda` à 33, `sdc` à 32 178 h ; aucune alerte en place | Remplacement anticipé au lieu de subi | Nul |
+| D12 | Restic : vérifier le 14/11 la première sauvegarde après la bascule (`restic snapshots --latest 1`), puis décider d'y ajouter `~/Documents`, `~/Backups` et `~/Dropbox` | 4 dossiers de `~` sauvegardés sur 156 Go | Données personnelles avec au plus 24 h de perte | Dépôt plus gros sur TrueNAS, sauvegarde plus longue |
+
+Pas retenu : `noatime` (écarté le 9/11), ordonnanceur `none` sur `sda` (SSD SATA peu chargé
+désormais), secteurs LUKS de 4 Kio (réchiffrer 382 Go pour un gain CPU marginal, avec un risque
+de perte en cas de coupure).

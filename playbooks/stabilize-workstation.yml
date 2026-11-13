@@ -73,6 +73,11 @@
         src: /dev/vg-nvme-crypt/models
         fstype: ext4
         opts: defaults,nofail,x-systemd.device-timeout=30s
+      # Moved off the SATA SSD on 13 Nov 2026 (docs/runbook-storage-nvme.md).
+      - path: /home
+        src: /dev/vg-nvme-crypt/home
+        fstype: ext4
+        opts: defaults,nofail,x-systemd.device-timeout=30s
     # Hard NFS mounts kept mounted freeze PID 1 on any daemon-reload while TrueNAS is down, and bg
     # made systemd wait for them forever. Mount on access, drop when idle, give up after 20 s.
     # nosuid,nodev,noexec keep what the former user option implied; rsize/wsize are negotiated.
@@ -410,7 +415,7 @@
         quiet: true
       when: stabilize_write
 
-    - name: Mount the NVMe LVs (Docker, containerd, ollama models)
+    - name: Mount the NVMe LVs (Docker, containerd, ollama models, /home)
       ansible.posix.mount:
         path: "{{ item.path }}"
         src: "{{ item.src }}"
