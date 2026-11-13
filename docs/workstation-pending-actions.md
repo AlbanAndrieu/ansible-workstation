@@ -6,13 +6,13 @@ section donne le contrôle, la commande et la vérification. Rayer une section u
 
 ## 1. Commandes sudo prêtes
 
-### Reboot et bascule de `/home` sur le NVMe
+### Après la bascule de `/home` sur le NVMe (faite le 13/11)
 
-Noyau 7.0.0-43, NVIDIA et initramfs vérifiés le 11/11. Installer `home-nvme-switch.service` puis
-redémarrer : quatre commandes et les contrôles d'après dans le
-[runbook stockage](runbook-storage-nvme.md#1-reboot-et-bascule-de-home-sur-le-nvme). Pour enrôler
-la clé DKMS (section Secure Boot plus bas), lancer `mokutil --import` avant ce reboot : MokManager
-s'affiche au même redémarrage.
+Unité de bascule retirée du système le 13/11. Reste à supprimer `/home.sda-old` le 20/11 :
+commande dans le
+[runbook stockage](runbook-storage-nvme.md#1-bascule-de-home-sur-le-nvme--faite-le-1311). Pour
+enrôler la clé DKMS (section Secure Boot plus bas), lancer `mokutil --import` avant un reboot :
+MokManager s'affiche au redémarrage suivant.
 
 ### Restauration Restic isolée
 

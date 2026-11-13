@@ -18,63 +18,23 @@ Restaurer un volume si la racine est perdue : brancher la clé d'escrow, puis
 `cryptsetup open --key-file luks-escrow/nvme_crypt.key /dev/nvme0n1p2 nvme2_crypt` (idem `p5`) ;
 en-tête abîmé : `cryptsetup luksHeaderRestore /dev/nvme0n1p2 --header-backup-file luks-escrow/nvme0n1p2.luks-header`.
 
-## 1. Reboot et bascule de `/home` sur le NVMe
+## 1. Bascule de `/home` sur le NVMe — faite le 13/11
 
-Vérifié le 11/11, avant le reboot :
+Au boot de 10:33, `home-nvme-switch.service` a fait la passe finale en 5 min 14 s, renommé
+l'ancien `/home` en `/home.sda-old`, monté le LV et ajouté la ligne à `/etc/fstab`. Au boot de
+10:50, l'unité est sautée (`ConditionPathExists=!/home.sda-old`) et `/home` vient de `fstab`.
+Preuves et mesures : [relevé du 13/11](roadmap-workstation.md#13-novembre-2026--après-la-bascule-de-home).
+L'unité, son script et leurs tests sont retirés du dépôt (dans l'historique Git, commit `c09d3dc`) ;
+le montage est codifié dans `stabilize_nvme_mounts` (`--check` : `ok`, aucun changement).
 
-- noyau `7.0.0-43-generic` installé le matin (`/var/run/reboot-required` : `linux-image`,
-  `linux-base`, `gnome-shell`) ; module NVIDIA 595.71.05 construit par DKMS pour ce noyau ;
-- son initramfs ne contient que `sda3_crypt` dans `cryptroot/crypttab` : une seule phrase de passe
-  au boot, les volumes NVMe s'ouvrent ensuite avec la clé de la racine ;
-- `/boot` : 410 Mo libres ; `systemctl --failed` vide, à comparer après le reboot ;
-- copie à chaud resynchronisée en fin de journée : 3,8 millions de fichiers, 13 872 recopiés
-  (12,8 Go), LV `home` à 146 Go sur 246. La passe du boot reparcourt tout, mais ne copie que le
-  delta.
+Unité retirée du système le 13/11 à 18:16, avec l'accord de l'opérateur (`systemctl disable`,
+unité et script supprimés, `daemon-reload`) : elle ne peut plus repasser une fois
+`/home.sda-old` supprimé. Les 47 images de `motion` écrites pendant la passe finale (10:38:06 à
+10:38:27 ; `motion.service` manquait au `Before=` de l'unité) restent dans l'ancienne copie :
+l'opérateur n'en a pas besoin.
 
-La bascule se fait au boot, une seule fois, par
-[`home-nvme-switch.service`](../files/home-nvme-switch.service) : il passe avant GDM, les sessions
-(gestionnaire utilisateur en *lingering* compris), Docker, containerd, cron et ollama, donc rien
-n'écrit dans `/home` pendant la passe finale. Le [script](../files/home-nvme-switch.sh) refait
-`rsync -aHAXS --delete` (la copie à chaud est faite, seul le delta passe), renomme l'ancien `/home`
-en `/home.sda-old`, monte le LV sur `/home` et ajoute la ligne à `/etc/fstab`. Si le montage
-échoue, il remet l'ancien `/home` en place et le boot continue dessus. Il ne tourne plus dès que
-`/home.sda-old` existe.
-
-1. Avant le reboot, une fois les sessions Claude en cours au repos : installer et activer l'unité
-   (l'agent n'a pas le droit de poser une unité de boot) :
-
-   ```bash
-   sudo install -m 0755 files/home-nvme-switch.sh /usr/local/sbin/home-nvme-switch
-   sudo install -m 0644 files/home-nvme-switch.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable home-nvme-switch.service
-   ```
-
-2. Redémarrer. Seule la phrase de passe de `sda3_crypt` est demandée ; la console affiche la passe
-   finale (quelques minutes) avant l'écran de connexion.
-3. Après connexion :
-
-   ```bash
-   systemctl status home-nvme-switch systemd-cryptsetup@nvme2_crypt systemd-cryptsetup@nvme5_crypt --no-pager
-   findmnt /home /data/models/ollama
-   uname -r; nvidia-smi -L; systemctl --failed
-   ```
-
-   Attendu : les trois unités en `active (exited)`, `/home` sur `vg--nvme--crypt-home`, les modèles
-   sur `vg--nvme--crypt-models`, noyau `7.0.0-43-generic`, GPU listé, aucune unité en échec.
-4. Une semaine plus tard, si tout va bien (environ 140 Go libérés sur `sda`), puis ajouter `/home`
-   à `stabilize_nvme_mounts` :
-
-   ```bash
-   sudo systemctl disable home-nvme-switch.service
-   sudo rm /etc/systemd/system/home-nvme-switch.service /usr/local/sbin/home-nvme-switch
-   sudo rm -rf /home.sda-old
-   ```
-
-Sans l'unité : fermer la session, se connecter en root sur un TTY (`Ctrl+Alt+F3`), vérifier que
-`fuser -vm /home` ne liste rien, lancer
-`/usr/local/sbin/home-nvme-switch /dev/vg-nvme-crypt/home /home /mnt/home-nvme /etc/fstab`, puis
-redémarrer.
+Reste à faire : le 20/11, après une sauvegarde Restic réussie depuis la bascule,
+`sudo rm -rf /home.sda-old` (160 Go libérés sur `sda`, `/` de 77 % à environ 42 %).
 
 Retour arrière (TTY root, session fermée) : `umount /home && rmdir /home && mv /home.sda-old /home`,
 retirer la ligne `/home` de `/etc/fstab`, redémarrer. Ce qui a été écrit dans `/home` depuis la
