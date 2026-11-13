@@ -71,15 +71,12 @@ screensaver_enabled: yes
 dash_enabled: yes
 classicmenu_indicator_enabled: yes
 calendar_indicator_enabled: yes
-pidgin_indicator_enabled: yes
 weather_indicator_enabled: yes
 cpufreq_indicator_enabled: yes
 tlp_enabled: yes
 tweak_enabled: yes
 compizconfig_enabled: yes
-gstreamer_enabled: yes
 skype_enabled: yes
-webapps_enabled: yes
 pidgin_enabled: yes
 nodejs_enabled: yes
 mount_enabled: no
@@ -91,7 +88,6 @@ python_enabled: yes
 ansigenome_enabled: yes
 apache_create_vhosts: yes
 webcam_enabled: yes
-keepass2_enabled: yes
 plank_enabled: yes
 android_enabled: yes
 docker_enabled: yes

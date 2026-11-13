@@ -36,7 +36,6 @@
   when:
     - ansible_os_family == 'Debian'
     - scm_enabled | bool
-    - ansible_distribution_version not in ['12.04', '14.04']
   tags: package
 
 # Provisioning must not unexpectedly enumerate and register every repository,

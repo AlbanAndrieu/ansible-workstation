@@ -115,7 +115,7 @@ sans changement de comportement : `homelab-split-dns.py`,
 `recover-split-dns-nta.py`, `accept-private-nta-dispatcher.py` et
 `diagnose-wifi-path.py`, avec leurs tests renommés en `*_contract.py`
 (inclus dans `mise run test-offline`) et des tâches `mise run workstation-*`.
-Les originaux restent dans Compose tant que leur retrait n'est pas décidé.
+Les originaux ont été retirés de Compose le 11 novembre (voir plus bas).
 
 **Équivalence vérifiée le 10 novembre 2026.** Les originaux n'ont pas changé depuis `cc3f9ca6`.
 Comparés par `ast.dump`, `recover-split-dns-nta.py`, `accept-private-nta-dispatcher.py` et
@@ -124,7 +124,7 @@ Les trois autres ne diffèrent que sur la forme : `homelab-split-dns.py` renvoie
 `mise run workstation-nss-path` au lieu de `just`, `diagnose-nss-resolution.py` remplace une
 lambda par un `def`, et `diagnose-dnssec-chain.py` extrait deux variables pour la même sortie.
 Côté nabla-compose, la [PR #346](https://github.com/AlbanAndrieu/nabla-compose/pull/346) retire
-ces six scripts et leurs recettes en renvoyant vers ce dépôt (rebasée le 11 novembre, à fusionner).
+ces six scripts et leurs recettes en renvoyant vers ce dépôt (fusionnée le 11 novembre, `30d1958b`).
 
 Restent dans Compose : LiteLLM/FastAPI, CrowdSec/pfSense, DefectDojo,
 Nexus et les scripts OpenClaw (cible `nabla-openclaw`).

@@ -1,7 +1,7 @@
 ---
 - name: workstation | Install useless tool
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['14.04', '16.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   tags: screenfetch
   with_items:
     - screenfetch
@@ -13,7 +13,7 @@
 
 - name: workstation | Install thefuck tool
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - python3-dev
     - python3-pip
@@ -35,7 +35,7 @@
 
 - name: workstation | Install gource tool for git
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '14.04'])
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - gource
   become: true
@@ -43,7 +43,7 @@
 
 - name: workstation | Install fortune and cowsay
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   with_items:
     - fortune-mod
     - fortunes-ubuntu-server
@@ -63,7 +63,7 @@
   ansible.builtin.get_url:
     url: https://www.gnome-look.org/p/1368915/startdownload?file_id=1585605568&file_name=Adwaita-all.tar.gz&file_type=application/x-gzip&file_size=8619948
     dest: "{{ home }}/.themes/"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version is version_compare(19.04, '>='))
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true
   changed_when: false
   tags:

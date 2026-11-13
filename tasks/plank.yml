@@ -11,13 +11,13 @@
     state: "{{"
     cmd: util_repository_state | default('present') }}
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04', '17.04']) and plank_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plank_enabled
   tags: plank
 
 - name: workstation | Install plank
   action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }} update_cache=yes"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_distribution_version not in ['12.04']) and plank_enabled
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and plank_enabled
   tags: plank
   with_items:
     - plank

@@ -12,10 +12,8 @@
     truenas_stabilize_apply: false
     truenas_stabilize_apply_approved: false
     truenas_stabilize_write: "{{ truenas_stabilize_apply | bool and truenas_stabilize_apply_approved | bool }}"
-    # Stopped since the 4 Nov OOM; autostart would bring them back at boot on a host without swap.
-    truenas_vm_autostart_off:
-      - taloswk01
-      - taloswk02
+    # The Talos workers autostart on purpose: the homelab reboot waits for all three VMs.
+    truenas_vm_autostart_off: []
     truenas_search_domains:
       - albandrieu.com
     # dpool no longer exists.
@@ -26,6 +24,14 @@
       - description: clamav-scan
         command: 'docker exec ix-clamav-clamav-1 clamdscan --multiscan --fdpass /scandir --log /mnt/logs/clamav-scan-$(date +\%Y-\%m-\%d_\%H-\%M).log'
         schedule: { minute: "0", hour: "6", dom: "1", month: "*", dow: "*" }
+      # Weekly on what comes from outside (SMB/NFS shares, mail, uploads, ISOs); the monthly scan covers the rest.
+      - description: clamav-scan-exposed
+        command: 'docker exec ix-clamav-clamav-1 clamdscan --multiscan --fdpass /scandir/ftp /scandir/share /scandir/www /scandir/workspace /scandir/bababou /scandir/jenkins-slave /scandir/home /scandir/iso /scandir/bichon /scandir/openclaw /scandir/immich /scandir/openwebui --log /mnt/logs/clamav-scan-exposed-$(date +\%Y-\%m-\%d_\%H-\%M).log'
+        schedule: { minute: "0", hour: "4", dom: "*", month: "*", dow: "6" }
+      # The old pattern clamav-scan-*-.log matched no log, so none was ever removed.
+      - description: clamav-cleanup
+        command: 'docker exec ix-clamav-clamav-1 find /mnt/logs -type f -name "clamav-scan-*.log" -mtime +90 -exec rm {} \;'
+        schedule: { minute: "50", hour: "4", dom: "1", month: "*", dow: "*" }
       # One long test per disk and week of the month; a WD30EFRX long test takes about 7 h.
       - description: smart-long-sda
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3457796

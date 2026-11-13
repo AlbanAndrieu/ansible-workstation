@@ -1,14 +1,6 @@
 ---
 # Disk, recovery, and storage management packages.
 
-- name: storage_disk | Install desktop tools (legacy versions)
-  ansible.builtin.apt:
-    name: software-center
-    state: "{{ util_pkg_state | default('present') }}"
-  become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['12.04', '14.04', '16.04']
-  tags: package
-
 - name: storage_disk | Install disk and recovery tools
   ansible.builtin.apt:
     name: "{{ item }}"
@@ -20,25 +12,6 @@
     - gparted
     - usbmount
     - remmina
-  tags: package
-
-- name: storage_disk | Install unetbootin (legacy versions)
-  ansible.builtin.apt:
-    name: unetbootin
-    state: "{{ util_pkg_state | default('present') }}"
-  become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version is version('18.04', '<=')
-  tags: package
-
-- name: storage_disk | Install LVM/storage tools (Debian/Ubuntu 14.04, 16.04)
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: "{{ util_pkg_state | default('present') }}"
-  become: true
-  when: ansible_os_family == 'Debian' and ansible_distribution_version in ['14.04', '16.04']
-  loop:
-    - system-storage-manager
-    - system-config-lvm
   tags: package
 
 - name: storage_disk | Install LVM/storage tools (Red Hat)
