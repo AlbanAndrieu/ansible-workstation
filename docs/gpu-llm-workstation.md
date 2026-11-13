@@ -142,7 +142,7 @@ réponse exacte (horaires, pourcentages, logique, jours de la semaine en frança
 | `bonsai-2:4b` | 100 % | 2,3 Go | 79 tok/s | oui, oui, oui | 9/10 |
 | `qwen3.5:2b` | 100 % | 2,6 Go | 73 tok/s | oui, oui, oui | 9/10 |
 | `llama3.2:3b` | 90 % | 4,2 Go | 23 tok/s | oui, oui, oui | 7/10 |
-| `qwen3:4b` | 75 % | 5,0 Go | 8 tok/s | non, oui, oui | 8/10 |
+| `qwen3:4b` | 75 % | 5,0 Go | 8 tok/s | oui (tard, voir plus bas), oui, oui | 8/10 |
 | `gemma3` (4B) | — | — | — | pas d'appel d'outil (HTTP 400) | — |
 
 `bonsai-2:9b` (Prism ML, Apache 2.0, architecture `qwen35`, 9,0 milliards de paramètres) est un
@@ -158,3 +158,18 @@ réponse exacte (horaires, pourcentages, logique, jours de la semaine en frança
 
 Retour arrière : remettre `ollama_chat/qwen3.5:4b` dans l'entrée `qwen`, puis
 `docker restart litellm-litellm-1`. Il déborde même en 16k (15 % CPU, 36 tok/s, embedding chargé).
+
+Vérifié le 14/11 :
+
+- **`qwen3:4b` appelle bien l'outil, mais tard.** Même avec `think: false`, il écrit d'abord 340 tokens
+  de réflexion dans la réponse visible (« Okay, the user is asking… ») : le banc, limité à 256 tokens,
+  coupait avant l'appel. Il faut 9 s en 8k et 398 s en 32k (débordement CPU), contre 27 tokens et
+  moins d'une seconde pour `bonsai-2:9b`.
+- **`think` ne recharge pas le modèle** (chargement à 0 s), seul `num_ctx` le fait. Avec la réflexion,
+  `bonsai-2:9b` passe de 9 à 30 s sur une question d'horaire, de 27 à 76 tokens sur un appel d'outil.
+- **Open WebUI** (TrueNAS, `DEFAULT_MODELS=qwen`) passe par la route `qwen` du LiteLLM de TrueNAS,
+  servie par `bonsai-2:9b` depuis nabla-compose#373.
+- **Reactive Resume** (route `rr-json`, `qwen2.5:3b` en 8k) : avec son vrai prompt de chat et son
+  outil `patch_resume`, `bonsai-2:9b` réussit 3 modifications sur 3 (remplacer, ajouter avec `-`,
+  supprimer), `qwen2.5:3b` 2 sur 3 (aucun appel pour un ajout). Sortie JSON structurée correcte pour
+  les deux. Les deux modèles ne tiennent pas ensemble sur le GPU : alterner les routes les recharge.
