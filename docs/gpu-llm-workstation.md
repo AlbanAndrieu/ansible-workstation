@@ -5,8 +5,8 @@ Matériel : RTX 2060 6 Go (Turing, compute 7.5, pas de bf16), pilote 595.71, i7-
 
 Chaîne : LiteLLM (conteneur `litellm-litellm-1`, config `~/.litellm/litellm_config.yaml`, liée depuis
 nabla-compose `litellm/config.yaml`, non versionnée) appelle ollama 0.40.15 sur `172.17.0.57:11434`.
-Modèles dans `/data/models/ollama` (20 Go, RAID1 de deux disques durs : d'où les chargements à froid de
-12 à 17 s). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
+Modèles dans `/data/models/ollama` : RAID1 de disques durs jusqu'au 11/11 (chargements à froid de 12 à
+17 s), puis LV `vg-nvme-crypt/models` sur le NVMe (3 à 8 s). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
 de TrueNAS (`fastapi-qwen`), qui relaie vers l'entrée `qwen` de ce LiteLLM.
 
 ## Constats
@@ -127,3 +127,34 @@ appartiennent à une autre organisation : à retirer, ou à confirmer par l'opé
 
 Pour refaire la mesure : `/api/generate` avec `"think": false`, `num_predict: 256`, température 0,
 puis `ollama ps` pour le placement CPU/GPU.
+
+## Choix du modèle du 13/11 : `bonsai-2:9b`
+
+Claude Desktop, Chrome et Slack prennent maintenant 1 Go de VRAM au lieu de 0,55 Go : `qwen3.5:4b` en
+32k ne tient plus dans la carte (88 % GPU, 15 à 21 tok/s au lieu de 57). Même banc pour chaque
+modèle, ollama 0.40.15, contexte 32k, `think: false`, température 0. Raisonnement : 10 questions à
+réponse exacte (horaires, pourcentages, logique, jours de la semaine en français).
+
+| Modèle | GPU | Taille | Génération | Outil, JSON, aiguille dans 10k tokens | Raisonnement |
+| --- | --- | --- | --- | --- | --- |
+| `bonsai-2:9b` (Qwen3.5 9B ternaire, Q2_0) | 100 % | 3,4 Go | 53 tok/s | oui, oui, oui | **10/10** |
+| `qwen3.5:4b` | 88 % | 3,9 Go | 15-21 tok/s | oui, oui, oui | 9/10 |
+| `bonsai-2:4b` | 100 % | 2,3 Go | 79 tok/s | oui, oui, oui | 9/10 |
+| `qwen3.5:2b` | 100 % | 2,6 Go | 73 tok/s | oui, oui, oui | 9/10 |
+| `llama3.2:3b` | 90 % | 4,2 Go | 23 tok/s | oui, oui, oui | 7/10 |
+| `qwen3:4b` | 75 % | 5,0 Go | 8 tok/s | non, oui, oui | 8/10 |
+| `gemma3` (4B) | — | — | — | pas d'appel d'outil (HTTP 400) | — |
+
+`bonsai-2:9b` (Prism ML, Apache 2.0, architecture `qwen35`, 9,0 milliards de paramètres) est un
+9B qui pèse le poids d'un 4B : vision, outils et 262k de contexte. Mis en place :
+
+- LiteLLM workstation : `qwen` → `ollama_chat/bonsai-2:9b`, toujours 32k et `think: false`
+  (sauvegarde `~/.litellm/litellm_config.yaml-2026-11-13`). Vérifié à travers LiteLLM : réponse en
+  1 s, `get_weather(Lyon)` appelé, image décrite, 100 % GPU.
+- `nomic-embed-text` chargé à côté passe à 74 % CPU : 32 morceaux de 400 tokens en 1,75 s au lieu de
+  0,5 s. Acceptable pour 7 appels d'embedding en 14 jours.
+- Non retenus : `qwen3.5:9b` en Q4 (6,6 Go, déborde) ; `qwen3.5:35b-a3b` (22 Go, 15 Go libres sur le
+  LV des modèles, surtout sur le CPU) ; Gemma 4 E4B (6,6 Go et plus).
+
+Retour arrière : remettre `ollama_chat/qwen3.5:4b` dans l'entrée `qwen`, puis
+`docker restart litellm-litellm-1`. Il déborde même en 16k (15 % CPU, 36 tok/s, embedding chargé).
