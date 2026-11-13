@@ -216,6 +216,16 @@ Propositions, rien n'est appliqué :
 | D11 | Étape 6 : poser les alertes SMART dans `nabla-compose` ([runbook](runbook-storage-nvme.md), § 2) | `sda` à 33, `sdc` à 32 178 h ; aucune alerte en place | Remplacement anticipé au lieu de subi | Nul |
 | D12 | Restic : vérifier le 14/11 la première sauvegarde après la bascule (`restic snapshots --latest 1`), puis décider d'y ajouter `~/Documents`, `~/Backups` et `~/Dropbox` | 4 dossiers de `~` sauvegardés sur 156 Go | Données personnelles avec au plus 24 h de perte | Dépôt plus gros sur TrueNAS, sauvegarde plus longue |
 
+Décisions de l'opérateur le 13/11 : D2 et D6 acceptées.
+
+- D2 : à faire le 20/11, comme prévu, après une sauvegarde Restic réussie depuis la bascule.
+- D6 **appliquée le 13/11 à 18:20** : `docker builder prune` (25,3 Go), 20 images de registre
+  sans conteneur (linters, Prometheus, Alertmanager, images de base) et 3 anciennes versions sans
+  tag supprimées ; `/docker` de 101 à 70 Go utilisés (75 → 51 %, 67 Go libres). Gardées : les
+  images construites en local, qu'on ne peut pas retélécharger :
+  `nabla/ansible-jenkins-slave-docker:node26-test` et `:resolute-test` (21,4 Go, une autre
+  session travaillait sur `:runner-test` à ce moment-là) et les 11 tags `bower-sample` (6,7 Go).
+
 Pas retenu : `noatime` (écarté le 9/11), ordonnanceur `none` sur `sda` (SSD SATA peu chargé
 désormais), secteurs LUKS de 4 Kio (réchiffrer 382 Go pour un gain CPU marginal, avec un risque
 de perte en cas de coupure).
