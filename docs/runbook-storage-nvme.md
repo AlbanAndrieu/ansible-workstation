@@ -36,47 +36,23 @@ l'opérateur n'en a pas besoin.
 Reste à faire : le 20/11, après une sauvegarde Restic réussie depuis la bascule,
 `sudo rm -rf /home.sda-old` (160 Go libérés sur `sda`, `/` de 77 % à environ 42 %).
 
-Retour arrière (TTY root, session fermée) : `umount /home && rmdir /home && mv /home.sda-old /home`,
+Le point de montage vide de `/home` sur `/` est immuable depuis le 13/11 (D1, `chattr +i` posé à
+travers un `mount --bind /` temporaire) : si le LV ne se monte pas, rien ne peut s'y écrire et la
+session échoue au lieu de s'ouvrir sur un `/home` vide. `lsattr -d` sur ce point de montage :
+`----i---------e-------`.
+
+Retour arrière (TTY root, session fermée) :
+`umount /home && chattr -i /home && rmdir /home && mv /home.sda-old /home`,
 retirer la ligne `/home` de `/etc/fstab`, redémarrer. Ce qui a été écrit dans `/home` depuis la
 bascule reste sur le LV (`mount /dev/vg-nvme-crypt/home /mnt/home-nvme` pour le récupérer).
 
-## 2. Alertes SMART et usure (dépôt `nabla-compose`)
+## 2. Alertes SMART et usure — en PR le 13/11
 
-Bloqué pour l'agent : le checkout `nabla-compose` est sur la branche d'une autre tâche, avec des
-changements indexés. Les métriques existent déjà (job `workstation_node`, fichiers
-`smartmon.prom` et `nvme.prom`). Ajouter dans `apps/prometheus/rules/node-exporter.rules.yml` :
+Règles `WorkstationSsdWearHigh`, `WorkstationDiskSectorsFailing` et `WorkstationNvmeDegraded`
+dans `apps/prometheus/rules/node-exporter.rules.yml` de `nabla-compose`
+([PR #371](https://github.com/AlbanAndrieu/nabla-compose/pull/371)) : promtool valide, les trois
+expressions renvoient les disques attendus sur le Prometheus de TrueNAS, aucune ne se déclenche.
 
-```yaml
-  - name: WorkstationDisks
-    rules:
-      - alert: WorkstationSsdWearHigh
-        expr: smartmon_wear_leveling_count_value{job="workstation_node"} < 20
-        labels:
-          severity: warning
-        annotations:
-          summary: "Worn SATA SSD {{ $labels.disk }} on the workstation"
-          description: "Wear_Leveling_Count normalized value is {{ $value }} (33 on 10 Nov 2026): plan its replacement."
-
-      - alert: WorkstationDiskSectorsFailing
-        expr: |
-          max by (disk) (
-            smartmon_reallocated_sector_ct_raw_value{job="workstation_node"}
-            or smartmon_current_pending_sector_raw_value{job="workstation_node"}
-            or smartmon_offline_uncorrectable_raw_value{job="workstation_node"}
-          ) > 0
-        labels:
-          severity: warning
-        annotations:
-          summary: "Failing sectors on workstation disk {{ $labels.disk }}"
-          description: "Reallocated, pending or uncorrectable sectors: back up and replace the disk (lvconvert --repair for the RAID1)."
-
-      - alert: WorkstationNvmeDegraded
-        expr: nvme_critical_warning{job="workstation_node"} > 0 or nvme_media_errors_total{job="workstation_node"} > 0
-        labels:
-          severity: critical
-        annotations:
-          summary: "NVMe {{ $labels.device }} reports a critical warning or media errors"
-```
-
-Vérifier : `promtool check rules`, déployer (skill `truenas-ops`), puis une alerte de test
-(`amtool alert add WorkstationSsdWearHigh disk=/dev/sda`) doit arriver.
+Reste à faire après la fusion : faire relire ses règles à Prometheus (skill `truenas-ops`), puis
+envoyer une alerte de test (`amtool alert add WorkstationSsdWearHigh disk=/dev/sda`), qui doit
+arriver.
