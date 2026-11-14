@@ -36,6 +36,15 @@ POLICIES = {
             "explicit approval",
         ),
     ),
+    "CLAUDE.md": (
+        "# Claude Code adapter — ansible-workstation",
+        ("AGENTS.md", ".agents/skills", "NOT_RUN", "Draft PR"),
+    ),
+    "docs/agent-execution-modes.md": (
+        "# Modes d'exécution des agents — Ubuntu Workstation",
+        ("Claude Code local", "Codex distant", "NOT_RUN",
+         "mise run audit-configuration"),
+    ),
     "docs/agent-skills-workstation.md": (
         "## Security boundary",
         ("read-only", "PAM", "DNS", "secrets", "no automatic apply"),

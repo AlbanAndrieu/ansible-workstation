@@ -39,6 +39,23 @@ provenance before approving any skill update.
 Do not duplicate installed skill contents under the alias directories, and do
 not commit caches, personal settings, keys or `.env` files.
 
+## Mode-aware skill loading (no duplicated vendor skills)
+
+`AGENTS.md` is authoritative, `CLAUDE.md` only routes Claude Code.
+For an OS task, read **one matching skill** from
+`.agents/skills/`, not every vendored reference. Both
+`.claude/skills/` and `.hermes/skills/` are symlink aliases, not
+separate copies or independent versions.
+
+[Execution modes](agent-execution-modes.md) distinguish **Claude Code
+local on verified Ubuntu** from a **remote Codex** checkout. Only the
+local mode can attest real `systemd`, DNS, PAM, NFS, Docker or hardware
+evidence; remote tests must be classified `NOT_RUN` when those
+resources are unavailable. For routine quality work, run a narrow
+unit test first and use `mise run quality` once at publication, not
+after every edit. Never execute an Ansible mutation simply to
+validate a skill.
+
 ## Local verification
 
 ```bash
