@@ -5,8 +5,8 @@ Matériel : RTX 2060 6 Go (Turing, compute 7.5, pas de bf16), pilote 595.71, i7-
 
 Chaîne : LiteLLM (conteneur `litellm-litellm-1`, config `~/.litellm/litellm_config.yaml`, liée depuis
 nabla-compose `litellm/config.yaml`, non versionnée) appelle ollama 0.40.15 sur `172.17.0.57:11434`.
-Modèles dans `/data/models/ollama` (20 Go, RAID1 de deux disques durs : d'où les chargements à froid de
-12 à 17 s). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
+Modèles dans `/data/models/ollama` : RAID1 de disques durs jusqu'au 11/11 (chargements à froid de 12 à
+17 s), puis LV `vg-nvme-crypt/models` sur le NVMe (3 à 8 s). FastAPI Sample (staging TrueNAS) passe par le LiteLLM
 de TrueNAS (`fastapi-qwen`), qui relaie vers l'entrée `qwen` de ce LiteLLM.
 
 ## Constats
@@ -104,7 +104,7 @@ injectées (nabla-compose `docs/runbooks/fastapi-sample-litellm.md`).
 | 2 | Mettre ollama à jour | Fait : 0.40.15, aucun gain de vitesse mesuré |
 | 3 | `qwen` → `qwen3.5:4b`, 32k, réflexion coupée | Fait, testé avec FastAPI Sample |
 | 4 | Code : `qwen3.5:4b` à la place de `qwen2.5-coder:7b` | Aucune entrée LiteLLM ni outil n'utilise `qwen2.5-coder:7b` (4,7 Go) ; gardé, à supprimer si inutile |
-| 5 | Retirer les `num_ctx` sous 8192 et les entrées qui débordent sur le CPU | Fait côté workstation. Le LiteLLM de TrueNAS (nabla-compose `apps/litellm/config.yaml`) garde `llama3.1`, `llama3.8b` et `deepseek-coder-v2`, qui renvoient maintenant 404 : à retirer puis redéployer |
+| 5 | Retirer les `num_ctx` sous 8192 et les entrées qui débordent sur le CPU | Fait côté workstation. Le LiteLLM de TrueNAS (nabla-compose `apps/litellm/config.yaml`) gardait `llama3.1`, `llama3.8b` et `deepseek-coder-v2`, qui renvoient 404 : **retirés et redéployés le 13/11** ([nabla-compose#371](https://github.com/AlbanAndrieu/nabla-compose/pull/371)) : le LiteLLM de TrueNAS ne les liste plus. La route `qwen` de TrueNAS utilise toujours `qwen3:4b` : ne pas le supprimer |
 | 6 | Supprimer les 6 modèles trop gros | Fait, 64 Go libérés |
 | 7 | Embedding `qwen3-embedding:0.6b` | Abandonné : 30 fois plus lent, ne tient pas à côté du modèle de chat |
 | 8 | `qwen3.5:35b-a3b` (MoE) avec les experts en RAM via `llama-server --n-cpu-moe` ; estimation non mesurée : 12 à 22 tok/s | Pas fait (22 Go à télécharger, llama.cpp à installer) |
@@ -116,5 +116,83 @@ Vu pendant les tests, non corrigé :
   et correctif : [stabilisation](stabilisation-workstation-truenas.md#workstation-reste-à-faire), n° 1.
 - `fastapi-sample/promptfooconfig.yaml` évalue encore `ollama:chat:llama3:8b`, supprimé.
 
+Relevé du 13/11 : GPU à 43 °C, sans ralentissement, 0,7 Go de VRAM pris par Claude Desktop, Chrome
+et Slack ; aucun modèle chargé. En 14 jours, ollama a reçu 55 `/api/generate`, 5 `/api/chat` et
+7 `/api/embed` ; LiteLLM, 27 requêtes de chat en 24 h, dont 2 en erreur 500 : les routes Azure
+`gpt-4.1` et `gpt-4.1-mini` répondent « Connection error » après 5 essais, et les replis de
+`llama3.2` et `gemma3` envoient vers elles les requêtes locales qui échouent. Ces endpoints
+appartiennent à une autre organisation : à retirer, ou à confirmer par l'opérateur.
+`qwen2.5-coder:7b` s'est chargé avec 0 couche sur 29 sur le GPU, donc sur le CPU seul.
+`~/.litellm/litellm_config.yaml` n'est ni versionné ni sauvegardé par Restic.
+
 Pour refaire la mesure : `/api/generate` avec `"think": false`, `num_predict: 256`, température 0,
 puis `ollama ps` pour le placement CPU/GPU.
+
+## Choix du modèle du 13/11 : `bonsai-2:9b`
+
+Claude Desktop, Chrome et Slack prennent maintenant 1 Go de VRAM au lieu de 0,55 Go : `qwen3.5:4b` en
+32k ne tient plus dans la carte (88 % GPU, 15 à 21 tok/s au lieu de 57). Même banc pour chaque
+modèle, ollama 0.40.15, contexte 32k, `think: false`, température 0. Raisonnement : 10 questions à
+réponse exacte (horaires, pourcentages, logique, jours de la semaine en français).
+
+| Modèle | GPU | Taille | Génération | Outil, JSON, aiguille dans 10k tokens | Raisonnement |
+| --- | --- | --- | --- | --- | --- |
+| `bonsai-2:9b` (Qwen3.5 9B ternaire, Q2_0) | 100 % | 3,4 Go | 53 tok/s | oui, oui, oui | **10/10** |
+| `qwen3.5:4b` | 88 % | 3,9 Go | 15-21 tok/s | oui, oui, oui | 9/10 |
+| `bonsai-2:4b` | 100 % | 2,3 Go | 79 tok/s | oui, oui, oui | 9/10 |
+| `qwen3.5:2b` | 100 % | 2,6 Go | 73 tok/s | oui, oui, oui | 9/10 |
+| `llama3.2:3b` | 90 % | 4,2 Go | 23 tok/s | oui, oui, oui | 7/10 |
+| `qwen3:4b` | 75 % | 5,0 Go | 8 tok/s | oui (tard, voir plus bas), oui, oui | 8/10 |
+| `gemma3` (4B) | — | — | — | pas d'appel d'outil (HTTP 400) | — |
+
+`bonsai-2:9b` (Prism ML, Apache 2.0, architecture `qwen35`, 9,0 milliards de paramètres) est un
+9B qui pèse le poids d'un 4B : vision, outils et 262k de contexte. Mis en place :
+
+- LiteLLM workstation : `qwen` → `ollama_chat/bonsai-2:9b`, toujours 32k et `think: false`
+  (sauvegarde `~/.litellm/litellm_config.yaml-2026-11-13`). Vérifié à travers LiteLLM : réponse en
+  1 s, `get_weather(Lyon)` appelé, image décrite, 100 % GPU.
+- `nomic-embed-text` chargé à côté passe à 74 % CPU : 32 morceaux de 400 tokens en 1,75 s au lieu de
+  0,5 s. Acceptable pour 7 appels d'embedding en 14 jours.
+- Non retenus : `qwen3.5:9b` en Q4 (6,6 Go, déborde) ; `qwen3.5:35b-a3b` (22 Go, 15 Go libres sur le
+  LV des modèles, surtout sur le CPU) ; Gemma 4 E4B (6,6 Go et plus).
+
+Retour arrière : remettre `ollama_chat/qwen3.5:4b` dans l'entrée `qwen`, puis
+`docker restart litellm-litellm-1`. Il déborde même en 16k (15 % CPU, 36 tok/s, embedding chargé).
+
+Vérifié le 14/11 :
+
+- **`qwen3:4b` appelle bien l'outil, mais tard.** Même avec `think: false`, il écrit d'abord 340 tokens
+  de réflexion dans la réponse visible (« Okay, the user is asking… ») : le banc, limité à 256 tokens,
+  coupait avant l'appel. Il faut 9 s en 8k et 398 s en 32k (débordement CPU), contre 27 tokens et
+  moins d'une seconde pour `bonsai-2:9b`.
+- **`think` ne recharge pas le modèle** (chargement à 0 s), seul `num_ctx` le fait. Avec la réflexion,
+  `bonsai-2:9b` passe de 9 à 30 s sur une question d'horaire, de 27 à 76 tokens sur un appel d'outil.
+- **Open WebUI** (TrueNAS, `DEFAULT_MODELS=qwen`) passe par la route `qwen` du LiteLLM de TrueNAS,
+  servie par `bonsai-2:9b` depuis nabla-compose#373, déployée le 14/11 : chat, `get_weather(Lyon)` et
+  image vérifiés à travers le LiteLLM de TrueNAS, aucun rechargement sur la workstation.
+- **Reactive Resume** (route `rr-json`, `qwen2.5:3b` en 8k) : avec son vrai prompt de chat et son
+  outil `patch_resume`, `bonsai-2:9b` réussit 3 modifications sur 3 (remplacer, ajouter avec `-`,
+  supprimer), `qwen2.5:3b` 2 sur 3 (aucun appel pour un ajout). Sortie JSON structurée correcte pour
+  les deux. Les deux modèles ne tiennent pas ensemble sur le GPU : alterner les routes les recharge.
+
+## Un seul modèle de chat sur le GPU (14/11)
+
+Règle : toute route LiteLLM vers l'ollama de la workstation utilise `bonsai-2:9b` avec
+`num_ctx: 32768`. `think` ne recharge pas le modèle, un autre modèle ou un autre `num_ctx` si.
+
+| Route | Réglage | Clients |
+| --- | --- | --- |
+| `qwen` | `think: false` | Open WebUI, OpenRAG, FastAPI Sample (`fastapi-qwen`), Homarr, Langfuse |
+| `qwen-think` | `think: true`, environ 3 fois plus lent | à choisir dans Open WebUI pour les questions difficiles |
+| `rr-json` | `think: false`, température 0 | Reactive Resume |
+| `embedding` | `nomic-embed-text`, 2e modèle autorisé (`OLLAMA_MAX_LOADED_MODELS=2`) | RAG, mémoire d'OpenClaw |
+
+- Workstation (`~/.litellm/litellm_config.yaml`, sauvegarde `-2026-11-14`) : `qwen-think` ajoutée,
+  `llama3.2` et `gemma3` retirées avec leurs replis. En alternant `qwen`, `qwen-think` et `rr-json`
+  à travers LiteLLM : aucun chargement de modèle dans le journal d'ollama, une seule instance.
+- TrueNAS ([nabla-compose#374](https://github.com/AlbanAndrieu/nabla-compose/pull/374)) : mêmes
+  routes, et `default_fallbacks` passe de `llama3.2` à `qwen` (toute route en échec chargeait
+  `llama3.2` sur le GPU). Un test vérifie la règle sur chaque route vers `172.17.0.57:11434`.
+- OpenClaw n'utilise aucun modèle de chat local : `gpt-4.1` et l'embedding seulement.
+- Non vérifié : les flows Langflow (choix du modèle stocké dans sa base) ; les appels directs à
+  ollama, hors LiteLLM, peuvent toujours demander un autre modèle tant qu'il est installé.

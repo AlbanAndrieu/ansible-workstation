@@ -125,7 +125,7 @@ Partitions NVMe inutilisées :
 | 3 | LUKS2 sur `p2` et `p5`, déverrouillés au boot (clé sur la racine chiffrée, ou YubiKey FIDO2), PV dans un VG `vg-nvme-crypt` : LV `home` 250 Go, LV `models` 40 Go, reste libre | `cryptsetup luksDump`, boot à froid sans intervention | **FAIT le 11/11** : clé `/etc/cryptsetup-keys.d/nvme_crypt.key`, copie et en-têtes LUKS sur la clé USB d'escrow (`luks-escrow/`) ; `/etc/crypttab` en `nofail`, ouverture par `systemd-cryptsetup@` vérifiée ; 92 Go libres dans le VG. Reste à voir un boot à froid ([runbook](runbook-storage-nvme.md)) |
 | 4 | Migrer `/home` sur le NVMe : passe finale `rsync -aHAXS` sans session ouverte, `fstab`, ancienne `/home` gardée une semaine | Session graphique normale, 0 Gio/jour de profils sur `sda` (`pidstat -d`) | **FAIT le 13/11** : bascule au boot de 10:33 par l'unité ponctuelle `home-nvme-switch.service` (passe finale 5 min 14 s) ; `/home` sur `vg--nvme--crypt-home`, 160,6 Go, aucune unité en échec ; `sda` de 11:00 à 16:00 : écritures 5,3 → 1,4 Gio, lectures 29,7 → 0,1 Gio ([relevé](#13-novembre-2026--après-la-bascule-de-home)). Montage codifié dans `stabilize_nvme_mounts`, unité retirée du dépôt et du système. Reste : supprimer `/home.sda-old` le 20/11 ([runbook](runbook-storage-nvme.md), § 1) |
 | 5 | `OLLAMA_MODELS` sur le LV `models` (drop-in ollama) | Chargement à froid mesuré avant/après (`qwen3.5:4b`, 12 à 17 s aujourd'hui) | **FAIT le 11/11** : LV monté sur `/data/models/ollama` (chemin inchangé), `RequiresMountsFor` dans le drop-in ; **17 s → 5,7 s**. Ancienne copie dans `/data/models/ollama.hdd-20261111`, à supprimer après une semaine |
-| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà exportées, job `workstation_node`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | Règles rédigées dans le [runbook](runbook-storage-nvme.md) § 2 ; à poser dans `nabla-compose` |
+| 6 | Alertes : `Wear_Leveling_Count` de `sda` sous 20, secteurs réalloués ou en attente sur `sdb`/`sdc` (métriques `smartmon_` déjà exportées, job `workstation_node`) ; prévoir le remplacement de `sdc` (`lvconvert --repair`) | Alerte de test reçue | **DÉPLOYÉ le 13/11** : 3 règles dans `nabla-compose` ([PR #371](https://github.com/AlbanAndrieu/nabla-compose/pull/371), fusionnée), expressions vérifiées sur le Prometheus de TrueNAS (`sda` à 33, 0 secteur défaillant, NVMe à 0). Prometheus redéployé : règles évaluées, `health=ok`, inactives ; alerte de test routée vers Slack, 0 échec ([runbook](runbook-storage-nvme.md) § 2). Reste à prévoir le remplacement de `sdc` |
 | 7 | À terme : déplacer `/` et `/boot` du SSD 860 vers le NVMe, ou le remplacer | Après les étapes 4 et 6 | Plus tard |
 
 Après l'étape 4, `sda` ne porte plus que le système (environ 180 Go, 40 %) : moins plein, il s'use
@@ -216,9 +216,14 @@ Propositions, rien n'est appliqué :
 | D11 | Étape 6 : poser les alertes SMART dans `nabla-compose` ([runbook](runbook-storage-nvme.md), § 2) | `sda` à 33, `sdc` à 32 178 h ; aucune alerte en place | Remplacement anticipé au lieu de subi | Nul |
 | D12 | Restic : vérifier le 14/11 la première sauvegarde après la bascule (`restic snapshots --latest 1`), puis décider d'y ajouter `~/Documents`, `~/Backups` et `~/Dropbox` | 4 dossiers de `~` sauvegardés sur 156 Go | Données personnelles avec au plus 24 h de perte | Dépôt plus gros sur TrueNAS, sauvegarde plus longue |
 
-Décisions de l'opérateur le 13/11 : D2 et D6 acceptées.
+Décisions de l'opérateur le 13/11 : D1, D2, D6 et D11 acceptées.
 
+- D1 **appliquée le 13/11** : `chattr +i` sur le point de montage vide de `/home` sur `/`, posé à
+  travers un `mount --bind /` temporaire, retiré aussitôt. Testé avant sur un dossier de `/data` :
+  l'écriture est refusée et le montage par-dessus fonctionne. Le retour arrière du
+  [runbook](runbook-storage-nvme.md) § 1 commence désormais par `chattr -i`.
 - D2 : à faire le 20/11, comme prévu, après une sauvegarde Restic réussie depuis la bascule.
+- D11 **déployée le 13/11** : voir l'étape 6.
 - D6 **appliquée le 13/11 à 18:20** : `docker builder prune` (25,3 Go), 20 images de registre
   sans conteneur (linters, Prometheus, Alertmanager, images de base) et 3 anciennes versions sans
   tag supprimées ; `/docker` de 101 à 70 Go utilisés (75 → 51 %, 67 Go libres). Gardées : les
