@@ -56,6 +56,15 @@ unit test first and use `mise run quality` once at publication, not
 after every edit. Never execute an Ansible mutation simply to
 validate a skill.
 
+## Agent cooperation and published skill integrity
+
+The shared [PR policy](../AGENTS.md) and
+[on-demand rebase procedure](agent-execution-modes.md) require an
+existing compatible PR, conflict resolution before editing and one
+reviewed publication batch. Vendored Ansible skills and their locked
+symlink aliases must never be rewritten just to reduce prompt length.
+Keep local verification and approval gates intact.
+
 ## Local verification
 
 ```bash

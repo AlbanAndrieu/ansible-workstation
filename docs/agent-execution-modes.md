@@ -26,6 +26,25 @@ n'atteste jamais l'accès à la Workstation.
 5. Rendre uniquement : fichiers modifiés, test réellement exécuté et
    prochain contrôle runtime/GO-NO-GO. Aucun log complet positif en contexte.
 
+## Synchronisation des PR et regroupement des modifications
+
+- Examiner les PR ouvertes, leurs HEAD/base et les fichiers en chevauchement.
+  Réutiliser la PR compatible et attribuer un propriétaire par fichier d'agent,
+  playbook, skill ou roadmap. Ne pas en ouvrir une seconde pour de petites retouches.
+- Dans une worktree isolée, `git fetch origin master`, `git status --short`,
+  `git log --left-right HEAD...origin/master`, puis **rebase avant édition**
+  lorsque la base a avancé. Résoudre fichier par fichier et refaire les tests
+  pertinents. Ne jamais effacer une modification concurrente.
+- Si l'historique publié doit être réécrit, le `--force-with-lease`
+  requiert une autorisation spécifique et une vérification de l'ancien HEAD ;
+  sinon préférer un merge non-force revu. L'agent API doit arrêter sur un
+  changement inattendu de HEAD, pas écraser le blob.
+- Éviter les **micro-push** : publier un lot cohérent après les contrats
+  ciblés et le gate local. Exceptions : incident de sécurité/disponibilité
+  de Production nécessitant déploiement ou migration importante terminée
+  avec services dépendants mis à jour. Aucune exception ne neutralise les
+  contrôles de sécurité, les permissions ou la revue humaine.
+
 ## Sécurité et ressources
 
 - L'agent local peut employer CPU/RAM/Node/Python d'Ubuntu pour tests,
