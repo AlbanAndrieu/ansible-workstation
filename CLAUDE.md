@@ -21,3 +21,8 @@ a Draft PR; never merge without approval.
 Load only the matching `.agents/skills/<name>/SKILL.md`.
 The symlinks under `.claude/skills` refer to the same vendored
 content; do not duplicate them.
+
+**PR workflow:** follow `AGENTS.md` and its on-demand
+`docs/agent-execution-modes.md`: reuse the compatible PR, synchronize
+and resolve conflicts before editing, publish one tested batch.
+Never rewrite a published branch without an authorized exact lease.

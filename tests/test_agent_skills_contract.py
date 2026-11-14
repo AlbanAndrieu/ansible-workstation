@@ -20,6 +20,11 @@ def fixture(root: Path, installed: bool = True) -> None:
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(heading + "\n" + "\n".join(markers) + "\n", encoding="utf-8")
+    agent = root / "AGENTS.md"
+    agent.write_text(agent.read_text() +
+                     "\n" + SKILLS.PR_CONTRACT[0] + "\n" +
+                     "\n".join(SKILLS.PR_CONTRACT[1]) + "\n",
+                     encoding="utf-8")
     if not installed:
         return
     data = {"version": 1, "skills": {}}
@@ -160,6 +165,20 @@ class AgentSkillsContract(unittest.TestCase):
             path.write_text(path.read_text().replace("NOT_RUN", "PASS"))
             issues = SKILLS.audit(root)[1]
             self.assertTrue(any("NOT_RUN" in issue for issue in issues))
+
+    def test_missing_pr_coordination_marker_fails_closed(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            fixture(root)
+            policy = root / "AGENTS.md"
+            self.assertEqual(SKILLS.audit(root), ("installed", []))
+            policy.write_text(policy.read_text().replace(
+                "Rebase before edits", "Edit without synchronization"
+            ))
+            self.assertTrue(any(
+                "PR cooperation marker missing: Rebase before edits" in issue
+                for issue in SKILLS.audit(root)[1]
+            ))
 
     def test_invalid_manifest_fails(self):
         with tempfile.TemporaryDirectory() as d:

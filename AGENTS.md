@@ -34,6 +34,24 @@ when a task needs tests, diagnostics, or a handoff.
   mutation, YubiKey operations or third-party skill execution. Explicit
   user approval remains required for these changes.
 
+## PR cooperation and batch publication
+
+- **Reuse an existing open PR** when it matches the task. Compare base/HEAD,
+  changed paths and current owner before touching a shared skill, playbook,
+  agent policy or roadmap. One active writer per overlapping file.
+- **Rebase before edits** in a clean, isolated worktree. Fetch `master`,
+  reconcile conflicts intentionally, preserve concurrent commits and run
+  focused checks. No blind force-push, `reset --hard` or `--ours` strategy.
+  If published history requires rewriting, obtain explicit authorization
+  and an exact `--force-with-lease`; otherwise use a reviewed merge.
+- **Batch small edits** into one cohesive, tested PR update; do not push one
+  formatting change per commit. Exceptions are urgent production
+  security/stability repairs requiring deployment or completed migrations
+  with coordinated downstream changes.
+- Keep the PR Draft and retain all required quality/security gates.
+  Do not auto-merge or trigger CI to replace local evidence. An unavailable
+  workstation/TrueNAS check stays `NOT_RUN`.
+
 No automatic privileged commands, workstation configuration changes, CI jobs,
 third-party code execution or merged PRs simply because a skill recommends them.
 Preserve local-only quality gates and redact credentials. This repository owns

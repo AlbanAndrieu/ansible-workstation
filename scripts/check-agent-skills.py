@@ -52,6 +52,13 @@ POLICIES = {
 }
 
 
+PR_CONTRACT = (
+    "## PR cooperation and batch publication",
+    ("Reuse an existing open PR", "Rebase before edits",
+     "Batch small edits", "NOT_RUN", "force-with-lease"),
+)
+
+
 def scoped_section(content: str, heading: str) -> str:
     lines = content.splitlines()
     try:
@@ -79,6 +86,20 @@ def audit(root: Path) -> tuple[str, list[str]]:
         for marker in markers:
             if marker not in section:
                 issues.append(f"{relative}: policy marker missing: {marker}")
+
+    try:
+        pr_policy = scoped_section(
+            (root / "AGENTS.md").read_text(encoding="utf-8"),
+            PR_CONTRACT[0],
+        )
+    except (OSError, UnicodeError):
+        pr_policy = ""
+    if not pr_policy:
+        issues.append("AGENTS.md: PR cooperation section missing")
+    else:
+        for marker in PR_CONTRACT[1]:
+            if marker not in pr_policy:
+                issues.append(f"AGENTS.md: PR cooperation marker missing: {marker}")
 
     lock = root / "skills-lock.json"
     if not lock.is_file() or lock.is_symlink():
