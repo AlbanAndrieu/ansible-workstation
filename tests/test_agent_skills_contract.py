@@ -141,6 +141,26 @@ class AgentSkillsContract(unittest.TestCase):
                 any("no automatic apply" in x for x in SKILLS.audit(root)[1]),
             )
 
+    def test_missing_claude_adapter_or_execution_matrix_blocks(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            fixture(root)
+            (root / "CLAUDE.md").unlink()
+            (root / "docs/agent-execution-modes.md").unlink()
+            issues = SKILLS.audit(root)[1]
+            self.assertTrue(any("CLAUDE.md" in issue for issue in issues))
+            self.assertTrue(any("docs/agent-execution-modes.md" in issue
+                                for issue in issues))
+
+    def test_execution_modes_must_keep_runtime_unverified(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            fixture(root)
+            path = root / "docs/agent-execution-modes.md"
+            path.write_text(path.read_text().replace("NOT_RUN", "PASS"))
+            issues = SKILLS.audit(root)[1]
+            self.assertTrue(any("NOT_RUN" in issue for issue in issues))
+
     def test_invalid_manifest_fails(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
