@@ -193,6 +193,11 @@ Règle : toute route LiteLLM vers l'ollama de la workstation utilise `bonsai-2:9
 - TrueNAS ([nabla-compose#374](https://github.com/AlbanAndrieu/nabla-compose/pull/374)) : mêmes
   routes, et `default_fallbacks` passe de `llama3.2` à `qwen` (toute route en échec chargeait
   `llama3.2` sur le GPU). Un test vérifie la règle sur chaque route vers `172.17.0.57:11434`.
+  **Déployé le 14/11.** La clé `openwebui` autorise désormais `qwen`, `qwen-think`,
+  `workstation-qwen`, `gpt-4.1(-mini)` et `embedding` (mise à jour par `/key/update` : le script
+  d'enregistrement ne touche pas une clé existante). Vérifié depuis le conteneur Open WebUI, avec
+  sa clé : ces six modèles listés ; `qwen` 2,4 s, `qwen-think` 8,6 s avec réflexion ; `llama3.2`
+  refusé (403) ; `rr-json` répond aussi par TrueNAS. Aucun chargement de modèle sur la workstation.
 - OpenClaw n'utilise aucun modèle de chat local : `gpt-4.1` et l'embedding seulement.
 - Non vérifié : les flows Langflow (choix du modèle stocké dans sa base) ; les appels directs à
   ollama, hors LiteLLM, peuvent toujours demander un autre modèle tant qu'il est installé.

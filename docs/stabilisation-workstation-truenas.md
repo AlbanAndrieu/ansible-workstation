@@ -119,9 +119,13 @@ Non corrigé : `/api/` est relayé vers `albandrieu.albandrieu.com:80` (`127.0.0
 | 5 | `/home` occupe 141 Go sur `/`. | Inventaire avec `mise run cleanup-check` | `scripts/workstation-cleanup.sh` |
 | 6 | Un `daemon-reload` pendant une panne de TrueNAS a figé PID 1 le 6/11, avec des partages montés. Les tests du 7/11 ne reproduisent pas ce gel (voir plus bas) : la condition exacte reste inconnue. | Ne pas lancer apt pendant un arrêt de TrueNAS. `softreval` n'aide pas (testé le 7/11). | `/etc/fstab` |
 | 7 | Les conteneurs résolvent par `9.9.9.9` puis Pi-hole sur TrueNAS (`/etc/docker/daemon.json`) : 27 échecs vers `9.9.9.9` en 24 h. | Passer à `172.17.0.1` comme l'hôte (redémarrage de Docker et recréation des conteneurs) | `/etc/docker/daemon.json` |
-| 8 | msmtp n'a aucune configuration : chaque sortie de cron finit en `status 0x004e from MTA` (awstats toutes les 10 min jusqu'au 7/11, `wacli` et `vdirsyncer` chaque heure). La sortie est perdue. | Configurer `/etc/msmtprc`, ou `MAILTO=""` et rediriger vers `logger` | crontab utilisateur, `/etc/msmtprc` |
+| 8 | msmtp n'a aucune configuration : chaque sortie de cron finit en `status 0x004e from MTA` (awstats toutes les 10 min jusqu'au 7/11, `wacli` et `vdirsyncer` chaque heure). La sortie est perdue. | Configurer `/etc/msmtprc`, ou `MAILTO=""` et rediriger vers `logger`. **14/11** : les deux lignes de la crontab utilisateur sont commentées (sauvegarde `~/.crontab.bak-20261114-105404`) : `/usr/bin/wacli` n'existe plus (seule sa base reste dans `~/.local/state/wacli`), et `vdirsyncer.timer` (utilisateur, paquet) synchronise déjà toutes les 15 min. Restent perdus : les rapports de `debsecan` (horaire) et d'`apticron` | crontab utilisateur, `/etc/msmtprc` |
 | 9 | Crontab root (ClamTk) : `clamscan -r /home/albandrieu` à minuit, plus de 1 h 40 à 100 % d'un cœur, sans `nice`. `maldet -a /` appelle un binaire désinstallé et publie un rapport vide. `chkrootkit` tourne deux fois (crontab et `chkrootkit.timer`). | **Codé le 10/11, revu le 13/11**, apply à faire : lignes ClamTk, `maldet` et `chkrootkit` retirées (le rapport HTML de chkrootkit disparaît avec) ; `clamav-local-disks` hebdomadaire sur les disques locaux, sans les partages TrueNAS | [`stabilize-workstation.yml`](../playbooks/stabilize-workstation.yml) |
 | 10 | Port USB `1-1.3` : un périphérique refuse l'énumération (`error -71`), le 6/11 à 16:41. | Changer de câble ou de port | Matériel |
+| 11 | Open-AudIT (installé en 2024 sous `/usr/local/open-audit`) : `/etc/cron.d/open-audit` lance PHP chaque minute, sans MySQL ni MariaDB installés ni site Apache. | **Désactivé le 14/11** : renommé `open-audit.disabled-20261114` (cron ignore les noms avec un point) ; plus aucun lancement dans le journal. Retour : remettre le nom `open-audit` | `/etc/cron.d` |
+| 12 | Environ 5 000 `[UFW BLOCK]` par jour dans le journal. Les principaux viennent de pfSense (`172.17.0.1`) vers des ports où rien n'écoute : syslog UDP `1514` (ancienne cible, déjà notée « à retirer » dans nabla-compose) et TCP `3000`, `9000`, `8081` (backends HAProxy `ntopng`, `albandrieu`, `graylog`… vérifiés chaque seconde, services partis de la station). | Retirer la cible syslog dans pfSense. `ntopng` et `graylog` tournent maintenant sur TrueNAS (14/11) : pointer leurs backends HAProxy vers TrueNAS au lieu de les retirer | pfSense (nabla-compose) |
+| 13 | DNS : 4 248 délais dépassés sur 223 808 requêtes en 24 h (1,9 %), groupés (13/11 vers 14 h, 20 h, 21 h, 14/11 vers 0 h) : `vdirsyncer` a échoué 1 023 fois rien qu'entre 14 h et 15 h. La station n'interroge que `172.17.0.1`, en DNSSEC strict. | Chercher côté pfSense et Pi-hole ce qui tombe à ces heures ; le DNSSEC strict reste un choix voulu | pfSense, Pi-hole (TrueNAS) |
+| 14 | `libvirtd` tourne sans aucune VM (22 Mo, 5 `dnsmasq`, `virbr0` éteint) et écrit 32 erreurs par jour sur les `veth` de Docker qui disparaissent. | **Désactivé le 14/11** : `libvirtd.service` et `libvirt-guests.service` désactivés et arrêtés, réseau `default` arrêté. Les sockets `libvirtd*.socket` restent actives : `sudo virsh list --all` relance le démon, qui s'arrête après 120 s d'inactivité. Le `dnsmasq` de `minikube-net` (reste d'un ancien minikube, aucune VM définie) disparaît au prochain redémarrage. Retour : `sudo systemctl enable --now libvirtd.service libvirt-guests.service` | systemd |
 
 Suspecté :
 
@@ -135,6 +139,19 @@ Vérifié sain :
 - les 13 montages NFS, sans retransmission ;
 - Restic : sauvegarde du 4/11 à 00:38 ;
 - 12 conteneurs sains.
+
+Relevé du 14/11 (journal, `dmesg`, systemd) :
+
+- aucune unité en échec, système ni utilisateur ; 0 OOM en 7 jours ; un seul coredump
+  (`gnome-keyring-daemon`) ;
+- rasdaemon : aucune erreur mémoire ni PCIe. Ses avertissements portent sur les événements CXL,
+  absents de ce matériel ;
+- démarrage : les « 2 min 43 » de la phase noyau dans `systemd-analyze` sont un artefact (le noyau
+  date son premier message à 160 s : compteur non remis à zéro au redémarrage à chaud ; noyau et
+  initramfs prennent environ 6 s). Les 35 s du chargeur viennent de `recordfail` de GRUB : menu de
+  30 s après les redémarrages anormaux du 13/11, au lieu des 10 s habituelles ;
+- bruit sans conséquence : `Page flip failed` de gnome-shell (pilote NVIDIA sous Wayland), SGX
+  coupé par le BIOS.
 
 ## TrueNAS
 
