@@ -168,7 +168,8 @@ Vérifié le 14/11 :
 - **`think` ne recharge pas le modèle** (chargement à 0 s), seul `num_ctx` le fait. Avec la réflexion,
   `bonsai-2:9b` passe de 9 à 30 s sur une question d'horaire, de 27 à 76 tokens sur un appel d'outil.
 - **Open WebUI** (TrueNAS, `DEFAULT_MODELS=qwen`) passe par la route `qwen` du LiteLLM de TrueNAS,
-  servie par `bonsai-2:9b` depuis nabla-compose#373.
+  servie par `bonsai-2:9b` depuis nabla-compose#373, déployée le 14/11 : chat, `get_weather(Lyon)` et
+  image vérifiés à travers le LiteLLM de TrueNAS, aucun rechargement sur la workstation.
 - **Reactive Resume** (route `rr-json`, `qwen2.5:3b` en 8k) : avec son vrai prompt de chat et son
   outil `patch_resume`, `bonsai-2:9b` réussit 3 modifications sur 3 (remplacer, ajouter avec `-`,
   supprimer), `qwen2.5:3b` 2 sur 3 (aucun appel pour un ajout). Sortie JSON structurée correcte pour
