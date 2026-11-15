@@ -93,6 +93,7 @@
     stabilize_apache_files:
       - apache2.conf
       - conf-available/security.conf
+      - ports.conf
       - sites-available/000-default.conf
     # Loaded in every prefork child, used by nothing: no balancer, AJP, CONNECT, FastCGI or HTML rewriting.
     stabilize_apache_mods_off:
