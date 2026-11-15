@@ -42,8 +42,12 @@ POLICIES = {
     ),
     "docs/agent-execution-modes.md": (
         "# Modes d'exécution des agents — Ubuntu Workstation",
-        ("Claude Code local", "Codex distant", "NOT_RUN",
-         "mise run audit-configuration"),
+        (
+            "Claude Code local",
+            "Codex distant",
+            "NOT_RUN",
+            "mise run audit-configuration",
+        ),
     ),
     "docs/agent-skills-workstation.md": (
         "## Security boundary",
@@ -54,8 +58,13 @@ POLICIES = {
 
 PR_CONTRACT = (
     "## PR cooperation and batch publication",
-    ("Reuse an existing open PR", "Rebase before edits",
-     "Batch small edits", "NOT_RUN", "force-with-lease"),
+    (
+        "Reuse an existing open PR",
+        "Rebase before edits",
+        "Batch small edits",
+        "NOT_RUN",
+        "force-with-lease",
+    ),
 )
 
 
