@@ -69,7 +69,9 @@ workstation_firewall_manage_enabled: false
 # Bulk myrepos registration must be explicitly requested, never run as root.
 workstation_myrepos_autoregister_enabled: false
 workstation_myrepos_root: "/workspace/users/{{ user }}{{ shell_default_version }}"
-screensaver_enabled: false
+screensaver_enabled: true
+screensaver_matrix_idle_min: 10
+screensaver_lock_idle_seconds: 3600
 dash_enabled: true
 classicmenu_indicator_enabled: true
 calendar_indicator_enabled: true
