@@ -1,12 +1,36 @@
 # Roadmap ansible-workstation — Ubuntu secure-by-default
 
-**Périmètre :** seulement `ansible-workstation`. Contrat : [Option A](workstation-ownership-option-a.md). La vue homelab/YubiKey reste dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/blob/master/docs/roadmap-workstation-yubikey.md) ; shell utilisateur dans [dotfiles](https://github.com/AlbanAndrieu/dotfiles/blob/main/docs/roadmap-workstation.md).
+**Périmètre :** OS, audit et réconciliation Ubuntu dans `ansible-workstation` (contrat [Option A](workstation-ownership-option-a.md)). Le shell relève de [dotfiles](https://github.com/AlbanAndrieu/dotfiles/blob/main/docs/roadmap-workstation.md), le matériel de [nabla-yubikey](https://github.com/AlbanAndrieu/nabla-yubikey/blob/master/docs/roadmap.md), la gateway de [nabla-openclaw](https://github.com/AlbanAndrieu/nabla-openclaw) et les intégrations NAS/réseau de [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/blob/master/docs/roadmap-portfolio.md).
 
-**Consolidée le 10 novembre 2026** (rebase de la PR #20 sur `master` après la PR #18).
+**Synthèse consolidée le 16 novembre 2026**, à partir des preuves runtime documentées du 10 au 13 novembre ; aucun nouvel audit de la workstation n'a été effectué.
 Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté sur la station ;
 **CODE ADDED** = code et contrats offline, runtime non vérifié ; **À faire**.
 
-## P0 — sécurité et exposition
+
+## Portefeuille priorisé — 16 novembre 2026
+
+Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas confondre code commité, audit local, apply et réception runtime. Le contrôle de GitHub n'atteste pas une nouvelle mesure réseau, GNOME, disque ou sauvegarde.
+
+| ID | Priorité | Livrable restant | État documenté et critère de réception |
+| --- | --- | --- | --- |
+| W01 | **P0** | Attribution de la fenêtre GNOME « Capture Input » | Application **inconnue**. Ajouter un audit read-only du portail InputCapture (identité application, PID/émetteur D-Bus, capacités, persistance des consentements), **sans capturer les frappes, mouvements ni presse-papiers**. Tester le refus ; propriétaire OS ici et autostart dans dotfiles |
+| W02 | **P0** | PRA Restic et copie indépendante | Timer/check documentés ; service de restauration isolée **codé mais non exécuté** ; hors-site absent. Tester restauration après migration du 13/11, décider des données utiles de home et prouver une copie/clé de récupération indépendante de la workstation et de TrueNAS |
+| W03 | **P0** | Conservation auditd et sécurité de session | Cron root supprimant les rotations audit.log signalé ; GDM autologin mentionné. Vérifier la présence effective, la politique de rotation et de verrouillage, corriger via plan approuvé ; **aucune mutation PAM automatique** |
+| W04 | **P0** | Preuve négative du filtrage Docker/IPv6/WAN | UFW actif ; 3009 fermé depuis TrueNAS et 4000 autorisé à TrueNAS. DROP du 4000 depuis une **deuxième machine du LAN**, IPv6 et accès WAN restent **NOT_VERIFIED** ; conserver le chemin de monitoring autorisé |
+| W05 | **P1** | Secure Boot, MOK NVIDIA, TPM/LUKS | TPM 2.0 présent ; Secure Boot désactivé, MOK NVIDIA non enrôlée. Enrôlement puis redémarrage contrôlé et GPU fonctionnel ; étudier récupération LUKS avant tout binding TPM |
+| W06 | **P1** | Fin de migration du stockage | Home chiffré sur NVMe appliqué le 13/11, point de montage sécurisé. **Ne supprimer /home.sda-old qu'à partir du 20/11** et seulement après preuve d'une restauration Restic récente |
+| W07 | **P1** | DNS cohérent pour Docker | Hôte configuré vers pfSense, conteneurs encore vers 9.9.9.9/Pi-hole avec échecs documentés. Préparer un plan vers 172.17.0.1, mesurer split DNS et redémarrer seulement lors d'une fenêtre autorisée |
+| W08 | **P1** | Mise à jour OS, droits Apache, alertes cron | Drop-in unattended-upgrades non appliqué ; arbitrer cadence quotidienne vs hebdomadaire ; corriger les effets de UMASK 027 par service et les erreurs msmtp, sans écraser les conffiles |
+| W09 | **P1** | Audit de dérive unique, rapide et traçable | L'inventaire JSON v1 et la policy OS existent. Proposer un agrégateur **read-only** config/DNS, réseau, GNOME, boot, backup, stockage avec provenance, fraîcheur et statuts PASS/WARN/FAIL/NOT_RUN ; pas de double collecteur |
+| W10 | **P2** | Bootstrap utilisateur et unités systemd --user | Dotfiles PR #5 fusionnée le 11/11 ; OpenClaw source désactivé depuis le 3/11. Tester sur HOME isolé, inventorier autostarts, ne pas réactiver la gateway source par réparation automatique |
+| W11 | **P2** | Performance, nettoyage et capacité | Migration NVMe et alertes SMART appliquées, D6 purge Docker déjà réalisée le 13/11. Mesurer caches, CPU, I/O, prompt avant/après ; **aucun prune de volumes ni effacement LUKS** automatique |
+| W12 | **P2** | Documentation et ownership inter-dépôts | Corriger les références historiques aux YubiKey/Compose, transférer uniquement les diagnostics dont la parité est prouvée ; scripts d'agent minimaux, une seule PR active par chemin partagé |
+
+**Ordre de travail recommandé :** W01/W03 (permissions et logs), W02 (restauration), W04 (mesures négatives), puis W05–W08 (changements OS supervisés) et W09–W12 (simplification). La suppression prévue de l'ancien home dépend de **W02**, pas du calendrier seul.
+
+**Contrats de sécurité :** audit sans privilège par défaut ; plan expurgé, approbation explicite et rollback pour tout apply ; aucune mutation YubiKey, PAM ou secrets ; PR Draft, publications groupées, tests locaux, pas de CI payante ni d'automerge. Toute validation hôte inaccessible depuis l'agent reste **NOT_RUN**. Voir les [actions opérateur](workstation-pending-actions.md).
+
+## P0 — sécurité et exposition (livraisons historiques)
 
 | Livrable | Gate de validation | Statut |
 | --- | --- | --- |
@@ -37,7 +61,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
 | [Réparation de la toolchain utilisateur](user-toolchain-recovery.md) | `check` par défaut, OpenClaw épinglé | **ACCEPTED (10/11)** : `toolchain-check` sans problème ; une gateway désactivée n'est plus une erreur, et `toolchain-repair` ne la redémarre plus (deux gateways interrogeraient les mêmes comptes Telegram et WhatsApp) |
 | [OpenClaw : audit de la source Workstation, cible TrueNAS](openclaw-workstation-to-truenas.md) | Contrats offline, aucune mutation | **BASCULE FAITE le 3/11** par `nabla-openclaw` : gateway de la station arrêtée et désactivée, gardée pour le retour arrière. Reste de la bascule retiré le 10/11 : la ligne `tech-news-digest` de 9 h de la crontab utilisateur, qui écrivait `/tmp/td-merged.json` sans rien envoyer (la livraison passe par la gateway TrueNAS) |
 | [Extraire le code Workstation de nabla-compose](migration-from-nabla-compose-20261030.md) | Équivalence des sondes, secrets hors dépôt | **LOT 1 BASCULÉ (11/11)** : les 6 diagnostics DNS/Wi-Fi ont le même AST que les originaux de nabla-compose (inchangés depuis `cc3f9ca6`), aux virgules finales près. Seuls trois écarts cosmétiques : `mise run` au lieu de `just`, une lambda en `def`, deux variables extraites. Originaux retirés côté nabla-compose par la [PR #346](https://github.com/AlbanAndrieu/nabla-compose/pull/346), fusionnée le 11/11 (`30d1958b`) : seules restent les tâches `mise run workstation-*` d'ici ([détails](migration-from-nabla-compose-20261030.md#lot-1-copié-2026-11-02--diagnostics-dns-et-wi-fi-du-poste)) |
-| [Transférer l'inventaire JSON v1 de dotfiles ici](audit-workstation.md#inventaire-système-json-v1) | Collecteur unique, date/source par champ | **CODE ADDED (10/11)** : `mise run audit-inventory`, sans sudo ; sur la station, même JSON v1 que dotfiles, plus `provenance` (source et date UTC de chaque champ, vérifiées par test de contrat). **Wrapper dotfiles en PR (11/11)** : `bin/inspect-workstation-system.py` lance ce collecteur, sorties identiques (JSON plus `provenance`, résumé) ; commité (`5f5d47d`), [dotfiles#5](https://github.com/AlbanAndrieu/dotfiles/pull/5) à relire puis fusionner |
+| [Transférer l'inventaire JSON v1 de dotfiles ici](audit-workstation.md#inventaire-système-json-v1) | Collecteur unique, date/source par champ | **CODE ADDED (10/11)** : `mise run audit-inventory`, sans sudo ; sur la station, même JSON v1 que dotfiles, plus `provenance` (source et date UTC de chaque champ, vérifiées par test de contrat). **Wrapper dotfiles livré et PR #5 fusionnée (11/11)** : `bin/inspect-workstation-system.py` lance ce collecteur, sorties identiques (JSON plus `provenance`, résumé) ; commité (`5f5d47d`), [dotfiles#5](https://github.com/AlbanAndrieu/dotfiles/pull/5) fusionnée le 11/11 |
 | Profil minimal des paquets/services opt-in ; retirer les vieilles distributions | `--check` non destructif, idempotence, rollback | **VIEILLES DISTRIBUTIONS RETIRÉES (10/11)**, code seul : 52 tâches réservées à Ubuntu 12.04–19.10 supprimées (PPA morts, Unity, Wine 17.04…), 84 clauses toujours vraies sur 20.04+ retirées, `gui.yml`, `keepass.yml` et `record.yml` vidés puis supprimés ; plancher du `workstation.yml` racine relevé à 20.04 (tag `platform` : « Ubuntu 26.04 x86_64 », `changed=0`) ; test de contrat : plus aucun `ansible_distribution_version` dans `tasks/`. Rien ne change sur une 20.04+ : les tâches supprimées y étaient toujours sautées. Retour arrière : `git revert`. Profil minimal opt-in : périmètre à décider, après le commit de ce lot ([question 11](workstation-pending-actions.md#2-décisions)) ; idempotence d'un run complet non mesurée (pas d'apply global) |
 
 ## P2
@@ -55,9 +79,7 @@ Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté s
   conservation chiffrée ; garder une copie indépendante de TrueNAS.
 - **Pas de CI payante ni de fusion automatique.** Tests de contrat en local (`mise run test-offline`),
   PR revues par l'opérateur.
-- **Suivant :** les commandes sudo et les décisions du [runbook des actions en
-  attente](workstation-pending-actions.md) ; boot à froid (étape 3) et bascule de `/home` (étape 4)
-  du stockage, devant la machine.
+- **Suivant :** réception des W01–W04 et décisions du [runbook des actions en attente](workstation-pending-actions.md). La bascule de `/home` est déjà achevée depuis le 13/11.
 
 ## 30 octobre 2026 — skills Ansible et acceptation DNS
 
