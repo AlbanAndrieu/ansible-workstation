@@ -162,6 +162,28 @@ class StabilizeWorkstationContracts(unittest.TestCase):
             "/usr/local/sbin/clamav-scan-local-disks",
         )
 
+    def test_anacron_logs_to_the_journal_without_maldet(self):
+        tasks = {t["name"]: t for t in play()["tasks"]}
+        removed = tasks["Remove the cron jobs the uninstalled maldet left behind"]
+        self.assertIn("/etc/cron.daily/maldet", removed["loop"])
+        edit = tasks[
+            "Log the anacron jobs to the journal, not the unconfigured mailer"
+        ]["ansible.builtin.replace"]
+        before = (
+            "1\t5\tcron.daily\trun-parts --report /etc/cron.daily\n"
+            "@monthly\t15\tcron.monthly\trun-parts --report /etc/cron.monthly"
+        )
+        after = re.sub(edit["regexp"], edit["replace"], before, flags=re.M)
+        self.assertEqual(
+            after,
+            "1\t5\tcron.daily\tsystemd-cat -t cron.daily "
+            "run-parts --report /etc/cron.daily\n"
+            "@monthly\t15\tcron.monthly\tsystemd-cat -t cron.monthly "
+            "run-parts --report /etc/cron.monthly",
+        )
+        again = re.sub(edit["regexp"], edit["replace"], after, flags=re.M)
+        self.assertEqual(again, after)
+
     def test_local_disk_scan_skips_truenas_mounts(self):
         mounts = "\n".join(
             [

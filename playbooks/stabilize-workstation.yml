@@ -577,6 +577,26 @@
       become: true
       when: stabilize_write
 
+    # Without /usr/local/maldetect, cron.daily/maldet exits 1 and fails cron.daily every morning.
+    - name: Remove the cron jobs the uninstalled maldet left behind
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/cron.daily/maldet
+        - /etc/cron.d/maldet_pub
+      become: true
+      when: stabilize_write
+
+    # msmtp has no account: anacron mailed the job output into the void. systemd-cat keeps the exit code.
+    - name: Log the anacron jobs to the journal, not the unconfigured mailer
+      ansible.builtin.replace:
+        path: /etc/anacrontab
+        regexp: '^(\S+\s+\d+\s+(cron\.\w+)\s+)(run-parts --report /etc/cron\.\w+)$'
+        replace: '\1systemd-cat -t \2 \3'
+      become: true
+      when: stabilize_write
+
     - name: Install the local-disk ClamAV scan
       ansible.builtin.copy:
         src: "{{ playbook_dir | dirname }}/files/clamav-scan-local-disks.sh"
@@ -608,3 +628,4 @@
           system_units_off: "{{ stabilize_system_units_off }}"
           user_units_off: "{{ stabilize_user_units_off }}"
           root_crontab: ClamTk, maldet and duplicate chkrootkit lines removed; weekly clamav-local-disks added
+          anacron: maldet cron files removed; job output and exit code go to the journal
