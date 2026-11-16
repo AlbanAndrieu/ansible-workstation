@@ -20,10 +20,6 @@
     harden_docker_nets: 172.16.0.0/16
     harden_rules:
       - from: "{{ harden_lan }}"
-        port: "8082"
-        proto: tcp
-        comment: apache
-      - from: "{{ harden_lan }}"
         port: "8087"
         proto: tcp
         comment: apache

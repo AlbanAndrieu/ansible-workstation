@@ -21,10 +21,15 @@ def fixture(root: Path, installed: bool = True) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(heading + "\n" + "\n".join(markers) + "\n", encoding="utf-8")
     agent = root / "AGENTS.md"
-    agent.write_text(agent.read_text() +
-                     "\n" + SKILLS.PR_CONTRACT[0] + "\n" +
-                     "\n".join(SKILLS.PR_CONTRACT[1]) + "\n",
-                     encoding="utf-8")
+    agent.write_text(
+        agent.read_text()
+        + "\n"
+        + SKILLS.PR_CONTRACT[0]
+        + "\n"
+        + "\n".join(SKILLS.PR_CONTRACT[1])
+        + "\n",
+        encoding="utf-8",
+    )
     if not installed:
         return
     data = {"version": 1, "skills": {}}
@@ -154,8 +159,9 @@ class AgentSkillsContract(unittest.TestCase):
             (root / "docs/agent-execution-modes.md").unlink()
             issues = SKILLS.audit(root)[1]
             self.assertTrue(any("CLAUDE.md" in issue for issue in issues))
-            self.assertTrue(any("docs/agent-execution-modes.md" in issue
-                                for issue in issues))
+            self.assertTrue(
+                any("docs/agent-execution-modes.md" in issue for issue in issues),
+            )
 
     def test_execution_modes_must_keep_runtime_unverified(self):
         with tempfile.TemporaryDirectory() as d:
@@ -172,13 +178,18 @@ class AgentSkillsContract(unittest.TestCase):
             fixture(root)
             policy = root / "AGENTS.md"
             self.assertEqual(SKILLS.audit(root), ("installed", []))
-            policy.write_text(policy.read_text().replace(
-                "Rebase before edits", "Edit without synchronization"
-            ))
-            self.assertTrue(any(
-                "PR cooperation marker missing: Rebase before edits" in issue
-                for issue in SKILLS.audit(root)[1]
-            ))
+            policy.write_text(
+                policy.read_text().replace(
+                    "Rebase before edits",
+                    "Edit without synchronization",
+                ),
+            )
+            self.assertTrue(
+                any(
+                    "PR cooperation marker missing: Rebase before edits" in issue
+                    for issue in SKILLS.audit(root)[1]
+                ),
+            )
 
     def test_invalid_manifest_fails(self):
         with tempfile.TemporaryDirectory() as d:

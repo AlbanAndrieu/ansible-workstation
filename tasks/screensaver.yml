@@ -1,26 +1,70 @@
 ---
-# http://quehow.com/how-to-add-screensavers-in-ubuntu-14-04/6606.html
-# Uninstall default black screensaver
-- name: workstation | Uninstall default black screensaver
-  ansible.builtin.apt: >
-    pkg={{ item }}
-    state=absent
-    purge=yes
-    force=yes
+# The xscreensaver daemon fails under GNOME Wayland (no $DISPLAY at login, X11-only idle timer):
+# a user service draws its xmatrix hack after idle, and GNOME blanks and locks the session.
+- name: screensaver | Purge the xscreensaver daemon
+  ansible.builtin.apt:
+    name: xscreensaver
+    state: absent
+    purge: true
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  when: ansible_os_family == 'Debian' and screensaver_enabled
   tags: package
-  with_items:
-    - gnome-screensaver
 
-- name: workstation | Install screensaver
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state={{ util_pkg_state | default('present') }}"
+- name: screensaver | Install the xmatrix hack and wmctrl
+  ansible.builtin.apt:
+    name:
+      - xscreensaver-data-extra
+      - wmctrl
+    state: "{{ util_pkg_state | default('present') }}"
   become: true
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and screensaver_enabled
+  when: ansible_os_family == 'Debian' and screensaver_enabled
   tags: package
-  with_items:
-    - xscreensaver
-    - xscreensaver-data-extra
-    - xscreensaver-gl-extra
-# Test it with xscreensaver-demo
-# Change to XMatrix
+
+- name: screensaver | Copy the matrix screensaver script
+  ansible.builtin.copy:
+    src: matrix-screensaver.sh
+    dest: /usr/local/bin/matrix-screensaver.sh
+    mode: "0755"
+  become: true
+  when: screensaver_enabled
+  tags: configure
+
+- name: screensaver | Copy the matrix screensaver user unit
+  ansible.builtin.template:
+    src: matrix-screensaver.service.j2
+    dest: /usr/lib/systemd/user/matrix-screensaver.service
+    mode: "0644"
+  become: true
+  when: screensaver_enabled
+  tags: configure
+
+- name: screensaver | Start the matrix screensaver user unit
+  ansible.builtin.systemd_service:
+    name: matrix-screensaver.service
+    daemon_reload: true
+    state: started
+    enabled: true
+    scope: user
+  become: false
+  when: screensaver_enabled
+  tags: service
+
+- name: screensaver | Let GNOME blank and lock the session after idle
+  ansible.builtin.shell: |
+    [ "$(gsettings get {{ item.schema }} {{ item.key }})" = "{{ item.value }}" ] && exit 0
+    gsettings set {{ item.schema }} {{ item.key }} "{{ item.value }}" && echo changed
+  register: screensaver_gsettings
+  changed_when: "'changed' in screensaver_gsettings.stdout"
+  become: false
+  when: screensaver_enabled
+  tags: configure
+  loop:
+    - schema: org.gnome.desktop.session
+      key: idle-delay
+      value: "uint32 {{ screensaver_lock_idle_seconds }}"
+    - schema: org.gnome.desktop.screensaver
+      key: lock-enabled
+      value: "true"
+    - schema: org.gnome.desktop.screensaver
+      key: lock-delay
+      value: "uint32 0"

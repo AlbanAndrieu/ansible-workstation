@@ -105,6 +105,11 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         ):
             self.assertNotRegex(path, deny)
         self.assertIn("ServerTokens Prod", security.splitlines())
+        # Only the Cloudflare tunnel reaches the site: no LAN or HAProxy listener.
+        self.assertIn(
+            "Listen 127.0.0.1:8082",
+            (apache / "ports.conf").read_text().splitlines(),
+        )
         site = (apache / "sites-available/000-default.conf").read_text()
         self.assertNotRegex(site, r"DocumentRoot /var/www/nabla-site-apache/\s")
         for name in play()["vars"]["stabilize_apache_files"]:

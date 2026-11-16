@@ -1,0 +1,14 @@
+[Unit]
+Description=Matrix screensaver (xscreensaver xmatrix hack) after {{ screensaver_matrix_idle_min }} min idle
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=MATRIX_IDLE_MIN={{ screensaver_matrix_idle_min }}
+ExecStart=/usr/local/bin/matrix-screensaver.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target

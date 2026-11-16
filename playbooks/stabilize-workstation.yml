@@ -20,9 +20,8 @@
       - cloud-init-base
       # Hyper-V KVP daemon waits 90 s at boot for a device that never appears on bare metal.
       - linux-cloud-tools-common
-      # Fails under GNOME, which has its own screen locker.
+      # Fails under GNOME, which has its own screen locker; tasks/screensaver.yml keeps the xmatrix hack.
       - xscreensaver
-      - xscreensaver-data-extra
       - xscreensaver-gl-extra
       # Never produced a report (/var/lib/awstats empty since 2020): www-data cannot read the apache
       # logs, and its cron job fails every 10 min.
@@ -32,6 +31,10 @@
       - cento.service
       # No client since November 2025; its FTDC statfs every NFS mount each second, so they never idle out.
       - mongod.service
+      # No Prometheus target and no client (15/11/2026); its UFW rule 9116 is gone too.
+      - snmp_exporter.service
+      # Nothing reads DCGM: GPU metrics come from nvidia-gpu-textfile (nvidia-smi).
+      - nvidia-dcgm.service
     # libminiupnpc.so.17 is gone; the timer restarts the failing service every 30 min.
     stabilize_user_units_off:
       - bitcoin-qt.timer
@@ -93,6 +96,7 @@
     stabilize_apache_files:
       - apache2.conf
       - conf-available/security.conf
+      - ports.conf
       - sites-available/000-default.conf
     # Loaded in every prefork child, used by nothing: no balancer, AJP, CONNECT, FastCGI or HTML rewriting.
     stabilize_apache_mods_off:
