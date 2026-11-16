@@ -1,8 +1,19 @@
 # Actions en attente de l'opérateur
 
-**11 novembre 2026.** Points de la [roadmap](roadmap-workstation.md) que l'agent ne peut pas
-finir seul : une commande sudo (refusée à l'agent), ou une décision. Le code est commité ; chaque
-section donne le contrôle, la commande et la vérification. Rayer une section une fois faite.
+**Révision documentaire du 16 novembre 2026** (dernière observation documentée : 13/11). Décisions et actions qui exigent un sudo local, un contrôle physique ou une autorisation. Avant de reprendre une ancienne commande, **revalider son préflight** : aucun test live n'a été réalisé pendant cette révision.
+
+
+## Synthèse des décisions ouvertes
+
+| Rang | Décision / risque | Gate avant intervention |
+| --- | --- | --- |
+| **P0 — W01/W03** | Fenêtre GNOME InputCapture ; rétention auditd ; autologin/session | Identifier le processus D-Bus demandeur et les consentements ; ne pas collecter d'événements clavier ni accorder de permission inconnue. Contrôler le cron destructeur avant de le supprimer |
+| **P0 — W02** | Restauration Restic et copie hors NAS | Service de test de restauration installé et succès observable ; confirmer une sauvegarde **postérieure au 13/11**, sa couverture et la possession indépendante de la clé |
+| **P0 — W04** | Surface Docker/UFW/IPv6 | Test de refus depuis un **autre** hôte LAN et un observateur WAN autorisé ; aucune conclusion WAN sur la seule mesure TrueNAS |
+| **P1 — W06** | Suppression de l'ancien home | **Pas avant le 20/11** et seulement après restauration vérifiée ; vérifier montage/LUKS/backup |
+| **P1 — W05/W07/W08** | MOK, DNS Docker, APT, Apache, cron | Fenêtres d'apply séparées et approbations explicites ; rollback documenté |
+
+La [roadmap consolidée](roadmap-workstation.md#portefeuille-priorisé--16-novembre-2026) est la vue d'arbitrage. Les chiffres ci-dessous reflètent leurs **dates d'observation**, pas une nouvelle mesure.
 
 ## 1. Commandes sudo prêtes
 
@@ -122,10 +133,7 @@ mise run zabbix-host-check
    comme l'hôte, impose un redémarrage de Docker et la recréation des conteneurs : quand ?
 4. **Cadence apt** : garder la cadence hebdomadaire réglée sur la station
    (`Update-Package-Lists "7"`) ou passer au quotidien du tag `apt-periodic` ?
-5. **Images et cache Docker** : 47,6 Go d'images et 25,4 Go de cache de build récupérables
-   (`docker system df`, 11/11). `docker image prune -a` et `docker builder prune` retirent tout ce
-   qu'aucun conteneur n'utilise : une image à reconstruire ou retélécharger au prochain usage. Les
-   5,8 Go de volumes orphelins sont des données : à trier à la main, jamais en `prune`.
+5. **Images et cache Docker** : le nettoyage **D6 a été effectué le 13/11** (environ 31 Go libérés). L'ancienne estimation du 11/11 n'est plus un quota récupérable. Relancer `docker system df` avant une nouvelle proposition, conserver les images locales non re-téléchargeables et **ne jamais pruner les volumes par défaut**.
 6. **`cleanup-apply-system`** (sudo) : caches apt, snaps désactivés, flatpaks inutilisés. À lancer ?
 7. **Cron root `rm -f /var/log/audit/audit.log.*`** : il efface les rotations d'auditd. Le retirer
    et laisser `max_log_file_action = ROTATE` / `num_logs` d'auditd gérer la taille ?
@@ -134,8 +142,7 @@ mise run zabbix-host-check
    choisir), ou `MAILTO=""` et rediriger vers `logger` ?
 9. **Howdy** : l'apply écrit `disabled = true` dans sa configuration ; l'activation PAM reste à
    nabla-yubikey. Appliquer ?
-10. **Lot « vieilles distributions »** : 51 fichiers indexés dans ce checkout (dont le correctif du
-    cron clamav-cleanup d'une autre session), à relire puis commiter (le commit n'est pas le mien).
+10. **Lot « vieilles distributions »** : livré d'après la roadmap du 10/11. Ne pas reproduire l'ancienne instruction de committer « 51 fichiers indexés » : inspecter les changements locaux et respecter les propriétaires des autres sessions.
 11. **Profil minimal opt-in** : `tasks/workstation.yml` importe sans condition ses 50 fichiers de
     tâches, et chacun dépend de ses propres `*_enabled` (68 dans `defaults/main.yml`). Proposition :
     une variable `workstation_profile: minimal` qui n'importe que sécurité, réseau, git, éditeur,
@@ -151,7 +158,7 @@ mise run zabbix-host-check
 - **dotfiles** : `bin/inspect-workstation-system.py` est devenu un wrapper vers
   `scripts/audit-workstation-inventory.py` (même JSON, `provenance` en plus, et même résumé), avec
   ses tests et ses docs. Commité (`5f5d47d`) sur `refactor/inventory-wrapper-20261111` :
-  [dotfiles#5](https://github.com/AlbanAndrieu/dotfiles/pull/5), à relire puis fusionner.
+  [dotfiles#5](https://github.com/AlbanAndrieu/dotfiles/pull/5), **fusionnée le 11/11**.
 - ~~**nabla-compose PR #346**~~ : fusionnée le 11/11 (`30d1958b`) ; les six diagnostics du lot 1
   ne vivent plus qu'ici.
 - **P2, scripts OpenClaw/TrueNAS** : voir la question 12. L'API de sonde entre `nabla-openclaw`
