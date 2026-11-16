@@ -55,6 +55,10 @@ sudo crontab -l | grep -c clamav-scan-local-disks
 
 Attendu : `0`, puis `1`. Journal : `/var/log/clamav/local-disks-<date>.log`.
 
+**Appliqué le 16/11** (tâches ClamAV seules, `--start-at-task`) : `0`, puis `1`. Les tâches orphelines de
+maldet (`/etc/cron.daily/maldet`, `/etc/cron.d/maldet_pub`) sont supprimées, et anacron envoie sa sortie au
+journal (`systemd-cat`). Reste dans le lot : `Listen 127.0.0.1:8082` d'Apache.
+
 ### Secure Boot : enrôler la clé DKMS avant de l'activer
 
 `mise run audit-boot` rend `secure_boot_off_enroll_dkms_key_first` :
@@ -139,7 +143,8 @@ mise run zabbix-host-check
    et laisser `max_log_file_action = ROTATE` / `num_logs` d'auditd gérer la taille ?
 8. **msmtp** : sans configuration, chaque sortie de cron finit en `status 0x004e from MTA` et
    se perd (`wacli` et `vdirsyncer` chaque heure). Configurer `/etc/msmtprc` (relais et compte à
-   choisir), ou `MAILTO=""` et rediriger vers `logger` ?
+   choisir), ou `MAILTO=""` et rediriger vers `logger` ? **16/11** : anacron passe par `systemd-cat`
+   (journal et code de retour conservés) ; restent les sorties de `debsecan` et d'`apticron`.
 9. **Howdy** : l'apply écrit `disabled = true` dans sa configuration ; l'activation PAM reste à
    nabla-yubikey. Appliquer ?
 10. **Lot « vieilles distributions »** : livré d'après la roadmap du 10/11. Ne pas reproduire l'ancienne instruction de committer « 51 fichiers indexés » : inspecter les changements locaux et respecter les propriétaires des autres sessions.
