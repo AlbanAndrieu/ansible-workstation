@@ -214,6 +214,14 @@ class NetworkHardeningContract(unittest.TestCase):
             )
             self.assertIn(rule["proto"], {"tcp", "udp"})
 
+    def test_syslog_and_snmp_are_retired_after_pfsense(self):
+        v = self.play["vars"]
+        self.assertFalse([r for r in v["harden_rules"] if r["port"] in {"514", "9116"}])
+        retired = {r["port"] for r in v["harden_legacy_rules"] if "from" in r}
+        self.assertEqual(retired, {"514", "9116"})
+        names = [t["name"] for t in self.play["tasks"]]
+        self.assertIn("Stop the rsyslog network inputs", names)
+
     def test_docker_routes_admit_only_truenas_and_deny_the_lan(self):
         routes = self.play["vars"]["harden_docker_routes"]
         for route in routes:
