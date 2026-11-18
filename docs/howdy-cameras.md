@@ -1,8 +1,8 @@
 # Howdy et motion : une caméra chacun
 
-**Statut :** CODE ADDED / RUNTIME NOT VERIFIED — 9 contrats offline PASS
-(`tests/test_howdy_cameras_contract.py`), syntaxe et `ansible-lint`
-(profil production) PASS, scénarios audit/refus simulés.
+**Statut :** APPLIQUÉ le 16/11/2026, enrôlement et activation PAM à faire —
+9 contrats offline PASS (`tests/test_howdy_cameras_contract.py`), `ansible-lint`
+(profil production) PASS, playbook convergé sans changement PAM au second passage.
 
 Playbook : [`playbooks/howdy-cameras.yml`](../playbooks/howdy-cameras.yml),
 opt-in, jamais importé par le rôle global (qui n'installe plus Howdy).
@@ -66,6 +66,45 @@ volontairement si le paquet a modifié PAM**.
 
 Pour garder motion actif plus longtemps : `sudo systemctl stop motion-autostop.timer`
 après l'avoir démarré, ou `-e motion_autostop_after=15min`.
+
+## Remise en route du 16 novembre 2026
+
+**Symptôme :** Howdy ne fonctionnait plus.
+
+**Causes :**
+
+1. `howdy` était en état `rc` : supprimé par la mise à niveau vers 26.04, sans
+   binaire ni module PAM.
+2. `python3-dlib 19.24+slimbook9` (source tierce, compilé pour Python 3.12) :
+   `import dlib` échoue sous Python 3.14 (`No module named '_dlib_pybind11'`).
+   Ubuntu ne fournit pas `python3-dlib` ; le PPA Howdy en a un pour 3.14.
+3. Un ImageMagick 7.0.10 et une `libheif` 1.9.1 compilés à la main en 2020 dans
+   `/usr/local` masquaient la `libheif` d'Ubuntu : OpenCV (`cv2`) échouait sur
+   `libx265.so.179`. Ce même ImageMagick, cassé (`libIlmImf-2_3.so.24`
+   absente), masquait aussi dans le `PATH` l'ImageMagick 7.1.2 d'Ubuntu.
+
+**Corrections :**
+
+| Changement | Retour arrière |
+| --- | --- |
+| Playbook appliqué : Howdy sur le port USB 3.3, motion sur le port 9 (liens `by-path`), `disabled = true` | Voir plus bas |
+| `python3-dlib` du PPA épinglé en priorité 1001, puis contrôle `import dlib, cv2, numpy` (playbook) | Retirer la section `python3-dlib` du `.pref` |
+| ImageMagick et `libheif` de 2020 déplacés (89 entrées) dans `/usr/local/quarantine-imagemagick-2020/`, arborescence conservée, puis `ldconfig` | Remettre les fichiers à leur place, puis `sudo ldconfig` |
+
+**PAM :** le paquet ajoute Howdy à `/etc/pam.d/common-auth` (profil
+`pam-auth-update` `howdy`, avant `pam_unix`), donc aussi à `sudo`, à la
+connexion et au verrouillage d'écran. Avec `disabled = true`, le module ne fait
+rien.
+
+**Pour activer :**
+
+1. Avec de la lumière (la C310 n'a pas d'infrarouge ; `dark_threshold = 60`) :
+   `sudo howdy add`, puis `sudo howdy test`.
+2. `sudo howdy config` et passer `disabled = false`.
+3. Choisir où Howdy suffit. Via `common-auth`, une photo ouvrirait aussi
+   `sudo` : préférer le seul écran de verrouillage, en décochant Howdy dans
+   `sudo pam-auth-update` et en l'ajoutant au seul service GDM (activation
+   détenue par `nabla-yubikey`).
 
 ## Retour arrière
 
