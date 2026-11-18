@@ -1,13 +1,46 @@
 # Architecture DNS du homelab — split-DNS, DNSSEC et NetworkManager Dispatcher
 
-**État documenté : 28 octobre 2026.**  
+**État documenté : 28 octobre 2026, mis à jour le 18 novembre 2026 (retrait de pfSense, voir la section 0).**  
 **Propriétaire de la configuration :** [ansible-workstation, PR #15](https://github.com/AlbanAndrieu/ansible-workstation/pull/15).  
 **Propriétaire des contrôles et des preuves :** [nabla-compose, PR #289](https://github.com/AlbanAndrieu/nabla-compose/pull/289).  
 **Périmètre :** workstation Linux sur le LAN, interface `eno1`. Ne pas généraliser la configuration à d'autres hôtes ou interfaces.
 
+## 0. État au 18 novembre 2026 : pfSense retiré
+
+Le Netgate 1100 (pfSense) ne redémarre plus après trois tentatives. Il a été retiré, et la Freebox remise en mode routeur après une réinitialisation usine. La Freebox refuse une adresse LAN hors de `192.168.x.x` : c'est le Netgear R7000 (ancien point d'accès Wi-Fi) qui reprend `172.17.0.1` derrière elle, en double NAT. Le split-DNS continue sur la workstation, avec Pi-hole sur TrueNAS comme résolveur des noms privés.
+
+| Élément | Avant | Depuis le 18/11 |
+| --- | --- | --- |
+| Passerelle et DHCP | pfSense `172.17.0.1` | Netgear R7000 `172.17.0.1`, DHCP `.100-.199` avec réservation `.57` pour la workstation, derrière la Freebox `192.168.1.254`. Administration : `https://172.17.0.1/start.htm` (la racine redirige vers `routerlogin.com` et échoue) |
+| Résolveur `~int.albandrieu.com` | Unbound de pfSense `172.17.0.1` | Pi-hole de TrueNAS `172.17.0.24` |
+| DNS global de `systemd-resolved` | `172.17.0.1` | Quad9 `9.9.9.9 149.112.112.112` (`/etc/systemd/resolved.conf`, copie `resolved.conf-2026-11-18`) |
+| Profil NetworkManager | `Wired eno1` | `Wired eno1`, recréé en renommant le profil « Freebox » après la suppression par erreur de l'ancien |
+| Adresse dans `172.17.0.0/24` | `172.17.0.57` par DHCP | `172.17.0.57` par la réservation DHCP du R7000, et la même adresse en statique dans le profil : elle garde TrueNAS et les montages NFS joignables si le bail change |
+
+- **TrueNAS garde son IP fixe `172.17.0.24`.** Sans adresse dans `172.17.0.0/24`, la workstation ne le joint plus. Les automontages NFS `nabla:/mnt/cpool/...` de `/etc/fstab` bloquent alors tout accès sous `/media` jusqu'à leur délai de 20 s.
+- **Les noms publics ne dépendent pas de TrueNAS** : le DNS global Quad9 reste interrogé, et la validation DNSSEC publique reste active (`cloudflare.com` : `Data is authenticated: yes` le 18/11).
+- **Un nom privé ne résout que si Pi-hole a son enregistrement local** : le 18/11, `defectdojo.int.albandrieu.com` répond `172.17.0.24`, `grafana.int.albandrieu.com` ne répond pas.
+- `ipv6.ignore-auto-dns yes` écarte les DNS IPv6 de Free annoncés sur le lien : ils répondraient NXDOMAIN aux noms privés, et le dispatcher exige `172.17.0.24` comme seul DNS du lien.
+
+Configuration appliquée (à rejouer si le profil disparaît : `nmcli connection add type ethernet ifname eno1 con-name "Wired eno1"` d'abord) :
+
+```bash
+nmcli connection modify "Wired eno1" ipv4.ignore-auto-dns yes ipv4.dns 172.17.0.24 \
+  ipv4.dns-search "~int.albandrieu.com" ipv6.ignore-auto-dns yes +ipv4.addresses 172.17.0.57/24
+nmcli connection up "Wired eno1"
+resolvectl status eno1   # DNS 172.17.0.24, domaine ~int.albandrieu.com
+resolvectl nta eno1      # int.albandrieu.com
+```
+
+Reste à faire :
+
+1. Fait le 18/11 : le R7000 en `172.17.0.1` rend Internet à TrueNAS (Pi-hole résout de nouveau les noms publics). Détail du R7000 : runbook Freebox de nabla-compose (`docs/pfsense/runbooks/freebox-router-mode.md`).
+2. Si `resolvectl status eno1` ne montre plus `172.17.0.24`, vérifier `ipv4.dns` et `ipv4.addresses` du profil : le 18/11, les deux ont été vidés une fois sans cause identifiée, puis remis avec la commande ci-dessus.
+3. Compléter les enregistrements locaux `*.int.albandrieu.com` de Pi-hole.
+
 ## 1. Objectif et état réel
 
-Le but du *split-DNS* est de résoudre les noms privés en `*.int.albandrieu.com` à partir du LAN, avec le résolveur pfSense/Unbound `172.17.0.1`, sans désactiver la validation DNSSEC des noms publics.
+Le but du *split-DNS* est de résoudre les noms privés en `*.int.albandrieu.com` à partir du LAN, avec un résolveur LAN (Unbound de pfSense `172.17.0.1` jusqu'au 18/11/2026, Pi-hole de TrueNAS `172.17.0.24` depuis), sans désactiver la validation DNSSEC des noms publics.
 
 **Réception réelle :**
 
@@ -30,7 +63,7 @@ flowchart TD
     A["Applications LAN : navigateur, curl, getent"] --> B["NSS / systemd-resolved<br/>stub 127.0.0.53 selon le chemin client"]
     B --> C{"Nom DNS à résoudre"}
     C -->|"*.int.albandrieu.com"| D["Règle de routage ~int.albandrieu.com<br/>sur eno1"]
-    D --> E["pfSense / Unbound<br/>172.17.0.1"]
+    D --> E["Pi-hole sur TrueNAS<br/>172.17.0.24"]
     E --> F["Réponse privée : exemple<br/>defectdojo.int.albandrieu.com → 172.17.0.24"]
     C -->|"Nom public : cloudflare.com"| G["Sélection du résolveur selon<br/>DefaultRoute et les autres liens"]
     G --> H["Résolution publique et<br/>validation DNSSEC"]
@@ -40,14 +73,14 @@ flowchart TD
     K -->|"Après contrôles LAN"| I
 ```
 
-**Attention à la portée du routage :** `~int.albandrieu.com` est un *domaine de routage*, et non un suffixe de recherche ordinaire. Il privilégie le serveur DNS configuré sur ce lien pour les noms de cette zone. Il ne garantit **pas à lui seul** qu'un nom public utilisera un résolveur extérieur : cela dépend des autres liens et de `DNSDefaultRoute`. Le rôle Ansible configure également pfSense comme **seul DNS IPv4 de ce profil NetworkManager**. Vérifier `resolvectl status eno1` avant d'affirmer un chemin de résolution public.
+**Attention à la portée du routage :** `~int.albandrieu.com` est un *domaine de routage*, et non un suffixe de recherche ordinaire. Il privilégie le serveur DNS configuré sur ce lien pour les noms de cette zone. Il ne garantit **pas à lui seul** qu'un nom public utilisera un résolveur extérieur : cela dépend des autres liens et de `DNSDefaultRoute`. Le rôle Ansible configure également le résolveur LAN comme **seul DNS IPv4 de ce profil NetworkManager**. Vérifier `resolvectl status eno1` avant d'affirmer un chemin de résolution public.
 
 | Élément | Valeur connue | Rôle |
 | --- | --- | --- |
 | Workstation | `172.17.0.57` | Client LAN |
 | Interface | `eno1` | Lien géré par NetworkManager |
 | Profil | `Wired eno1` | Profil autorisé par le dispatcher |
-| DNS LAN | `172.17.0.1` | pfSense/Unbound |
+| DNS LAN | `172.17.0.24` | Pi-hole sur TrueNAS (pfSense `172.17.0.1` jusqu'au 18/11/2026) |
 | Domaine route-only | `~int.albandrieu.com` | Oriente les requêtes privées vers le lien |
 | Domaine NTA | `int.albandrieu.com` | Exempt la zone privée de validation DNSSEC sur ce lien |
 | Service d'exemple | `defectdojo.int.albandrieu.com` | Résolution attendue `172.17.0.24` (TrueNAS) |
@@ -89,7 +122,7 @@ Une *Negative Trust Anchor* évite la validation DNSSEC **pour cette zone privé
 
 NetworkManager lance les scripts exécutables du répertoire `dispatcher.d` lorsqu'un événement survient. Il fournit le nom de l'interface, l'action et notamment `CONNECTION_ID`. Notre script ne tourne pas en boucle et **n'est pas un nouveau résolveur DNS**.
 
-Le script est *fail-closed* : il refuse une mutation en dehors du lien `eno1` ; pour appliquer l'ancre, il exige `Wired eno1`, DNS effectif `172.17.0.1`, domaine `~int.albandrieu.com`, et aucune NTA tierce. Il utilise `/usr/bin/resolvectl nta eno1`, sans modifier DNSSEC global ni redémarrer NetworkManager.
+Le script est *fail-closed* : il refuse une mutation en dehors du lien `eno1` ; pour appliquer l'ancre, il exige `Wired eno1`, DNS effectif `172.17.0.24` seul, domaine `~int.albandrieu.com`, et aucune NTA tierce. Il utilise `/usr/bin/resolvectl nta eno1`, sans modifier DNSSEC global ni redémarrer NetworkManager.
 
 | Événement | Comportement du script |
 | --- | --- |
@@ -108,7 +141,7 @@ Le script est *fail-closed* : il refuse une mutation en dehors du lien `eno1` ; 
 ### `ansible-workstation` : état désiré et persistance
 
 - `defaults/main.yml` : variables, avec `workstation_split_dns_enabled: false` et `workstation_split_dns_nta_dispatcher_enabled: false` par défaut.
-- `tasks/network_split_dns.yml` : valide le lien, lit les paramètres NetworkManager, fixe si nécessaire le DNS `172.17.0.1`, ajoute le domaine `~int.albandrieu.com` **sans écraser les autres domaines**, puis réapplique le profil en cas de dérive.
+- `tasks/network_split_dns.yml` : valide le lien, lit les paramètres NetworkManager, fixe si nécessaire le DNS `172.17.0.24`, ajoute le domaine `~int.albandrieu.com` **sans écraser les autres domaines**, puis réapplique le profil en cas de dérive.
 - `tasks/network_dnssec_nta_dispatcher.yml` : installe/retire le dispatcher **sur opt-in seulement**.
 - `playbooks/homelab-dns.yml` : point d'entrée ciblé, qui importe les seules tâches DNS ; il ne lance pas le rôle workstation complet.
 - `tests/test_homelab_dns_guard_contract.py` et `tests/test_homelab_dns_nta_dispatcher.py` : garde hors ligne.
@@ -170,7 +203,7 @@ PRIVATE_NTA_DISPATCHER_ACCEPTANCE v1
   mode=READ_ONLY
 ```
 
-- `lan_profile=MATCH` : profil `Wired eno1`, DNS du lien `172.17.0.1`, routage `~int.albandrieu.com`.
+- `lan_profile=MATCH` : profil `Wired eno1`, DNS du lien `172.17.0.24`, routage `~int.albandrieu.com`.
 - `dispatcher=ROOT_EXECUTABLE` : fichier régulier, root:root, exécutable par root et inaccessible au groupe/aux autres.
 - `link_nta=EXPECTED_ONLY` : le lien possède uniquement `int.albandrieu.com` comme NTA.
 - `private_dns=PASS` : la requête IPv4 de DefectDojo renvoie l'adresse attendue `172.17.0.24`.

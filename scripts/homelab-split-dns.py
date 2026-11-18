@@ -16,7 +16,7 @@ import sys
 import time
 
 INTERFACE = "eno1"
-RESOLVER = "172.17.0.1"
+RESOLVER = "172.17.0.24"
 ZONE = "~int.albandrieu.com"
 HOST = "defectdojo.int.albandrieu.com"
 EDGE = "172.17.0.24"

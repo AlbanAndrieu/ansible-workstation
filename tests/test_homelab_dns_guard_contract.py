@@ -38,8 +38,8 @@ class HomelabDNSGuardContract(unittest.TestCase):
                 ("{{ dns_new }}", "9.9.9.9 149.112.112.112"),
                 ("{{ net_interface }}", "eno1"),
                 (
-                    "{{ workstation_split_dns_resolver | default('172.17.0.1') }}",
-                    "172.17.0.1",
+                    "{{ workstation_split_dns_resolver | default('172.17.0.24') }}",
+                    "172.17.0.24",
                 ),
                 (
                     "{{ workstation_split_dns_domain"
@@ -95,7 +95,7 @@ class HomelabDNSGuardContract(unittest.TestCase):
 
     def test_homelab_nm_dns_prevents_override_despite_resolved_drift(self):
         self.run_hook(
-            nm_dns="172.17.0.1",
+            nm_dns="172.17.0.24",
             domain="",
             link_dns="172.17.0.24",
             expected_override=False,

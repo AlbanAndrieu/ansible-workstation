@@ -66,7 +66,7 @@ SYSTEM_UNITS = (
 ALLOWED_SYSTEMD_KEYS = ("LoadState", "ActiveState", "UnitFileState")
 METADATA_SYSTEMD_KEYS = ("FragmentPath", "DropInPaths")
 PRIVATE_DOMAIN = "~int.albandrieu.com"
-EXPECTED_DNS = "172.17.0.1"
+EXPECTED_DNS = "172.17.0.24"
 DNS_INTERFACE = "eno1"
 # Absolute paths: a user PATH entry cannot substitute these probes.
 SYSTEMCTL = "/usr/bin/systemctl"

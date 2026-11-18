@@ -19,7 +19,7 @@ Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas conf
 | W04 | **P0** | Preuve négative du filtrage Docker/IPv6/WAN | UFW actif ; 3009 fermé depuis TrueNAS et 4000 autorisé à TrueNAS. DROP du 4000 depuis une **deuxième machine du LAN**, IPv6 et accès WAN restent **NOT_VERIFIED** ; conserver le chemin de monitoring autorisé |
 | W05 | **P1** | Secure Boot, MOK NVIDIA, TPM/LUKS | TPM 2.0 présent ; Secure Boot désactivé, MOK NVIDIA non enrôlée. Enrôlement puis redémarrage contrôlé et GPU fonctionnel ; étudier récupération LUKS avant tout binding TPM |
 | W06 | **P1** | Fin de migration du stockage | Home chiffré sur NVMe appliqué le 13/11, point de montage sécurisé. **Ne supprimer /home.sda-old qu'à partir du 20/11** et seulement après preuve d'une restauration Restic récente |
-| W07 | **P1** | DNS cohérent pour Docker | Hôte configuré vers pfSense, conteneurs encore vers 9.9.9.9/Pi-hole avec échecs documentés. Préparer un plan vers 172.17.0.1, mesurer split DNS et redémarrer seulement lors d'une fenêtre autorisée |
+| W07 | **P1** | DNS cohérent pour Docker | pfSense retiré le 18/11 : l'hôte route `~int.albandrieu.com` vers Pi-hole (`172.17.0.24`) et le reste vers Quad9 (voir la section du 18/11). Conteneurs encore vers 9.9.9.9/Pi-hole avec échecs documentés : aligner sur ce schéma et mesurer le split DNS au prochain redémarrage autorisé |
 | W08 | **P1** | Mise à jour OS, droits Apache, alertes cron | Drop-in unattended-upgrades non appliqué ; arbitrer cadence quotidienne vs hebdomadaire ; corriger les effets de UMASK 027 par service et les erreurs msmtp, sans écraser les conffiles |
 | W09 | **P1** | Audit de dérive unique, rapide et traçable | L'inventaire JSON v1 et la policy OS existent. Proposer un agrégateur **read-only** config/DNS, réseau, GNOME, boot, backup, stockage avec provenance, fraîcheur et statuts PASS/WARN/FAIL/NOT_RUN ; pas de double collecteur |
 | W10 | **P2** | Bootstrap utilisateur et unités systemd --user | Dotfiles PR #5 fusionnée le 11/11 ; OpenClaw source désactivé depuis le 3/11. Tester sur HOME isolé, inventorier autostarts, ne pas réactiver la gateway source par réparation automatique |
@@ -256,3 +256,37 @@ Décisions de l'opérateur le 13/11 : D1, D2, D6 et D11 acceptées.
 Pas retenu : `noatime` (écarté le 9/11), ordonnanceur `none` sur `sda` (SSD SATA peu chargé
 désormais), secteurs LUKS de 4 Kio (réchiffrer 382 Go pour un gain CPU marginal, avec un risque
 de perte en cas de coupure).
+
+## 18 novembre 2026 — retrait de pfSense
+
+Le Netgate 1100 ne redémarre plus après trois tentatives : il a été retiré, et la Freebox remise
+en mode routeur après une réinitialisation usine. Détail et commandes :
+[architecture DNS, section 0](homelab-split-dns-architecture.md).
+
+Fait le 18/11 sur la workstation (`TESTED` par lecture runtime, rien de commité) :
+
+- profil `Wired eno1` recréé (renommage du profil « Freebox », l'ancien ayant été supprimé par
+  erreur), DNS du lien `172.17.0.24` (Pi-hole sur TrueNAS) avec `~int.albandrieu.com`, DNS IPv4 et
+  IPv6 annoncés ignorés ;
+- adresse statique `172.17.0.57/24` ajoutée à côté du bail Freebox `192.168.1.x` : TrueNAS
+  (`172.17.0.24`, IP fixe) et les automontages NFS de `/media` répondent de nouveau ;
+- DNS global de `systemd-resolved` : `172.17.0.1` remplacé par Quad9 (copie
+  `/etc/systemd/resolved.conf-2026-11-18`) ;
+- contrat du rôle : `workstation_split_dns_resolver` passe à `172.17.0.24` (defaults, gardes des
+  tâches, dispatcher NTA, gabarit, scripts de diagnostic, politique `home-desktop`, tests) ;
+  dispatcher redéployé dans `/etc/NetworkManager/dispatcher.d/` ; 435 tests verts ;
+- relevé : NTA `int.albandrieu.com` posée sur `eno1`, `cloudflare.com` authentifié DNSSEC,
+  `defectdojo.int.albandrieu.com` → `172.17.0.24` via NSS, Internet joignable.
+
+Reste à faire :
+
+1. Fait le 18/11 : la Freebox refusant toute adresse LAN hors de `192.168.x.x` (`invalid_gateway_ip`),
+   le Netgear R7000 reprend `172.17.0.1` derrière elle. La workstation a la réservation DHCP `.57` et
+   la passerelle `172.17.0.1`, TrueNAS sort de nouveau sur Internet. Administration du R7000 :
+   `https://172.17.0.1/start.htm` (la racine redirige vers `routerlogin.com` et échoue).
+2. Comprendre pourquoi `ipv4.dns` et `ipv4.addresses` du profil `Wired eno1` ont été vidés une fois le
+   18/11 (remis à la main) ; garder la même adresse `.57` en statique dans le profil.
+3. Compléter les enregistrements locaux de Pi-hole (`grafana.int.albandrieu.com` ne répond pas).
+4. Restes de pfSense à retirer ou réorienter : `scripts/diagnose-wifi-path.py` (contrôles propres à
+   pfSense), `stabilize_apache_probe_source: 172.17.0.1` dans `playbooks/stabilize-workstation.yml`,
+   le commentaire de `tasks/services.yml`, et les entrées `172.17.0.x` de `/etc/hosts`.

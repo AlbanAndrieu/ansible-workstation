@@ -20,11 +20,11 @@ spec.loader.exec_module(dns)
 def good_profile() -> dict[str, str]:
     return {
         "name": "Wired eno1",
-        "device_dns": "172.17.0.1",
-        "profile_dns": "172.17.0.1",
+        "device_dns": "172.17.0.24",
+        "profile_dns": "172.17.0.24",
         "profile_auto": "yes",
         "profile_domains": "~int.albandrieu.com,example.net",
-        "link_dns": "Link 2 (eno1): 172.17.0.1",
+        "link_dns": "Link 2 (eno1): 172.17.0.24",
         "link_domains": "Link 2 (eno1): ~int.albandrieu.com",
     }
 

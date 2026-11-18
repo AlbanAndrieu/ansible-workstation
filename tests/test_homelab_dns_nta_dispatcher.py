@@ -17,7 +17,7 @@ class NetworkManagerNTADispatcherTests(unittest.TestCase):
         action="up",
         interface="eno1",
         connection="Wired eno1",
-        link_dns="172.17.0.1",
+        link_dns="172.17.0.24",
         link_domain="~int.albandrieu.com",
         existing="",
     ):

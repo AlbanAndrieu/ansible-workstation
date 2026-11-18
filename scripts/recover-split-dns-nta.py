@@ -18,7 +18,7 @@ IFACE = "eno1"
 DOMAIN = "int.albandrieu.com"
 HOST = "defectdojo.int.albandrieu.com"
 EDGE = "172.17.0.24"
-DNS = "172.17.0.1"
+DNS = "172.17.0.24"
 ACK = "I_APPROVE_SCOPED_PRIVATE_DNSSEC_NTA"
 
 
