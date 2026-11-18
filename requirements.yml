@@ -111,8 +111,9 @@ roles:
     name: python
     version: master
 
-  - src: https://github.com/geerlingguy/ansible-role-security.git
-    name: geerlingguy.security
+  # Fork of geerlingguy/ansible-role-security (same code as of July 2024).
+  - src: https://github.com/AlbanAndrieu/ansible-role-security.git
+    name: albanandrieu.security
     version: master
 
   - src: https://github.com/geerlingguy/ansible-role-sonar-runner.git

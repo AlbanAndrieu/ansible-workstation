@@ -43,10 +43,6 @@
         port: "514"
         proto: udp
         comment: rsyslog server
-      - from: "{{ harden_lan }}"
-        port: "9116"
-        proto: tcp
-        comment: snmp_exporter
       - from: "{{ harden_truenas }}"
         port: "9100"
         proto: tcp
