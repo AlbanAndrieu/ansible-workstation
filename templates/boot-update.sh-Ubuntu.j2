@@ -1,57 +1,19 @@
 #!/bin/bash
-#set -xv
+# Root part of the boot update (boot-update.service). It never runs a file the user can edit:
+# mr, brew, pip, conky and docker compose run in boot-update-user.service (docs/security-workstation.md).
+set -uo pipefail
 
-/bin/bash -c 'zenity --info --text="`hostname -I` Update started" --title="Update started"'
+apt-get update || true
 
-sudo killall -KILL  whatsie
+# Old snap revisions (was the user-owned nabla/env/linux/cleanup-snap.sh).
+LANG=C.UTF-8 snap list --all | awk '/disabled/{print $1, $3}' |
+  while read -r name revision; do
+    snap remove "${name}" --revision="${revision}" || true
+  done
 
-# sudo systemd-analyze time
-# sudo systemd-analyze plot >/home/albandrieu/Downloads/file.svg
-# sudo systemd-analyze blame
+# motion writes as its own user.
+rm -f /workspace/Dropbox/motion/*.jpg /workspace/Dropbox/motion/*.mkv
 
-cd /home/albandrieu/w && mr update || true
-cd /home/albandrieu/w/jm && mr update || true
-cd /home/albandrieu/w/jm/infra && mr update || true
-cd /home/albandrieu/w/jm/data  && mr update || true
-sudo apt-get update # && apt-get upgrade
-
-tldr --update
-
-echo "brew upgrade asdf"
-
-brew cleanup || true
-pip cache purge || true
-pipenv --clear || true
-# sudo docker system prune || true
-
-sudo rm -f /workspace/Dropbox/motion/*.jpg
-sudo rm -f /workspace/Dropbox/motion/*.mkv
-
-cd /home/albandrieu/.config/Code/User/workspaceStorage
-./clean_old_folders.py
-
-cd /home/albandrieu/.config/Cursor/User/workspaceStorage
-./clean_old_folders.py
-
-/workspace/users/albandrieu30/nabla/env/linux/cleanup-snap.sh || true
-
-/bin/bash -c 'zenity --info --text="`hostname -I` Update completed" --title="Update completed"'
-
-# sudo service docker restart
-sudo systemctl restart docker
-
-cd /workspace/users/albandrieu30/nabla/infra/docker-compose
-docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --pull=never --no-build postgres -d
-docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --no-build redis-server -d
-
-docker pull zricethezav/gitleaks:latest || true
-
-docker compose pull --ignore-pull-failures || true
-
-echo "docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --pull=never --no-build -d"
-
-# Conky runs from the user conky.service: started here as root, it left ~/.cache/conky owned by root.
-
-# sudo systemctl status boot-update.service
+systemctl restart docker
 
 exit 0

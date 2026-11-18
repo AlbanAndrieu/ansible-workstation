@@ -1,0 +1,8 @@
+[Unit]
+Description=Nabla boot update, user part (mr, brew, pip, docker compose)
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/script/boot-update-user.sh
+Nice=10

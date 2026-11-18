@@ -152,10 +152,11 @@
         enabled: true
       become: true
 
-    - name: Reload apache
+    # ports.conf is managed: a graceful reload cannot rebind a changed Listen ("could not bind").
+    - name: Restart apache
       ansible.builtin.systemd_service:
         name: apache2.service
-        state: reloaded
+        state: restarted
       become: true
 
     # An automount cannot start over a live mount: swap the idle ones now, busy ones at next boot.
@@ -508,7 +509,7 @@
       loop: "{{ stabilize_apache_files }}"
       become: true
       when: stabilize_write
-      notify: Reload apache
+      notify: Restart apache
 
     - name: Disable the apache modules nothing uses
       community.general.apache2_module:
@@ -517,7 +518,7 @@
       loop: "{{ stabilize_apache_mods_off }}"
       become: true
       when: stabilize_write
-      notify: Reload apache
+      notify: Restart apache
 
     - name: Cap the dirty page cache and keep the other kernel settings
       ansible.builtin.copy:
@@ -597,27 +598,7 @@
       become: true
       when: stabilize_write
 
-    - name: Install the local-disk ClamAV scan
-      ansible.builtin.copy:
-        src: "{{ playbook_dir | dirname }}/files/clamav-scan-local-disks.sh"
-        dest: /usr/local/sbin/clamav-scan-local-disks
-        owner: root
-        group: root
-        mode: "0755"
-      become: true
-      when: stabilize_write
-
-    # TrueNAS datasets are scanned on TrueNAS by its clamav App.
-    - name: Scan the local disks with ClamAV every Saturday night
-      ansible.builtin.cron:
-        name: clamav-local-disks
-        user: root
-        minute: "0"
-        hour: "1"
-        weekday: "6"
-        job: /usr/local/sbin/clamav-scan-local-disks
-      become: true
-      when: stabilize_write
+    # The weekly local-disk ClamAV scan lives in security-scans.yml (systemd timer, clamd multiscan).
 
     - name: Report the stabilization plan
       ansible.builtin.debug:
@@ -627,5 +608,5 @@
           purge: "{{ stabilize_purge }}"
           system_units_off: "{{ stabilize_system_units_off }}"
           user_units_off: "{{ stabilize_user_units_off }}"
-          root_crontab: ClamTk, maldet and duplicate chkrootkit lines removed; weekly clamav-local-disks added
+          root_crontab: ClamTk, maldet and duplicate chkrootkit lines removed (scans in security-scans.yml)
           anacron: maldet cron files removed; job output and exit code go to the journal

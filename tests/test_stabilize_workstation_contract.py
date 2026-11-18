@@ -1,10 +1,7 @@
 """Offline guardrails for the workstation stabilization playbook."""
 
-import os
 from pathlib import Path
 import re
-import subprocess
-import tempfile
 import unittest
 
 import yaml
@@ -152,15 +149,8 @@ class StabilizeWorkstationContracts(unittest.TestCase):
             '--log="/var/log/clamav/history/x.log"'
         )
         report = "0 0 * * * /usr/sbin/chkrootkit | ansi2html -l > /var/www/report.html"
-        local = "0 1 * * 6 /usr/local/sbin/clamav-scan-local-disks"
         self.assertTrue(any(re.search(r, clamtk) for r in drop["loop"]))
         self.assertTrue(any(re.search(r, report) for r in drop["loop"]))
-        self.assertFalse(any(re.search(r, local) for r in drop["loop"]))
-        cron = tasks["Scan the local disks with ClamAV every Saturday night"]
-        self.assertEqual(
-            cron["ansible.builtin.cron"]["job"],
-            "/usr/local/sbin/clamav-scan-local-disks",
-        )
 
     def test_anacron_logs_to_the_journal_without_maldet(self):
         tasks = {t["name"]: t for t in play()["tasks"]}
@@ -183,35 +173,6 @@ class StabilizeWorkstationContracts(unittest.TestCase):
         )
         again = re.sub(edit["regexp"], edit["replace"], after, flags=re.M)
         self.assertEqual(again, after)
-
-    def test_local_disk_scan_skips_truenas_mounts(self):
-        mounts = "\n".join(
-            [
-                "/ /",
-                "/var/snap/firefox/common/host-hunspell /usr/share/hunspell",
-                "/data /",
-                "/workspace /",
-                "/run/media/albandrieu/NABLA_ESCROW /",
-                "/var/lib/containerd /containerd",
-            ],
-        )
-        with tempfile.TemporaryDirectory() as tmp:
-            bin_dir = Path(tmp)
-            (bin_dir / "findmnt").write_text(f"#!/bin/sh\nprintf '%s\\n' '{mounts}'\n")
-            # nice stands in for the whole command line, so nothing is scanned.
-            (bin_dir / "nice").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
-            for stub in bin_dir.iterdir():
-                stub.chmod(0o755)
-            env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}"}
-            argv = subprocess.run(
-                ["bash", ROOT / "files/clamav-scan-local-disks.sh"],
-                env=env,
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout.splitlines()
-        self.assertIn("--cross-fs=no", argv)
-        self.assertEqual(argv[-3:], ["/", "/data", "/workspace"])
 
     def test_nvme_volumes_never_block_the_boot(self):
         doc = play()

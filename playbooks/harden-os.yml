@@ -37,6 +37,8 @@
       - rds
       - sctp
       - tipc
+    # Same as security-scans.yml: auditd rotates its own logs (keep_logs fills /var/log/audit).
+    os_auditd_max_log_file_action: rotate
     # hidepid=2 hides processes from polkit and GNOME tools.
     hidepid_option: "0"
     # Keep Docker/libvirt routing, VPN-friendly rp_filter, IPv6 SLAAC and SysRq as they are today.

@@ -1,0 +1,9 @@
+[Unit]
+Description=Run the user part of the boot update after login
+
+[Timer]
+# After boot-update.timer (15 min after boot), whose docker restart the user part waits for.
+OnStartupSec=16m
+
+[Install]
+WantedBy=timers.target

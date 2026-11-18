@@ -48,7 +48,10 @@
 /etc/systemd/resolved.conf.d/99-workstation.conf
 
 # Admin-created files (do not exist on a fresh install)
+# Enable after restore: sudo a2enconf nabla-lan-only (docs/security-workstation.md).
+/etc/apache2/conf-available/nabla-lan-only.conf
 /etc/docker/daemon.json
+/etc/lynis/custom.prf
 /etc/modprobe.d/blacklist-local.conf
 /etc/modprobe.d/blacklist-nouveau.conf
 /etc/modprobe.d/blacklist-nvidia-nouveau.conf

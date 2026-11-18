@@ -1,0 +1,250 @@
+---
+# Security lots 1 and 2 (docs/security-workstation.md): no root job runs a user-editable file, and
+# one systemd timer per scanner replaces the scattered root crontab, cron.* and package jobs.
+# Plan only by default. Writing needs security_scans_apply AND security_scans_apply_approved.
+# Run: .venv/bin/ansible-playbook -i localhost, -c local playbooks/security-scans.yml
+- name: Plan or explicitly apply the security scan timers and the root job cleanup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    security_scans_apply: false
+    security_scans_apply_approved: false
+    security_scans_write: "{{ security_scans_apply | bool and security_scans_apply_approved | bool }}"
+    security_scans_user: albandrieu
+    # OnCalendar per scanner: quiet hours, never two at once.
+    security_scans_schedule:
+      lynis: "*-*-* 03:10"
+      rkhunter: "Sun 03:40"
+      clamav: "Sat 01:00"
+      openscap: "*-*-01 04:20"
+    # Root crontab lines that run user-editable files, write to paths that no longer exist,
+    # call missing binaries, delete the audit trail, or duplicate the timers above.
+    security_scans_root_cron_drop:
+      - /etc/webmin/package-updates/update\.pl
+      - /usr/local/lynis/lynis
+      - "oscap xccdf eval "
+      - /home/albandrieu/w/nabla/env/linux/run-perf-monitoring\.sh
+      - /home/albandrieu/w/nabla/env/linux/run-audit-log-cleanup\.sh
+      - rm -f /var/log/audit/audit\.log
+      - /home/albandrieu/\.linuxbrew/bin/pgbadger
+      - /usr/local/sbin/clamav-scan-local-disks
+    security_scans_files_drop:
+      # Mode 644: run-parts never ran it.
+      - /etc/cron.monthly/clam_scan
+      - /usr/local/sbin/clamav-scan-local-disks
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      become: true
+
+    # auditd has no reload action; SIGHUP rereads auditd.conf.
+    - name: Reload auditd
+      ansible.builtin.command:
+        argv: [systemctl, kill, --signal=HUP, auditd.service]
+      changed_when: true
+      become: true
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that: security_scans_apply_approved | bool
+        fail_msg: Set security_scans_apply_approved=true as well to write.
+      when: security_scans_apply | bool
+
+    - name: Install the scanner, publisher and boot update scripts
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/{{ item }}"
+        dest: /opt/script/{{ item }}
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - security-scan.sh
+        - publish-security-reports.sh
+      become: true
+      when: security_scans_write
+
+    # Local, not the NFS docroot: Apache on 8087 must not keep the TrueNAS share mounted.
+    - name: Create the local reports directory Apache serves as /reports
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ security_scans_user }}"
+        group: www-data
+        mode: "2750"
+      loop:
+        - /var/www/reports
+        - /var/www/reports/security
+      become: true
+      when: security_scans_write
+
+    # boot-update.sh no longer runs mr, brew, conky, cleanup-snap.sh or docker compose as root.
+    - name: Install the root and user parts of the boot update
+      ansible.builtin.template:
+        src: "{{ playbook_dir | dirname }}/templates/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - src: boot-update.sh-Ubuntu.j2
+          dest: /opt/script/boot-update.sh
+          mode: "0755"
+        - src: boot-update-user.sh-Ubuntu.j2
+          dest: /opt/script/boot-update-user.sh
+          mode: "0755"
+        - src: boot-update-user.service.j2
+          dest: /etc/systemd/user/boot-update-user.service
+          mode: "0644"
+        - src: boot-update-user.timer.j2
+          dest: /etc/systemd/user/boot-update-user.timer
+          mode: "0644"
+      become: true
+      when: security_scans_write
+
+    - name: Enable the user part of the boot update for every user session
+      ansible.builtin.command:
+        argv: [systemctl, --global, enable, boot-update-user.timer]
+        creates: /etc/systemd/user/timers.target.wants/boot-update-user.timer
+      become: true
+      when: security_scans_write
+
+    - name: Skip the Lynis test that hangs on the NFS mounts
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/etc/lynis/custom.prf"
+        dest: /etc/lynis/custom.prf
+        owner: root
+        group: root
+        mode: "0640"
+      become: true
+      when: security_scans_write
+
+    - name: Run one scanner per unit, then publish its reports as the user
+      ansible.builtin.copy:
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: "{{ item.content }}"
+      loop:
+        - dest: /etc/systemd/system/security-scan@.service
+          content: |
+            # Managed by ansible-workstation playbooks/security-scans.yml
+            [Unit]
+            Description=Security scan: %i
+            OnSuccess=security-reports-publish.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/opt/script/security-scan.sh %i
+            Nice=19
+            IOSchedulingClass=idle
+            TimeoutStartSec=12h
+        - dest: /etc/systemd/system/security-reports-publish.service
+          content: |
+            # Managed by ansible-workstation playbooks/security-scans.yml
+            [Unit]
+            Description=Publish the security reports to the local Apache /reports
+
+            [Service]
+            Type=oneshot
+            User={{ security_scans_user }}
+            ExecStart=/opt/script/publish-security-reports.sh
+      become: true
+      when: security_scans_write
+      notify: Reload systemd
+
+    - name: Schedule each scanner
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/security-scan-{{ item.key }}.timer
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by ansible-workstation playbooks/security-scans.yml
+          [Unit]
+          Description=Security scan: {{ item.key }}
+
+          [Timer]
+          OnCalendar={{ item.value }}
+          Persistent=true
+          Unit=security-scan@{{ item.key }}.service
+
+          [Install]
+          WantedBy=timers.target
+      loop: "{{ security_scans_schedule | dict2items }}"
+      become: true
+      when: security_scans_write
+      notify: Reload systemd
+
+    - name: Load the new units before starting their timers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Start the scanner timers
+      ansible.builtin.systemd_service:
+        name: security-scan-{{ item }}.timer
+        state: started
+        enabled: true
+      loop: "{{ security_scans_schedule.keys() | list }}"
+      become: true
+      when: security_scans_write
+
+    # security-scan-lynis.timer replaces it, with reports kept and published.
+    - name: Stop the package Lynis timer
+      ansible.builtin.systemd_service:
+        name: lynis.timer
+        state: stopped
+        enabled: false
+      become: true
+      when: security_scans_write
+
+    # Refresh the file properties after every APT run: otherwise each upgrade floods rkhunter.
+    - name: Let APT refresh the rkhunter baseline
+      ansible.builtin.lineinfile:
+        path: /etc/default/rkhunter
+        regexp: ^APT_AUTOGEN=
+        line: APT_AUTOGEN="true"
+      become: true
+      when: security_scans_write
+
+    # The root cron deleted audit.log under auditd every night and its rotations every month.
+    - name: Let auditd rotate its own logs
+      ansible.builtin.lineinfile:
+        path: /etc/audit/auditd.conf
+        regexp: ^max_log_file_action\s*=
+        line: max_log_file_action = ROTATE
+      become: true
+      when: security_scans_write
+      notify: Reload auditd
+
+    - name: Drop the dead, dangerous and duplicate root cron lines
+      ansible.builtin.lineinfile:
+        path: /var/spool/cron/crontabs/root
+        regexp: "{{ item }}"
+        state: absent
+      loop: "{{ security_scans_root_cron_drop }}"
+      become: true
+      when: security_scans_write
+
+    - name: Remove the replaced scan files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ security_scans_files_drop }}"
+      become: true
+      when: security_scans_write
+
+    - name: Report the security scan plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'applied' if security_scans_write else 'check_only' }}"
+          timers: "{{ security_scans_schedule }}"
+          reports: /var/lib/security-reports/<date>/, published to /reports/security/ (LAN only)
+          root_cron_dropped: "{{ security_scans_root_cron_drop }}"
+          files_dropped: "{{ security_scans_files_drop }}"
+          boot_update: root part (apt, snap, docker restart) and user timer (mr, brew, pip, compose)
