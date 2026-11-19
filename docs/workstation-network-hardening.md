@@ -174,8 +174,9 @@ les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply 
 | Ports entrants BitTorrent (TCP et DHT) | actifs | coupés |
 | Bail fixe du R7000 | MAC `…:90`, inactif, commentaire « pfSense WAN » | MAC `…:8F` (WAN réel) → `192.168.1.117`, « R7000 WAN » ; adresse inchangée |
 
-Gardés par choix de l'opérateur : accès distant à Freebox OS et à l'API (Freebox Connect), partage
-Samba de la Freebox, serveur WireGuard (démarré, aucune connexion). Restent à faire à la main dans
+Coupés le 19/11 : partage Samba (fichiers et imprimante) et serveur WireGuard (aucune connexion ;
+l'accès distant passe par Cloudflare Tunnel), port entrant WireGuard compris. Gardé : accès distant
+à Freebox OS et à l'API (Freebox Connect). Restent à faire à la main dans
 Freebox OS (Gestion des accès > Applications > « Nabla edge ») : décocher les droits inutiles, l'app
 ayant tout reçu à son réenregistrement (VM, appels, contacts, explorateur, TV, PVR…), et décocher
 « Modification des réglages » hors intervention.
