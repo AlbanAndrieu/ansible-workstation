@@ -159,7 +159,10 @@ pflow vers Akvorado et Unbound (le DNS passe à Pi-hole, PR #35). Détail et ret
 **Workstation (appliqué le 19/11)** : pfSense était le seul émetteur syslog
 (aucun dossier `/var/log/<hôte>` distant récent). `harden-network.yml` retire les règles LAN `514`
 et `9116` (snmp_exporter), et met en commentaire les entrées `imudp`/`imtcp` de `/etc/rsyslog.conf` ;
-les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply :
+les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. La redirection vers `172.17.0.57:5140` ne partait jamais : elle se trouvait après
+`*.* ?RemoteLogs` / `& ~`, qui arrête les règles suivantes, et rien n'écoutait sur 5140. Depuis le
+20/11, rsyslog envoie `*.info` (sans mail, authpriv ni cron) à Alloy sur TrueNAS (UDP 1514, RFC 5424),
+qui pousse vers Loki : `{host="albandrieu", source="remote-syslog"}` dans Grafana. Contrôle après apply :
 `ss -tulpn | grep -c ':514 '` → `0`, et `sudo ufw status | grep -cE '514|9116'` → `0` (relevé le 19/11).
 
 **Freebox, appliqué le 18/11 par l'API** (app « Nabla edge », chaque réglage relu après écriture) :

@@ -221,6 +221,7 @@ class NetworkHardeningContract(unittest.TestCase):
         self.assertEqual(retired, {"514", "9116"})
         names = [t["name"] for t in self.play["tasks"]]
         self.assertIn("Stop the rsyslog network inputs", names)
+        self.assertIn("Forward syslog to Alloy on TrueNAS", names)
 
     def test_docker_routes_admit_only_truenas_and_deny_the_lan(self):
         routes = self.play["vars"]["harden_docker_routes"]
