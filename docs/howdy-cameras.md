@@ -1,6 +1,8 @@
 # Howdy et motion : une caméra chacun
 
-**Statut :** APPLIQUÉ le 16/11/2026, enrôlement et activation PAM à faire —
+**Statut :** APPLIQUÉ le 16/11/2026. Reconnaissance TESTÉE le 19/11 :
+`sudo howdy test` sur la caméra du port 3.3 reconnaît le modèle `albandrieu-01`
+(4 modèles du 29/08/2025, avec et sans lunettes). Reste l'activation PAM —
 9 contrats offline PASS (`tests/test_howdy_cameras_contract.py`), `ansible-lint`
 (profil production) PASS, playbook convergé sans changement PAM au second passage.
 
@@ -99,12 +101,16 @@ rien.
 **Pour activer :**
 
 1. Avec de la lumière (la C310 n'a pas d'infrarouge ; `dark_threshold = 60`) :
-   `sudo howdy add`, puis `sudo howdy test`.
-2. `sudo howdy config` et passer `disabled = false`.
-3. Choisir où Howdy suffit. Via `common-auth`, une photo ouvrirait aussi
-   `sudo` : préférer le seul écran de verrouillage, en décochant Howdy dans
-   `sudo pam-auth-update` et en l'ajoutant au seul service GDM (activation
+   `sudo howdy add`, puis `sudo howdy test`. Fait (test du 19/11).
+2. **D'abord** choisir où Howdy suffit. Via `common-auth`, une photo ouvrirait
+   aussi `sudo` : préférer le seul écran de verrouillage, en décochant Howdy
+   dans `sudo pam-auth-update` et en l'ajoutant au seul service GDM (activation
    détenue par `nabla-yubikey`).
+3. **Ensuite seulement** `sudo howdy config` et passer `disabled = false`.
+   Dans l'ordre inverse, `sudo` accepte une photo entre les deux étapes.
+
+Les modèles faciaux (`/usr/share/dlib/<utilisateur>.dat`) sont en `0644`,
+lisibles par tout compte local ; le module PAM les lit en root, `0600` suffit.
 
 ## Retour arrière
 
