@@ -38,6 +38,19 @@ Reste à faire :
 2. Si `resolvectl status eno1` ne montre plus `172.17.0.24`, vérifier `ipv4.dns` et `ipv4.addresses` du profil : le 18/11, les deux ont été vidés une fois sans cause identifiée, puis remis avec la commande ci-dessus.
 3. Compléter les enregistrements locaux `*.int.albandrieu.com` de Pi-hole.
 
+### Retour d'un pfSense (4200 ou autre)
+
+**Décision (19/11) : la workstation garde Pi-hole comme résolveur de `~int.albandrieu.com`, même avec un pfSense.** Les noms privés de la workstation ne dépendent plus du routeur : aucune variable, tâche ou dispatcher à changer, car les tâches imposent `172.17.0.24`. pfSense ne fait que renvoyer la zone vers Pi-hole pour les autres appareils du LAN.
+
+Côté pfSense, tout passe par `scripts/pfsense/reconcile-split-dns.sh` de nabla-compose (contrat : `tests/test_pfsense_split_dns_reconcile.py`) :
+
+1. Nouvelle clé d'hôte SSH : `ssh-keygen -R '[172.17.0.1]:9922'`, puis accepter la nouvelle empreinte une fois, à la main. Le script refuse une clé inconnue.
+2. Si `config.xml` est restauré, le renvoi `int.albandrieu.com → 172.17.0.24` revient avec lui. Le prouver avec `bash scripts/pfsense/reconcile-split-dns.sh --check`.
+3. Sur une installation vierge, activer SSH et la clé d'administration, puis lancer `--check` (avec `--port 22` tant que SSH n'est pas sur 9922). S'il signale `split_dns_override=MISSING`, lancer `--apply` : il vérifie d'abord que Pi-hole répond, garde l'historique de configuration de pfSense et ne redémarre Unbound que si quelque chose change.
+4. Réception : `--check` rend `result=SPLIT_DNS_CONFIG_CONVERGED`, puis `just workstation-dnssec-dispatcher-check` depuis nabla-compose pour la workstation.
+
+Facultatif : remettre `172.17.0.1` comme DNS global de `systemd-resolved` à la place de Quad9. Ce n'est pas nécessaire au split DNS.
+
 ## 1. Objectif et état réel
 
 Le but du *split-DNS* est de résoudre les noms privés en `*.int.albandrieu.com` à partir du LAN, avec un résolveur LAN (Unbound de pfSense `172.17.0.1` jusqu'au 18/11/2026, Pi-hole de TrueNAS `172.17.0.24` depuis), sans désactiver la validation DNSSEC des noms publics.
