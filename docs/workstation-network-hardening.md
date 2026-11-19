@@ -156,11 +156,11 @@ Internet, les services publics passent par Cloudflare Tunnel. Perdus avec pfSens
 pflow vers Akvorado et Unbound (le DNS passe à Pi-hole, PR #35). Détail et retour arrière côté réseau :
 `nabla-compose`, `docs/pfsense/runbooks/freebox-router-mode.md`.
 
-**Workstation (`CODED`, `TESTED`, `NOT_RUN` sur l'hôte)** : pfSense était le seul émetteur syslog
+**Workstation (appliqué le 19/11)** : pfSense était le seul émetteur syslog
 (aucun dossier `/var/log/<hôte>` distant récent). `harden-network.yml` retire les règles LAN `514`
 et `9116` (snmp_exporter), et met en commentaire les entrées `imudp`/`imtcp` de `/etc/rsyslog.conf` ;
 les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply :
-`ss -tulpn | grep -c ':514 '` → `0`.
+`ss -tulpn | grep -c ':514 '` → `0`, et `sudo ufw status | grep -cE '514|9116'` → `0` (relevé le 19/11).
 
 **Freebox, appliqué le 18/11 par l'API** (app « Nabla edge », chaque réglage relu après écriture) :
 

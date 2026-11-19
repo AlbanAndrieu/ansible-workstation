@@ -112,9 +112,13 @@
       - port: "5432"
         proto: tcp
       # pfSense (gone 18/11/2026) was the only syslog sender; snmp_exporter is retired.
+      # ufw stores tcp and udp as separate rules: "any" would match neither.
       - from: "{{ harden_lan }}"
         port: "514"
-        proto: any
+        proto: tcp
+      - from: "{{ harden_lan }}"
+        port: "514"
+        proto: udp
       - from: "{{ harden_lan }}"
         port: "9116"
         proto: tcp
