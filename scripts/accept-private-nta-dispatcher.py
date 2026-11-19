@@ -21,7 +21,7 @@ import time
 IFACE = "eno1"
 PROFILE = "Wired eno1"
 DOMAIN = "int.albandrieu.com"
-DNS = "172.17.0.1"
+DNS = "172.17.0.24"
 NAME = "defectdojo.int.albandrieu.com"
 ADDR = "172.17.0.24"
 PUBLIC = "cloudflare.com"

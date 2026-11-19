@@ -6,7 +6,7 @@ set -euo pipefail
 dns_default="{{ dns_default }}"
 dns_new="{{ dns_new }}"
 net_interface="{{ net_interface }}"
-private_dns="{{ workstation_split_dns_resolver | default('172.17.0.1') }}"
+private_dns="{{ workstation_split_dns_resolver | default('172.17.0.24') }}"
 private_domain="{{ workstation_split_dns_domain | default('int.albandrieu.com') }}"
 
 # This hook is optional. A missing network manager/resolved must not

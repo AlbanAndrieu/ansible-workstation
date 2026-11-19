@@ -6,16 +6,16 @@
   ansible.builtin.assert:
     that:
       - workstation_split_dns_interface == 'eno1'
-      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_resolver == '172.17.0.24'
       - workstation_split_dns_domain == 'int.albandrieu.com'
-    fail_msg: 'NTA change refused outside the approved LAN zone'
+    fail_msg: "NTA change refused outside the approved LAN zone"
   tags: [dns]
 
 - name: workstation | Reject contradictory NTA apply and removal flags
   ansible.builtin.assert:
     that:
       - not ((workstation_split_dns_persistent_nta_enabled | bool) and (workstation_split_dns_persistent_nta_remove_enabled | bool))
-    fail_msg: 'Choose either private NTA apply or rollback, never both'
+    fail_msg: "Choose either private NTA apply or rollback, never both"
   tags: [dns]
 
 - name: workstation | Ensure scoped DNSSEC trust anchors directory
@@ -24,7 +24,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
   become: true
   when: workstation_split_dns_persistent_nta_enabled | bool
   tags: [dns]
@@ -38,7 +38,7 @@
     content: "{{ workstation_split_dns_domain }}\n"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   become: true
   when: workstation_split_dns_persistent_nta_enabled | bool
   notify: workstation | Restart resolved after approved NTA change

@@ -4,6 +4,14 @@ Source of truth: `ansible-workstation` task
 `tasks/network_split_dns.yml`. pfSense upstream DoT and private Unbound zone
 belong to `AlbanAndrieu/nabla-compose` PR #274.
 
+## 2026-11-18: pfSense retired
+
+The Netgate 1100 no longer boots and was removed; the Freebox is back in
+router mode. The private-zone resolver is now Pi-hole on TrueNAS
+(`172.17.0.24`), the global `systemd-resolved` DNS is Quad9, and the
+`Wired eno1` profile was recreated. Details, remaining steps and the
+`nmcli` commands: [architecture, section 0](homelab-split-dns-architecture.md).
+
 ## Observation
 
 2026-10-24: `nmcli device reapply eno1` succeeded but
@@ -27,7 +35,7 @@ Example play variables (explicit opt-in):
 ```yaml
 workstation_split_dns_enabled: true
 workstation_split_dns_interface: eno1
-workstation_split_dns_resolver: 172.17.0.1
+workstation_split_dns_resolver: 172.17.0.24
 workstation_split_dns_domain: int.albandrieu.com
 ```
 
@@ -45,7 +53,7 @@ nmcli -f GENERAL.CONNECTION,IP4.DNS device show eno1
 resolvectl dns eno1
 resolvectl domain eno1
 getent ahostsv4 sample.int.albandrieu.com
-dig @172.17.0.1 sample.int.albandrieu.com A
+dig @172.17.0.24 sample.int.albandrieu.com A
 ```
 
 Do not treat an update to the profile as success without these checks.
