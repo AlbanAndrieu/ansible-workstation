@@ -25,7 +25,6 @@
       - litellm.service
       - nvidia-persistence.service
       - ollama.service
-      - snmp_exporter.service
     # Git keeps no mode and the checkout umask gives 0664: /etc modes are set here instead.
     etc_restore_modes:
       ufw/after.rules: "0640"

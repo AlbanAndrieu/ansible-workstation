@@ -39,25 +39,27 @@ systemctl show restic-restore-test.service -p Result
 
 Attendu : `Result=success`.
 
-### Crontab root : scan ClamAV hebdomadaire des disques locaux, doublons retirés
+### Crontab root : scans de sécurité en timers systemd, doublons retirés
 
-Les lignes ClamTk (`clamscan -r /home/albandrieu` chaque nuit, 16 h 40 le 12/11), maldet (cassée)
-et chkrootkit (en double) sont retirées. `clamav-local-disks` scanne chaque samedi à 01:00, au
-repos, les systèmes de fichiers locaux (`/`, `/boot`, `/data`, `/workspace`, `/docker`…) avec
-`--cross-fs=no` : les partages TrueNAS (NFS sous `/media`) sont scannés sur TrueNAS.
+Les lignes ClamTk (`clamscan -r /home/albandrieu` chaque nuit, tuée à 08:08 le 16/11 sans résumé), maldet,
+chkrootkit, lynis, oscap, webmin, pgbadger et les scripts de `~/w/nabla` (modifiables par l'utilisateur,
+donc élévation vers root) sont retirées. `playbooks/security-scans.yml` les remplace par des timers
+`security-scan@<outil>` ; ClamAV passe par `clamdscan --multiscan` le samedi à 01:00, sur les systèmes de
+fichiers locaux seulement (les partages TrueNAS sont scannés sur TrueNAS).
 
 ```bash
-mise run stabilize-check
-.venv/bin/ansible-playbook -i localhost, -c local playbooks/stabilize-workstation.yml -e stabilize_apply=true -e stabilize_apply_approved=true -K
-sudo crontab -l | grep -cE 'maldet|chkrootkit|-r /home/albandrieu'
-sudo crontab -l | grep -c clamav-scan-local-disks
+.venv/bin/ansible-playbook -i localhost, -c local playbooks/security-scans.yml -e security_scans_apply=true -e security_scans_apply_approved=true -K
+sudo crontab -l | grep -vE '^(#|$)'
+systemctl list-timers 'security-scan@*'
 ```
 
-Attendu : `0`, puis `1`. Journal : `/var/log/clamav/local-disks-<date>.log`.
+Attendu : `MAILTO=""` et speedtest seuls, puis quatre timers. Détail : `docs/security-workstation.md`.
 
-**Appliqué le 16/11** (tâches ClamAV seules, `--start-at-task`) : `0`, puis `1`. Les tâches orphelines de
-maldet (`/etc/cron.daily/maldet`, `/etc/cron.d/maldet_pub`) sont supprimées, et anacron envoie sa sortie au
-journal (`systemd-cat`). Reste dans le lot : `Listen 127.0.0.1:8082` d'Apache.
+**Appliqué le 16/11** : crontab réduite à `MAILTO=""` et speedtest, 4 timers actifs, Lynis publié
+(indice 73). Les tâches orphelines de maldet sont supprimées et anacron écrit dans le journal
+(`systemd-cat`). Apache écoute `127.0.0.1:8082` (tunnel) ; les rapports sont servis en local sur 8087 (LAN)
+et par le tunnel derrière Cloudflare Access, application encore à créer (« Accès aux rapports » dans
+`security-workstation.md`).
 
 ### Secure Boot : enrôler la clé DKMS avant de l'activer
 

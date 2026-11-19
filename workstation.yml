@@ -57,11 +57,13 @@
   gather_facts: false
 
   roles:
-    - geerlingguy.security
+    - albanandrieu.security
 
   vars:
     # sudoers_enabled: no
     security_ssh_port: 9922
+    # sshd is masked on this desktop (harden-os.yml): the role default "started" would fail on it.
+    security_sshd_state: stopped
     restart_ssh_enabled: false
     security_ssh_password_authentication: "no"
     security_ssh_permit_root_login: "no"

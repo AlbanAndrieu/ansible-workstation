@@ -1,0 +1,44 @@
+#!/bin/bash
+# User part of the boot update (boot-update-user.service, systemd --user): everything that reads or
+# writes the user's files. The root part (apt, snap, docker restart) stays in boot-update.sh.
+set -uo pipefail
+
+notify() { zenity --info --text="$(hostname -I) $1" --title="$1" 2>/dev/null || true; }
+
+notify "Update started"
+
+for repo in "${HOME}/w" "${HOME}/w/jm" "${HOME}/w/jm/infra" "${HOME}/w/jm/data"; do
+  if [ -d "${repo}" ]; then
+    (cd "${repo}" && mr update) || true
+  fi
+done
+
+tldr --update || true
+brew cleanup || true
+pip cache purge || true
+pipenv --clear || true
+
+for storage in "${HOME}/.config/Code/User/workspaceStorage" "${HOME}/.config/Cursor/User/workspaceStorage"; do
+  if [ -x "${storage}/clean_old_folders.py" ]; then
+    (cd "${storage}" && ./clean_old_folders.py) || true
+  fi
+done
+
+# boot-update.service restarts docker as root: wait for it before starting the shared services.
+for _ in $(seq 60); do
+  docker info >/dev/null 2>&1 && break
+  sleep 5
+done
+
+compose=/workspace/users/albandrieu30/nabla/infra/docker-compose
+if [ -d "${compose}" ]; then
+  cd "${compose}" || exit 0
+  docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --pull=never --no-build postgres -d || true
+  docker compose --env-file .env --env-file .env.secrets -f docker-compose.yml up --no-build redis-server -d || true
+  docker compose pull --ignore-pull-failures || true
+fi
+docker pull zricethezav/gitleaks:latest || true
+
+notify "Update completed"
+
+exit 0

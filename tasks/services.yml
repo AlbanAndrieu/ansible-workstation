@@ -247,6 +247,26 @@
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and macchanger_enabled
   tags: configure
 
+# The user part (mr, brew, pip, docker compose) must not run as root: playbooks/security-scans.yml.
+- name: boot-update | Copy the user part and its user units
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - src: "boot-update-user.sh-{{ ansible_distribution }}.j2"
+      dest: /opt/script/boot-update-user.sh
+      mode: "0755"
+    - src: boot-update-user.service.j2
+      dest: /etc/systemd/user/boot-update-user.service
+      mode: "0644"
+    - src: boot-update-user.timer.j2
+      dest: /etc/systemd/user/boot-update-user.timer
+      mode: "0644"
+  become: true
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and macchanger_enabled
+  tags: configure
+
 # - name: boot-update | Start the boot-update service
 #   ansible.builtin.systemd_service:
 #     name: boot-update.timer

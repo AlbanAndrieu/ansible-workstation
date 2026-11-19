@@ -35,18 +35,6 @@
         port: "5353"
         proto: udp
         comment: mDNS
-      - from: "{{ harden_lan }}"
-        port: "514"
-        proto: tcp
-        comment: rsyslog server
-      - from: "{{ harden_lan }}"
-        port: "514"
-        proto: udp
-        comment: rsyslog server
-      - from: "{{ harden_lan }}"
-        port: "9116"
-        proto: tcp
-        comment: snmp_exporter
       - from: "{{ harden_truenas }}"
         port: "9100"
         proto: tcp
@@ -123,9 +111,26 @@
         proto: tcp
       - port: "5432"
         proto: tcp
+      # pfSense (gone 18/11/2026) was the only syslog sender; snmp_exporter is retired.
+      # ufw stores tcp and udp as separate rules: "any" would match neither.
+      - from: "{{ harden_lan }}"
+        port: "514"
+        proto: tcp
+      - from: "{{ harden_lan }}"
+        port: "514"
+        proto: udp
+      - from: "{{ harden_lan }}"
+        port: "9116"
+        proto: tcp
     harden_write: "{{ harden_apply | bool and harden_apply_approved | bool }}"
 
   handlers:
+    - name: Restart rsyslog
+      ansible.builtin.systemd_service:
+        name: rsyslog.service
+        state: restarted
+      become: true
+
     - name: Restart zabbix agent
       ansible.builtin.systemd_service:
         name: zabbix-agent2.service
@@ -148,6 +153,16 @@
         state: absent
       become: true
       when: harden_write
+
+    # Nothing sends syslog here since pfSense left: stop listening on 514 (per-host files stay).
+    - name: Stop the rsyslog network inputs
+      ansible.builtin.replace:
+        path: /etc/rsyslog.conf
+        regexp: '^(module\(load="im(udp|tcp)"\)|input\(type="im(udp|tcp)" port="514"\)|\$AllowedSender .*)$'
+        replace: '# \1'
+      become: true
+      when: harden_write
+      notify: Restart rsyslog
 
     - name: Stop and mask rpcbind (nfs-common depends on the package)
       ansible.builtin.systemd_service:
@@ -227,15 +242,16 @@
       become: true
       when: harden_write
 
-    - name: Delete legacy rules open to anywhere
+    - name: Delete legacy and retired rules
       community.general.ufw:
         rule: allow
+        from_ip: "{{ item.from | default('any') }}"
         to_port: "{{ item.port }}"
         proto: "{{ item.proto }}"
         delete: true
       loop: "{{ harden_legacy_rules }}"
       loop_control:
-        label: "{{ item.port }}/{{ item.proto }}"
+        label: "{{ item.from | default('any') }} -> {{ item.port }}/{{ item.proto }}"
       become: true
       when: harden_write
 

@@ -164,3 +164,51 @@ Ne pas utiliser de `--tags` pour contourner des contrôles.
 
 **Aucun appel à `sudo`, APT, PAM, au socket Docker ou à une
 YubiKey n'est lancé pendant la création de cette PR.**
+
+## SSH avec la YubiKey et trousseau GNOME (15 novembre 2026)
+
+**Symptôme :** `ssh -p 9922 admin@172.17.0.1 true` demandait deux fois
+« Autoriser », le PIN et le toucher de la YubiKey. Au démarrage, plusieurs
+mots de passe étaient demandés.
+
+**Cause SSH :** `SSH_AUTH_SOCK` pointe vers `gcr-ssh-agent`, qui republie tous
+les `~/.ssh/*.pub`, y compris les clés `ED25519-SK` des deux YubiKey. ssh
+demande d'abord à l'agent de signer : l'agent affiche sa fenêtre, demande le
+PIN et le toucher, puis échoue (`process_sign_request2: sshkey_sign: invalid
+format` dans `journalctl --user -u gcr-ssh-agent`). ssh signe alors lui-même,
+d'où la seconde série. `AddKeysToAgent no` ne suffit pas : gcr republie les
+clés publiques.
+
+**Correction** (dépôt dotfiles, `~/.config/ssh/common.conf`, bloc `Host *`) :
+`IdentityAgent none`. ssh signe directement : un PIN et un toucher par
+connexion maître (`ControlPersist` 10 min, 8 h pour GitHub). Git signe avec
+`gpg-agent`, non touché. Sans YubiKey, la clé de secours `~/.ssh/id_ed25519`
+demande sa phrase de passe à chaque nouvelle connexion maître.
+
+**Cause au démarrage :**
+
+1. La phrase LUKS du disque système (`sda3_crypt`) : normale.
+2. La connexion automatique de GDM ne transmet aucun mot de passe à PAM
+   (`gkr-pam: no password is available for user`) : le trousseau `login`
+   restait verrouillé et le premier programme qui lisait un secret le
+   redemandait.
+3. Deux trousseaux, `login` et `Default_Keyring` (celui par défaut, avec les
+   secrets de Chrome, VS Code, Bitwarden CLI, Git et d'un disque LUKS USB) :
+   chacun se déverrouillait à part.
+4. Un `default.keyring` corrompu (« invalid or unrecognized format »).
+
+**Corrections :**
+
+| Changement | Où | Retour arrière |
+| --- | --- | --- |
+| Connexion automatique coupée : le mot de passe de session déverrouille `login` | `/etc/gdm3/custom.conf`, capturé dans [`files/etc/gdm3/custom.conf`](../files/etc/gdm3/custom.conf) (`restore-etc.yml`) | `AutomaticLoginEnable = true` ; sauvegarde `/etc/gdm3/custom.conf.bak-20261115` |
+| `login` trousseau par défaut ; les 26 secrets de `Default_Keyring` copiés dans `login` (empreintes identiques), puis `Default_Keyring` supprimé | `~/.local/share/keyrings/` | `Default_Keyring.keyring.bak-20261115` et `default.bak-20261115` à remettre en place, session fermée |
+| `default.keyring` corrompu mis de côté | `~/.local/share/keyrings/default.keyring.corrupt-20261115` | Aucun : il n'était plus lisible |
+
+Le mot de passe du trousseau `login` doit être celui de la session. Si une
+demande de déverrouillage revient après la prochaine connexion, changer le
+mot de passe de `login` dans Seahorse pour celui de la session. Le trousseau
+`gogcli` reste à part : il ne se déverrouille que si `gog` en a besoin.
+
+Les secrets ne passent pas par Ansible : seule la configuration GDM est
+versionnée ici.

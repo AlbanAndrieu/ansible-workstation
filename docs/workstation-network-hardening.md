@@ -14,7 +14,7 @@ les interfaces. Avec `userland-proxy: false`, les ports publiés par Docker pass
 | ufw : entrée refusée sauf allowlist | Voir ci-dessous ; sortie et forwarding inchangés (Docker, libvirt) |
 
 Allowlist : depuis le LAN `172.17.0.0/24` apache 8082/8087, minidlna 8200 + SSDP 1900/udp,
-mDNS 5353/udp, rsyslog 514 tcp/udp, snmp_exporter 9116, Synergy/Deskflow 24800 + service Synergy
+mDNS 5353/udp, Synergy/Deskflow 24800 + service Synergy
 24802, Dropbox 17500 tcp/udp. Depuis TrueNAS
 seulement : LiteLLM 4000 (openrag, litellm, langflow de `nabla-compose`), ollama 11434, zabbix 10050.
 Depuis les bridges Docker locaux `172.16.0.0/16` : 4000 et 11434.
@@ -147,3 +147,38 @@ Deux suites :
   fichiers seront en `0640` dans le groupe de l'utilisateur. La racine Apache
   (`/media/www/nabla-site-apache`, groupe `www-data`, sans setgid) ne pourra plus les lire : poser le
   bit setgid sur ses dossiers, ou y travailler en `umask 002`.
+
+## Après le retrait de pfSense (18 novembre 2026)
+
+Chemin de sortie : workstation → Netgear R7000 (`172.17.0.1`, routeur, DHCP `.100-.199`) → Freebox
+(`192.168.1.254`, routeur) → Internet. Double NAT, sans DMZ ni redirection : rien n'entre depuis
+Internet, les services publics passent par Cloudflare Tunnel. Perdus avec pfSense : Snort, l'export
+pflow vers Akvorado et Unbound (le DNS passe à Pi-hole, PR #35). Détail et retour arrière côté réseau :
+`nabla-compose`, `docs/pfsense/runbooks/freebox-router-mode.md`.
+
+**Workstation (appliqué le 19/11)** : pfSense était le seul émetteur syslog
+(aucun dossier `/var/log/<hôte>` distant récent). `harden-network.yml` retire les règles LAN `514`
+et `9116` (snmp_exporter), et met en commentaire les entrées `imudp`/`imtcp` de `/etc/rsyslog.conf` ;
+les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply :
+`ss -tulpn | grep -c ':514 '` → `0`, et `sudo ufw status | grep -cE '514|9116'` → `0` (relevé le 19/11).
+
+**Freebox, appliqué le 18/11 par l'API** (app « Nabla edge », chaque réglage relu après écriture) :
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| WPS | actif | coupé |
+| UPnP IGD (ouverture de ports par le LAN) | actif | coupé |
+| UPnP AV, AirMedia | actifs | coupés |
+| Réveil réseau (WoL) et ping depuis Internet | actifs | coupés |
+| Demande de jeton d'app depuis le LAN (`allow_token_request`) | ouverte | fermée ; à rouvrir pour enregistrer une app |
+| Ports entrants BitTorrent (TCP et DHT) | actifs | coupés |
+| Bail fixe du R7000 | MAC `…:90`, inactif, commentaire « pfSense WAN » | MAC `…:8F` (WAN réel) → `192.168.1.117`, « R7000 WAN » ; adresse inchangée |
+
+Gardés par choix de l'opérateur : accès distant à Freebox OS et à l'API (Freebox Connect), partage
+Samba de la Freebox, serveur WireGuard (démarré, aucune connexion). Restent à faire à la main dans
+Freebox OS (Gestion des accès > Applications > « Nabla edge ») : décocher les droits inutiles, l'app
+ayant tout reçu à son réenregistrement (VM, appels, contacts, explorateur, TV, PVR…), et décocher
+« Modification des réglages » hors intervention.
+
+Reste `NOT_VERIFIED` côté R7000 : Wi-Fi actif ou non (un client Wi-Fi y serait dans `172.17.0.0/24`,
+donc dans l'allowlist LAN), Remote Management, UPnP et WPS du R7000, DNS distribué par son DHCP.

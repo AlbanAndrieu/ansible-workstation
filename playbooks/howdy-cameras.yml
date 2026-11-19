@@ -273,6 +273,12 @@
           Package: *
           Pin: release o={{ howdy_apt_origin }}
           Pin-Priority: 100
+
+          # Ubuntu has no python3-dlib; a third-party 19.24+slimbook9 built for
+          # Python 3.12 fails to import on 3.14 (16/11/2026): this build wins.
+          Package: python3-dlib
+          Pin: release o={{ howdy_apt_origin }}
+          Pin-Priority: 1001
       become: true
       when: howdy_cameras_write | bool
 
@@ -283,6 +289,22 @@
         update_cache: true
         install_recommends: false
       become: true
+      when: howdy_cameras_write | bool
+
+    # latest follows the 1001 pin above: present would keep a broken build already installed.
+    - name: Replace any other python3-dlib build with the pinned one # noqa: package-latest
+      ansible.builtin.apt:
+        name: python3-dlib
+        state: latest
+        allow_downgrade: true
+        install_recommends: false
+      become: true
+      when: howdy_cameras_write | bool
+
+    - name: Check that Howdy can import its recognition stack
+      ansible.builtin.command:
+        argv: [/usr/bin/python3, -I, -c, "import dlib, cv2, numpy"]
+      changed_when: false
       when: howdy_cameras_write | bool
 
     - name: Read the installed Howdy configuration

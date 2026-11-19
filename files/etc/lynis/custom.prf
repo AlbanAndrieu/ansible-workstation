@@ -1,0 +1,3 @@
+# Managed by ansible-workstation (docs/security-workstation.md).
+# CRYP-7902 walks certificates on the NFS mounts and hung for 35 min on 16/11/2026.
+skip-test=CRYP-7902
