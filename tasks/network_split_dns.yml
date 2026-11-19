@@ -5,14 +5,22 @@
   ansible.builtin.assert:
     that:
       - workstation_split_dns_interface == 'eno1'
-      - workstation_split_dns_resolver == '172.17.0.1'
+      - workstation_split_dns_resolver == '172.17.0.24'
       - workstation_split_dns_domain == 'int.albandrieu.com'
-    fail_msg: 'Refusing DNS changes outside the approved workstation LAN contract'
+    fail_msg: "Refusing DNS changes outside the approved workstation LAN contract"
   tags: [dns]
 
 - name: workstation | Read active NetworkManager profile
   ansible.builtin.command:
-    argv: [nmcli, -g, GENERAL.CONNECTION, device, show, "{{ workstation_split_dns_interface }}"]
+    argv:
+      [
+        nmcli,
+        -g,
+        GENERAL.CONNECTION,
+        device,
+        show,
+        "{{ workstation_split_dns_interface }}",
+      ]
   register: workstation_dns_profile
   changed_when: false
   check_mode: false
@@ -23,12 +31,20 @@
     that:
       - workstation_dns_profile.stdout | trim | length > 0
       - workstation_dns_profile.stdout | trim != '--'
-    fail_msg: 'NetworkManager profile not found: no changes applied'
+    fail_msg: "NetworkManager profile not found: no changes applied"
   tags: [dns]
 
 - name: workstation | Read configured profile DNS server
   ansible.builtin.command:
-    argv: [nmcli, -g, ipv4.dns, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+    argv:
+      [
+        nmcli,
+        -g,
+        ipv4.dns,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
   register: workstation_dns_servers
   changed_when: false
   check_mode: false
@@ -36,7 +52,15 @@
 
 - name: workstation | Read configured DHCP DNS override
   ansible.builtin.command:
-    argv: [nmcli, -g, ipv4.ignore-auto-dns, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+    argv:
+      [
+        nmcli,
+        -g,
+        ipv4.ignore-auto-dns,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
   register: workstation_dns_auto
   changed_when: false
   check_mode: false
@@ -44,7 +68,15 @@
 
 - name: workstation | Read configured search domain
   ansible.builtin.command:
-    argv: [nmcli, -g, ipv4.dns-search, connection, show, "{{ workstation_dns_profile.stdout | trim }}"]
+    argv:
+      [
+        nmcli,
+        -g,
+        ipv4.dns-search,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
   register: workstation_dns_search
   changed_when: false
   check_mode: false
@@ -58,7 +90,7 @@
   check_mode: false
   tags: [dns]
 
-- name: workstation | Configure pfSense as the sole profile DNS
+- name: workstation | Configure the homelab resolver as the sole profile DNS
   ansible.builtin.command:
     argv:
       - nmcli
@@ -66,7 +98,7 @@
       - modify
       - "{{ workstation_dns_profile.stdout | trim }}"
       - ipv4.ignore-auto-dns
-      - 'yes'
+      - "yes"
       - ipv4.dns
       - "{{ workstation_split_dns_resolver }}"
   become: true

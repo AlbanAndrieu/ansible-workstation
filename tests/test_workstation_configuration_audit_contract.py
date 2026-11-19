@@ -173,10 +173,10 @@ class TestConfigurationAudit(unittest.TestCase):
     def test_dns_expected(self):
         def fake(argv, timeout=5):
             if argv[:2] == [audit.RESOLVECTL, "dns"]:
-                return 0, "Link 2 (eno1): 172.17.0.1"
+                return 0, "Link 2 (eno1): 172.17.0.24"
             if argv[:2] == [audit.RESOLVECTL, "domain"]:
                 return 0, "Link 2 (eno1): ~int.albandrieu.com"
-            return 0, "172.17.0.1"
+            return 0, "172.17.0.24"
 
         with patch.object(audit, "run", side_effect=fake):
             status = audit.audit_dns("eno1")
@@ -208,9 +208,9 @@ class TestConfigurationAudit(unittest.TestCase):
             audit,
             "run",
             side_effect=[
-                (0, "Link 2: 172.17.0.1 9.9.9.9"),
+                (0, "Link 2: 172.17.0.24 9.9.9.9"),
                 (0, "Link 2: ~int.albandrieu.com"),
-                (0, "172.17.0.1"),
+                (0, "172.17.0.24"),
             ],
         ):
             status = audit.audit_dns("eno1")

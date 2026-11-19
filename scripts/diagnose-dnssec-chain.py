@@ -15,7 +15,7 @@ import subprocess
 import sys
 import time
 
-DNS = "172.17.0.1"
+DNS = "172.17.0.24"
 PRIVATE = "defectdojo.int.albandrieu.com"
 PRIVATE_A = "172.17.0.24"
 SIGNED = "cloudflare.com"

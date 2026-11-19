@@ -24,7 +24,7 @@ dns:
   # Pinned in three places on purpose; tests keep them identical:
   # defaults/main.yml, tasks/network_split_dns.yml and the audit script.
   interface: eno1
-  resolver: 172.17.0.1
+  resolver: 172.17.0.24
   route_domain: "~int.albandrieu.com"
   evidence: "docs/roadmap-workstation.md: operator resolvectl proof 2026-10-30"
 

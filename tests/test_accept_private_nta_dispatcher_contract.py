@@ -29,7 +29,7 @@ class DispatcherAcceptanceTests(unittest.TestCase):
             "run",
             side_effect=[
                 (True, "Wired eno1\n"),
-                (True, "Link 2 (eno1): 172.17.0.1\n"),
+                (True, "Link 2 (eno1): 172.17.0.24\n"),
                 (True, "Link 2 (eno1): ~int.albandrieu.com\n"),
             ],
         ) as commands:

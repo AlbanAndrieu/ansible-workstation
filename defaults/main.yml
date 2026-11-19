@@ -194,7 +194,7 @@ devops_tools:
 workstation_hide_location_dns_override_enabled: false
 workstation_split_dns_enabled: false
 workstation_split_dns_interface: eno1
-workstation_split_dns_resolver: 172.17.0.1
+workstation_split_dns_resolver: 172.17.0.24
 workstation_split_dns_domain: int.albandrieu.com
 
 # Opt-in only after runtime per-link NTA reception. This installs a scoped
