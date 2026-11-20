@@ -164,6 +164,30 @@
       when: harden_write
       notify: Restart rsyslog
 
+    # The old lines sat after "*.* ?RemoteLogs / & ~", which stops every later rule: nothing was ever
+    # sent (and their target, this host on 5140, had no listener). Comment them out, forward first.
+    - name: Comment out the dead syslog forwards
+      ansible.builtin.replace:
+        path: /etc/rsyslog.conf
+        regexp: '^([^#].*\s@[0-9.]+:[0-9]+\S*)$'
+        replace: '# \1'
+      become: true
+      when: harden_write
+      notify: Restart rsyslog
+
+    # Alloy on TrueNAS takes RFC 5424 over UDP 1514 and pushes to Loki (nabla-compose apps/grafana).
+    - name: Forward syslog to Alloy on TrueNAS
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: 'type="omfwd"'
+        line: >-
+          *.info;mail.none;authpriv.none;cron.none action(type="omfwd" target="{{ harden_truenas }}"
+          port="1514" protocol="udp" template="RSYSLOG_SyslogProtocol23Format")
+        insertbefore: '^\$template RemoteLogs'
+      become: true
+      when: harden_write
+      notify: Restart rsyslog
+
     - name: Stop and mask rpcbind (nfs-common depends on the package)
       ansible.builtin.systemd_service:
         name: "{{ item }}"

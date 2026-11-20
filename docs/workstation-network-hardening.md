@@ -159,7 +159,10 @@ pflow vers Akvorado et Unbound (le DNS passe à Pi-hole, PR #35). Détail et ret
 **Workstation (appliqué le 19/11)** : pfSense était le seul émetteur syslog
 (aucun dossier `/var/log/<hôte>` distant récent). `harden-network.yml` retire les règles LAN `514`
 et `9116` (snmp_exporter), et met en commentaire les entrées `imudp`/`imtcp` de `/etc/rsyslog.conf` ;
-les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply :
+les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. La redirection vers `172.17.0.57:5140` ne partait jamais : elle se trouvait après
+`*.* ?RemoteLogs` / `& ~`, qui arrête les règles suivantes, et rien n'écoutait sur 5140. Depuis le
+20/11, rsyslog envoie `*.info` (sans mail, authpriv ni cron) à Alloy sur TrueNAS (UDP 1514, RFC 5424),
+qui pousse vers Loki : `{host="albandrieu", source="remote-syslog"}` dans Grafana. Contrôle après apply :
 `ss -tulpn | grep -c ':514 '` → `0`, et `sudo ufw status | grep -cE '514|9116'` → `0` (relevé le 19/11).
 
 **Freebox, appliqué le 18/11 par l'API** (app « Nabla edge », chaque réglage relu après écriture) :
@@ -174,8 +177,9 @@ les fichiers par hôte (`/var/log/%HOSTNAME%/`) restent. Contrôle après apply 
 | Ports entrants BitTorrent (TCP et DHT) | actifs | coupés |
 | Bail fixe du R7000 | MAC `…:90`, inactif, commentaire « pfSense WAN » | MAC `…:8F` (WAN réel) → `192.168.1.117`, « R7000 WAN » ; adresse inchangée |
 
-Gardés par choix de l'opérateur : accès distant à Freebox OS et à l'API (Freebox Connect), partage
-Samba de la Freebox, serveur WireGuard (démarré, aucune connexion). Restent à faire à la main dans
+Coupés le 19/11 : partage Samba (fichiers et imprimante) et serveur WireGuard (aucune connexion ;
+l'accès distant passe par Cloudflare Tunnel), port entrant WireGuard compris. Gardé : accès distant
+à Freebox OS et à l'API (Freebox Connect). Restent à faire à la main dans
 Freebox OS (Gestion des accès > Applications > « Nabla edge ») : décocher les droits inutiles, l'app
 ayant tout reçu à son réenregistrement (VM, appels, contacts, explorateur, TV, PVR…), et décocher
 « Modification des réglages » hors intervention.
