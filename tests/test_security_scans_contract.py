@@ -195,9 +195,11 @@ class SecurityScansContracts(unittest.TestCase):
             report = json.loads((target / "summary.json").read_text())
             page = (target / "index.html").read_text()
             self.assertEqual(report["schema"], "workstation-security-summary/v1")
-            self.assertEqual(report["days"][0]["scans"]["lynis"]["metrics"]["hardening_index"], 73)
-            self.assertEqual(report["days"][0]["scans"]["clamav"]["state"], "INCOMPLETE")
-            self.assertEqual(report["days"][0]["scans"]["clamav"]["metrics"]["infected_files_reported"], 2)
+            lynis = report["days"][0]["scans"]["lynis"]
+            clamav = report["days"][0]["scans"]["clamav"]
+            self.assertEqual(lynis["metrics"]["hardening_index"], 73)
+            self.assertEqual(clamav["state"], "INCOMPLETE")
+            self.assertEqual(clamav["metrics"]["infected_files_reported"], 2)
             self.assertIn("Posture de sécurité", page)
             self.assertIn("INCOMPLETE", page)
             self.assertNotIn("internal.local", page + json.dumps(report))
