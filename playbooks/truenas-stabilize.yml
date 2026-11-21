@@ -33,18 +33,19 @@
         command: 'docker exec ix-clamav-clamav-1 find /mnt/logs -type f -name "clamav-scan-*.log" -mtime +90 -exec rm {} \;'
         schedule: { minute: "50", hour: "4", dom: "1", month: "*", dow: "*" }
       # One long test per disk and week of the month; a WD30EFRX long test takes about 7 h.
+      # 08:00, after the 01:00-07:00 night window of bitcoind: one disk under test slows every raidz2 read.
       - description: smart-long-sda
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3457796
-        schedule: { minute: "0", hour: "2", dom: "7", month: "*", dow: "*" }
+        schedule: { minute: "0", hour: "8", dom: "7", month: "*", dow: "*" }
       - description: smart-long-sdb
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68EUZN0_WD-WX32FK2NSIGF
-        schedule: { minute: "0", hour: "2", dom: "14", month: "*", dow: "*" }
+        schedule: { minute: "0", hour: "8", dom: "14", month: "*", dow: "*" }
       - description: smart-long-sdc
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68EUZN0_WD-WCA2F74L52TH
-        schedule: { minute: "0", hour: "2", dom: "21", month: "*", dow: "*" }
+        schedule: { minute: "0", hour: "8", dom: "21", month: "*", dow: "*" }
       - description: smart-long-sdd
         command: smartctl -t long /dev/disk/by-id/ata-WDC_WD30EFRX-68AX9N0_WD-WMC1T3491311
-        schedule: { minute: "0", hour: "2", dom: "28", month: "*", dow: "*" }
+        schedule: { minute: "0", hour: "8", dom: "28", month: "*", dow: "*" }
 
   tasks:
     - name: Refuse an apply without a second explicit approval
