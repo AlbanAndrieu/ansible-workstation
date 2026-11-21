@@ -85,6 +85,116 @@ public : le tunnel ne publie pas encore Apache. Dans le tableau de bord :
 Tant qu'elle n'existe pas, le tunnel répond 403 sur `/reports`. Les anciennes copies (`public/reports/` sur le partage NFS)
 restent limitées au LAN et peuvent être supprimées.
 
+## NFS minimal, Code Server et rapports CTEM (21/11/2026)
+
+### Pourquoi la workstation voit-elle `/mnt/cpool/code` ?
+
+`nabla-compose/apps/code/compose.yml` publie des chemins TrueNAS dans
+le **conteneur Code Server** : `/mnt/cpool/code:/code-server`,
+`/mnt/cpool/code/config:/config` et plusieurs dossiers frères.
+Ce montage Docker est distinct d'un partage **NFS workstation**.
+Dans `defaults/main.yml` et les exports déclarés par
+`playbooks/truenas-nfs-shares.yml`, `cpool/code` n'est pas un
+partage workstation légitime. Le code NFS crée maintenant des
+déclarations `state: absent` pour les exports exacts :
+
+- `/mnt/cpool/code`
+- `/mnt/cpool/ctem`
+- `/mnt/cpool/ctem/amass/reports`
+- `/mnt/cpool/var/nabla/ops-logs`
+
+Ces interdictions sont **CODED / NOT_APPLIED**. Le playbook NFS ne
+supprime rien en mode plan ; il laisse actuellement les exports
+**non déclarés** intacts. Contrôler également tout export parent
+`/mnt/cpool` ou `/mnt/cpool/var`, qui contournerait une suppression
+par chemin exact.
+
+Pour identifier le mécanisme réel sur la workstation, **sans lancer
+un `find` récursif sur les NFS automounts** :
+
+```bash
+findmnt -T /mnt/cpool/code -o TARGET,SOURCE,FSTYPE,OPTIONS || true
+readlink -f /mnt/cpool/code || true
+findmnt -rn -t nfs,nfs4 -o TARGET,SOURCE,OPTIONS
+ls -ld /mnt/cpool /mnt/cpool/code 2>/dev/null || true
+```
+
+Sur TrueNAS, l'inventaire des exports reste
+`sudo midclt call sharing.nfs.query`. Exécuter
+`playbooks/truenas-nfs-shares.yml` sans `truenas_nfs_apply=true`
+pour voir le plan avant de demander une suppression explicite.
+Code Server doit être audité séparément : ses montages RW
+`nginx,drawio,compose,traefik,prometheus,grafana,litellm` sont
+trop larges pour une configuration Zero Trust ; limiter chaque
+montage à l'usage réellement attendu, de préférence en lecture seule.
+
+### Distribution CTEM vers `/media/www`, puis Apache
+
+Le répertoire TrueNAS privé
+`/mnt/cpool/ctem/amass/reports` reste hors NFS/Apache. Seule sa
+synthèse **sans FQDN, sans IP ni entité Backstage** est projetée dans
+le partage existant :
+
+| Provenance | Destination / effet |
+| --- | --- |
+| TrueNAS `/mnt/cpool/www/reports/ctem` | Deux fichiers expurgés, copie dans le NFS `www` |
+| Workstation `/media/www/reports/ctem` | Vue du partage TrueNAS, **non directement servie** |
+| Workstation `/var/www/reports/ctem` | Miroir local des deux fichiers, revalidé puis HTML reconstruit |
+| Apache `/reports/ctem/` | `Alias /reports /var/www/reports` déjà existant, LAN ou tunnel Access |
+
+La copie locale évite de remonter `/media/www` lors de chaque requête
+Apache, conformément à la stabilisation du 16/11. Le playbook
+`security-scans.yml` installe désormais
+`/opt/script/publish-ctem-web-mirror.py` **sans le planifier**.
+Il refuse l'HTML venant de NFS et tout champ JSON inattendu
+(y compris sous-domaines ou données brutes) ; il reconstruit
+localement un HTML statique `noindex` et un JSON 0640 avec groupe
+`www-data`. Recette après publication TrueNAS :
+
+```bash
+# Sur workstation, utilisateur propriétaire de /var/www/reports (pas sudo)
+python3 /opt/script/publish-ctem-web-mirror.py --check
+
+CTEM_WORKSTATION_MIRROR_APPROVED=YES \
+  python3 /opt/script/publish-ctem-web-mirror.py --apply
+```
+
+Aucun timer, `rsync` récursif du NAS, ni changement de VirtualHost
+Apache n'est ajouté. **Ne pas exposer les rapports détaillés via un
+tunnel public**, même si un en-tête `Cf-Access-Jwt-Assertion`
+est présent : la configuration Apache actuelle teste son existence,
+pas sa signature cryptographique. Contrôler Cloudflare Access, les
+nouvelles règles de diffusion et les clients NFS autorisés séparément.
+
+### Autres candidats à un portail local de synthèses
+
+- **Acceptables après expurgation** : état Gatus / couverture Prometheus
+  agrégée, score Lynis et dérive de conformité, récapitulatif
+  `checkdmarc` SPF/DMARC, compte de findings DefectDojo par sévérité,
+  rapports de disponibilité TrueNAS (statuts et dates sans adresses),
+  FinOps Vercel agrégé.
+- **Ne pas publier tels quels** : JSON Amass des sous-domaines, graphe
+  PostgreSQL, rapports Nuclei/ZAP avec URLs et réponses, fichiers
+  complets Lynis/rkhunter/ClamAV/OpenSCAP contenant chemins ou noms
+  internes, dumps de bases, logs d'authentification ou logs
+  `nabla-ops-logs`. Pour ces derniers, utiliser le coffre privé et une
+  visualisation authentifiée, pas Apache statique.
+
+### Identification du journal `reconcile-f51102a8.log`
+
+Le SHA abrégé `f51102a8` correspond au commit
+`f51102a814fe5b69475c08b76bee7941f7e35814` de
+`nabla-compose` (8/11/2026), une fusion de `origin/master` dans
+`ccr-bc925643-xffav2` avec résolution de conflits de roadmap et
+catalogue. L'emplacement par défaut des journaux d'exploitation est
+`/mnt/cpool/var/nabla/ops-logs` depuis `scripts/cron.sh`.
+L'origine précise du fichier et son contenu **ne peuvent être
+authentifiés sans un `stat` et une lecture locale contrôlée**.
+
+Sur le NAS, si le fichier existe dans ce dossier :
+`sudo stat -c '%n %s bytes %a %U:%G %y' /mnt/cpool/var/nabla/ops-logs/reconcile-f51102a8.log`.
+Conserver privé, ne jamais le publier sur `/media/www` ou Apache.
+
 ## Résultats des scans
 
 | Outil | Résultat | Lecture |
