@@ -140,7 +140,7 @@ le partage existant :
 | TrueNAS `/mnt/cpool/www/reports/ctem` | Deux fichiers expurgés, copie dans le NFS `www` |
 | Workstation `/media/www/reports/ctem` | Vue du partage TrueNAS, **non directement servie** |
 | Workstation `/var/www/reports/ctem` | Miroir local des deux fichiers, revalidé puis HTML reconstruit |
-| Apache `/reports/ctem/` | `Alias /reports /var/www/reports` déjà existant, LAN ou tunnel Access |
+| Apache `/reports/ctem/` | `Alias /reports /var/www/reports` déjà existant, **LAN uniquement** tant qu'Access JWT n'est pas vérifié |
 
 La copie locale évite de remonter `/media/www` lors de chaque requête
 Apache, conformément à la stabilisation du 16/11. Le playbook
@@ -160,11 +160,12 @@ CTEM_WORKSTATION_MIRROR_APPROVED=YES \
 ```
 
 Aucun timer, `rsync` récursif du NAS, ni changement de VirtualHost
-Apache n'est ajouté. **Ne pas exposer les rapports détaillés via un
-tunnel public**, même si un en-tête `Cf-Access-Jwt-Assertion`
-est présent : la configuration Apache actuelle teste son existence,
-pas sa signature cryptographique. Contrôler Cloudflare Access, les
-nouvelles règles de diffusion et les clients NFS autorisés séparément.
+Apache n'est ajouté. **La configuration Apache de cette PR refuse les
+accès au rapport qui ne proviennent pas du LAN** : elle n'accorde plus
+l'accès sur la seule présence d'un en-tête
+`Cf-Access-Jwt-Assertion`. Il faudra une vraie vérification
+cryptographique du JWT ou une protection équivalente avant d'envisager
+un accès externe. Contrôler les clients NFS autorisés séparément.
 
 ### Autres candidats à un portail local de synthèses
 
