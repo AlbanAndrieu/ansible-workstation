@@ -18,7 +18,9 @@ def report():
         "status": "OBSERVED_NOT_CERTIFIED", "vantage": "truenas-internal",
         "domains_in_scope": 20, "candidate_count": 0,
         "catalog_categories": CATEGORIES.copy(),
-        "interpretation": "ASSET_CANDIDATES_NOT_CONFIRMED_PUBLIC_EXPOSURES_OR_VULNERABILITIES",
+        "interpretation": (
+            "ASSET_CANDIDATES_NOT_CONFIRMED_PUBLIC_EXPOSURES_OR_VULNERABILITIES"
+        ),
     }
 
 
@@ -63,7 +65,9 @@ class WorkstationMirrorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp) / "source.json"
             source.write_text(json.dumps(report()))
-            self.assertEqual(MOD["load_source"](source)["report"], "ctem-amass-aggregates")
+            self.assertEqual(
+                MOD["load_source"](source)["report"], "ctem-amass-aggregates"
+            )
             symlink = Path(temp) / "alias.json"
             symlink.symlink_to(source)
             with self.assertRaises(ValueError):
@@ -72,7 +76,9 @@ class WorkstationMirrorTest(unittest.TestCase):
     def test_installation_remains_opt_in_and_reports_are_local(self):
         script = SCRIPT.read_text()
         playbook = (ROOT / "playbooks/security-scans.yml").read_text()
-        conf = (ROOT / "files/etc/apache2/conf-available/nabla-lan-only.conf").read_text()
+        conf = (
+            ROOT / "files/etc/apache2/conf-available/nabla-lan-only.conf"
+        ).read_text()
         self.assertIn("CTEM_WORKSTATION_MIRROR_APPROVED", script)
         self.assertIn("/media/www/reports/ctem/amass-summary.json", script)
         self.assertIn("/var/www/reports/ctem", script)
