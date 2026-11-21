@@ -45,6 +45,14 @@
         networks: "{{ nfs_lan }}"
       - { path: /mnt/cpool/backup/lab, networks: "{{ nfs_lan }}" }
       - { path: /mnt/cpool/jenkins-slave, networks: "{{ nfs_lan }}" }
+      # Security-denied exports: applications use local TrueNAS bind mounts.
+      # Never expose application workspaces, CTEM evidence or operational logs
+      # to workstation NFS. Only explicit, redacted www subreports are shared.
+      # These entries remove matching shares ONLY when both apply gates are set.
+      - { path: /mnt/cpool/code, state: absent }
+      - { path: /mnt/cpool/ctem, state: absent }
+      - { path: /mnt/cpool/ctem/amass/reports, state: absent }
+      - { path: /mnt/cpool/var/nabla/ops-logs, state: absent }
       # Disabled.
       - path: /mnt/cpool/jenkins
         comment: jenkins
