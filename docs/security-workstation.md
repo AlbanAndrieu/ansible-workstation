@@ -6,6 +6,22 @@ Rapports : `/var/www/reports/security/` sur le disque local, servis par Apache e
 `/reports` : `http://172.17.0.57:8087/reports/security/` depuis le LAN, et par le
 tunnel Cloudflare derrière Cloudflare Access (voir « Accès aux rapports »).
 
+## Réévaluation du 21 novembre 2026 — preuves et priorités
+
+Les **derniers résultats des scanners sur la workstation accessibles dans cette documentation sont ceux du 16/11** ; aucun rapport brut du scan `security-scan@clamav` planifié samedi 21/11 n'a été fourni ou interrogé. Les trois workflows GitHub du 21/11 sur `9b672df` (CodeQL Python, Ansible Syntax, CI lint/contrats) ont conclu **success** ; `Molecule manual integration` est **skipped**. Ces statuts ne prouvent ni un OS sain ni une analyse complète de toutes les dépendances.
+
+| Ordre | Interprétation fondée sur les rapports du 16/11 | Condition de réception |
+| --- | --- | --- |
+| **P0 — élévation de privilèges** | Les crons root qui exécutaient des scripts modifiables ont été supprimés le 16/11 (lot 1), mais `security_sudoers_passwordless: [albandrieu]` donne encore `NOPASSWD: ALL` selon la configuration décrite ; les groupes `docker`, `lxd`, `libvirt` et `microk8s` offrent d'autres chemins équivalents à root | Audit du sudoers **effectif**, des appartenances et des services réellement exploités, accès console de secours, suppression graduelle des droits non requis et test négatif |
+| **P0 — rapports et WAN** | Apache autorise localement le tunnel avec un en-tête `Cf-Access-Jwt-Assertion` **sans validation cryptographique du JWT** ; application Cloudflare Access pas créée dans le rapport du 16/11. La confiance locale `CF-Connecting-IP` doit rester strictement liée à cloudflared | Application Access réelle avant publication, vérification signature/audience ou délégation prouvée au tunnel, 403 depuis WAN sans identité, aucun accès direct :8082/8087 |
+| **P1 — Lynis** | 73/100 et un avertissement `grpck`. Ce score est un indice de configuration, **pas** une probabilité de compromission | Corriger les groupes orphelins après inventaire UID/GID ; enregistrer la différence de score et les tests encore applicables |
+| **P1 — OpenSCAP CIS L1** | 260 PASS, 100 FAIL, 36 N/A sur contenu 24.04 adapté à 26.04 ; **pas de certification de conformité 26.04** | Revalider la compatibilité SSG, classer les échecs par contrôle, traiter GNOME lock, auditd, AppArmor, réseau ; justifier les règles inapplicables (Apache/Docker/NFS) |
+| **P1 — rkhunter** | 116 binaires `modified` correspondent aux fichiers de paquets selon `dpkg --verify` documenté ; **aucune preuve de rootkit** | Rafraîchir la baseline `--propupd` seulement après preuve des paquets installés signés, conserver un diff du rapport |
+| **P1 — ClamAV** | Deux détections `php.include.remote.526.UNOFFICIAL` sur cache NVD et détections `Heuristics.Zip.OverlappingFiles` ; les deux scans ont été interrompus (2 h et 8 h) | Conserver échantillons en quarantaine hors publication, provenance/signature des bases tierces, résultat `clamdscan --multiscan` avec résumé et durée ; `NOT_RUN` jusqu'à preuve du timer du 21/11 |
+| **P2 — traçabilité** | `auditd` tournait avec règles vides avant les lots appliqués ; AIDE pas encore en place | Charger une allowlist minimale de règles et tester événement → journal, mesure de rétention et surcharge I/O |
+
+**Risque de chaîne d'approvisionnement :** le cache Nexus [prévu pour APT/npm/PyPI/Docker](workstation-nexus-package-cache.md) ne fournit pas gratuitement la quarantaine Repository Firewall. Conserver CodeQL, scans SCA, SBOM, signature des métadonnées APT et contrôle des digests Docker. L'ancienne version de Nexus déclarée dans Compose (`3.92.3-alpine`) doit être revue séparément.
+
 ## Ce qui a été corrigé tout de suite
 
 | Changement | Pourquoi | Retour arrière |

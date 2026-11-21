@@ -1,6 +1,6 @@
 # Actions en attente de l'opérateur
 
-**Révision documentaire du 16 novembre 2026** (dernière observation documentée : 13/11). Décisions et actions qui exigent un sudo local, un contrôle physique ou une autorisation. Avant de reprendre une ancienne commande, **revalider son préflight** : aucun test live n'a été réalisé pendant cette révision.
+**Révision documentaire du 21 novembre 2026** (observations de poste : 16–18/11 ; CI GitHub : 21/11). Décisions et actions qui exigent un sudo local, un contrôle physique ou une autorisation. Avant de reprendre une ancienne commande, **revalider son préflight** : aucun test live n'a été réalisé pendant cette révision.
 
 
 ## Synthèse des décisions ouvertes
@@ -13,7 +13,7 @@
 | **P1 — W06** | Suppression de l'ancien home | **Pas avant le 20/11** et seulement après restauration vérifiée ; vérifier montage/LUKS/backup |
 | **P1 — W05/W07/W08** | MOK, DNS Docker, APT, Apache, cron | Fenêtres d'apply séparées et approbations explicites ; rollback documenté |
 
-La [roadmap consolidée](roadmap-workstation.md#portefeuille-priorisé--16-novembre-2026) est la vue d'arbitrage. Les chiffres ci-dessous reflètent leurs **dates d'observation**, pas une nouvelle mesure.
+La [roadmap consolidée](roadmap-workstation.md#portefeuille-priorisé--21-novembre-2026) est la vue d'arbitrage. Les chiffres ci-dessous reflètent leurs **dates d'observation**, pas une nouvelle mesure.
 
 ## 1. Commandes sudo prêtes
 
@@ -126,6 +126,12 @@ export ZABBIX_API_TOKEN="$(…)"   # depuis Vaultwarden, sans l'afficher
 mise run zabbix-host-check
 ```
 
+### Nouveau lot — accès Nexus et sécurité (21/11)
+
+- **Nexus package cache** : [plan et critères de réception](workstation-nexus-package-cache.md). Vérifier le TLS privé `nexus.int.albandrieu.com`, les dépôts réellement créés, l'absence de proxy de sécurité Ubuntu et les limites Community avant tout changement APT/npm/uv/Docker. Pas d'URL publique Cloudflare Access dans les fichiers de configuration CLI.
+- **Privilèges P0** : relever `sudo -l` sans jeton dans les logs, inspecter `security_sudoers_passwordless` et les groupes `docker`/`lxd`/`libvirt`/`microk8s`. Préparer un accès de secours et un plan de retrait ; aucun changement PAM ou YubiKey automatique.
+- **Scans P1** : obtenir la sortie du premier `security-scan@clamav` de samedi 21/11 et les erreurs `grpck` ; vérifier Lynis, OpenSCAP et rkhunter sur les scans achevés. Les résultats du 16/11 ne prouvent pas un scan complet le 21/11.
+
 ## 2. Décisions
 
 1. **Copie Restic hors site** : quel fournisseur et quel budget ? La règle « garder une copie
@@ -134,15 +140,12 @@ mise run zabbix-host-check
 2. **Racine Apache et `UMASK 027`** : les nouveaux fichiers créés sous `/var/www` ne seront plus
    lisibles par `www-data`. Options : setgid + groupe `www-data` sur la racine, ou `umask 022`
    pour le seul déploiement du site.
-3. **DNS du démon Docker** : les conteneurs résolvent par `9.9.9.9` puis Pi-hole
-   (`/etc/docker/daemon.json`), avec 27 échecs vers `9.9.9.9` en 24 h. Passer à `172.17.0.1`,
-   comme l'hôte, impose un redémarrage de Docker et la recréation des conteneurs : quand ?
+3. **DNS du démon Docker après le retrait de pfSense** : l'ancien couple `9.9.9.9`/Pi-hole et ses 27 échecs sont des mesures antérieures. La station utilise Pi-hole `172.17.0.24` pour `~int.albandrieu.com`, Quad9 pour le public et le R7000 `172.17.0.1` comme routeur. **Ne pas traiter `172.17.0.1` comme DNS pfSense.** Auditer les résolutions dans les conteneurs et valider un plan de redémarrage avant toute modification de `daemon.json`.
 4. **Cadence apt** : garder la cadence hebdomadaire réglée sur la station
    (`Update-Package-Lists "7"`) ou passer au quotidien du tag `apt-periodic` ?
 5. **Images et cache Docker** : le nettoyage **D6 a été effectué le 13/11** (environ 31 Go libérés). L'ancienne estimation du 11/11 n'est plus un quota récupérable. Relancer `docker system df` avant une nouvelle proposition, conserver les images locales non re-téléchargeables et **ne jamais pruner les volumes par défaut**.
 6. **`cleanup-apply-system`** (sudo) : caches apt, snaps désactivés, flatpaks inutilisés. À lancer ?
-7. **Cron root `rm -f /var/log/audit/audit.log.*`** : il efface les rotations d'auditd. Le retirer
-   et laisser `max_log_file_action = ROTATE` / `num_logs` d'auditd gérer la taille ?
+7. **Auditd** : la suppression du cron destructeur et la rotation `max_log_file_action=ROTATE` sont documentées **APPLIQUÉES le 16/11** dans `security-workstation.md`. La prochaine action est une vérification `auditctl -l`/rétention et un test de production de traces, pas la répétition de l'ancien nettoyage.
 8. **msmtp** : sans configuration, chaque sortie de cron finit en `status 0x004e from MTA` et
    se perd (`wacli` et `vdirsyncer` chaque heure). Configurer `/etc/msmtprc` (relais et compte à
    choisir), ou `MAILTO=""` et rediriger vers `logger` ? **16/11** : anacron passe par `systemd-cat`
