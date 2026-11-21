@@ -218,10 +218,9 @@ class SecurityScansContracts(unittest.TestCase):
             for line in block.splitlines()
             if line.strip().startswith("Require")
         ]
-        self.assertEqual(requires[0], "Require ip @@INTERNAL@@")
-        self.assertIn("127.0.0.1/32", requires[1])
-        self.assertIn("Cf-Access-Jwt-Assertion", requires[1])
-        self.assertEqual(len(requires), 2)
+        self.assertEqual(requires, ["Require ip @@INTERNAL@@"])
+        # Header presence is not cryptographic Access authentication.
+        self.assertNotIn("Cf-Access-Jwt-Assertion", block)
 
 
 if __name__ == "__main__":
