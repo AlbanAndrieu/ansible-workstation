@@ -15,6 +15,15 @@
 
 La [roadmap consolidée](roadmap-workstation.md#portefeuille-priorisé--21-novembre-2026) est la vue d'arbitrage. Les chiffres ci-dessous reflètent leurs **dates d'observation**, pas une nouvelle mesure.
 
+### Réception des rapports de sécurité (21/11)
+
+Le code de synthèse HTML/JSON est préparé mais non installé sur la machine.
+Prévoir un contrôle local des quatre timers, du résultat des scans et de la
+publication LAN après un `--check` Ansible puis un apply explicitement approuvé.
+L'accès par un en-tête Cloudflare non authentifié a été supprimé du modèle Apache ;
+vérifier que l'instance active a bien été alignée avant de conclure à une
+protection effective. Les données complètes restent privées ; aucun import
+DefectDojo ni export vers le site public n'est activé.
 ## 1. Commandes sudo prêtes
 
 ### Après la bascule de `/home` sur le NVMe (faite le 13/11)

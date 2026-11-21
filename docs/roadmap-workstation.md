@@ -41,6 +41,16 @@ Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas conf
 
 **Séparation des responsabilités** : `ansible-workstation` gère les clients APT/npm/PyPI/Docker et leurs audits ; `nabla-compose` gère Nexus, son stockage, son TLS, ses repositories OpenTofu et les scans réseau TrueNAS. Aucune modification du système dans cette PR documentaire.
 
+### Lot W13/W14 — livraison de code du 21/11, réception encore ouverte
+
+- **W13 / rapports** : un générateur HTML et JSON expurgé existe désormais dans
+  `files/render-security-reports.py`, déployable par `playbooks/security-scans.yml`.
+  Une erreur scanner n'est pas équivalente à une preuve de succès. Le contrôle
+  Apache des rapports n'accepte plus un en-tête Access non vérifié comme authentification.
+  Le site public ne doit recevoir aucun rapport brut (voir `docs/security-workstation.md`).
+- **W14 / Nexus** : route HTTPS privée et restriction réseau préparées dans
+  `nabla-compose` PR #432, sans déploiement TrueNAS. DNS/TLS et refus WAN
+  doivent être mesurés avant toute configuration APT, npm ou PyPI.
 ## P0 — sécurité et exposition (livraisons historiques)
 
 | Livrable | Gate de validation | Statut |

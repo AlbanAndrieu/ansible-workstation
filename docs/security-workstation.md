@@ -22,6 +22,28 @@ Les **derniers résultats des scanners sur la workstation accessibles dans cette
 
 **Risque de chaîne d'approvisionnement :** le cache Nexus [prévu pour APT/npm/PyPI/Docker](workstation-nexus-package-cache.md) ne fournit pas gratuitement la quarantaine Repository Firewall. Conserver CodeQL, scans SCA, SBOM, signature des métadonnées APT et contrôle des digests Docker. L'ancienne version de Nexus déclarée dans Compose (`3.92.3-alpine`) doit être revue séparément.
 
+## 21 novembre 2026 — tableaux de bord des scans (CODED, non déployé)
+
+Le pipeline versionné prépare un résumé HTML statique et un fichier JSON
+`workstation-security-summary/v1` contenant les dates, statuts et compteurs
+des quatre scanners. Les rapports complets restent disponibles uniquement
+sur le LAN ; le résumé ne contient aucun finding brut ni nom d'hôte.
+
+Les états `COMPLETE`, `INCOMPLETE`, `PARTIAL` et `NOT_RUN` sont distincts.
+Une erreur ClamAV ne doit jamais être interprétée comme un scan terminé.
+Les contrats offline exercent la génération du rapport à partir de données
+de test, ainsi que l'absence de texte sensible dans la synthèse.
+
+L'ancien contrôle Apache fondé sur un simple en-tête de demande Access
+est remplacé, dans la configuration versionnée, par un accès LAN uniquement.
+Avant toute réouverture distante, réceptionner une vérification réelle du
+jeton signé et des tests de refus extérieur.
+
+Une intégration DefectDojo doit passer par l'importeur privé existant de
+`nabla-compose` et uniquement pour des findings qualifiés et revus.
+Sur `nabla-site-alban`, ne publier qu'une éventuelle synthèse agrégée
+explicitement autorisée ; pas de connexion à l'API DefectDojo ni de rapports
+bruts dans le bundle public.
 ## Ce qui a été corrigé tout de suite
 
 | Changement | Pourquoi | Retour arrière |
