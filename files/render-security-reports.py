@@ -128,6 +128,20 @@ def to_html(summary: dict, dest: Path) -> str:
                 f"<td>{' · '.join(links) if links else '—'}</td></tr>"
             )
     body = "\n".join(rows) or '<tr><td colspan="5">Aucun scan disponible — NOT_RUN</td></tr>'
+    recent = []
+    for tool in TOOLS:
+        latest = next(
+            ((day["date"], day["scans"][tool]["state"]) for day in summary["days"]
+             if day["scans"][tool]["state"] != "NOT_RUN"),
+            (None, "NOT_RUN"),
+        )
+        stamp = latest[0] or "aucune date"
+        recent.append(
+            f'<li><strong>{html.escape(tool)}</strong>'
+            f'<span class="status">{html.escape(latest[1])}</span>'
+            f'<small>{html.escape(stamp)}</small></li>'
+        )
+    cards = "".join(recent)
     return (
         '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -135,11 +149,18 @@ def to_html(summary: dict, dest: Path) -> str:
         '<style>body{font:1rem system-ui;margin:2rem auto;max-width:76rem;padding:0 1rem;'
         'color:#24303a}table{width:100%;border-collapse:collapse}td,th{padding:.75rem;'
         'border-bottom:1px solid #ccd4dc;text-align:left}thead{background:#edf2f5}'
-        'a{color:#135b9b}small{color:#586574}table{display:block;overflow-x:auto}</style>'
+        'a{color:#135b9b}small{color:#586574}table{display:block;overflow-x:auto}'
+        '.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));'
+        'gap:.75rem;list-style:none;padding:0}.status-grid li{display:flex;'
+        'flex-direction:column;gap:.3rem;padding:1rem;border:1px solid #ccd4dc;'
+        'border-radius:.5rem}.status{font-weight:700;letter-spacing:.04em}</style>'
         '</head><body><main><h1>Posture de sécurité · Workstation</h1>'
         '<p>Rapport local. Un compteur nul n’est pas une preuve d’absence de vulnérabilité.'
         ' Les scans incomplets sont marqués INCOMPLETE ou PARTIAL.</p>'
         f'<small>Actualisé : {html.escape(summary["generated_at"])}</small>'
+        '<section aria-label="Dernier résultat connu par scanner">'
+        '<h2>Dernier résultat disponible</h2><ul class="status-grid">'
+        + cards + '</ul></section><h2>Historique local</h2>'
         '<table><thead><tr><th>Date</th><th>Outil</th><th>État</th>'
         '<th>Mesures</th><th>Rapport privé</th></tr></thead><tbody>'
         + body + '</tbody></table></main></body></html>\n'

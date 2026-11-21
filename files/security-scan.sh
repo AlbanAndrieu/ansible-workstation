@@ -44,8 +44,12 @@ rkhunter)
   if [ "${rkhunter_rc}" -gt 1 ]; then scan_state=INCOMPLETE; fi
   rootkits="$(sed -n 's/.*Possible rootkits: //p' "${day}/rkhunter.log" | tail -1)"
   warnings="$(grep -c '^Warning:' "${day}/rkhunter-warnings.txt" || true)"
-  metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}" \
-    "security_scan_last_success_timestamp_seconds{tool=\"rkhunter\"} $(date +%s)"
+  if [ "${scan_state}" = COMPLETE ]; then
+    metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}" \
+      "security_scan_last_success_timestamp_seconds{tool=\"rkhunter\"} $(date +%s)"
+  else
+    metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}"
+  fi
   ;;
 clamav)
   # clamd only for the scan: one multi-threaded pass instead of a single-core clamscan that
