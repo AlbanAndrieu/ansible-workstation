@@ -22,6 +22,64 @@ Les **derniers résultats des scanners sur la workstation accessibles dans cette
 
 **Risque de chaîne d'approvisionnement :** le cache Nexus [prévu pour APT/npm/PyPI/Docker](workstation-nexus-package-cache.md) ne fournit pas gratuitement la quarantaine Repository Firewall. Conserver CodeQL, scans SCA, SBOM, signature des métadonnées APT et contrôle des digests Docker. L'ancienne version de Nexus déclarée dans Compose (`3.92.3-alpine`) doit être revue séparément.
 
+## Complément 21 novembre — preuves NFS/Apache (fournies par l'opérateur)
+
+Le montage `/media/www` est un **automount systemd NFSv4.2** depuis
+`nabla:/mnt/cpool/www`, avec `nosuid,nodev,noexec`.
+Les symlinks historiques `/var/www/nabla-site-apache` et
+`/var/www/nabla-site-bababou` pointent vers ce partage :
+**ces sites sont servis en NFS, sans miroir local**.
+
+`sudo apache2ctl -S` n'affiche que `*:80` et `*:8082`, exécutés
+comme `www-data`, et aucun VirtualHost 8087 ou 443 dans les éléments
+fournis. Il s'agit de l'état réellement observé, à distinguer de
+l'`Alias /reports` sur port 8087 **préparé mais non réceptionné**
+dans cette PR. `Main DocumentRoot: /var/www/html` ne décrit pas à lui
+seul le `DocumentRoot` de chaque VirtualHost : les vhosts du dépôt
+peuvent servir `/var/www/nabla-site-apache/public`.
+
+`getfacl -p /media/www/nabla-site-apache/public` prouve
+`owner=albandrieu`, `group=www-data`, ACL `user::rwx`,
+`group::rwx`, `other::r-x` : le groupe Apache a le **droit
+d'écriture** dans la racine NFS du site. C'est un risque de
+modification du contenu servi (PHP est chargé), **à revoir avant
+toute bascule d'ACL** pour ne pas casser le flux de déploiement.
+Modules vus : `php_module`, `proxy_module`, `proxy_http_module`,
+`remoteip_module`; aucune preuve de `security2_module` chargé
+dans ce filtre. `AH00558` est un avertissement `ServerName` global
+sans effet sur le succès de `apache2ctl -S`.
+
+Architecture CTEM prévue, **non attestée déployée** :
+
+```text
+TrueNAS /mnt/cpool/ctem/amass/reports  [privé, jamais NFS]
+   └─ export expurgé /mnt/cpool/www/reports/ctem
+         └─ NFS /media/www/reports/ctem (source à revalider)
+               └─ publish-ctem-web-mirror.py (non-root, opt-in)
+                     └─ /var/www/reports/ctem (local)
+                           └─ Apache Alias /reports (LAN only)
+```
+
+Sur la workstation, contrôles **en lecture seule** :
+
+```bash
+sudo apache2ctl -S
+sudo grep -R -n -E 'Alias /reports|Listen 8087|ServerName' \
+  /etc/apache2/sites-enabled /etc/apache2/conf-enabled /etc/apache2/ports.conf
+findmnt -T /media/www/reports -o TARGET,SOURCE,FSTYPE,OPTIONS
+namei -l /var/www/reports /var/www/nabla-site-apache/public
+getfacl -p /media/www/nabla-site-apache/public /var/www/reports
+python3 /opt/script/publish-ctem-web-mirror.py --check
+```
+
+Le préflight peut retourner `NOT_RUN` / fichier absent si le pilote
+n'est pas installé : ne pas assimiler cela à une panne du serveur ou
+à une validation du partage. Le producteur expurgé et les règles de
+minimisation sont documentés dans
+[nabla-compose #436](https://github.com/AlbanAndrieu/nabla-compose/pull/436)
+et dans son
+[runbook commun](https://github.com/AlbanAndrieu/nabla-compose/blob/feat/ctem-vantage-isolated-20261121/docs/runbooks/workstation-truenas-report-sharing-and-honeypot.md).
+
 ## 21 novembre 2026 — tableaux de bord des scans (CODED, non déployé)
 
 Le pipeline versionné prépare un résumé HTML statique et un fichier JSON
