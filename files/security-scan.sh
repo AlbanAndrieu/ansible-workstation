@@ -7,6 +7,7 @@ set -euo pipefail
 umask 027
 
 tool="${1:?usage: security-scan.sh lynis|rkhunter|clamav|openscap}"
+scan_state=COMPLETE
 # Overridable only so the contract tests can run without root.
 base="${SECURITY_REPORTS_DIR:-/var/lib/security-reports}"
 metrics="${SECURITY_METRICS_DIR:-/var/lib/prometheus/node-exporter}"
@@ -37,12 +38,18 @@ lynis)
 rkhunter)
   # Exit 1 only means warnings: the count goes to the metric, not to a failed unit.
   rkhunter --update --nocolors >/dev/null 2>&1 || true
+  rkhunter_rc=0
   rkhunter --check --sk --nocolors --rwo --logfile "${day}/rkhunter.log" \
-    >"${day}/rkhunter-warnings.txt" 2>&1 || true
+    >"${day}/rkhunter-warnings.txt" 2>&1 || rkhunter_rc=$?
+  if [ "${rkhunter_rc}" -gt 1 ]; then scan_state=INCOMPLETE; fi
   rootkits="$(sed -n 's/.*Possible rootkits: //p' "${day}/rkhunter.log" | tail -1)"
   warnings="$(grep -c '^Warning:' "${day}/rkhunter-warnings.txt" || true)"
-  metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}" \
-    "security_scan_last_success_timestamp_seconds{tool=\"rkhunter\"} $(date +%s)"
+  if [ "${scan_state}" = COMPLETE ]; then
+    metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}" \
+      "security_scan_last_success_timestamp_seconds{tool=\"rkhunter\"} $(date +%s)"
+  else
+    metric "security_rkhunter_possible_rootkits ${rootkits:-0}" "security_rkhunter_warnings ${warnings}"
+  fi
   ;;
 clamav)
   # clamd only for the scan: one multi-threaded pass instead of a single-core clamscan that
@@ -63,8 +70,13 @@ clamav)
   # 1 = infected files found, 2 = errors (unreadable files): both still produce a report.
   [ "${rc}" -le 2 ] || exit "${rc}"
   infected="$(grep -c ' FOUND$' "${day}/clamav.txt" || true)"
-  metric "security_clamav_infected_files ${infected}" \
-    "security_scan_last_success_timestamp_seconds{tool=\"clamav\"} $(date +%s)"
+  if [ "${rc}" -eq 2 ]; then
+    scan_state=INCOMPLETE
+    metric "security_clamav_infected_files ${infected}"
+  else
+    metric "security_clamav_infected_files ${infected}" \
+      "security_scan_last_success_timestamp_seconds{tool=\"clamav\"} $(date +%s)"
+  fi
   ;;
 openscap)
   # No SSG content for 26.04 yet: the 24.04 content with its platform check retargeted.
@@ -86,5 +98,8 @@ openscap)
   ;;
 esac
 
+printf '{"tool":"%s","state":"%s"}\n' "${tool}" "${scan_state}" >"${day}/.scan-${tool}.json.tmp"
+chmod 0640 "${day}/.scan-${tool}.json.tmp"
+mv "${day}/.scan-${tool}.json.tmp" "${day}/.scan-${tool}.json"
 chgrp -R "${group}" "${day}"
 chmod -R g+rX "${day}"

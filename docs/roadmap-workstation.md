@@ -2,12 +2,12 @@
 
 **Périmètre :** OS, audit et réconciliation Ubuntu dans `ansible-workstation` (contrat [Option A](workstation-ownership-option-a.md)). Le shell relève de [dotfiles](https://github.com/AlbanAndrieu/dotfiles/blob/main/docs/roadmap-workstation.md), le matériel de [nabla-yubikey](https://github.com/AlbanAndrieu/nabla-yubikey/blob/master/docs/roadmap.md), la gateway de [nabla-openclaw](https://github.com/AlbanAndrieu/nabla-openclaw) et les intégrations NAS/réseau de [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/blob/master/docs/roadmap-portfolio.md).
 
-**Synthèse consolidée le 16 novembre 2026**, à partir des preuves runtime documentées du 10 au 13 novembre ; aucun nouvel audit de la workstation n'a été effectué.
+**Roadmap revue le 21 novembre 2026** : absence de pfSense depuis le 18/11, Nexus TrueNAS étudié comme cache, analyse des scans du 16/11 et des contrôles GitHub du 21/11. Aucune nouvelle mesure runtime de l'hôte n'a été effectuée.
 Statuts : **ACCEPTED** = preuve runtime opérateur ; **APPLIQUÉ** = exécuté sur la station ;
 **CODE ADDED** = code et contrats offline, runtime non vérifié ; **À faire**.
 
 
-## Portefeuille priorisé — 16 novembre 2026
+## Portefeuille priorisé — 21 novembre 2026
 
 Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas confondre code commité, audit local, apply et réception runtime. Le contrôle de GitHub n'atteste pas une nouvelle mesure réseau, GNOME, disque ou sauvegarde.
 
@@ -15,21 +15,42 @@ Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas conf
 | --- | --- | --- | --- |
 | W01 | **P0** | Attribution de la fenêtre GNOME « Capture Input » | Application **inconnue**. Ajouter un audit read-only du portail InputCapture (identité application, PID/émetteur D-Bus, capacités, persistance des consentements), **sans capturer les frappes, mouvements ni presse-papiers**. Tester le refus ; propriétaire OS ici et autostart dans dotfiles |
 | W02 | **P0** | PRA Restic et copie indépendante | Timer/check documentés ; service de restauration isolée **codé mais non exécuté** ; hors-site absent. Tester restauration après migration du 13/11, décider des données utiles de home et prouver une copie/clé de récupération indépendante de la workstation et de TrueNAS |
-| W03 | **P0** | Conservation auditd et sécurité de session | Cron root supprimant les rotations audit.log signalé ; GDM autologin mentionné. Vérifier la présence effective, la politique de rotation et de verrouillage, corriger via plan approuvé ; **aucune mutation PAM automatique** |
-| W04 | **P0** | Preuve négative du filtrage Docker/IPv6/WAN | UFW actif ; 3009 fermé depuis TrueNAS et 4000 autorisé à TrueNAS. DROP du 4000 depuis une **deuxième machine du LAN**, IPv6 et accès WAN restent **NOT_VERIFIED** ; conserver le chemin de monitoring autorisé |
+| W03 | **P0** | Conservation auditd et sécurité GNOME | Les crons destructeurs et scripts root modifiables ont été retirés le 16/11 (source : [audit sécurité](security-workstation.md)) ; vérifier le statut effectif, les règles auditd chargées, l'autologin et le verrouillage GNOME ; **aucune mutation PAM automatique** |
+| W04 | **P0** | Filtrage sans pfSense, Docker, IPv6 et WAN | Depuis le 18/11 : Freebox routeur, R7000 passerelle `172.17.0.1` et Pi-hole sur TrueNAS `172.17.0.24` ; vérifier les règles NAT/UPnP des deux routeurs, UFW/DOCKER-USER, les refus depuis un second hôte LAN et une source WAN autorisée. Une ancienne mesure depuis TrueNAS ne prouve pas la nouvelle topologie |
 | W05 | **P1** | Secure Boot, MOK NVIDIA, TPM/LUKS | TPM 2.0 présent ; Secure Boot désactivé, MOK NVIDIA non enrôlée. Enrôlement puis redémarrage contrôlé et GPU fonctionnel ; étudier récupération LUKS avant tout binding TPM |
 | W06 | **P1** | Fin de migration du stockage | Home chiffré sur NVMe appliqué le 13/11, point de montage sécurisé. **Ne supprimer /home.sda-old qu'à partir du 20/11** et seulement après preuve d'une restauration Restic récente |
 | W07 | **P1** | DNS cohérent pour Docker | pfSense retiré le 18/11 : l'hôte route `~int.albandrieu.com` vers Pi-hole (`172.17.0.24`) et le reste vers Quad9 (voir la section du 18/11). Conteneurs encore vers 9.9.9.9/Pi-hole avec échecs documentés : aligner sur ce schéma et mesurer le split DNS au prochain redémarrage autorisé |
-| W08 | **P1** | Mise à jour OS, droits Apache, alertes cron | Drop-in unattended-upgrades non appliqué ; arbitrer cadence quotidienne vs hebdomadaire ; corriger les effets de UMASK 027 par service et les erreurs msmtp, sans écraser les conffiles |
+| W08 | **P1** | APT/unattended-upgrades, droits Apache, notifications cron | Arbitrer la cadence et maintenir les poches `-security`/ESM signées même pendant un pilote Nexus ; corriger `UMASK 027`, les erreurs de notification et revalider les services après redémarrage. Aucune substitution globale de sources APT sans test et rollback |
 | W09 | **P1** | Audit de dérive unique, rapide et traçable | L'inventaire JSON v1 et la policy OS existent. Proposer un agrégateur **read-only** config/DNS, réseau, GNOME, boot, backup, stockage avec provenance, fraîcheur et statuts PASS/WARN/FAIL/NOT_RUN ; pas de double collecteur |
 | W10 | **P2** | Bootstrap utilisateur et unités systemd --user | Dotfiles PR #5 fusionnée le 11/11 ; OpenClaw source désactivé depuis le 3/11. Tester sur HOME isolé, inventorier autostarts, ne pas réactiver la gateway source par réparation automatique |
 | W11 | **P2** | Performance, nettoyage et capacité | Migration NVMe et alertes SMART appliquées, D6 purge Docker déjà réalisée le 13/11. Mesurer caches, CPU, I/O, prompt avant/après ; **aucun prune de volumes ni effacement LUKS** automatique |
 | W12 | **P2** | Documentation et ownership inter-dépôts | Corriger les références historiques aux YubiKey/Compose, transférer uniquement les diagnostics dont la parité est prouvée ; scripts d'agent minimaux, une seule PR active par chemin partagé |
+| W13 | **P0** | Corriger les risques réels des [scans du 16/11](security-workstation.md) | `NOPASSWD: ALL` et groupes root-equivalents non réceptionnés ; conserver un accès de secours et traiter Apache/Access, auditd et `grpck` avant des ajustements de score CIS. ClamAV incomplet ≠ sain, rkhunter 116 fichiers ≠ infection confirmée |
+| W14 | **P1** | [Nexus comme cache APT, npm, PyPI, Docker et IaC](workstation-nexus-package-cache.md) | OpenTofu Compose déclare déjà les dépôts ; Nexus 3.92.3 dans Compose, version stable 3.98.3 publiée le 19/11. **NO-GO** pour basculer la station : HTTPS privé désactivé, proxy `-security` non déclaré, runtime/quotas/rollback non prouvés. Déployer par pilotes un par un ; scans de dépendances conservés |
 
-**Ordre de travail recommandé :** W01/W03 (permissions et logs), W02 (restauration), W04 (mesures négatives), puis W05–W08 (changements OS supervisés) et W09–W12 (simplification). La suppression prévue de l'ancien home dépend de **W02**, pas du calendrier seul.
+**Ordre recommandé :** W13/W03 (privilèges, logs et session), W01 (InputCapture), W02 (PRA), W04/W07 (réseau après pfSense), puis W14 (pilotes Nexus) et W05/W08/W09–W12. Le stockage W06 dépend toujours de la preuve de restauration W02, **pas seulement de la date du 20/11**.
 
 **Contrats de sécurité :** audit sans privilège par défaut ; plan expurgé, approbation explicite et rollback pour tout apply ; aucune mutation YubiKey, PAM ou secrets ; PR Draft, publications groupées, tests locaux, pas de CI payante ni d'automerge. Toute validation hôte inaccessible depuis l'agent reste **NOT_RUN**. Voir les [actions opérateur](workstation-pending-actions.md).
 
+## 21 novembre 2026 — arbitrages réseau, cache Nexus et sécurité
+
+- **Topologie courante** : pfSense **retiré** depuis le 18/11 ; R7000 en routeur de `172.17.0.0/24` et Freebox en routeur amont. `172.17.0.1` reste la passerelle R7000 **et non un service pfSense**. Le split DNS du poste route `~int.albandrieu.com` vers Pi-hole `172.17.0.24`, le public vers Quad9 ; [preuves du 18/11](#18-novembre-2026--retrait-de-pfsense). Ne pas remplacer arbitrairement les DNS Docker par `172.17.0.1` et réviser les descriptions `mise` encore libellées pfSense avant de réutiliser leurs chemins `--apply`.
+- **Cache Nexus (W14)** : priorité au runbook [workstation-nexus-package-cache.md](workstation-nexus-package-cache.md). Dans `nabla-compose/terraform/nexus`, `apt-ubuntu-26-04`, `npm-all`, `pypi-all`, `docker-all`, `terraform-proxy` et Hugging Face sont **déclarés, pas attestés déployés**. L'image Compose pointe `3.92.3-alpine` ; Sonatype documente `3.98.3` au 19/11. La route privée `nexus.int.albandrieu.com` est désactivée par défaut. Préparer Nexus/TLS/snapshots/quotas dans Compose avant d'ajouter des sources de paquets ici. L'APT `-security` ne possède pas encore de proxy dédié : **maintenir l'amont signé**.
+- **Résultats sécurité (W13)** : [audit documenté du 16/11](security-workstation.md) : Lynis **73/100** avec `grpck`, OpenSCAP **260 PASS / 100 FAIL / 36 N/A** (profil Ubuntu 24.04 adapté, pas validation CIS 26.04), rkhunter **116 binaires signalés** mais contrôlés contre `dpkg`, ClamAV **2 détections non confirmées** sur un scan interrompu. Les scripts root modifiables ont été retirés le 16/11 ; la délégation `NOPASSWD: ALL` et les groupes équivalents à root restent prioritaires. Ne pas supprimer les rapports de détection avant revue.
+- **CI GitHub** : sur `master` `9b672df` (21/11), `CI`, `Ansible Syntax` et `CodeQL Python` sont **success** ; `Molecule manual integration` est **skipped**. Il n'y a aucune nouvelle preuve d'exécution des timers `security-scan@` ni des tests d'exposition WAN. La CI ne remplace pas la réception runtime.
+
+**Séparation des responsabilités** : `ansible-workstation` gère les clients APT/npm/PyPI/Docker et leurs audits ; `nabla-compose` gère Nexus, son stockage, son TLS, ses repositories OpenTofu et les scans réseau TrueNAS. Aucune modification du système dans cette PR documentaire.
+
+### Lot W13/W14 — livraison de code du 21/11, réception encore ouverte
+
+- **W13 / rapports** : un générateur HTML et JSON expurgé existe désormais dans
+  `files/render-security-reports.py`, déployable par `playbooks/security-scans.yml`.
+  Une erreur scanner n'est pas équivalente à une preuve de succès. Le contrôle
+  Apache des rapports n'accepte plus un en-tête Access non vérifié comme authentification.
+  Le site public ne doit recevoir aucun rapport brut (voir `docs/security-workstation.md`).
+- **W14 / Nexus** : route HTTPS privée et restriction réseau préparées dans
+  `nabla-compose` PR #432, sans déploiement TrueNAS. DNS/TLS et refus WAN
+  doivent être mesurés avant toute configuration APT, npm ou PyPI.
 ## P0 — sécurité et exposition (livraisons historiques)
 
 | Livrable | Gate de validation | Statut |

@@ -1,5 +1,6 @@
 """Offline guardrails for the security scan timers and the root job cleanup."""
 
+import json
 import os
 from pathlib import Path
 import re
@@ -165,6 +166,52 @@ class SecurityScansContracts(unittest.TestCase):
         self.assertLess(index.index("2026-11-16"), index.index("2026-11-15"))
         self.assertIn('href="2026-11-16/lynis.txt"', index)
 
+    def test_sanitized_dashboard_never_publishes_scanner_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source"
+            target = root / "target"
+            day = source / "2026-11-16"
+            day.mkdir(parents=True)
+            target.mkdir()
+            (day / "lynis-report.dat").write_text(
+                "hardening_index=73\nwarning[]=PRIVATE-URL internal.local\n"
+            )
+            (day / ".scan-lynis.json").write_text(
+                '{"tool":"lynis","state":"COMPLETE"}\n'
+            )
+            (day / "clamav.txt").write_text(
+                "Sensitive /home/secret.key: FOUND\nInfected files: 2\n"
+            )
+            (day / ".scan-clamav.json").write_text(
+                '{"tool":"clamav","state":"INCOMPLETE"}\n'
+            )
+            renderer = ROOT / "files/render-security-reports.py"
+            subprocess.run(
+                [
+                    "python3",
+                    str(renderer),
+                    "--source",
+                    str(source),
+                    "--destination",
+                    str(target),
+                ],
+                check=True,
+                capture_output=True,
+            )
+            report = json.loads((target / "summary.json").read_text())
+            page = (target / "index.html").read_text()
+            self.assertEqual(report["schema"], "workstation-security-summary/v1")
+            lynis = report["days"][0]["scans"]["lynis"]
+            clamav = report["days"][0]["scans"]["clamav"]
+            self.assertEqual(lynis["metrics"]["hardening_index"], 73)
+            self.assertEqual(clamav["state"], "INCOMPLETE")
+            self.assertEqual(clamav["metrics"]["infected_files_reported"], 2)
+            self.assertIn("Posture de sécurité", page)
+            self.assertIn("INCOMPLETE", page)
+            self.assertNotIn("internal.local", page + json.dumps(report))
+            self.assertNotIn("/home/secret.key", page + json.dumps(report))
+
     def test_reports_are_local_and_open_only_to_lan_or_cloudflare_access(self):
         conf = (
             ROOT / "files/etc/apache2/conf-available/nabla-lan-only.conf"
@@ -180,10 +227,9 @@ class SecurityScansContracts(unittest.TestCase):
             for line in block.splitlines()
             if line.strip().startswith("Require")
         ]
-        self.assertEqual(requires[0], "Require ip @@INTERNAL@@")
-        self.assertIn("127.0.0.1/32", requires[1])
-        self.assertIn("Cf-Access-Jwt-Assertion", requires[1])
-        self.assertEqual(len(requires), 2)
+        self.assertEqual(requires, ["Require ip @@INTERNAL@@"])
+        # Header presence is not cryptographic Access authentication.
+        self.assertNotIn("Cf-Access-Jwt-Assertion", block)
 
 
 if __name__ == "__main__":

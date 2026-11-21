@@ -63,12 +63,26 @@ class TrueNASIntegrationContracts(unittest.TestCase):
         paths = [share["path"] for share in shares]
         self.assertEqual(len(paths), len(set(paths)))
         self.assertTrue(all(p.startswith("/mnt/") for p in paths))
+        forbidden_exports = {
+            "/mnt/cpool/code",
+            "/mnt/cpool/ctem",
+            "/mnt/cpool/ctem/amass/reports",
+            "/mnt/cpool/var/nabla/ops-logs",
+        }
         for share in shares:
             with self.subTest(path=share["path"]):
                 if share.get("state") == "absent":
-                    self.assertTrue(share["path"].startswith("/mnt/dpool/"))
+                    self.assertTrue(
+                        share["path"].startswith("/mnt/dpool/")
+                        or share["path"] in forbidden_exports
+                    )
                 else:
                     self.assertEqual(share["networks"], "{{ nfs_lan }}")
+                    self.assertNotIn(share["path"], forbidden_exports)
+        self.assertEqual(
+            {s["path"] for s in shares if s["path"] in forbidden_exports},
+            forbidden_exports,
+        )
         delete = [t for t in play(NFS)["tasks"] if "sharing.nfs.delete" in str(t)]
         self.assertEqual(len(delete), 1)
         self.assertIn("'delete'", delete[0]["loop"])

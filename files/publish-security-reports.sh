@@ -15,19 +15,6 @@ mkdir -p "${dest}"
 rsync -rt --chmod=D2750,F0640 --exclude='ssg-*-ds.xml' "${src}/" "${dest}/"
 find "${dest}" -mindepth 1 -maxdepth 1 -type d -name '20??-??-??' -mtime +"${keep_days}" -exec rm -r -- {} +
 
-# Newest first; one line per day with the files it holds.
-{
-  printf '<!doctype html>\n<html lang="fr"><meta charset="utf-8"><title>Rapports de sécurité</title>\n'
-  printf '<h1>Rapports de sécurité de la workstation</h1>\n<p>Mis à jour le %s.</p>\n<ul>\n' "$(date '+%F %T')"
-  for d in $(find "${dest}" -mindepth 1 -maxdepth 1 -type d -name '20??-??-??' -printf '%f\n' | sort -r); do
-    printf '<li>%s :' "${d}"
-    for f in "${dest}/${d}"/*; do
-      [ -f "${f}" ] || continue
-      n="$(basename "${f}")"
-      printf ' <a href="%s/%s">%s</a>' "${d}" "${n}" "${n}"
-    done
-    printf '</li>\n'
-  done
-  printf '</ul>\n</html>\n'
-} >"${dest}/index.html.tmp"
-mv "${dest}/index.html.tmp" "${dest}/index.html"
+# Render only structured, privacy-safe aggregate counters and LAN-only raw links.
+# Never send unredacted findings to the public site or DefectDojo automatically.
+python3 "$(dirname "$0")/render-security-reports.py" --source "$src" --destination "$dest"
