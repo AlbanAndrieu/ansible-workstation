@@ -1,6 +1,6 @@
 # Workstation — utiliser Nexus Repository comme cache de dépendances
 
-**État du plan : 21 novembre 2026 — CODED (documentation) ; non déployé.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
+**État du plan : 22 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; Nexus sans les dépôts, non déployé.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
 
 ## État constaté dans Git, pas au runtime
 
@@ -9,6 +9,29 @@
 - [OpenTofu Nexus](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus) déclare déjà `apt-ubuntu-26-04`, `npm-all`, `pypi-all`, `docker-all`, `terraform-proxy`, Hugging Face et d'autres dépôts. **Créé dans le code ≠ présent dans l'instance** : contrôler l'API des dépôts avec des droits read-only, puis `tofu plan` avant toute écriture.
 - `repo-apt.tofu` cible `archive.ubuntu.com/ubuntu/` (distribution `resolute`) mais **ne définit pas de proxy séparé pour `security.ubuntu.com/ubuntu/`**. Ne pas faire basculer la poche `-security` avant cette correction.
 - `repo-docker.tofu` configure `path_enabled=true` et `v1_enabled=true` pour les proxies (groupe V1 désactivé). Étudier la désactivation V1 sur tous les proxies après avoir vérifié les clients requis, sans casser le cache existant.
+
+## État constaté au runtime (22/11/2026, lecture seule depuis la workstation)
+
+| Contrôle | Résultat |
+| --- | --- |
+| `http://172.17.0.24:8081/service/rest/v1/status` | 200, `Server: Nexus/3.92.3-01 (COMMUNITY)` |
+| Dépôts visibles en anonyme | 9 : `maven-central`, `maven-public`, `maven-releases`, `maven-snapshots`, `nabla-releases`, `nabla-snapshots`, `nuget-group`, `nuget-hosted`, `nuget.org-proxy` |
+| `apt-ubuntu-26-04`, `npm-all`, `npm-proxy`, `pypi-all`, `pypi-proxy`, `docker-all`, `terraform-proxy` | **404 : jamais créés** ; l'OpenTofu `nabla-compose/terraform/nexus` n'a pas été appliqué |
+| `maven-central` en anonyme | 200 : lecture anonyme active |
+| `nexus.int.albandrieu.com` | résolu par Pi-hole vers `172.17.0.24` ; HTTPS avec certificat valide (Traefik), puis 404 : le routeur privé est désactivé (`NEXUS_PRIVATE_INGRESS_ENABLED`) |
+
+Le proxy séparé `apt-ubuntu-26-04-security` (`security.ubuntu.com`, `resolute-security`) est ajouté dans `nabla-compose` le 22/11, avant le premier `apply`.
+
+## Bascule des clients : `playbooks/nexus-clients.yml`
+
+`mise run nexus-clients-check` sonde les quatre dépôts en HTTPS et affiche le plan, sans sudo ni changement. L'écriture exige `-e nexus_apply=true -e nexus_apply_approved=true -K`, et **refuse de basculer tant qu'une sonde ne répond pas 200** (vérifié le 22/11 : refus, rien d'écrit). Elle écrit :
+
+- `/etc/apt/sources.list.d/ubuntu.sources` : mêmes suites, `-security` par son propre proxy, `Signed-By` Ubuntu conservé ; l'original est sauvegardé à côté (`backup`) ;
+- `/etc/profile.d/nexus-package-cache.sh` : `NPM_CONFIG_REGISTRY`, `PIP_INDEX_URL`, `UV_DEFAULT_INDEX`. Les fichiers utilisateur `.npmrc`, `pip.conf` et `uv.toml`, qui peuvent porter des jetons, ne sont pas touchés.
+
+Retour arrière : `sudo rm /etc/profile.d/nexus-package-cache.sh`, puis restaurer la sauvegarde de `ubuntu.sources` et `sudo apt-get update`. Un pilote limité à une session reste possible sans le playbook : `NPM_CONFIG_REGISTRY=… npm ci`.
+
+Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 4 × 200, puis l'application.
 
 ## Prérequis obligatoires — NO-GO tant que non prouvés
 

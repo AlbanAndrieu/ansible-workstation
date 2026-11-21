@@ -1,0 +1,112 @@
+---
+# Point APT, npm, pip and uv at the Nexus package cache on TrueNAS (docs/workstation-nexus-package-cache.md).
+# Check-only by default: probes Nexus and prints the plan, no sudo. Writing needs nexus_apply AND
+# nexus_apply_approved, and every repository must answer over HTTPS first, so a missing or partial
+# Nexus can never break APT. Rollback: sudo rm /etc/profile.d/nexus-package-cache.sh and restore the
+# ubuntu.sources backup that the copy task leaves next to it.
+- name: Plan or explicitly point package clients at Nexus
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    nexus_apply: false
+    nexus_apply_approved: false
+    nexus_url: https://nexus.int.albandrieu.com
+    nexus_suite: resolute
+    nexus_apt_archive: "{{ nexus_url }}/repository/apt-ubuntu-26-04"
+    nexus_apt_security: "{{ nexus_url }}/repository/apt-ubuntu-26-04-security"
+    nexus_npm: "{{ nexus_url }}/repository/npm-all/"
+    nexus_pypi: "{{ nexus_url }}/repository/pypi-all/simple/"
+    # One URL per repository, each must answer 200 before anything is written.
+    nexus_probes:
+      - "{{ nexus_apt_archive }}/dists/{{ nexus_suite }}/InRelease"
+      - "{{ nexus_apt_security }}/dists/{{ nexus_suite }}-security/InRelease"
+      - "{{ nexus_npm }}npm"
+      - "{{ nexus_pypi }}pip/"
+    nexus_write: "{{ nexus_apply | bool and nexus_apply_approved | bool }}"
+
+  tasks:
+    - name: Refuse an apply without a second explicit approval
+      ansible.builtin.assert:
+        that:
+          - nexus_apply_approved | bool
+        fail_msg: "Apply denied: requires both nexus_apply=true and nexus_apply_approved=true."
+        quiet: true
+      when: nexus_apply | bool
+
+    - name: Refuse a cache that is not served over HTTPS
+      ansible.builtin.assert:
+        that:
+          - nexus_url is match('https://')
+        fail_msg: "nexus_url must be https:// (private Traefik ingress), never the plain LAN port."
+        quiet: true
+
+    - name: Probe every Nexus repository the clients would use
+      ansible.builtin.uri:
+        url: "{{ item }}"
+        method: GET
+        validate_certs: true
+        status_code: [200, 401, 403, 404]
+        timeout: 10
+      loop: "{{ nexus_probes }}"
+      register: nexus_probe
+      failed_when: false
+
+    - name: Refuse to switch while a repository is missing or unreachable
+      ansible.builtin.assert:
+        that:
+          - nexus_probe.results | rejectattr('status', 'equalto', 200) | list | length == 0
+        fail_msg: "Nexus is not ready: every probe must answer 200 (see the plan below)."
+        quiet: true
+      when: nexus_write
+
+    # Same suites and Ubuntu signing key: Nexus only caches, APT still verifies InRelease.
+    - name: Fetch APT through the Nexus proxies
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/ubuntu.sources
+        backup: true
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by ansible-workstation playbooks/nexus-clients.yml (Nexus package cache).
+          Types: deb
+          URIs: {{ nexus_apt_archive }}
+          Suites: {{ nexus_suite }} {{ nexus_suite }}-updates
+          Components: main restricted universe multiverse
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+          Types: deb
+          URIs: {{ nexus_apt_security }}
+          Suites: {{ nexus_suite }}-security
+          Components: main restricted universe multiverse
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+      become: true
+      when: nexus_write
+
+    # Environment only: user .npmrc and pip.conf may hold tokens and stay untouched.
+    - name: Point npm, pip and uv at the Nexus groups
+      ansible.builtin.copy:
+        dest: /etc/profile.d/nexus-package-cache.sh
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by ansible-workstation playbooks/nexus-clients.yml (Nexus package cache).
+          export NPM_CONFIG_REGISTRY={{ nexus_npm }}
+          export PIP_INDEX_URL={{ nexus_pypi }}
+          export UV_DEFAULT_INDEX={{ nexus_pypi }}
+      become: true
+      when: nexus_write
+
+    - name: Report the Nexus client plan
+      ansible.builtin.debug:
+        msg:
+          mode: "{{ 'apply' if nexus_write else 'check (no change)' }}"
+          probes: "{{ dict(nexus_probe.results | map(attribute='item') | zip(nexus_probe.results | map(attribute='status'))) }}"
+          apt: "{{ nexus_apt_archive }} + {{ nexus_apt_security }}"
+          npm: "{{ nexus_npm }}"
+          pypi: "{{ nexus_pypi }}"
+          verify: "sudo apt-get update && npm view left-pad version && uv pip download --no-deps six -d /tmp/nexus-check"
