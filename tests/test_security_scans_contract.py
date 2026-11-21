@@ -188,9 +188,16 @@ class SecurityScansContracts(unittest.TestCase):
             )
             renderer = ROOT / "files/render-security-reports.py"
             subprocess.run(
-                ["python3", str(renderer), "--source", str(source),
-                 "--destination", str(target)],
-                check=True, capture_output=True,
+                [
+                    "python3",
+                    str(renderer),
+                    "--source",
+                    str(source),
+                    "--destination",
+                    str(target),
+                ],
+                check=True,
+                capture_output=True,
             )
             report = json.loads((target / "summary.json").read_text())
             page = (target / "index.html").read_text()
