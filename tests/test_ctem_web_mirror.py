@@ -1,4 +1,5 @@
 """Contract: only approved aggregate JSON may pass from NFS into local Apache."""
+
 from pathlib import Path
 import json
 import runpy
@@ -13,10 +14,13 @@ CATEGORIES = {category: 0 for category in MOD["CATALOG_CLASSES"]}
 
 def report():
     return {
-        "schema_version": 1, "report": "ctem-amass-aggregates",
+        "schema_version": 1,
+        "report": "ctem-amass-aggregates",
         "observed_at": "2026-11-21T12:00:00+00:00",
-        "status": "OBSERVED_NOT_CERTIFIED", "vantage": "truenas-internal",
-        "domains_in_scope": 20, "candidate_count": 0,
+        "status": "OBSERVED_NOT_CERTIFIED",
+        "vantage": "truenas-internal",
+        "domains_in_scope": 20,
+        "candidate_count": 0,
         "catalog_categories": CATEGORIES.copy(),
         "interpretation": (
             "ASSET_CANDIDATES_NOT_CONFIRMED_PUBLIC_EXPOSURES_OR_VULNERABILITIES"
