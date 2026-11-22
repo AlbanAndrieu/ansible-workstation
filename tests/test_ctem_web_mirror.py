@@ -118,9 +118,7 @@ class WorkstationMirrorTest(unittest.TestCase):
             parent.chmod(0o2750)
             safe_stat = parent.stat()
             # Simulate a world-writable parent without ever creating one.
-            unsafe_stat = os.stat_result(
-                (safe_stat.st_mode | 0o002, *safe_stat[1:])
-            )
+            unsafe_stat = os.stat_result((safe_stat.st_mode | 0o002, *safe_stat[1:]))
             with (
                 mock.patch.object(Path, "stat", return_value=unsafe_stat),
                 mock.patch.object(
