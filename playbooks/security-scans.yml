@@ -140,6 +140,7 @@
             [Unit]
             Description=Security scan: %i
             OnSuccess=security-reports-publish.service
+            OnFailure=security-reports-publish.service
 
             [Service]
             Type=oneshot

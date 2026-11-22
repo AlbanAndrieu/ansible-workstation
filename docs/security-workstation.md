@@ -3,8 +3,10 @@
 **Statut :** audit fait, corrections urgentes et lots 1 et 2 appliqués le 16/11 ; lots 3 à 5 proposés.
 
 Rapports : `/var/www/reports/security/` sur le disque local, servis par Apache en
-`/reports` : `http://172.17.0.57:8087/reports/security/` depuis le LAN, et par le
-tunnel Cloudflare derrière Cloudflare Access (voir « Accès aux rapports »).
+`/reports` : `http://172.17.0.57:8087/reports/security/` depuis le LAN.
+L'accès via le tunnel Cloudflare **n'est pas autorisé par la configuration
+versionnée actuelle** sans validation cryptographique du jeton Access et
+nouvelle revue (voir « Accès aux rapports »).
 
 ## Réévaluation du 21 novembre 2026 — preuves et priorités
 
@@ -79,6 +81,16 @@ minimisation sont documentés dans
 [nabla-compose #436](https://github.com/AlbanAndrieu/nabla-compose/pull/436)
 et dans son
 [runbook commun](https://github.com/AlbanAndrieu/nabla-compose/blob/feat/ctem-vantage-isolated-20261121/docs/runbooks/workstation-truenas-report-sharing-and-honeypot.md).
+
+### Visibilité des scans échoués (22/11 — CODED / NOT_DEPLOYED)
+
+Le script des scanners utilise un gestionnaire `EXIT` unique : après un échec
+Lynis, rkhunter, ClamAV ou OpenSCAP, il écrit un reçu `INCOMPLETE` en conservant
+le code de sortie original. L'unité `security-scan@.service` utilise
+`OnFailure=security-reports-publish.service` pour rendre l'échec consultable
+dans le tableau local, même lorsque le timer est en erreur. Les reçus invalides
+ne peuvent plus être pris pour un scan `COMPLETE`. Les nouveaux tests reproduisent
+un échec Lynis, sa sortie non nulle et la présence du reçu incomplet.
 
 ### Durcissement additionnel du miroir CTEM (22/11)
 

@@ -134,6 +134,40 @@ class SecurityScansContracts(unittest.TestCase):
         self.assertEqual(log[-1], "systemctl stop clamav-daemon")
         self.assertIn("security_clamav_infected_files 0", metrics)
 
+    def test_failed_scanner_publishes_incomplete_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = stub_bin(
+                tmp,
+                {
+                    "lynis": 'echo "scan aborted" >&2; exit 9',
+                    "chgrp": "true",
+                },
+            )
+            env = {
+                **os.environ,
+                "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                "SECURITY_REPORTS_DIR": str(root / "reports"),
+                "SECURITY_METRICS_DIR": tmp,
+            }
+            result = subprocess.run(
+                ["bash", SCAN, "lynis"],
+                env=env,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 9)
+            receipts = list((root / "reports").glob("*/.scan-lynis.json"))
+            self.assertEqual(len(receipts), 1)
+            self.assertEqual(
+                json.loads(receipts[0].read_text()),
+                {"tool": "lynis", "state": "INCOMPLETE"},
+            )
+            self.assertIn(
+                "OnFailure=security-reports-publish.service",
+                PLAYBOOK.read_text(),
+            )
+
     def test_openscap_content_is_retargeted_to_the_running_release(self):
         text = SCAN.read_text()
         sed = re.search(r'sed "(s/[^"]+)"', text).group(1)
@@ -165,6 +199,42 @@ class SecurityScansContracts(unittest.TestCase):
             self.assertFalse((dest / "ssg-ubuntu2404-resolute-ds.xml").exists())
         self.assertLess(index.index("2026-11-16"), index.index("2026-11-15"))
         self.assertIn('href="2026-11-16/lynis.txt"', index)
+
+    def test_invalid_scan_receipt_never_claims_a_complete_scan(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "source"
+            dest = root / "dest"
+            day = src / "2026-11-22"
+            day.mkdir(parents=True)
+            dest.mkdir()
+            (day / "rkhunter-warnings.txt").write_text(
+                "Warning: private-hostname.local\n"
+            )
+            (day / ".scan-rkhunter.json").write_text(
+                '{"tool":"unexpected","state":"COMPLETE"}\n'
+            )
+            subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "files/render-security-reports.py"),
+                    "--source",
+                    str(src),
+                    "--destination",
+                    str(dest),
+                ],
+                capture_output=True,
+                check=True,
+            )
+            data = json.loads((dest / "summary.json").read_text())
+            self.assertEqual(
+                data["days"][0]["scans"]["rkhunter"]["state"],
+                "INCOMPLETE",
+            )
+            self.assertNotIn(
+                "private-hostname.local",
+                (dest / "index.html").read_text(),
+            )
 
     def test_sanitized_dashboard_never_publishes_scanner_text(self):
         with tempfile.TemporaryDirectory() as tmp:

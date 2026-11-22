@@ -45,13 +45,18 @@ def collect(tool: str, day: Path) -> dict:
         "clamav": ("clamav.txt", "clamav.log"),
         "openscap": ("openscap.txt", "openscap-results.xml"),
     }[tool]
-    receipt = read_text(day / f".scan-{tool}.json")
+    receipt_path = day / f".scan-{tool}.json"
+    receipt = read_text(receipt_path)
     state = "NOT_RUN"
-    if receipt is not None:
+    if receipt is None and (receipt_path.exists() or receipt_path.is_symlink()):
+        state = "INCOMPLETE"
+    elif receipt is not None:
         try:
             payload = json.loads(receipt)
             if payload.get("tool") == tool and payload.get("state") in ("COMPLETE", "INCOMPLETE"):
                 state = payload["state"]
+            else:
+                state = "INCOMPLETE"
         except (ValueError, AttributeError):
             state = "INCOMPLETE"
     if state == "NOT_RUN" and any((day / filename).is_file() for filename in raw):
