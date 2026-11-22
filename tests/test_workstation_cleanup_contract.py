@@ -68,6 +68,7 @@ FORBIDDEN_PREFIXES = (
     "/",
 )
 PROCESS_ALLOWLIST = {
+    "brew cleanup",
     "go clean -cache",
     "uv cache prune",
     "pre-commit gc",

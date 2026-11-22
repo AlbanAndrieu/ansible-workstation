@@ -53,6 +53,13 @@ et cache de build, pip, npm, miniatures). Les caches des navigateurs, éditeurs
 et de Claude restent dans `apply`, manuel, parce que ces applications peuvent
 être ouvertes. Rien n'exige sudo ; `apply-system` reste manuel.
 
+Pas de doublon avec le démarrage : `boot-update-user.sh` ne purge plus de
+cache (pip, pipenv et brew sont passés dans `periodic`) ; il garde
+`clean_old_folders.py` pour les `workspaceStorage` périmés. `boot-update.sh`
+(root) garde les révisions de snaps désactivées et vide encore **toutes** les
+captures `/workspace/Dropbox/motion` à chaque démarrage, contrairement à la
+rétention `MOTION_RETENTION_DAYS` d'`apply-system` : décision opérateur.
+
 Images Docker inutilisées (re-téléchargeables ; une image construite
 localement devra être reconstruite) : opt-in par âge,
 `DOCKER_UNUSED_IMAGE_DAYS=30 mise run cleanup-apply`.

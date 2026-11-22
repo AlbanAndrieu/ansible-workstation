@@ -61,6 +61,7 @@ PERIODIC_CLEANERS=(
   workstation_dev.ansible_tmp
 )
 TOOL_CLEANERS=(
+  "brew:workstation_dev.brew_cleanup"
   "go:workstation_dev.go_build_cache"
   "uv:workstation_dev.uv_cache"
   "pre-commit:workstation_dev.pre_commit_gc"
