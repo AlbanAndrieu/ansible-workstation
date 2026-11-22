@@ -54,6 +54,11 @@
     <description>Leftover remote/local temporary directories under ~/.ansible/tmp</description>
     <action command="delete" search="walk.all" path="~/.ansible/tmp/"/>
   </option>
+  <option id="go_build_cache">
+    <label>Go build cache</label>
+    <description>Remove the Go build and test cache (runs: go clean -cache); modules stay</description>
+    <action command="process" cmd="go clean -cache"/>
+  </option>
   <option id="docker_build">
     <label>Docker dangling images and build cache</label>
     <description>Runs docker image prune --force and docker builder prune --force (never containers or volumes)</description>

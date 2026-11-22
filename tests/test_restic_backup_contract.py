@@ -83,6 +83,17 @@ class ResticBackupContract(unittest.TestCase):
         init = (UNITS / "restic-init.service.j2").read_text()
         self.assertIn("ConditionPathExists=!{{ restic_repository }}/config", init)
 
+    def test_home_scope_keeps_local_secrets_and_skips_redownloaded_bundles(self):
+        include = (UNITS / "include.txt.j2").read_text().splitlines()
+        exclude = (UNITS / "exclude.txt.j2").read_text().splitlines()
+        for path in (".password-store", "keys", "keyrings-backup", ".ssh", ".gnupg"):
+            self.assertIn(f"{{{{ restic_home }}}}/{path}", include)
+        for path in (
+            ".config/Claude/vm_bundles",
+            ".config/google-chrome/OptGuideOnDeviceModel",
+        ):
+            self.assertIn(f"{{{{ restic_home }}}}/{path}", exclude)
+
     def test_maven_settings_come_from_the_real_directory(self):
         include = (UNITS / "include.txt.j2").read_text().splitlines()
         self.assertIn("{{ restic_maven_dir }}/settings.xml", include)

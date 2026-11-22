@@ -233,6 +233,18 @@ run = "bash scripts/workstation-cleanup.sh check"
 description = "Clean regenerable user caches with BleachBit and files/bleachbit/workstation_dev.xml; no sudo"
 run = "bash scripts/workstation-cleanup.sh apply"
 
+[tasks.cleanup-periodic]
+description = "What the weekly user timer runs: developer caches and tool prunes, never caches of open browsers/editors"
+run = "bash scripts/workstation-cleanup.sh periodic"
+
+[tasks.cleanup-timer-install]
+description = "Install and start the weekly systemd --user cleanup timer (Sunday, Persistent)"
+run = "bash scripts/workstation-cleanup.sh timer-install"
+
+[tasks.cleanup-timer-remove]
+description = "Stop and remove the weekly systemd --user cleanup timer"
+run = "bash scripts/workstation-cleanup.sh timer-remove"
+
 [tasks.cleanup-apply-system]
 description = "Explicit sudo cleanup: apt caches, disabled snaps, journald size, unused flatpaks"
 run = "bash scripts/workstation-cleanup.sh apply-system"
