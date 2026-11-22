@@ -56,9 +56,11 @@ et de Claude restent dans `apply`, manuel, parce que ces applications peuvent
 Pas de doublon avec le démarrage : `boot-update-user.sh` ne purge plus de
 cache (pip, pipenv et brew sont passés dans `periodic`) ; il garde
 `clean_old_folders.py` pour les `workspaceStorage` périmés. `boot-update.sh`
-(root) garde les révisions de snaps désactivées et vide encore **toutes** les
-captures `/workspace/Dropbox/motion` à chaque démarrage, contrairement à la
-rétention `MOTION_RETENTION_DAYS` d'`apply-system` : décision opérateur.
+(root) garde les révisions de snaps désactivées et, depuis le 22/11, ne
+supprime que les captures `/workspace/Dropbox/motion` de plus de 10 jours
+(auparavant toutes, pour que Dropbox ne sature pas). Il relance aussi
+l'automount de tout montage NFS en échec (`/media/home/albandrieu` restait
+mort depuis le 18/11).
 
 Images Docker inutilisées (re-téléchargeables ; une image construite
 localement devra être reconstruite) : opt-in par âge,
