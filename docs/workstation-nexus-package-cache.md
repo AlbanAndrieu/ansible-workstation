@@ -24,14 +24,14 @@ Le proxy séparé `apt-ubuntu-26-04-security` (`security.ubuntu.com`, `resolute-
 
 ## Bascule des clients : `playbooks/nexus-clients.yml`
 
-`mise run nexus-clients-check` sonde les quatre dépôts en HTTPS et affiche le plan, sans sudo ni changement. L'écriture exige `-e nexus_apply=true -e nexus_apply_approved=true -K`, et **refuse de basculer tant qu'une sonde ne répond pas 200** (vérifié le 22/11 : refus, rien d'écrit). Elle écrit :
+`mise run nexus-clients-check` sonde désormais **cinq chemins** en HTTPS : `resolute`, `resolute-updates`, `resolute-security`, npm et PyPI. Le mode par défaut affiche le plan sans sudo ni changement. L'écriture exige `-e nexus_apply=true -e nexus_apply_approved=true -K` et refuse toute réponse différente de **200**, tout hôte autre que `nexus.int.albandrieu.com`, ou des métadonnées Ubuntu `InRelease` qui ne commencent pas par `-----BEGIN PGP SIGNED MESSAGE-----`. Les réponses des sondes sont masquées dans les logs Ansible. Ce contrôle de format ne remplace **pas** la vérification cryptographique `Signed-By` par APT après activation. Aucun déploiement n'est attesté ici. Elle écrit :
 
 - `/etc/apt/sources.list.d/ubuntu.sources` : mêmes suites, `-security` par son propre proxy, `Signed-By` Ubuntu conservé ; l'original est sauvegardé à côté (`backup`) ;
 - `/etc/profile.d/nexus-package-cache.sh` : `NPM_CONFIG_REGISTRY`, `PIP_INDEX_URL`, `UV_DEFAULT_INDEX`. Les fichiers utilisateur `.npmrc`, `pip.conf` et `uv.toml`, qui peuvent porter des jetons, ne sont pas touchés.
 
 Retour arrière : `sudo rm /etc/profile.d/nexus-package-cache.sh`, puis restaurer la sauvegarde de `ubuntu.sources` et `sudo apt-get update`. Un pilote limité à une session reste possible sans le playbook : `NPM_CONFIG_REGISTRY=… npm ci`.
 
-Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 4 × 200, puis l'application.
+Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 5 × 200, métadonnées `InRelease` reconnues, puis l'application.
 
 ## Prérequis obligatoires — NO-GO tant que non prouvés
 

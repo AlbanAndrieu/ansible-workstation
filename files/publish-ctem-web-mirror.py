@@ -59,13 +59,23 @@ def verified_public(data: object) -> dict:
 def load_source(path: Path) -> dict:
     if path.is_symlink() or not path.is_file():
         raise ValueError("CTEM NFS source not present or symlink")
-    st = path.stat()
-    if not stat.S_ISREG(st.st_mode) or not 0 < st.st_size <= MAX_SOURCE:
-        raise ValueError("CTEM summary exceeds bound")
-    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode) or not 0 < before.st_size <= MAX_SOURCE:
+        raise ValueError("CTEM source is not a bounded regular file")
+    # A symlink or replaced NFS inode between the first stat and open is
+    # rejected. Validate the descriptor rather than trusting the pathname.
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     with os.fdopen(fd, "rb") as stream:
+        opened = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino, opened.st_size)
+                != (before.st_dev, before.st_ino, before.st_size)):
+            raise ValueError("CTEM NFS source replaced before open")
         data = stream.read(MAX_SOURCE + 1)
-    if len(data) != st.st_size:
+        after = os.fstat(stream.fileno())
+    if (len(data) != opened.st_size
+            or (opened.st_mtime_ns, opened.st_ctime_ns, opened.st_size)
+            != (after.st_mtime_ns, after.st_ctime_ns, after.st_size)):
         raise ValueError("CTEM NFS summary changed during copy")
     return verified_public(json.loads(data))
 
@@ -101,13 +111,18 @@ def publish(destination: Path, data: dict) -> None:
     owner = os.geteuid()
     group = grp.getgrnam("www-data").gr_gid
     info = parent.stat()
-    if info.st_uid != owner or info.st_gid != group or not info.st_mode & stat.S_ISGID:
-        raise ValueError("Apache report parent has unexpected ownership/group")
+    if (info.st_uid != owner or info.st_gid != group
+            or not info.st_mode & stat.S_ISGID
+            or info.st_mode & 0o027):
+        raise ValueError("Apache report parent has unsafe ownership or permissions")
     if not destination.exists():
         destination.mkdir(mode=0o2750)
-    if (destination.is_symlink() or destination.stat().st_uid != owner
-            or destination.stat().st_gid != group):
-        raise ValueError("Apache CTEM target ownership invalid")
+    directory = destination.stat()
+    if (destination.is_symlink() or directory.st_uid != owner
+            or directory.st_gid != group
+            or not directory.st_mode & stat.S_ISGID
+            or directory.st_mode & 0o027):
+        raise ValueError("Apache CTEM target ownership or permissions invalid")
     for filename, content in (
         ("amass-summary.json", json.dumps(data, sort_keys=True, indent=2) + "\n"),
         ("index.html", render(data)),
@@ -116,12 +131,14 @@ def publish(destination: Path, data: dict) -> None:
         if target.is_symlink() or (target.exists() and not target.is_file()):
             raise ValueError("Apache target not a regular file")
         tmp = destination / f".{filename}.tmp-{os.getpid()}"
-        fd = os.open(tmp, os.O_CREAT | os.O_EXCL | os.O_WRONLY
-                     | getattr(os, "O_NOFOLLOW", 0), 0o640)
+        # Keep a temporary file private until the approved, aggregate-only
+        # payload is complete. The final 0640 is required for www-data.
+        fd = os.open(tmp, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as out:
                 out.write(content)
                 out.flush()
+                os.fchmod(out.fileno(), 0o640)
                 os.fsync(out.fileno())
             os.replace(tmp, target)
         finally:

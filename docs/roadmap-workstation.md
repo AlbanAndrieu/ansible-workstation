@@ -41,6 +41,11 @@ Les tableaux de livraisons P0–P2 ci-dessous sont **historiques** : ne pas conf
 
 **Séparation des responsabilités** : `ansible-workstation` gère les clients APT/npm/PyPI/Docker et leurs audits ; `nabla-compose` gère Nexus, son stockage, son TLS, ses repositories OpenTofu et les scans réseau TrueNAS. Aucune modification du système dans cette PR documentaire.
 
+### Revue du 22/11 — nouvelles gates du pilote Nexus et du miroir CTEM
+
+- **Nexus** : cinq sondes préalables, dont `resolute-updates` et `resolute-security`, marqueur de métadonnées PGP, hôte privé imposé et réponses non journalisées. APT conserve `Signed-By` ; ces gates ne remplacent pas la validation réelle `apt-get update`.
+- **CTEM** : rejet de toute modification de l'inode NFS pendant la copie, fichiers temporaires 0600, droits Apache accordés seulement à la publication. Déploiement toujours `NOT_RUN`.
+
 ### Lot W13/W14 — livraison de code du 21/11, réception encore ouverte
 
 - **W13 / rapports** : un générateur HTML et JSON expurgé existe désormais dans

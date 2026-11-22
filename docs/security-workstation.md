@@ -80,6 +80,17 @@ minimisation sont documentés dans
 et dans son
 [runbook commun](https://github.com/AlbanAndrieu/nabla-compose/blob/feat/ctem-vantage-isolated-20261121/docs/runbooks/workstation-truenas-report-sharing-and-honeypot.md).
 
+### Durcissement additionnel du miroir CTEM (22/11)
+
+Le lecteur NFS compare le descripteur ouvert avec l'inode observé avant l'ouverture
+(et les métadonnées avant/après lecture) ; un lien symbolique, fichier remplacé
+ou modifié pendant la copie entraîne un refus, sans exposer son contenu.
+L'écriture des agrégats et de la page HTML commence en `0600` avec `O_EXCL`
+et `O_NOFOLLOW`, puis n'autorise le groupe Apache en lecture (`0640`)
+qu'une fois les données rédigées et synchronisées. Le parent doit être
+`setgid`, non accessible aux autres utilisateurs et non modifiable par le
+groupe. Les données CTEM brutes ne sont jamais copiées.
+
 ## 21 novembre 2026 — tableaux de bord des scans (CODED, non déployé)
 
 Le pipeline versionné prépare un résumé HTML statique et un fichier JSON

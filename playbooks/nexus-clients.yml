@@ -22,6 +22,7 @@
     # One URL per repository, each must answer 200 before anything is written.
     nexus_probes:
       - "{{ nexus_apt_archive }}/dists/{{ nexus_suite }}/InRelease"
+      - "{{ nexus_apt_archive }}/dists/{{ nexus_suite }}-updates/InRelease"
       - "{{ nexus_apt_security }}/dists/{{ nexus_suite }}-security/InRelease"
       - "{{ nexus_npm }}npm"
       - "{{ nexus_pypi }}pip/"
@@ -39,8 +40,8 @@
     - name: Refuse a cache that is not served over HTTPS
       ansible.builtin.assert:
         that:
-          - nexus_url is match('https://')
-        fail_msg: "nexus_url must be https:// (private Traefik ingress), never the plain LAN port."
+          - nexus_url == 'https://nexus.int.albandrieu.com'
+        fail_msg: "nexus_url must be the canonical private HTTPS hostname (no userinfo, public edge or plain LAN port)."
         quiet: true
 
     - name: Probe every Nexus repository the clients would use
@@ -49,16 +50,29 @@
         method: GET
         validate_certs: true
         status_code: [200, 401, 403, 404]
+        return_content: true
         timeout: 10
       loop: "{{ nexus_probes }}"
       register: nexus_probe
       failed_when: false
+      no_log: true  # HTTP bodies and request metadata never enter CI or Ansible logs.
 
     - name: Refuse to switch while a repository is missing or unreachable
       ansible.builtin.assert:
         that:
           - nexus_probe.results | rejectattr('status', 'equalto', 200) | list | length == 0
         fail_msg: "Nexus is not ready: every probe must answer 200 (see the plan below)."
+        quiet: true
+      when: nexus_write
+
+    - name: Require signed metadata for all Ubuntu suites before writing APT sources
+      ansible.builtin.assert:
+        that:
+          - nexus_probe.results | length == 5
+          - (nexus_probe.results[0].content | default('')).startswith('-----BEGIN PGP SIGNED MESSAGE-----')
+          - (nexus_probe.results[1].content | default('')).startswith('-----BEGIN PGP SIGNED MESSAGE-----')
+          - (nexus_probe.results[2].content | default('')).startswith('-----BEGIN PGP SIGNED MESSAGE-----')
+        fail_msg: "Nexus served unexpected Ubuntu InRelease content (possibly an HTML login or error page). No client changes applied."
         quiet: true
       when: nexus_write
 

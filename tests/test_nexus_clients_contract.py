@@ -31,15 +31,36 @@ class NexusClientsContract(unittest.TestCase):
         )
         writes = [i for i, t in enumerate(self.play["tasks"]) if t.get("become")]
         self.assertTrue(writes and min(writes) > gate)
-        self.assertEqual(len(self.play["vars"]["nexus_probes"]), 4)
-        self.assertTrue(
-            self.tasks["Probe every Nexus repository the clients would use"][
-                "ansible.builtin.uri"
-            ]["validate_certs"],
+        self.assertEqual(len(self.play["vars"]["nexus_probes"]), 5)
+        self.assertIn(
+            "dists/{{ nexus_suite }}-updates/InRelease",
+            self.play["vars"]["nexus_probes"][1],
+        )
+        probe = self.tasks["Probe every Nexus repository the clients would use"]
+        self.assertTrue(probe["ansible.builtin.uri"]["validate_certs"])
+        self.assertTrue(probe["ansible.builtin.uri"]["return_content"])
+        self.assertTrue(probe["no_log"])
+        signed = self.tasks[
+            "Require signed metadata for all Ubuntu suites before writing APT sources"
+        ]
+        self.assertEqual(signed["when"], "nexus_write")
+        self.assertEqual(len(signed["ansible.builtin.assert"]["that"]), 4)
+        self.assertIn("BEGIN PGP SIGNED MESSAGE", str(signed["ansible.builtin.assert"]["that"]))
+        self.assertLess(
+            list(self.tasks).index(signed["name"]),
+            list(self.tasks).index("Fetch APT through the Nexus proxies"),
         )
 
     def test_https_only_and_signatures_kept(self):
-        self.assertTrue(self.play["vars"]["nexus_url"].startswith("https://"))
+        self.assertEqual(
+            self.play["vars"]["nexus_url"],
+            "https://nexus.int.albandrieu.com",
+        )
+        gate = self.tasks["Refuse a cache that is not served over HTTPS"]
+        self.assertIn(
+            "nexus_url == 'https://nexus.int.albandrieu.com'",
+            gate["ansible.builtin.assert"]["that"],
+        )
         apt = self.tasks["Fetch APT through the Nexus proxies"]["ansible.builtin.copy"]
         self.assertTrue(apt["backup"])
         self.assertEqual(

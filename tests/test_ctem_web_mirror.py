@@ -2,9 +2,12 @@
 
 from pathlib import Path
 import json
+import os
 import runpy
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "files/publish-ctem-web-mirror.py"
@@ -76,6 +79,47 @@ class WorkstationMirrorTest(unittest.TestCase):
             symlink.symlink_to(source)
             with self.assertRaises(ValueError):
                 MOD["load_source"](symlink)
+
+    def test_published_files_start_private_and_remain_lan_group_readable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            parent = Path(temp) / "reports"
+            parent.mkdir()
+            parent.chmod(0o2750)
+            destination = parent / "ctem"
+            modes = []
+            real_open = os.open
+
+            def recording_open(path, flags, mode=0o777, **kwargs):
+                if str(path).endswith(".tmp-" + str(os.getpid())):
+                    modes.append(mode)
+                return real_open(path, flags, mode, **kwargs)
+
+            with (
+                mock.patch.object(
+                    MOD["grp"],
+                    "getgrnam",
+                    return_value=SimpleNamespace(gr_gid=os.getegid()),
+                ),
+                mock.patch.object(MOD["os"], "open", side_effect=recording_open),
+            ):
+                MOD["publish"](destination, report())
+            self.assertEqual(modes, [0o600, 0o600])
+            for name in ("amass-summary.json", "index.html"):
+                self.assertEqual((destination / name).stat().st_mode & 0o777, 0o640)
+            self.assertIn("OBSERVED_NOT_CERTIFIED", (destination / "amass-summary.json").read_text())
+
+    def test_rejects_world_writable_report_parent(self):
+        with tempfile.TemporaryDirectory() as temp:
+            parent = Path(temp) / "reports"
+            parent.mkdir()
+            parent.chmod(0o2777)
+            with mock.patch.object(
+                MOD["grp"],
+                "getgrnam",
+                return_value=SimpleNamespace(gr_gid=os.getegid()),
+            ):
+                with self.assertRaises(ValueError):
+                    MOD["publish"](parent / "ctem", report())
 
     def test_installation_remains_opt_in_and_reports_are_local(self):
         script = SCRIPT.read_text()
