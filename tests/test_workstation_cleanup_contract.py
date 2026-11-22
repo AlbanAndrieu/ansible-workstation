@@ -16,7 +16,7 @@ SCRIPT = ROOT / "scripts/workstation-cleanup.sh"
 CLEANER = ROOT / "files/bleachbit/workstation_dev.xml"
 SYSTEM_TOOLS = (
     "bash env id cat grep sed awk sort tail head df du cmp install mkdir wc "
-    "find dirname tr touch"
+    "find dirname tr touch rm"
 ).split()
 BUILTIN = """vscode.cache
 vscode.backup
@@ -68,6 +68,8 @@ FORBIDDEN_PREFIXES = (
     "/",
 )
 PROCESS_ALLOWLIST = {
+    "brew cleanup",
+    "go clean -cache",
     "uv cache prune",
     "pre-commit gc",
     "docker image prune --force",
@@ -102,7 +104,7 @@ class WorkstationCleanupContracts(unittest.TestCase):
         (self.state / "custom.txt").write_text("\n".join(custom_ids()) + "\n")
         self._exe("bleachbit", BLEACHBIT)
         self._exe("sudo", SUDO)
-        for tool in ("uv", "docker", "journalctl", "snap", "apt-get"):
+        for tool in ("uv", "docker", "journalctl", "snap", "apt-get", "systemctl"):
             self._exe(tool, STUB.replace("NAME", tool))
 
     def _exe(self, name, text):
@@ -283,6 +285,59 @@ class WorkstationCleanupContracts(unittest.TestCase):
         self.assertIn('if [ "$(id -u)" -eq 0 ]; then', source)
         self.assertIn('ACTION="${1:-check}"', source)
 
+    def test_periodic_skips_caches_of_open_browsers_and_editors(self):
+        result = self.run_helper("periodic")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        args = self.clean_args()
+        self.assertTrue(
+            {"workstation_dev.python_caches", "workstation_dev.uv_cache"} <= args,
+        )
+        for excluded in (
+            "vscode.cache",
+            "google_chrome.cache",
+            "google_chrome.ai",
+            "firefox.cache",
+            "claude.cache",
+            "system.trash",
+        ):
+            self.assertNotIn(excluded, args)
+        self.assertNotIn("sudo", self.calls())
+        self.assertNotIn("--all", self.calls())
+
+    def test_docker_unused_images_are_opt_in_and_age_bounded(self):
+        self.assertEqual(
+            self.run_helper("apply", DOCKER_UNUSED_IMAGE_DAYS="0").returncode,
+            2,
+        )
+        result = self.run_helper("periodic", DOCKER_UNUSED_IMAGE_DAYS="30")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(
+            "docker image prune --all --force --filter until=720h",
+            self.calls(),
+        )
+
+    def test_timer_install_writes_a_weekly_low_priority_user_unit(self):
+        result = self.run_helper("timer-install")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        units = self.home / ".config/systemd/user"
+        service = (units / "workstation-cleanup.service").read_text()
+        timer = (units / "workstation-cleanup.timer").read_text()
+        self.assertIn(
+            f"/usr/bin/bash {self.checkout}/scripts/workstation-cleanup.sh periodic",
+            service,
+        )
+        self.assertIn("IOSchedulingClass=idle", service)
+        self.assertIn("Persistent=true", timer)
+        self.assertIn("OnCalendar=Sun", timer)
+        self.assertIn(
+            "systemctl --user enable --now workstation-cleanup.timer",
+            self.calls(),
+        )
+        self.assertNotIn("sudo", self.calls())
+        result = self.run_helper("timer-remove")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((units / "workstation-cleanup.timer").exists())
+
     def test_mise_tasks(self):
         with (ROOT / "mise.toml").open("rb") as stream:
             tasks = tomllib.load(stream)["tasks"]
@@ -290,6 +345,9 @@ class WorkstationCleanupContracts(unittest.TestCase):
             ("cleanup-check", "check"),
             ("cleanup-apply", "apply"),
             ("cleanup-apply-system", "apply-system"),
+            ("cleanup-periodic", "periodic"),
+            ("cleanup-timer-install", "timer-install"),
+            ("cleanup-timer-remove", "timer-remove"),
         ):
             with self.subTest(task=name):
                 self.assertEqual(

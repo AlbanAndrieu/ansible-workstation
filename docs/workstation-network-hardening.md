@@ -184,5 +184,7 @@ Freebox OS (Gestion des accès > Applications > « Nabla edge ») : décocher le
 ayant tout reçu à son réenregistrement (VM, appels, contacts, explorateur, TV, PVR…), et décocher
 « Modification des réglages » hors intervention.
 
+IPv6 : le R7000 n'a jamais routé le préfixe délégué `2a01:e0a:a17:3c01::/64` (aucune RA, voisin `FAILED`, même après redémarrage). **IPv6 désactivé sur le R7000 le 22/11** ; la workstation et TrueNAS restent en IPv4 seul derrière le double NAT. Le filtre nftables IPv6 de TrueNAS et la sonde `/sickz` restent en place pour une réactivation.
+
 Reste `NOT_VERIFIED` côté R7000 : Wi-Fi actif ou non (un client Wi-Fi y serait dans `172.17.0.0/24`,
 donc dans l'allowlist LAN), Remote Management, UPnP et WPS du R7000, DNS distribué par son DHCP.

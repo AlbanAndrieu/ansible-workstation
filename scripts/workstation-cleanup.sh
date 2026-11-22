@@ -3,10 +3,14 @@
 # Replaces the rm -Rf chains of nabla/env/linux/cleanup-*.sh with BleachBit
 # built-in cleaners plus files/bleachbit/workstation_dev.xml (CleanerML).
 #
-# Usage: bash scripts/workstation-cleanup.sh [check|apply|apply-system]
+# Usage: bash scripts/workstation-cleanup.sh [check|apply|periodic|apply-system|timer-install|timer-remove]
 #   check (default) read-only: disk usage, cleaner availability, preview.
 #   apply           user caches only: install the custom cleaner, then
 #                   bleachbit --clean. No sudo.
+#   periodic        what the weekly user timer runs: developer caches and
+#                   tool prunes only, never browser/editor caches of open apps.
+#   timer-install   install and start the weekly systemd --user timer.
+#   timer-remove    stop and remove it.
 #   apply-system    explicit sudo: apt caches, disabled snap revisions,
 #                   journald size, unused flatpaks, optional motion retention.
 # Never deletes profiles, installed tools (mise), credentials, databases,
@@ -23,6 +27,10 @@ EXTRA_CLEANERS="${EXTRA_CLEANERS:-}"
 # Matches SystemMaxUse in files/etc/systemd/journald.conf.d/size.conf.
 JOURNAL_MAX="${JOURNAL_MAX:-2G}"
 APT_AUTOREMOVE="${APT_AUTOREMOVE:-0}"
+# Opt-in: also remove Docker images unused for this many days (re-pullable;
+# a local-only image would have to be rebuilt).
+DOCKER_UNUSED_IMAGE_DAYS="${DOCKER_UNUSED_IMAGE_DAYS:-}"
+UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 MOTION_DIR="${MOTION_DIR:-/workspace/Dropbox/motion}"
 MOTION_RETENTION_DAYS="${MOTION_RETENTION_DAYS:-}"
 
@@ -45,7 +53,16 @@ USER_CLEANERS=(
   workstation_dev.ansible_tmp
 )
 # Options backed by an external command: selected only when it is on PATH.
+# The weekly timer: caches nobody holds open, unlike browser and editor caches.
+PERIODIC_CLEANERS=(
+  thumbnails.cache
+  workstation_dev.python_caches
+  workstation_dev.node_caches
+  workstation_dev.ansible_tmp
+)
 TOOL_CLEANERS=(
+  "brew:workstation_dev.brew_cleanup"
+  "go:workstation_dev.go_build_cache"
   "uv:workstation_dev.uv_cache"
   "pre-commit:workstation_dev.pre_commit_gc"
   "docker:workstation_dev.docker_build"
@@ -63,9 +80,9 @@ refuse() {
 have() { command -v "$1" >/dev/null 2>&1; }
 
 case "$ACTION" in
-check | apply | apply-system) ;;
+check | apply | periodic | apply-system | timer-install | timer-remove) ;;
 *)
-  printf 'Usage: %s {check|apply|apply-system}\n' "$0" >&2
+  printf 'Usage: %s {check|apply|periodic|apply-system|timer-install|timer-remove}\n' "$0" >&2
   exit 2
   ;;
 esac
@@ -82,6 +99,10 @@ for id in $EXTRA_CLEANERS; do
 done
 [[ "$JOURNAL_MAX" =~ ^[0-9]+[KMG]$ ]] || refuse "JOURNAL_MAX must look like 500M"
 [[ "$APT_AUTOREMOVE" =~ ^[01]$ ]] || refuse "APT_AUTOREMOVE must be 0 or 1"
+if [ -n "$DOCKER_UNUSED_IMAGE_DAYS" ]; then
+  [[ "$DOCKER_UNUSED_IMAGE_DAYS" =~ ^[1-9][0-9]*$ ]] ||
+    refuse "DOCKER_UNUSED_IMAGE_DAYS must be a positive integer"
+fi
 if [ -n "$MOTION_RETENTION_DAYS" ]; then
   [[ "$MOTION_RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]] ||
     refuse "MOTION_RETENTION_DAYS must be a positive integer"
@@ -106,7 +127,11 @@ select_available() {
 
 wanted_user_cleaners() {
   local entry id
-  printf '%s\n' "${USER_CLEANERS[@]}"
+  if [ "$ACTION" = periodic ]; then
+    printf '%s\n' "${PERIODIC_CLEANERS[@]}"
+  else
+    printf '%s\n' "${USER_CLEANERS[@]}"
+  fi
   for entry in "${TOOL_CLEANERS[@]}"; do
     if have "${entry%%:*}"; then
       printf '%s\n' "${entry#*:}"
@@ -175,6 +200,52 @@ run_user() {
   fi
 }
 
+prune_unused_docker_images() {
+  [ -n "$DOCKER_UNUSED_IMAGE_DAYS" ] && have docker || return 0
+  echo "--- docker images unused for ${DOCKER_UNUSED_IMAGE_DAYS}d"
+  docker image prune --all --force --filter "until=$((DOCKER_UNUSED_IMAGE_DAYS * 24))h"
+}
+
+install_timer() {
+  mkdir -p -- "$UNIT_DIR"
+  cat >"$UNIT_DIR/workstation-cleanup.service" <<EOF_UNIT
+# Managed by ansible-workstation scripts/workstation-cleanup.sh timer-install
+[Unit]
+Description=Weekly cleanup of regenerable developer caches (BleachBit)
+
+[Service]
+Type=oneshot
+# mise shims: uv, pre-commit and go come from mise, absent from the default user PATH.
+Environment=PATH=%h/.local/share/mise/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/bash $ROOT/scripts/workstation-cleanup.sh periodic
+Nice=19
+IOSchedulingClass=idle
+EOF_UNIT
+  cat >"$UNIT_DIR/workstation-cleanup.timer" <<EOF_UNIT
+# Managed by ansible-workstation scripts/workstation-cleanup.sh timer-install
+[Unit]
+Description=Weekly cleanup of regenerable developer caches
+
+[Timer]
+OnCalendar=Sun *-*-* 12:30
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF_UNIT
+  systemctl --user daemon-reload
+  systemctl --user enable --now workstation-cleanup.timer
+  systemctl --user list-timers workstation-cleanup.timer --no-pager || true
+}
+
+remove_timer() {
+  systemctl --user disable --now workstation-cleanup.timer 2>/dev/null || true
+  rm -f -- "$UNIT_DIR/workstation-cleanup.service" "$UNIT_DIR/workstation-cleanup.timer"
+  systemctl --user daemon-reload
+  pass "weekly cleanup timer removed"
+}
+
 check_system() {
   echo "--- system (apply-system, sudo)"
   if have journalctl; then
@@ -239,11 +310,19 @@ check)
   run_user
   check_system
   ;;
-apply)
-  echo "=== workstation cleanup: apply (user caches, no sudo) ==="
+apply | periodic)
+  echo "=== workstation cleanup: $ACTION (user caches, no sudo) ==="
   install -D -m 0644 -- "$CLEANER_SRC" "$CLEANER_DST"
   run_user
+  prune_unused_docker_images
   df -h "$HOME" | tail -n 1
+  ;;
+timer-install)
+  have bleachbit || refuse "bleachbit is not installed (tasks/workstation.yml installs it)"
+  install_timer
+  ;;
+timer-remove)
+  remove_timer
   ;;
 apply-system)
   echo "=== workstation cleanup: apply-system (sudo) ==="

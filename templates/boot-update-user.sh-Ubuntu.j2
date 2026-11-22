@@ -14,9 +14,8 @@ for repo in "${HOME}/w" "${HOME}/w/jm" "${HOME}/w/jm/infra" "${HOME}/w/jm/data";
 done
 
 tldr --update || true
-brew cleanup || true
-pip cache purge || true
-pipenv --clear || true
+# Cache purges (pip, pipenv, brew, uv, pre-commit, go) belong to the weekly
+# workstation-cleanup.timer (scripts/workstation-cleanup.sh periodic), not to every boot.
 
 for storage in "${HOME}/.config/Code/User/workspaceStorage" "${HOME}/.config/Cursor/User/workspaceStorage"; do
   if [ -x "${storage}/clean_old_folders.py" ]; then

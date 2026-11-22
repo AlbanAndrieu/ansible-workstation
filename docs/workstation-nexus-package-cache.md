@@ -33,6 +33,8 @@ Retour arrière : `sudo rm /etc/profile.d/nexus-package-cache.sh`, puis restaure
 
 Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 5 × 200, métadonnées `InRelease` reconnues, puis l'application.
 
+Routes (nabla-compose [#438](https://github.com/AlbanAndrieu/nabla-compose/pull/438), `CODED` le 22/11) : la workstation et OpenTofu passent par `nexus.int.albandrieu.com` (routeur Traefik `nexus-private`, allowlist LAN), jamais par Cloudflare. La CI (Maven, jeton de service Access) garde `nexus.albandrieu.com`, qui passera par Traefik + CrowdSec (`nexus-public`) une fois `nexus_tunnel_via_traefik` appliqué. `nexus.albandrieu.com` ne convient pas aux clients APT/npm/pip : ils ne savent pas envoyer les en-têtes Access.
+
 ## Prérequis obligatoires — NO-GO tant que non prouvés
 
 1. **DNS/TLS privé :** résoudre `nexus.int.albandrieu.com` sur Pi-hole TrueNAS `172.17.0.24`, activer le routeur Traefik privé seulement après preuve TLS/SNI et accès LAN ; certificat avec SAN exact, vérification activée, aucun `insecure-registries`, `trusted=yes`, `--trusted-host` ou `strict-ssl=false`.

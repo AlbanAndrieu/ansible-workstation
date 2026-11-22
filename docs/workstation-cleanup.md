@@ -1,8 +1,8 @@
 # Nettoyage de la workstation avec BleachBit
 
-**Statut :** CODE ADDED / RUNTIME NOT VERIFIED — 10 contrats offline PASS
-(`tests/test_workstation_cleanup_contract.py`), shellcheck PASS, nettoyeur
-validé contre le schéma officiel `cleaner_markup_language.xsd` de BleachBit.
+**Statut :** CODED, TESTED (13 contrats offline, shellcheck). `check` exécuté
+le 22/11/2026 sur la workstation ; `apply` et le timer : NOT_RUN (à lancer
+par l'opérateur).
 
 Remplace les chaînes `rm -Rf` de `nabla/env/linux/cleanup-*.sh` par :
 
@@ -37,6 +37,49 @@ JOURNAL_MAX=300M mise run cleanup-apply-system
 Les options absentes de la version installée de BleachBit sont ignorées et
 signalées (`skipped`). Les options `process` (uv, pre-commit, docker) ne sont
 sélectionnées que si l'outil est dans le `PATH`.
+
+## Nettoyage périodique (timer utilisateur hebdomadaire)
+
+```bash
+mise run cleanup-timer-install   # ~/.config/systemd/user/workstation-cleanup.{service,timer}
+systemctl --user list-timers workstation-cleanup.timer
+mise run cleanup-timer-remove
+```
+
+Le timer (dimanche 12:30, `Persistent=true`, `Nice=19`, I/O `idle`) lance
+`periodic` : caches de développement et purges natives des outils seulement
+(`go clean -cache`, `uv cache prune`, `pre-commit gc`, images Docker orphelines
+et cache de build, pip, npm, miniatures). Les caches des navigateurs, éditeurs
+et de Claude restent dans `apply`, manuel, parce que ces applications peuvent
+être ouvertes. Rien n'exige sudo ; `apply-system` reste manuel.
+
+Pas de doublon avec le démarrage : `boot-update-user.sh` ne purge plus de
+cache (pip, pipenv et brew sont passés dans `periodic`) ; il garde
+`clean_old_folders.py` pour les `workspaceStorage` périmés. `boot-update.sh`
+(root) garde les révisions de snaps désactivées et vide encore **toutes** les
+captures `/workspace/Dropbox/motion` à chaque démarrage, contrairement à la
+rétention `MOTION_RETENTION_DAYS` d'`apply-system` : décision opérateur.
+
+Images Docker inutilisées (re-téléchargeables ; une image construite
+localement devra être reconstruite) : opt-in par âge,
+`DOCKER_UNUSED_IMAGE_DAYS=30 mise run cleanup-apply`.
+
+### Mesures du 22/11/2026 (`mise run cleanup-check`)
+
+| Poste | Taille | Traitement |
+|---|---|---|
+| `~/.cache/pre-commit` | 16 Go | `pre-commit gc` (environnements non référencés) |
+| `~/.cache/uv` | 11 Go | `uv cache prune` |
+| `~/.local/share/mise/installs` | 12 Go | **jamais** (outils installés) ; `mise prune` à la main |
+| `~/.gvm`, `~/.nvm` | 7,5 + 7,4 Go | anciens gestionnaires de versions, remplacés par mise : décision opérateur |
+| `~/.config/google-chrome/OptGuideOnDeviceModel` | 4 Go | `google_chrome.ai` ; Chrome le re-télécharge |
+| `~/.config/Claude/vm_bundles` | 18,6 Go | image de VM de Claude Desktop : ni nettoyée ni sauvegardée |
+| Docker | 60 Go d'images inutilisées, 5 Go de cache de build | `periodic` + opt-in `DOCKER_UNUSED_IMAGE_DAYS` |
+| BleachBit `apply` | 9,3 Go | aperçu `bleachbit --preview` |
+
+`/home.sda-old` (159 Go) a été supprimé le 22/11 après comparaison avec le
+nouveau home et un test de restauration Restic réussi ; la racine est passée
+de 78 % à 41 %.
 
 ## Correspondance avec les scripts historiques
 
