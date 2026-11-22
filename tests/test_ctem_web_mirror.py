@@ -1,13 +1,13 @@
 """Contract: only approved aggregate JSON may pass from NFS into local Apache."""
 
-from pathlib import Path
 import json
 import os
 import runpy
 import tempfile
 import unittest
+import unittest.mock as mock
+from pathlib import Path
 from types import SimpleNamespace
-from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "files/publish-ctem-web-mirror.py"
@@ -115,14 +115,22 @@ class WorkstationMirrorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             parent = Path(temp) / "reports"
             parent.mkdir()
-            parent.chmod(0o2777)
-            with mock.patch.object(
-                MOD["grp"],
-                "getgrnam",
-                return_value=SimpleNamespace(gr_gid=os.getegid()),
+            parent.chmod(0o2750)
+            safe_stat = parent.stat()
+            # Simulate a world-writable parent without ever creating one.
+            unsafe_stat = os.stat_result(
+                (safe_stat.st_mode | 0o002, *safe_stat[1:])
+            )
+            with (
+                mock.patch.object(Path, "stat", return_value=unsafe_stat),
+                mock.patch.object(
+                    MOD["grp"],
+                    "getgrnam",
+                    return_value=SimpleNamespace(gr_gid=os.getegid()),
+                ),
+                self.assertRaises(ValueError),
             ):
-                with self.assertRaises(ValueError):
-                    MOD["publish"](parent / "ctem", report())
+                MOD["publish"](parent / "ctem", report())
 
     def test_installation_remains_opt_in_and_reports_are_local(self):
         script = SCRIPT.read_text()
