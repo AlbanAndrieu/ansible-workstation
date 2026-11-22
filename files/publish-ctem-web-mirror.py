@@ -14,7 +14,6 @@ from html import escape
 import json
 import os
 from pathlib import Path
-import re
 import stat
 
 SOURCE = Path("/media/www/reports/ctem/amass-summary.json")
