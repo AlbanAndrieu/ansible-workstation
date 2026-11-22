@@ -45,7 +45,10 @@ class NexusClientsContract(unittest.TestCase):
         ]
         self.assertEqual(signed["when"], "nexus_write")
         self.assertEqual(len(signed["ansible.builtin.assert"]["that"]), 4)
-        self.assertIn("BEGIN PGP SIGNED MESSAGE", str(signed["ansible.builtin.assert"]["that"]))
+        self.assertIn(
+            "BEGIN PGP SIGNED MESSAGE",
+            str(signed["ansible.builtin.assert"]["that"]),
+        )
         self.assertLess(
             list(self.tasks).index(signed["name"]),
             list(self.tasks).index("Fetch APT through the Nexus proxies"),

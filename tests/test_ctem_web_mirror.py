@@ -106,7 +106,10 @@ class WorkstationMirrorTest(unittest.TestCase):
             self.assertEqual(modes, [0o600, 0o600])
             for name in ("amass-summary.json", "index.html"):
                 self.assertEqual((destination / name).stat().st_mode & 0o777, 0o640)
-            self.assertIn("OBSERVED_NOT_CERTIFIED", (destination / "amass-summary.json").read_text())
+            self.assertIn(
+                "OBSERVED_NOT_CERTIFIED",
+                (destination / "amass-summary.json").read_text(),
+            )
 
     def test_rejects_world_writable_report_parent(self):
         with tempfile.TemporaryDirectory() as temp:
