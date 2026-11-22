@@ -3,9 +3,128 @@
 **Statut :** audit fait, corrections urgentes et lots 1 et 2 appliqués le 16/11 ; lots 3 à 5 proposés.
 
 Rapports : `/var/www/reports/security/` sur le disque local, servis par Apache en
-`/reports` : `http://172.17.0.57:8087/reports/security/` depuis le LAN, et par le
-tunnel Cloudflare derrière Cloudflare Access (voir « Accès aux rapports »).
+`/reports` : `http://172.17.0.57:8087/reports/security/` depuis le LAN.
+L'accès via le tunnel Cloudflare **n'est pas autorisé par la configuration
+versionnée actuelle** sans validation cryptographique du jeton Access et
+nouvelle revue (voir « Accès aux rapports »).
 
+## Réévaluation du 21 novembre 2026 — preuves et priorités
+
+Les **derniers résultats des scanners sur la workstation accessibles dans cette documentation sont ceux du 16/11** ; aucun rapport brut du scan `security-scan@clamav` planifié samedi 21/11 n'a été fourni ou interrogé. Les trois workflows GitHub du 21/11 sur `9b672df` (CodeQL Python, Ansible Syntax, CI lint/contrats) ont conclu **success** ; `Molecule manual integration` est **skipped**. Ces statuts ne prouvent ni un OS sain ni une analyse complète de toutes les dépendances.
+
+| Ordre | Interprétation fondée sur les rapports du 16/11 | Condition de réception |
+| --- | --- | --- |
+| **P0 — élévation de privilèges** | Les crons root qui exécutaient des scripts modifiables ont été supprimés le 16/11 (lot 1), mais `security_sudoers_passwordless: [albandrieu]` donne encore `NOPASSWD: ALL` selon la configuration décrite ; les groupes `docker`, `lxd`, `libvirt` et `microk8s` offrent d'autres chemins équivalents à root | Audit du sudoers **effectif**, des appartenances et des services réellement exploités, accès console de secours, suppression graduelle des droits non requis et test négatif |
+| **P0 — rapports et WAN** | Apache autorise localement le tunnel avec un en-tête `Cf-Access-Jwt-Assertion` **sans validation cryptographique du JWT** ; application Cloudflare Access pas créée dans le rapport du 16/11. La confiance locale `CF-Connecting-IP` doit rester strictement liée à cloudflared | Application Access réelle avant publication, vérification signature/audience ou délégation prouvée au tunnel, 403 depuis WAN sans identité, aucun accès direct :8082/8087 |
+| **P1 — Lynis** | 73/100 et un avertissement `grpck`. Ce score est un indice de configuration, **pas** une probabilité de compromission | Corriger les groupes orphelins après inventaire UID/GID ; enregistrer la différence de score et les tests encore applicables |
+| **P1 — OpenSCAP CIS L1** | 260 PASS, 100 FAIL, 36 N/A sur contenu 24.04 adapté à 26.04 ; **pas de certification de conformité 26.04** | Revalider la compatibilité SSG, classer les échecs par contrôle, traiter GNOME lock, auditd, AppArmor, réseau ; justifier les règles inapplicables (Apache/Docker/NFS) |
+| **P1 — rkhunter** | 116 binaires `modified` correspondent aux fichiers de paquets selon `dpkg --verify` documenté ; **aucune preuve de rootkit** | Rafraîchir la baseline `--propupd` seulement après preuve des paquets installés signés, conserver un diff du rapport |
+| **P1 — ClamAV** | Deux détections `php.include.remote.526.UNOFFICIAL` sur cache NVD et détections `Heuristics.Zip.OverlappingFiles` ; les deux scans ont été interrompus (2 h et 8 h) | Conserver échantillons en quarantaine hors publication, provenance/signature des bases tierces, résultat `clamdscan --multiscan` avec résumé et durée ; `NOT_RUN` jusqu'à preuve du timer du 21/11 |
+| **P2 — traçabilité** | `auditd` tournait avec règles vides avant les lots appliqués ; AIDE pas encore en place | Charger une allowlist minimale de règles et tester événement → journal, mesure de rétention et surcharge I/O |
+
+**Risque de chaîne d'approvisionnement :** le cache Nexus [prévu pour APT/npm/PyPI/Docker](workstation-nexus-package-cache.md) ne fournit pas gratuitement la quarantaine Repository Firewall. Conserver CodeQL, scans SCA, SBOM, signature des métadonnées APT et contrôle des digests Docker. L'ancienne version de Nexus déclarée dans Compose (`3.92.3-alpine`) doit être revue séparément.
+
+## Complément 21 novembre — preuves NFS/Apache (fournies par l'opérateur)
+
+Le montage `/media/www` est un **automount systemd NFSv4.2** depuis
+`nabla:/mnt/cpool/www`, avec `nosuid,nodev,noexec`.
+Les symlinks historiques `/var/www/nabla-site-apache` et
+`/var/www/nabla-site-bababou` pointent vers ce partage :
+**ces sites sont servis en NFS, sans miroir local**.
+
+`sudo apache2ctl -S` n'affiche que `*:80` et `*:8082`, exécutés
+comme `www-data`, et aucun VirtualHost 8087 ou 443 dans les éléments
+fournis. Il s'agit de l'état réellement observé, à distinguer de
+l'`Alias /reports` sur port 8087 **préparé mais non réceptionné**
+dans cette PR. `Main DocumentRoot: /var/www/html` ne décrit pas à lui
+seul le `DocumentRoot` de chaque VirtualHost : les vhosts du dépôt
+peuvent servir `/var/www/nabla-site-apache/public`.
+
+`getfacl -p /media/www/nabla-site-apache/public` prouve
+`owner=albandrieu`, `group=www-data`, ACL `user::rwx`,
+`group::rwx`, `other::r-x` : le groupe Apache a le **droit
+d'écriture** dans la racine NFS du site. C'est un risque de
+modification du contenu servi (PHP est chargé), **à revoir avant
+toute bascule d'ACL** pour ne pas casser le flux de déploiement.
+Modules vus : `php_module`, `proxy_module`, `proxy_http_module`,
+`remoteip_module`; aucune preuve de `security2_module` chargé
+dans ce filtre. `AH00558` est un avertissement `ServerName` global
+sans effet sur le succès de `apache2ctl -S`.
+
+Architecture CTEM prévue, **non attestée déployée** :
+
+```text
+TrueNAS /mnt/cpool/ctem/amass/reports  [privé, jamais NFS]
+   └─ export expurgé /mnt/cpool/www/reports/ctem
+         └─ NFS /media/www/reports/ctem (source à revalider)
+               └─ publish-ctem-web-mirror.py (non-root, opt-in)
+                     └─ /var/www/reports/ctem (local)
+                           └─ Apache Alias /reports (LAN only)
+```
+
+Sur la workstation, contrôles **en lecture seule** :
+
+```bash
+sudo apache2ctl -S
+sudo grep -R -n -E 'Alias /reports|Listen 8087|ServerName' \
+  /etc/apache2/sites-enabled /etc/apache2/conf-enabled /etc/apache2/ports.conf
+findmnt -T /media/www/reports -o TARGET,SOURCE,FSTYPE,OPTIONS
+namei -l /var/www/reports /var/www/nabla-site-apache/public
+getfacl -p /media/www/nabla-site-apache/public /var/www/reports
+python3 /opt/script/publish-ctem-web-mirror.py --check
+```
+
+Le préflight peut retourner `NOT_RUN` / fichier absent si le pilote
+n'est pas installé : ne pas assimiler cela à une panne du serveur ou
+à une validation du partage. Le producteur expurgé et les règles de
+minimisation sont documentés dans
+[nabla-compose #436](https://github.com/AlbanAndrieu/nabla-compose/pull/436)
+et dans son
+[runbook commun](https://github.com/AlbanAndrieu/nabla-compose/blob/feat/ctem-vantage-isolated-20261121/docs/runbooks/workstation-truenas-report-sharing-and-honeypot.md).
+
+### Visibilité des scans échoués (22/11 — CODED / NOT_DEPLOYED)
+
+Le script des scanners utilise un gestionnaire `EXIT` unique : après un échec
+Lynis, rkhunter, ClamAV ou OpenSCAP, il écrit un reçu `INCOMPLETE` en conservant
+le code de sortie original. L'unité `security-scan@.service` utilise
+`OnFailure=security-reports-publish.service` pour rendre l'échec consultable
+dans le tableau local, même lorsque le timer est en erreur. Les reçus invalides
+ne peuvent plus être pris pour un scan `COMPLETE`. Les nouveaux tests reproduisent
+un échec Lynis, sa sortie non nulle et la présence du reçu incomplet.
+
+### Durcissement additionnel du miroir CTEM (22/11)
+
+Le lecteur NFS compare le descripteur ouvert avec l'inode observé avant l'ouverture
+(et les métadonnées avant/après lecture) ; un lien symbolique, fichier remplacé
+ou modifié pendant la copie entraîne un refus, sans exposer son contenu.
+L'écriture des agrégats et de la page HTML commence en `0600` avec `O_EXCL`
+et `O_NOFOLLOW`, puis n'autorise le groupe Apache en lecture (`0640`)
+qu'une fois les données rédigées et synchronisées. Le parent doit être
+`setgid`, non accessible aux autres utilisateurs et non modifiable par le
+groupe. Les données CTEM brutes ne sont jamais copiées.
+
+## 21 novembre 2026 — tableaux de bord des scans (CODED, non déployé)
+
+Le pipeline versionné prépare un résumé HTML statique et un fichier JSON
+`workstation-security-summary/v1` contenant les dates, statuts et compteurs
+des quatre scanners. Les rapports complets restent disponibles uniquement
+sur le LAN ; le résumé ne contient aucun finding brut ni nom d'hôte.
+
+Les états `COMPLETE`, `INCOMPLETE`, `PARTIAL` et `NOT_RUN` sont distincts.
+Une erreur ClamAV ne doit jamais être interprétée comme un scan terminé.
+Les contrats offline exercent la génération du rapport à partir de données
+de test, ainsi que l'absence de texte sensible dans la synthèse.
+
+L'ancien contrôle Apache fondé sur un simple en-tête de demande Access
+est remplacé, dans la configuration versionnée, par un accès LAN uniquement.
+Avant toute réouverture distante, réceptionner une vérification réelle du
+jeton signé et des tests de refus extérieur.
+
+Une intégration DefectDojo doit passer par l'importeur privé existant de
+`nabla-compose` et uniquement pour des findings qualifiés et revus.
+Sur `nabla-site-alban`, ne publier qu'une éventuelle synthèse agrégée
+explicitement autorisée ; pas de connexion à l'API DefectDojo ni de rapports
+bruts dans le bundle public.
 ## Ce qui a été corrigé tout de suite
 
 | Changement | Pourquoi | Retour arrière |
@@ -46,6 +165,117 @@ public : le tunnel ne publie pas encore Apache. Dans le tableau de bord :
 
 Tant qu'elle n'existe pas, le tunnel répond 403 sur `/reports`. Les anciennes copies (`public/reports/` sur le partage NFS)
 restent limitées au LAN et peuvent être supprimées.
+
+## NFS minimal, Code Server et rapports CTEM (21/11/2026)
+
+### Pourquoi la workstation voit-elle `/mnt/cpool/code` ?
+
+`nabla-compose/apps/code/compose.yml` publie des chemins TrueNAS dans
+le **conteneur Code Server** : `/mnt/cpool/code:/code-server`,
+`/mnt/cpool/code/config:/config` et plusieurs dossiers frères.
+Ce montage Docker est distinct d'un partage **NFS workstation**.
+Dans `defaults/main.yml` et les exports déclarés par
+`playbooks/truenas-nfs-shares.yml`, `cpool/code` n'est pas un
+partage workstation légitime. Le code NFS crée maintenant des
+déclarations `state: absent` pour les exports exacts :
+
+- `/mnt/cpool/code`
+- `/mnt/cpool/ctem`
+- `/mnt/cpool/ctem/amass/reports`
+- `/mnt/cpool/var/nabla/ops-logs`
+
+Ces interdictions sont **CODED / NOT_APPLIED**. Le playbook NFS ne
+supprime rien en mode plan ; il laisse actuellement les exports
+**non déclarés** intacts. Contrôler également tout export parent
+`/mnt/cpool` ou `/mnt/cpool/var`, qui contournerait une suppression
+par chemin exact.
+
+Pour identifier le mécanisme réel sur la workstation, **sans lancer
+un `find` récursif sur les NFS automounts** :
+
+```bash
+findmnt -T /mnt/cpool/code -o TARGET,SOURCE,FSTYPE,OPTIONS || true
+readlink -f /mnt/cpool/code || true
+findmnt -rn -t nfs,nfs4 -o TARGET,SOURCE,OPTIONS
+ls -ld /mnt/cpool /mnt/cpool/code 2>/dev/null || true
+```
+
+Sur TrueNAS, l'inventaire des exports reste
+`sudo midclt call sharing.nfs.query`. Exécuter
+`playbooks/truenas-nfs-shares.yml` sans `truenas_nfs_apply=true`
+pour voir le plan avant de demander une suppression explicite.
+Code Server doit être audité séparément : ses montages RW
+`nginx,drawio,compose,traefik,prometheus,grafana,litellm` sont
+trop larges pour une configuration Zero Trust ; limiter chaque
+montage à l'usage réellement attendu, de préférence en lecture seule.
+
+### Distribution CTEM vers `/media/www`, puis Apache
+
+Le répertoire TrueNAS privé
+`/mnt/cpool/ctem/amass/reports` reste hors NFS/Apache. Seule sa
+synthèse **sans FQDN, sans IP ni entité Backstage** est projetée dans
+le partage existant :
+
+| Provenance | Destination / effet |
+| --- | --- |
+| TrueNAS `/mnt/cpool/www/reports/ctem` | Deux fichiers expurgés, copie dans le NFS `www` |
+| Workstation `/media/www/reports/ctem` | Vue du partage TrueNAS, **non directement servie** |
+| Workstation `/var/www/reports/ctem` | Miroir local des deux fichiers, revalidé puis HTML reconstruit |
+| Apache `/reports/ctem/` | `Alias /reports /var/www/reports` déjà existant, **LAN uniquement** tant qu'Access JWT n'est pas vérifié |
+
+La copie locale évite de remonter `/media/www` lors de chaque requête
+Apache, conformément à la stabilisation du 16/11. Le playbook
+`security-scans.yml` installe désormais
+`/opt/script/publish-ctem-web-mirror.py` **sans le planifier**.
+Il refuse l'HTML venant de NFS et tout champ JSON inattendu
+(y compris sous-domaines ou données brutes) ; il reconstruit
+localement un HTML statique `noindex` et un JSON 0640 avec groupe
+`www-data`. Recette après publication TrueNAS :
+
+```bash
+# Sur workstation, utilisateur propriétaire de /var/www/reports (pas sudo)
+python3 /opt/script/publish-ctem-web-mirror.py --check
+
+CTEM_WORKSTATION_MIRROR_APPROVED=YES \
+  python3 /opt/script/publish-ctem-web-mirror.py --apply
+```
+
+Aucun timer, `rsync` récursif du NAS, ni changement de VirtualHost
+Apache n'est ajouté. **La configuration Apache de cette PR refuse les
+accès au rapport qui ne proviennent pas du LAN** : elle n'accorde plus
+l'accès sur la seule présence d'un en-tête
+`Cf-Access-Jwt-Assertion`. Il faudra une vraie vérification
+cryptographique du JWT ou une protection équivalente avant d'envisager
+un accès externe. Contrôler les clients NFS autorisés séparément.
+
+### Autres candidats à un portail local de synthèses
+
+- **Acceptables après expurgation** : état Gatus / couverture Prometheus
+  agrégée, score Lynis et dérive de conformité, récapitulatif
+  `checkdmarc` SPF/DMARC, compte de findings DefectDojo par sévérité,
+  rapports de disponibilité TrueNAS (statuts et dates sans adresses),
+  FinOps Vercel agrégé.
+- **Ne pas publier tels quels** : JSON Amass des sous-domaines, graphe
+  PostgreSQL, rapports Nuclei/ZAP avec URLs et réponses, fichiers
+  complets Lynis/rkhunter/ClamAV/OpenSCAP contenant chemins ou noms
+  internes, dumps de bases, logs d'authentification ou logs
+  `nabla-ops-logs`. Pour ces derniers, utiliser le coffre privé et une
+  visualisation authentifiée, pas Apache statique.
+
+### Identification du journal `reconcile-f51102a8.log`
+
+Le SHA abrégé `f51102a8` correspond au commit
+`f51102a814fe5b69475c08b76bee7941f7e35814` de
+`nabla-compose` (8/11/2026), une fusion de `origin/master` dans
+`ccr-bc925643-xffav2` avec résolution de conflits de roadmap et
+catalogue. L'emplacement par défaut des journaux d'exploitation est
+`/mnt/cpool/var/nabla/ops-logs` depuis `scripts/cron.sh`.
+L'origine précise du fichier et son contenu **ne peuvent être
+authentifiés sans un `stat` et une lecture locale contrôlée**.
+
+Sur le NAS, si le fichier existe dans ce dossier :
+`sudo stat -c '%n %s bytes %a %U:%G %y' /mnt/cpool/var/nabla/ops-logs/reconcile-f51102a8.log`.
+Conserver privé, ne jamais le publier sur `/media/www` ou Apache.
 
 ## Résultats des scans
 

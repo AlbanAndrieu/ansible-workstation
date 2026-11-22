@@ -66,6 +66,8 @@
       loop:
         - security-scan.sh
         - publish-security-reports.sh
+        - publish-ctem-web-mirror.py
+        - render-security-reports.py
       become: true
       when: security_scans_write
 
@@ -138,6 +140,7 @@
             [Unit]
             Description=Security scan: %i
             OnSuccess=security-reports-publish.service
+            OnFailure=security-reports-publish.service
 
             [Service]
             Type=oneshot

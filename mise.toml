@@ -132,6 +132,10 @@ run = "bash scripts/capture-packages.sh"
 description = "Check-only: count missing or unavailable captured packages; no sudo, no install"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/restore-packages.yml"
 
+[tasks.nexus-clients-check]
+description = "Probe the Nexus package cache and print the APT/npm/pip/uv plan (no change)"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/nexus-clients.yml"
+
 [tasks.harden-network-check]
 description = "Check-only: print the ufw allowlist and service clean-up plan; no sudo, no change"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/ansible-playbook -i localhost, -c local playbooks/harden-network.yml"
