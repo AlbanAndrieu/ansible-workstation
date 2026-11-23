@@ -11,8 +11,20 @@ LANG=C.UTF-8 snap list --all | awk '/disabled/{print $1, $3}' |
     snap remove "${name}" --revision="${revision}" || true
   done
 
-# motion writes as its own user.
-rm -f /workspace/Dropbox/motion/*.jpg /workspace/Dropbox/motion/*.mkv
+# motion writes as its own user; 10 days keep the recent captures without filling Dropbox.
+find /workspace/Dropbox/motion -xdev -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.mkv' \) \
+  -mtime +10 -delete 2>/dev/null || true
+
+# A failed NFS mount (TrueNAS or network down at boot, 18/11/2026) leaves its automount dead
+# until someone runs reset-failed: re-arm the automount of every failed mount.
+systemctl list-units --failed --type=mount --plain --no-legend |
+  awk '{print $1}' |
+  while read -r mount; do
+    automount="${mount%.mount}.automount"
+    systemctl cat "${automount}" >/dev/null 2>&1 || continue
+    systemctl reset-failed "${mount}" || true
+    systemctl start "${automount}" || true
+  done
 
 systemctl restart docker
 

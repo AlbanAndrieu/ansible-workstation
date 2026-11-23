@@ -66,6 +66,14 @@ class SecurityScansContracts(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertFalse(any(re.search(r, line) for r in drop))
 
+    def test_boot_keeps_recent_motion_and_rearms_dead_automounts(self):
+        text = (ROOT / "templates/boot-update.sh-Ubuntu.j2").read_text()
+        self.assertIn("-mtime +10 -delete", text)
+        self.assertNotIn("rm -f /workspace/Dropbox/motion/*", text)
+        self.assertIn("systemctl list-units --failed --type=mount", text)
+        self.assertIn('systemctl reset-failed "${mount}"', text)
+        self.assertIn('systemctl start "${automount}"', text)
+
     def test_no_root_unit_runs_a_user_editable_file(self):
         text = (ROOT / "templates/boot-update.sh-Ubuntu.j2").read_text()
         boot = "\n".join(
@@ -209,10 +217,10 @@ class SecurityScansContracts(unittest.TestCase):
             day.mkdir(parents=True)
             dest.mkdir()
             (day / "rkhunter-warnings.txt").write_text(
-                "Warning: private-hostname.local\n"
+                "Warning: private-hostname.local\n",
             )
             (day / ".scan-rkhunter.json").write_text(
-                '{"tool":"unexpected","state":"COMPLETE"}\n'
+                '{"tool":"unexpected","state":"COMPLETE"}\n',
             )
             subprocess.run(
                 [
@@ -245,16 +253,16 @@ class SecurityScansContracts(unittest.TestCase):
             day.mkdir(parents=True)
             target.mkdir()
             (day / "lynis-report.dat").write_text(
-                "hardening_index=73\nwarning[]=PRIVATE-URL internal.local\n"
+                "hardening_index=73\nwarning[]=PRIVATE-URL internal.local\n",
             )
             (day / ".scan-lynis.json").write_text(
-                '{"tool":"lynis","state":"COMPLETE"}\n'
+                '{"tool":"lynis","state":"COMPLETE"}\n',
             )
             (day / "clamav.txt").write_text(
-                "Sensitive /home/secret.key: FOUND\nInfected files: 2\n"
+                "Sensitive /home/secret.key: FOUND\nInfected files: 2\n",
             )
             (day / ".scan-clamav.json").write_text(
-                '{"tool":"clamav","state":"INCOMPLETE"}\n'
+                '{"tool":"clamav","state":"INCOMPLETE"}\n',
             )
             renderer = ROOT / "files/render-security-reports.py"
             subprocess.run(
