@@ -1,6 +1,6 @@
 # Workstation — utiliser Nexus Repository comme cache de dépendances
 
-**État du plan : 23 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; HTTPS privé `nexus.int` et Maven `DEPLOYED` ; dépôts APT/npm/PyPI/Docker toujours absents.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
+**État du plan : 23 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; HTTPS privé `nexus.int` et Maven `DEPLOYED`, miroir Maven de la workstation en HTTPS `nexus.int` ; dépôts APT/npm/PyPI/Docker toujours absents.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
 
 ## État constaté dans Git, pas au runtime
 
@@ -28,11 +28,11 @@
 | `https://nexus.int.albandrieu.com/service/rest/v1/status` | 200, certificat vérifié |
 | Dépôts visibles en anonyme | toujours les 9 Maven/NuGet ; `apt-ubuntu-26-04*`, `npm-all`, `pypi-all`, `docker-all` en 404 |
 | `playbooks/nexus-clients.yml` (check) | 5 sondes en 404 : bascule refusée, aucun changement |
-| Maven de la workstation (`~/.m2/settings.xml`, miroir `nexus`) | résout via `http://172.17.0.24:8081/repository/maven-public/` (**HTTP clair**) |
+| Maven de la workstation (`~/.m2/settings.xml`, miroir `nexus`) | résolvait via `http://172.17.0.24:8081/repository/maven-public/` (**HTTP clair**) jusqu'à la bascule ci-dessous |
 | Maven via `https://nexus.int.albandrieu.com/repository/maven-public/` (settings temporaire, anonyme) | `BUILD SUCCESS`, truststore Java OK |
 | CI via `nexus.albandrieu.com` + service token Access | `200 application/java-archive` (22/11) |
 
-Action workstation : passer le miroir Maven `nexus` sur l'URL HTTPS `nexus.int` (fichier utilisateur, hors Git), puis retirer l'usage de `:8081`.
+**Maven de la workstation : `APPLIQUÉ` le 23/11 à 22 h 48.** Le miroir `nexus` (`mirrorOf *`) de `~/.m2/settings.xml` pointe `https://nexus.int.albandrieu.com/repository/maven-public/` (fichier utilisateur 0600, hors Git, seule l'URL a changé). Contrôle avec un dépôt local vide (`-Dmaven.repo.local`, `maven-dependency-plugin:3.8.1:get` de `commons-lang3:3.17.0`) : `BUILD SUCCESS`, 219 artefacts tous servis par `nexus.int` en HTTPS, aucune requête vers `172.17.0.24`. L'identifiant `nexus` ne change pas : le cache `~/.m2/repository` reste valide. Aucun autre client de la workstation (`.npmrc`, `pip.conf`, `uv.toml`, Gradle, Docker, `.terraformrc`) n'utilisait `:8081`. Retour arrière : `cp -p ~/.m2/settings.xml.bak-20261123 ~/.m2/settings.xml`. Le port 8081 reste exposé sur le LAN par Compose, pour le diagnostic sans secret (voir plus bas).
 
 ## Bascule des clients : `playbooks/nexus-clients.yml`
 
