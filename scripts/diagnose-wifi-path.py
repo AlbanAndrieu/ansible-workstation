@@ -163,7 +163,9 @@ def inspect_legacy_dns_hook(
                 re.MULTILINE,
             ),
         ),
-        "hook_sets_quad9": configured == ["149.112.112.112", "9.9.9.9"],
+        # Quad9 until 2026-11-24, Cloudflare since: a public override of the LAN DNS.
+        "hook_sets_public_dns": configured
+        in (["149.112.112.112", "9.9.9.9"], ["1.0.0.1", "1.1.1.1"]),
         "hook_targets_current_interface": (
             None if target is None or interface is None else target == interface
         ),
@@ -265,7 +267,7 @@ def snapshot(
 
     # Two independent public DNS endpoints and DNS access to the LAN gateway.
     result["pfsense_dns_public"] = query_a(runner, "172.17.0.1", "example.org")
-    result["control_dns_public"] = query_a(runner, "9.9.9.9", "example.org")
+    result["control_dns_public"] = query_a(runner, "1.1.1.1", "example.org")
     result["pfsense_private_zone"] = False
     ok, answer = runner(
         (
@@ -402,7 +404,7 @@ def render(result: dict[str, object]) -> None:
         ("LAN TCP/53", "pfsense_tcp53"),
         ("Internet TCP/443 by IP", "external_tcp443"),
         ("pfSense public DNS", "pfsense_dns_public"),
-        ("Quad9 control DNS", "control_dns_public"),
+        ("Cloudflare control DNS", "control_dns_public"),
         ("System public DNS", "system_dns_public"),
         ("pfSense private DNS", "pfsense_private_zone"),
         ("System private-name resolution", "system_dns_private"),
@@ -432,8 +434,8 @@ def render(result: dict[str, object]) -> None:
             + str(legacy["unit_has_start_timestamp"]),
         )
         print(
-            "  sets_quad9="
-            + str(legacy["hook_sets_quad9"])
+            "  sets_public_dns="
+            + str(legacy["hook_sets_public_dns"])
             + " targets_interface="
             + str(legacy["hook_targets_current_interface"])
             + " resolvectl_dns="

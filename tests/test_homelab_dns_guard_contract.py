@@ -191,7 +191,8 @@ class HomelabDNSGuardContract(unittest.TestCase):
         self.assertIn("when: not ansible_check_mode", contents)
         self.assertIn("workstation_split_dns_resolver not in", contents)
         self.assertIn(
-            "or '9.9.9.9' in workstation_dns_effective_before.stdout",
+            "or workstation_dns_public_resolvers | select('in', "
+            "workstation_dns_effective_before.stdout)",
             contents,
         )
         self.assertIn("~{{ workstation_split_dns_domain }}", contents)

@@ -21,7 +21,9 @@ ZONE = "~int.albandrieu.com"
 HOST = "defectdojo.int.albandrieu.com"
 EDGE = "172.17.0.24"
 ACK = "I_APPROVE_WORKSTATION_SPLIT_DNS_REPAIR"
-QUAD9 = {"9.9.9.9", "149.112.112.112"}
+# Public resolvers that must never replace Pi-hole on the LAN link
+# (Cloudflare since Quad9 stopped serving France on 2026-11-24).
+PUBLIC_DNS = {"1.1.1.1", "1.0.0.1", "9.9.9.9", "149.112.112.112"}
 
 
 def call(argv: list[str], timeout: int = 5) -> tuple[bool, str, float]:
@@ -153,7 +155,10 @@ def verdict(cfg: dict[str, str], state: dict[str, str]) -> str:
         return "DHCP_DNS_OVERRIDE_POLICY_DRIFT"
     if ZONE not in profile_routes(cfg["profile_domains"]):
         return "PRIVATE_ROUTE_NOT_PERSISTED"
-    if RESOLVER not in addresses(cfg["link_dns"]) or addresses(cfg["link_dns"]) & QUAD9:
+    if (
+        RESOLVER not in addresses(cfg["link_dns"])
+        or addresses(cfg["link_dns"]) & PUBLIC_DNS
+    ):
         return "RESOLVED_LINK_DNS_DRIFT"
     if ZONE not in cfg["link_domains"].split():
         return "RESOLVED_PRIVATE_ROUTE_DRIFT"
