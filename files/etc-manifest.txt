@@ -22,6 +22,7 @@
 /etc/default/zramswap
 /etc/ufw/after.rules
 /etc/gdm3/custom.conf
+/etc/gdm3/greeter.dconf-defaults
 /etc/glances/glances.conf
 /etc/gprofng.rc
 /etc/howdy/config.ini

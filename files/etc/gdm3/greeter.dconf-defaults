@@ -1,0 +1,47 @@
+# These are the options for the greeter session that can be set 
+# through GSettings. Any GSettings setting that is used by the 
+# greeter session can be set here.
+
+# Note that you must configure the path used by dconf to store the 
+# configuration, not the GSettings path.
+
+
+# Login manager options
+# =====================
+[org/gnome/login-screen]
+# See /usr/share/glib-2.0/schemas/org.gnome.login-screen.gschema.xml
+# - Distro logo shown below the user list or username box
+#logo='/usr/share/images/vendor-logos/logo-text-version-64.png'
+
+# - Disable user list
+# disable-user-list=true
+# - Disable restart buttons
+# disable-restart-buttons=true
+# - Show a login welcome message
+# banner-message-enable=true
+# banner-message-text='Welcome'
+# - Don't use a fingerprint reader for authentication
+# enable-fingerprint-authentication=false
+# - Don't use a smartcard reader for authentication
+enable-smartcard-authentication=false
+
+# Automatic suspend
+# =================
+[org/gnome/settings-daemon/plugins/power]
+# See /usr/share/glib-2.0/schemas/org.gnome.settings-daemon.plugins.power.gschema.xml
+# - Time inactive in seconds before suspending with AC power
+#   1200=20 minutes, 0=never
+# sleep-inactive-ac-timeout=1200
+# - What to do after sleep-inactive-ac-timeout
+#   'blank', 'suspend', 'shutdown', 'hibernate', 'interactive' or 'nothing'
+# sleep-inactive-ac-type='suspend'
+# - As above but when on battery
+# sleep-inactive-battery-timeout=1200
+# sleep-inactive-battery-type='suspend'
+
+# Appearance
+# ==========
+[org/gnome/desktop/interface]
+# See /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.xml
+# - Accent color for UI widgets, could be chosen to match distro branding
+# accent-color='blue'

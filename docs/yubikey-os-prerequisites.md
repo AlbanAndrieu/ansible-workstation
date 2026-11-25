@@ -212,3 +212,32 @@ mot de passe de `login` dans Seahorse pour celui de la session. Le trousseau
 
 Les secrets ne passent pas par Ansible : seule la configuration GDM est
 versionnée ici.
+
+## Connexion GDM bloquée quand la YubiKey est branchée (25/11/2026)
+
+**Symptôme :** après la phrase LUKS, l'écran de connexion GDM n'aboutit pas
+tant que la YubiKey est branchée, même en la touchant ; la débrancher rend la
+connexion par mot de passe.
+
+**Cause :** l'interface CCID/PIV de la YubiKey est vue comme une carte à puce.
+GDM bascule alors sur le service PAM `gdm-smartcard` (`pam_sss
+try_cert_auth`), alors qu'aucun certificat n'est configuré dans SSSD : la
+connexion ne peut pas aboutir. La YubiKey n'est pas un facteur de connexion de
+session sur ce poste.
+
+**Correction :** dans la section `[org/gnome/login-screen]` de
+`/etc/gdm3/greeter.dconf-defaults`, `enable-smartcard-authentication=false`
+décommenté, puis `sudo /usr/share/gdm/generate-config` (relancé par
+`ExecStartPre` de `gdm.service` à chaque démarrage). Capturé dans
+[`files/etc/gdm3/greeter.dconf-defaults`](../files/etc/gdm3/greeter.dconf-defaults)
+(`restore-etc.yml`).
+
+- Contrôle : `sudo -u gdm env DCONF_PROFILE=gdm dconf read
+  /org/gnome/login-screen/enable-smartcard-authentication` renvoie `false`.
+- Retour arrière : remettre `/etc/gdm3/greeter.dconf-defaults.bak-20261125`,
+  puis relancer `generate-config`.
+- Réception `NOT_RUN` : se déconnecter, YubiKey branchée, et se reconnecter au
+  mot de passe.
+- Non couvert : l'écran de verrouillage de la session lit le réglage de
+  l'utilisateur (`gsettings get org.gnome.login-screen
+  enable-smartcard-authentication`, toujours `true`), pas celui de GDM.
