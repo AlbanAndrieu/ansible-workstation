@@ -14,7 +14,7 @@ les interfaces. Avec `userland-proxy: false`, les ports publiés par Docker pass
 | ufw : entrée refusée sauf allowlist | Voir ci-dessous ; sortie et forwarding inchangés (Docker, libvirt) |
 
 Allowlist : depuis le LAN `172.17.0.0/24` apache 8082/8087, minidlna 8200 + SSDP 1900/udp,
-mDNS 5353/udp, Synergy/Deskflow 24800 + service Synergy
+mDNS 5353/udp, Deskflow 24800 + service Synergy
 24802, Dropbox 17500 tcp/udp. Depuis TrueNAS
 seulement : LiteLLM 4000 (openrag, litellm, langflow de `nabla-compose`), ollama 11434, zabbix 10050.
 Depuis les bridges Docker locaux `172.16.0.0/16` : 4000 et 11434.
@@ -46,6 +46,10 @@ port) reste ouvert, mais seulement depuis le LAN. **À rejouer** pour qu'elles d
 
 Vérifié le 3 novembre 2026 après redémarrage : `ufw.service` actif au boot, INPUT et FORWARD
 en DROP ; la liste des règles (sudo) n'a pas été relue.
+
+25 novembre 2026 : Deskflow (Flatpak) remplace Barrier et Synergy, retirés de l'autostart
+(dotfiles). `ufw status numbered` : `24800/tcp ALLOW IN 172.17.0.0/24 # deskflow`, aucune règle
+24800 ouverte à tous. 24802 (service Synergy) reste ouvert depuis le LAN tant que Synergy est installé.
 
 ## Liens avec TrueNAS (relevé du 4 novembre 2026)
 

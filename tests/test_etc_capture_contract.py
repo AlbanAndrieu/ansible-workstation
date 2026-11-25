@@ -214,6 +214,23 @@ class NetworkHardeningContract(unittest.TestCase):
             )
             self.assertIn(rule["proto"], {"tcp", "udp"})
 
+    def test_deskflow_is_reachable_from_the_lan_only(self):
+        v = self.play["vars"]
+        rules = [r for r in v["harden_rules"] if r["port"] == "24800"]
+        self.assertEqual(
+            rules,
+            [
+                {
+                    "from": "{{ harden_lan }}",
+                    "port": "24800",
+                    "proto": "tcp",
+                    "comment": "deskflow",
+                },
+            ],
+        )
+        # The open-to-anywhere rule found when ufw was first enabled stays deleted.
+        self.assertIn({"port": "24800", "proto": "any"}, v["harden_legacy_rules"])
+
     def test_syslog_and_snmp_are_retired_after_pfsense(self):
         v = self.play["vars"]
         self.assertFalse([r for r in v["harden_rules"] if r["port"] in {"514", "9116"}])

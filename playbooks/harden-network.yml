@@ -39,11 +39,11 @@
         port: "9100"
         proto: tcp
         comment: node_exporter host and restic metrics
-      # Synergy and Deskflow share 24800; synergy-service also listens on 24802.
+      # Deskflow replaced Barrier and Synergy on 24800 (25/11/2026); synergy-service, still installed, uses 24802.
       - from: "{{ harden_lan }}"
         port: "24800"
         proto: tcp
-        comment: synergy and deskflow
+        comment: deskflow
       - from: "{{ harden_lan }}"
         port: "24802"
         proto: tcp
