@@ -238,6 +238,7 @@ décommenté, puis `sudo /usr/share/gdm/generate-config` (relancé par
   puis relancer `generate-config`.
 - Réception `NOT_RUN` : se déconnecter, YubiKey branchée, et se reconnecter au
   mot de passe.
-- Non couvert : l'écran de verrouillage de la session lit le réglage de
-  l'utilisateur (`gsettings get org.gnome.login-screen
-  enable-smartcard-authentication`, toujours `true`), pas celui de GDM.
+- Écran de verrouillage : il lit le réglage de l'utilisateur, pas celui de
+  GDM. Passé aussi à `false` le 25/11 avec `gsettings set org.gnome.login-screen
+  enable-smartcard-authentication false` (base dconf utilisateur, hors
+  Ansible, sauvegardée par restic avec `~/.config`).
