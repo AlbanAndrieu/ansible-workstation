@@ -46,8 +46,35 @@ IPv6 is off on `eno1`.
   public names authenticated over DoT.
 - `tasks/services.yml` `dns_new` (hide-location) is now Cloudflare.
 
-Still open: `eno1` stays `DefaultRoute=yes`, so public queries also hit
-Pi-hole and log `no-signature`; the R7000 no longer sends IPv6 router
+Fixed later that evening (around 23:25):
+
+- Global `Domains=~.` in `99-workstation.conf`, reloaded with `SIGHUP`
+  (keeps the per-link NTA): public names only go to Cloudflare DoT even
+  though `eno1` stays `DefaultRoute=yes`; `~int.albandrieu.com` still goes
+  to Pi-hole.
+- `Wired eno1` rejects DHCP offers from the Freebox
+  (`ipv4.dhcp-reject-servers 192.168.1.254`, `tasks/network_split_dns.yml`).
+  At the 20:11 boot the workstation held the Freebox lease `192.168.1.135`
+  for 7 minutes: node-exporter bind failures, NFS timeouts and lost rsyslog
+  forwards. The Freebox LAN was bridged at layer 2 into the workstation
+  segment: kernel/UFW logs show frames from `192.168.1.x` (Freebox, Samsung
+  TV, IGMP) arriving on `eno1` with a source MAC other than the R7000's, 86
+  times between 18/11 (pfSense removal) and 25/11 09:24, 763 times on 25/11
+  until 20:07, none after 20:14. TrueNAS is not the bridge (`br0` holds
+  `enp10s0` and VM taps only; its USB keys are a CP210x serial radio and
+  Bluetooth). Suspect the small IoT switch hanging off the Freebox (Hue,
+  kitchen light, EnOcean gateway): check that no cable joins it to the R7000
+  LAN. Check: `journalctl -k -b | grep -c 'SRC=192.168.1.'` stays `0`.
+- Docker: `daemon.json` first tried `1.1.1.1` then Pi-hole, which broke
+  `*.int` in containers (Cloudflare answers NXDOMAIN before Pi-hole is
+  tried). On 26/11 it became `172.17.0.1` (R7000: Pi-hole for `*.int`,
+  Freebox for public names) then `1.1.1.1`; Docker restarted with
+  `live-restore` and the containers restarted. Grafana's restart loop
+  (397 restarts, plugin downloads failing on DNS) was a symptom; Grafana is
+  no longer run on the workstation (dashboards on TrueNAS, logs via rsyslog
+  to Alloy on TrueNAS).
+
+Still open: Pi-hole times out on public names (upstream still Quad9); the R7000 no longer sends IPv6 router
 advertisements (its LAN link-local `fe80::120c:6bff:fe62:128e` is silent),
 so `eno1` only has a link-local address; Pi-hole/AdGuard/Gluetun upstreams
 live in nabla-compose.

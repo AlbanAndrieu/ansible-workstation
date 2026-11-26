@@ -20,8 +20,8 @@
         }
     },
     "dns": [
-        "9.9.9.9",
-        "@@INTERNAL@@"
+        "@@INTERNAL@@",
+        "1.1.1.1"
     ],
     "exec-opts": [
         "native.cgroupdriver=systemd"
@@ -32,11 +32,11 @@
         "containerd-snapshotter": true
     },
     "builder": {
-	 	"gc": {
-			"enabled": true,
-			"defaultKeepStorage": "30GB"
-	 	}
-	},
+        "gc": {
+            "enabled": true,
+            "defaultKeepStorage": "30GB"
+        }
+    },
     "icc": true,
     "insecure-registries": [
         "localhost:32000"

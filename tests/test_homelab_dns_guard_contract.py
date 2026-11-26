@@ -197,6 +197,10 @@ class HomelabDNSGuardContract(unittest.TestCase):
         )
         self.assertIn("~{{ workstation_split_dns_domain }}", contents)
         self.assertIn("argv: [nmcli, device, reapply", contents)
+        self.assertIn("- ipv4.dhcp-reject-servers", contents)
+        self.assertIn("workstation_dhcp_reject.stdout", contents)
+        resolved = ROOT / "files/etc/systemd/resolved.conf.d/99-workstation.conf"
+        self.assertIn("Domains=~.", resolved.read_text(encoding="utf-8"))
         self.assertNotIn("command: > /etc/resolv.conf", contents)
         self.assertNotIn("argv: [tee, /etc/resolv.conf", contents)
 

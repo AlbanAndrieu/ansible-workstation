@@ -98,6 +98,22 @@
   check_mode: false
   tags: [dns]
 
+- name: workstation | Read configured rejected DHCP servers
+  ansible.builtin.command:
+    argv:
+      [
+        nmcli,
+        -g,
+        ipv4.dhcp-reject-servers,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
+  register: workstation_dhcp_reject
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
 - name: workstation | Inspect effective DNS before profile reconciliation
   ansible.builtin.command:
     argv: [resolvectl, dns, "{{ workstation_split_dns_interface }}"]
@@ -121,12 +137,18 @@
       # so the trusted LAN link must stay plain DNS or *.int stops resolving.
       - connection.dns-over-tls
       - "no"
+      # The Freebox DHCP sometimes answers first at boot (192.168.1.135 for 7 min on 25/11):
+      # only the R7000 may address this LAN profile.
+      - ipv4.dhcp-reject-servers
+      - "{{ workstation_split_dns_dhcp_reject_servers | join(',') }}"
   become: true
   register: workstation_dns_update
   when: >-
     (workstation_dns_servers.stdout | trim) != workstation_split_dns_resolver
     or (workstation_dns_auto.stdout | trim | lower) not in ['yes', 'true']
     or (workstation_dns_tls.stdout | trim | lower) != 'no'
+    or (workstation_dhcp_reject.stdout | trim)
+      != (workstation_split_dns_dhcp_reject_servers | join(','))
   tags: [dns]
 
 # Append rather than overwrite DNS-search entries belonging to other services.

@@ -196,6 +196,8 @@ workstation_split_dns_enabled: false
 workstation_split_dns_interface: eno1
 workstation_split_dns_resolver: 172.17.0.24
 workstation_split_dns_domain: int.albandrieu.com
+# DHCP servers the LAN profile ignores: the Freebox must never address eno1.
+workstation_split_dns_dhcp_reject_servers: ["192.168.1.254"]
 # Global resolvers (Cloudflare since Quad9 stopped serving France on 2026-11-24) must never
 # appear as the LAN link DNS: that would hide Pi-hole and break *.int.albandrieu.com.
 workstation_dns_public_resolvers:
