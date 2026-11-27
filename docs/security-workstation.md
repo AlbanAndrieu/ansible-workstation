@@ -8,6 +8,113 @@ L'accès via le tunnel Cloudflare **n'est pas autorisé par la configuration
 versionnée actuelle** sans validation cryptographique du jeton Access et
 nouvelle revue (voir « Accès aux rapports »).
 
+## Revue du 26 novembre 2026 — corrigé et appliqué
+
+Audit en lecture seule (Lynis du jour : 73, 2 avertissements ; UFW, écoutes, sysctl,
+AppArmor, auditd, sudo, GNOME), puis corrections appliquées et vérifiées :
+
+| Constat | Correction | Preuve | Retour arrière |
+| --- | --- | --- | --- |
+| **ClamAV aveugle** : `clamd.conf` en `TCPSocket 3310`, donc `--fdpass` ignoré ; clamd (utilisateur `clamav`) se voyait refuser chaque chemin, rapport « Infected files: 0 » sans rien analyser (21/11) | `LocalSocket /var/run/clamav/clamd.ctl` (le générateur systemd du paquet en déduit le socket), port 3310 fermé ; `security-scan.sh` refuse désormais un clamd sans socket Unix (sortie 78, reçu `INCOMPLETE`) | EICAR dans un fichier `0600` détecté, `/etc/shadow` lu sans erreur | `/etc/clamav/clamd.conf.bak-20261126`, `systemctl daemon-reload` |
+| Script de scan déployé plus ancien que le dépôt (PR #39 jamais rejouée) | `security-scans.yml` appliqué : reçus `INCOMPLETE`, `OnFailure`, rendu des rapports, mise à jour au démarrage | 7 changements, 0 échec | Réappliquer le commit précédent |
+| **auditd sans aucune règle** (Lynis ACCT-9630) et 5 × 6 Mo de journal, soit environ 6 h d'historique quand Docker régénère iptables et les veth | `files/audit-workstation.rules` → `rules.d/50-workstation.rules` : 25 surveillances en écriture sur identités, sudoers, PAM, sshd, cron, unités systemd, `ld.so.preload`, modules, GRUB, AppArmor, UFW, Docker, DNS, sources APT, audit ; rétention 8 × 32 Mo ; pas de `-e 2` | `chmod` via sudo sur `/etc/sudoers.d` journalisé avec `auid=albandrieu` | Supprimer le fichier puis `augenrules --load` ; `/etc/audit/auditd.conf.bak-20261126` |
+| `grpck` (Lynis AUTH-9216) : ligne `www` orpheline dans `/etc/gshadow` | Supprimée par `grpck` | `grpck -r` sort en 0 | `/etc/gshadow-` |
+| Notifications visibles sur l'écran verrouillé | `show-in-lock-screen false` (dconf utilisateur, sauvegardé par restic via `~/.config`) | `gsettings get` | `gsettings reset …` |
+
+Vérifié sans changement : sysctl déjà durcis (`kptr_restrict=2`, BPF non privilégié coupé,
+`ptrace_scope=1`, redirections ICMP refusées), sshd masqué, autologin coupé, 264 profils
+AppArmor appliqués, UFW limité au LAN et à TrueNAS, ports Docker `4000`/`8126` filtrés dans
+`DOCKER-USER`. Les 14 mises à jour `-security` en attente (Apache, libtiff…) sont sorties
+après le passage de 06:12 : unattended-upgrades les installe au prochain passage.
+
+### Deuxième passe du 26/11 (soir) — décisions du propriétaire appliquées
+
+Décisions : `NOPASSWD` **pas encore** (P0 reporté) ; ports Docker **oui** ; verrouillage GNOME
+**conservé** (33 min) ; Secure Boot, AIDE et règles UFW mortes **oui**.
+
+| Constat | Correction | Preuve | Retour arrière |
+| --- | --- | --- | --- |
+| `DOCKER-USER` renvoie toute source privée, LAN compris (`172.17.0.0/24` ⊂ `172.16.0.0/12`), vers les `ACCEPT` de Docker : un `ports:` oublié est ouvert au LAN. `"ip": "127.0.0.1"` ne suffit pas : il ne vaut que pour le réseau `bridge` par défaut, et pas tant que des conteneurs tournent (`live-restore`) | `files/etc/ufw/after.rules` : toute connexion **nouvelle** entrant par `eno1` vers un conteneur est rejetée et journalisée, sauf `ufw route allow` explicite. `ip` gardé pour `docker run -p` après redémarrage ; LiteLLM publie `0.0.0.0:4000` explicitement (`~/.litellm/compose.dns.yml`) | Conteneur jetable sur `0.0.0.0:18099` : 200 en local, **000 depuis TrueNAS**, `[UFW DOCKER BLOCK]` ; TrueNAS → LiteLLM toujours 200 | `/etc/ufw/after.rules.bak-20261126`, `ufw reload` |
+| Règles UFW sans service : `8082/tcp` (Apache n'écoute qu'en `127.0.0.1:8082`), `24802/tcp` (Synergy arrêté) | Supprimées, ajoutées à `harden_legacy_rules` | `ufw status` | `ufw allow from <LAN> to any port …` |
+| **AIDE inopérant depuis 08/2025** (`aide.db` vide) : Debian sélectionne `/ Full`, donc homes, conteneurs et NFS | `files/aide-workstation.conf` → `95_aide_workstation` : fichiers système seulement, 4 workers ; rapport quotidien sans les changements de dpkg (`FILTERUPDATES`), base roulée chaque nuit ; minuterie 01:50 en `Nice=19`/IO `idle` | Base de 3,18 M fichiers en 24 min | Supprimer le fichier, `/etc/default/aide.bak-20261126` |
+| **OpenSCAP mensuel en échec** : `/usr/local/bin/oscap` (compilé à la main, `librpm.so.8` absente) passe avant le paquet dans `PATH` | `security-scan.sh` appelle `/usr/bin/oscap` (1.4.3) | Scan complet : **262 PASS / 98 FAIL / 36 N/A** | — |
+| devsec `os_hardening` aurait remis auditd à 5 × 6 Mo | `harden-os.yml` aligné sur `security_scans_auditd` (test de non-régression) ; appliqué : `/var/log` en `0755`, `log_martians` persistant | rsyslog écrit toujours (`/var/log/albandrieu/`) | `chmod 0775 /var/log` |
+| kernel-hardening-checker (nouvel outil) : `bpf_jit_harden=0`, `protected_fifos=1` | `net.core.bpf_jit_harden=2`, `fs.protected_fifos=2` (via devsec) | `sysctl` | `sysctl_overwrite` |
+| `systemd-analyze security` : démons root sans usage — `ofono`, `dundee` (pas de modem), `lpd` (CUPS coupé), `multipathd` (aucun disque multipath), `nfs-kernel-server` (paquet retiré, script `init.d` resté, rien d'exporté) | Arrêtés et désactivés (`harden_os_unused_services`) ; restes de `nfs-kernel-server` purgés | `systemctl is-active` | `systemctl enable --now …` |
+| 5 209 fichiers inscriptibles par tous dans `/opt/ansible` (venv Python 2.7/3.8, propriétaire UID supprimé, groupe `docker`) | `chmod -R o-w /opt/ansible /root/.dapr/bin` | `find -perm -0002` = 0 (hors liens) | — |
+
+Faux positifs écartés : `chkrootkit` signale `basename`, `date`, `dirname`, `echo`, `env`
+« INFECTED » : ce sont les coreutils en Rust d'Ubuntu 26.04 (`rust-coreutils`), conformes à
+`dpkg --verify`. Ses autres alertes aussi : *BPFDoor* = processus `broker` de Chrome et
+Claude Desktop (filtres seccomp-BPF), *bindshell* 4000 = LiteLLM (`dockerd`), *ShitC* = un
+dossier `dir` des sources Go rangées dans `/usr/bin/go`, *Xor.DDoS* = exécutables sous `/tmp` :
+56 dossiers de faux binaires laissés par trois tests du dépôt (`mkdtemp` sans nettoyage,
+corrigé et supprimés). `debsums` : écarts expliqués (ZAP met à jour ses données, `libOpenCL` remplacée
+par le chargeur Khronos de CUDA, `docker.service` et `crowdsec.service` modifiés sur place).
+
+Premier rapport AIDE (27/11, 03:48, 25 min) : 202 278 modifiés, 5 431 ajoutés, 1 887 retirés.
+99 % sont le `chmod -R o-w` de `/opt/ansible` et `/root/.dapr/bin` de la veille ; le bruit restant
+venait de `/var/lib/lxcfs` (vue FUSE de `/proc`), `/run` et `/tmp/user`, exclus depuis. Le rapport
+du 28/11 listera encore la suppression de `/opt/ansible`, puis la base roulée redevient silencieuse.
+
+**Reste ouvert** :
+
+1. **P0 reporté** : `NOPASSWD: ALL` et groupes équivalents à root.
+2. **Secure Boot** : à faire à la console (procédure ci-dessous), puis paramètres noyau.
+3. **Fait le 27/11, sur décision du propriétaire** : `/opt/ansible` (4,6 Go, venv 2.7/3.8) et
+   `/jenkins` (6,2 Go, Jenkins 2.204 de 2020) supprimés, sans compte, groupe ni règle sudo
+   `jenkins` restant. `/jenkins` contenait encore `credentials.xml`, la clé maître Jenkins,
+   une clé SSH privée et un `.docker/config.json` : la suppression ne révoque rien, les
+   identifiants qui y étaient sont à révoquer s'ils servent encore. Paquet `trivy` 0.20.2
+   (2021, `/usr/local/bin`, base de vulnérabilités plus téléchargeable) purgé : il masquait
+   hors shell interactif le `trivy` de mise (`aqua:aquasecurity/trivy`, 0.76, sommes de
+   contrôle verrouillées), déclaré dans la configuration globale des dotfiles.
+4. **OpenSCAP non traités** : PAM (mots de passe, `faillock`, `nullok`) appartient à
+   nabla-yubikey ; `/home` en `nodev,nosuid` et `/etc/cron.allow` restent à décider ;
+   `/tmp noexec`, `TMOUT`, umask 027 casseraient le développement.
+5. **DefectDojo** : export `TESTED`, import `NOT_RUN`. `files/export-defectdojo-findings.py`
+   (installé dans `/opt/script/`) convertit le dernier Lynis (avertissement → Medium,
+   suggestion → Low) et le dernier OpenSCAP (règles en échec, sévérité SSG) en un fichier
+   « Generic Findings Import » : enveloppe fixe `Nabla workstation host scans` /
+   `Workstation Host Scan`, six champs par constat, identifiant
+   `workstation-sha256(outil|id|texte)` recalculable depuis le titre, adresses IP et e-mails
+   remplacés par `@@INTERNAL@@`. Le 27/11 : 134 constats (2 + 34 Lynis du 26/11 avant
+   corrections, 98 OpenSCAP du 26/11 au soir, dont 4 High : `grub2_password`,
+   `grub2_uefi_password`, `no_empty_passwords_unix` — `nullok` par défaut d'Ubuntu, aucun compte
+   sans mot de passe, PAM relève de nabla-yubikey — et `gnome_gdm_disable_xdmcp`, XDMCP déjà
+   désactivé par défaut). Manuel par principe : jamais d'envoi automatique de constats.
+   Reste à faire dans nabla-compose, **après fusion de la PR #451** (même liste blanche, autre
+   auteur en cours) : producteur `workstation-host` limité à `Generic Findings Import`, avec un
+   validateur qui exige cette enveloppe, ces six champs, `active=true`, `verified=false`, un
+   titre `(Lynis|OpenSCAP) <id>: <texte>` dont l'identifiant se recalcule, et aucune adresse IP
+   ni e-mail. Puis, à faire par toi : créer le produit et l'engagement dans DefectDojo, donner
+   au jeton d'import le droit d'y écrire, et lancer l'import sur TrueNAS
+   (`DEFECTDOJO_SERVICE_ID=workstation-host DEFECTDOJO_SCAN_TYPE='Generic Findings Import'`).
+
+### Secure Boot : procédure préparée (W05)
+
+État : TPM 2.0, démarrage par `SHIMX64.EFI` (shim signé Microsoft) → GRUB signé → noyau signé
+Canonical ; modules NVIDIA signés par la clé DKMS `/var/lib/shim-signed/mok/MOK.der`
+(SHA-256 `52:E2:D8:89:…:F4:CC`, valable jusqu'en 2120), **non enrôlée**. Seul DKMS construit des
+modules hors arbre (NVIDIA 595.71.05 pour les noyaux 43 et 44).
+
+À faire à la console, dans l'ordre :
+
+1. `sudo mokutil --import /var/lib/shim-signed/mok/MOK.der` : choisir un mot de passe à usage
+   unique.
+2. Redémarrer : MokManager (écran bleu) → *Enroll MOK* → *View key* (vérifier l'empreinte) →
+   *Continue* → *Yes* → mot de passe → *Reboot*.
+3. `mokutil --test-key /var/lib/shim-signed/mok/MOK.der` doit répondre *already enrolled*.
+4. Firmware (F2/Suppr) : Secure Boot **activé**, clés Microsoft standard, CSM désactivé.
+5. Vérifier : `mokutil --sb-state`, `nvidia-smi`, `cat /sys/kernel/security/lockdown`
+   (`[integrity]`), `python3 scripts/audit-boot-integrity.py` → verdict sans action.
+
+Retour arrière : désactiver Secure Boot dans le firmware. Effets du mode *lockdown integrity* :
+plus de module non signé, de `/dev/mem`, de `kexec` non signé ni d'hibernation.
+Au même redémarrage, candidats `cmdline` à tester : `slab_nomerge init_on_free=1
+page_alloc.shuffle=1 vsyscall=none`. Ensuite seulement, étudier la liaison TPM2/LUKS sur PCR 7,
+après avoir mis en lieu sûr la clé de récupération LUKS.
+
 ## Réévaluation du 21 novembre 2026 — preuves et priorités
 
 Les **derniers résultats des scanners sur la workstation accessibles dans cette documentation sont ceux du 16/11** ; aucun rapport brut du scan `security-scan@clamav` planifié samedi 21/11 n'a été fourni ou interrogé. Les trois workflows GitHub du 21/11 sur `9b672df` (CodeQL Python, Ansible Syntax, CI lint/contrats) ont conclu **success** ; `Molecule manual integration` est **skipped**. Ces statuts ne prouvent ni un OS sain ni une analyse complète de toutes les dépendances.

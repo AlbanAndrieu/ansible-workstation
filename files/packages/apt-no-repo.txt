@@ -160,7 +160,6 @@ tailscale
 tailscale-archive-keyring
 teams
 terraform
-trivy
 ttf-ancient-fonts
 ttf-ubuntu-font-family
 typora

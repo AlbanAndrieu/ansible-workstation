@@ -1,0 +1,39 @@
+## Workstation audit trail (docs/security-workstation.md, roadmap W03/W13).
+## Write/attribute watches on rarely changed security files only: who (auid) changed
+## identity, privilege, persistence, boot or network policy. No syscall-wide rules, no -e 2
+## (locking would need a reboot to change rules). Installed by playbooks/security-scans.yml.
+
+# Accounts and groups
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+
+# Privilege and authentication
+-w /etc/sudoers -p wa -k privilege
+-w /etc/sudoers.d/ -p wa -k privilege
+-w /etc/pam.d/ -p wa -k pam
+-w /etc/security/ -p wa -k pam
+-w /etc/gdm3/greeter.dconf-defaults -p wa -k pam
+-w /etc/ssh/sshd_config -p wa -k sshd
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd
+
+# Persistence: cron, systemd units, preloaded libraries, kernel modules
+-w /etc/crontab -p wa -k persistence
+-w /etc/cron.d/ -p wa -k persistence
+-w /var/spool/cron/ -p wa -k persistence
+-w /etc/systemd/system/ -p wa -k persistence
+-w /etc/ld.so.preload -p wa -k persistence
+-w /etc/modprobe.d/ -p wa -k modules
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
+
+# Boot, confinement, network and package sources
+-w /etc/default/grub -p wa -k boot
+-w /etc/apparmor.d/ -p wa -k apparmor
+-w /etc/ufw/ -p wa -k firewall
+-w /etc/docker/daemon.json -p wa -k docker
+-w /etc/systemd/resolved.conf.d/ -p wa -k dns
+-w /etc/apt/sources.list.d/ -p wa -k apt
+
+# The audit configuration itself
+-w /etc/audit/ -p wa -k auditconfig

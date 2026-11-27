@@ -122,11 +122,14 @@ class SecurityScansContracts(unittest.TestCase):
                     "chgrp": "true",
                 },
             )
+            conf = Path(tmp) / "clamd.conf"
+            conf.write_text("LocalSocket /var/run/clamav/clamd.ctl\n")
             env = {
                 **os.environ,
                 "PATH": f"{bin_dir}:{os.environ['PATH']}",
                 "SECURITY_REPORTS_DIR": f"{tmp}/reports",
                 "SECURITY_METRICS_DIR": tmp,
+                "CLAMD_CONF": str(conf),
             }
             subprocess.run(
                 ["bash", SCAN, "clamav"],
@@ -141,6 +144,87 @@ class SecurityScansContracts(unittest.TestCase):
         self.assertIn("systemctl start clamav-daemon", log)
         self.assertEqual(log[-1], "systemctl stop clamav-daemon")
         self.assertIn("security_clamav_infected_files 0", metrics)
+
+    def test_clamav_refuses_a_tcp_only_clamd(self):
+        # Over TCP --fdpass is ignored and clamd, as user clamav, reads nothing.
+        with tempfile.TemporaryDirectory() as tmp:
+            calls = Path(tmp) / "calls"
+            bin_dir = stub_bin(
+                tmp,
+                {
+                    "findmnt": "echo '/ /'",
+                    "systemctl": f'echo "systemctl $*" >>{calls}',
+                    "clamdscan": f'echo "clamdscan $*" >>{calls}',
+                    "chgrp": "true",
+                },
+            )
+            conf = Path(tmp) / "clamd.conf"
+            conf.write_text("TCPSocket 3310\nTCPAddr 127.0.0.1\n")
+            env = {
+                **os.environ,
+                "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                "SECURITY_REPORTS_DIR": f"{tmp}/reports",
+                "SECURITY_METRICS_DIR": tmp,
+                "CLAMD_CONF": str(conf),
+            }
+            result = subprocess.run(
+                ["bash", SCAN, "clamav"],
+                env=env,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 78)
+            self.assertFalse(calls.exists() and "clamdscan" in calls.read_text())
+            receipts = list(Path(tmp, "reports").glob("*/.scan-clamav.json"))
+            self.assertEqual(
+                json.loads(receipts[0].read_text()),
+                {"tool": "clamav", "state": "INCOMPLETE"},
+            )
+
+    def test_audit_rules_are_keyed_watches_and_never_lock(self):
+        rules = [
+            line
+            for line in (ROOT / "files/audit-workstation.rules")
+            .read_text()
+            .splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        self.assertTrue(rules)
+        for line in rules:
+            self.assertRegex(
+                line,
+                r"^(-w /\S+ -p wa|-a always,exit -F arch=b64 -S \S+) -k \w+$",
+            )
+        self.assertIn("-w /etc/sudoers.d/ -p wa -k privilege", rules)
+        copies = [
+            task["ansible.builtin.copy"]
+            for task in play()["tasks"]
+            if "ansible.builtin.copy" in task
+        ]
+        self.assertIn(
+            "/etc/audit/rules.d/50-workstation.rules",
+            [copy["dest"] for copy in copies],
+        )
+        retention = play()["vars"]["security_scans_auditd"]
+        self.assertEqual(retention["max_log_file_action"], "ROTATE")
+        self.assertGreaterEqual(retention["max_log_file"] * retention["num_logs"], 200)
+
+    def test_harden_os_keeps_the_same_auditd_retention(self):
+        # devsec os_hardening templates auditd.conf: its defaults would undo this play.
+        harden = yaml.safe_load((ROOT / "playbooks/harden-os.yml").read_text())[0]
+        retention = play()["vars"]["security_scans_auditd"]
+        for key, value in retention.items():
+            with self.subTest(key=key):
+                self.assertEqual(harden["vars"][f"os_auditd_{key}"], value)
+
+    def test_openscap_uses_the_packaged_binary(self):
+        # /usr/local/bin/oscap (hand-built, broken) shadows the package in PATH.
+        self.assertIn('"${OSCAP:-/usr/bin/oscap}" xccdf eval', SCAN.read_text())
+
+    def test_captured_clamd_listens_on_a_unix_socket(self):
+        conf = (ROOT / "files/etc/clamav/clamd.conf").read_text()
+        self.assertIn("LocalSocket /var/run/clamav/clamd.ctl", conf.splitlines())
+        self.assertNotRegex(conf, r"(?m)^TCPSocket ")
 
     def test_failed_scanner_publishes_incomplete_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -37,13 +37,20 @@
       - rds
       - sctp
       - tipc
-    # Same as security-scans.yml: auditd rotates its own logs (keep_logs fills /var/log/audit).
-    os_auditd_max_log_file_action: rotate
+    # Same as security-scans.yml (security_scans_auditd): auditd rotates its own logs
+    # (keep_logs fills /var/log/audit) and keeps 8 x 32 MB, not the role's 5 x 6 MB.
+    os_auditd_max_log_file_action: ROTATE
+    os_auditd_max_log_file: 32
+    os_auditd_num_logs: 8
     # hidepid=2 hides processes from polkit and GNOME tools.
     hidepid_option: "0"
     # Keep Docker/libvirt routing, VPN-friendly rp_filter, IPv6 SLAAC and SysRq as they are today.
     sysctl_overwrite:
       kernel.sysrq: 176
+      # kernel-hardening-checker (26/11/2026): JIT constant blinding for every BPF program,
+      # and no FIFO opened in a sticky world/group-writable directory owned by someone else.
+      net.core.bpf_jit_harden: 2
+      fs.protected_fifos: 2
       # 0 breaks the Chrome/Electron sandbox, flatpak and rootless podman.
       kernel.unprivileged_userns_clone: 1
       net.ipv4.ip_forward: 1
@@ -61,6 +68,19 @@
       net.ipv6.conf.default.accept_ra_defrtr: 1
       net.ipv6.conf.default.dad_transmits: 1
       net.ipv6.conf.default.max_addresses: 16
+    # Root daemons with nothing to serve on this desktop (26/11/2026): no modem (ofono, dundee),
+    # no printer queue (lpd, CUPS is off), no multipath disk. Disabled, not purged: reversible.
+    harden_os_unused_services:
+      - ofono.service
+      - ofono-fcc-unlock.service
+      - dundee.service
+      - lpd.service
+      - multipathd.socket
+      - multipathd.service
+    # Removed package whose leftover init script still ran as a generated nfs-kernel-server
+    # unit with nothing exported; nfs-common (TrueNAS client mounts) is a separate package.
+    harden_os_purge_leftovers:
+      - nfs-kernel-server
     # sshd is installed but unused: harden its config, keep the service off.
     ssh_server_service_enabled: false
     # Its "Restart sshd" handler started sshd on the 10 Nov apply: no restart at all.
@@ -87,3 +107,16 @@
       ansible.builtin.systemd_service:
         name: ssh.service
         state: stopped
+
+    - name: Stop and disable the unused root daemons
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ harden_os_unused_services }}"
+
+    - name: Purge the configuration left by removed server packages
+      ansible.builtin.apt:
+        name: "{{ harden_os_purge_leftovers }}"
+        state: absent
+        purge: true

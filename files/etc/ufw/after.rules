@@ -35,6 +35,11 @@ COMMIT
 :DOCKER-USER - [0:0]
 -A DOCKER-USER -j ufw-user-forward
 
+# A host behind eno1 reaches a published container port only through an explicit
+# "ufw route allow" (ufw-user-forward above): the RETURN for 172.16.0.0/12 below also covers
+# the LAN, so any forgotten "ports:" would be open to it (26/11/2026).
+-A DOCKER-USER -j ufw-docker-logging-deny -i eno1 -m conntrack --ctstate NEW
+
 -A DOCKER-USER -j RETURN -s 10.0.0.0/8
 -A DOCKER-USER -j RETURN -s 172.16.0.0/12
 -A DOCKER-USER -j RETURN -s 192.168.0.0/16

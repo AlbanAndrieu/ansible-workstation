@@ -41,6 +41,7 @@
     "insecure-registries": [
         "localhost:32000"
     ],
+    "ip": "127.0.0.1",
     "ip-forward": true,
     "ip6tables": true,
     "iptables": true,

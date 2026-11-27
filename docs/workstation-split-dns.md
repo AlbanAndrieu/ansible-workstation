@@ -64,7 +64,10 @@ Fixed later that evening (around 23:25):
   `enp10s0` and VM taps only; its USB keys are a CP210x serial radio and
   Bluetooth). Suspect the small IoT switch hanging off the Freebox (Hue,
   kitchen light, EnOcean gateway): check that no cable joins it to the R7000
-  LAN. Check: `journalctl -k -b | grep -c 'SRC=192.168.1.'` stays `0`.
+  LAN. Check that this prints `0` (the boot of 25/11 20:11 still holds 6
+  Freebox frames until 20:14); frames carrying the R7000 MAC are normal
+  routed replies (5 on 26/11 at 01:46) and are excluded:
+  `gw=$(ip neigh show 172.17.0.1 | awk '{print $5}'); journalctl -k -b | grep 'SRC=192.168.1.' | grep -vic "$gw"`.
 - Docker: `daemon.json` first tried `1.1.1.1` then Pi-hole, which broke
   `*.int` in containers (Cloudflare answers NXDOMAIN before Pi-hole is
   tried). On 26/11 it became `172.17.0.1` (R7000: Pi-hole for `*.int`,

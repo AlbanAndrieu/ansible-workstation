@@ -235,7 +235,8 @@ class NetworkHardeningContract(unittest.TestCase):
         v = self.play["vars"]
         self.assertFalse([r for r in v["harden_rules"] if r["port"] in {"514", "9116"}])
         retired = {r["port"] for r in v["harden_legacy_rules"] if "from" in r}
-        self.assertEqual(retired, {"514", "9116"})
+        # Plus Apache 8082 (loopback only) and Synergy 24802, retired 26/11/2026.
+        self.assertEqual(retired, {"514", "9116", "8082", "24802"})
         names = [t["name"] for t in self.play["tasks"]]
         self.assertIn("Stop the rsyslog network inputs", names)
         self.assertIn("Forward syslog to Alloy on TrueNAS", names)
