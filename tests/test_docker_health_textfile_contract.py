@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -22,6 +23,7 @@ esac
 class DockerHealthTextfileContracts(unittest.TestCase):
     def run_script(self, *containers):
         tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         stub = tmp / "bin/docker"
         stub.parent.mkdir()
         stub.write_text(DOCKER_STUB)
