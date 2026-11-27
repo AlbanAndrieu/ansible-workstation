@@ -2,3 +2,11 @@
 ALLOWHIDDENDIR=/etc/.java
 ALLOWHIDDENDIR=/etc/.git
 ALLOWHIDDENFILE=/etc/.gitignore
+# Known false positives of the first weekly report (22/11/2026):
+# libwww-perl ships lwp-request as a Perl script.
+SCRIPTWHITELIST=/usr/bin/lwp-request
+# systemd update-done stamp, and the resolv.conf backup left by the switch to systemd-resolved.
+ALLOWHIDDENFILE=/etc/.updated
+ALLOWHIDDENFILE=/etc/.resolv.conf.systemd-resolved.bak
+# LTTng-UST shared-memory wait files (user-space tracing in desktop applications).
+ALLOWDEVFILE=/dev/shm/lttng-ust-wait-*

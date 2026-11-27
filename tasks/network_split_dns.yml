@@ -82,6 +82,38 @@
   check_mode: false
   tags: [dns]
 
+- name: workstation | Read configured link DNS-over-TLS
+  ansible.builtin.command:
+    argv:
+      [
+        nmcli,
+        -g,
+        connection.dns-over-tls,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
+  register: workstation_dns_tls
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
+- name: workstation | Read configured rejected DHCP servers
+  ansible.builtin.command:
+    argv:
+      [
+        nmcli,
+        -g,
+        ipv4.dhcp-reject-servers,
+        connection,
+        show,
+        "{{ workstation_dns_profile.stdout | trim }}",
+      ]
+  register: workstation_dhcp_reject
+  changed_when: false
+  check_mode: false
+  tags: [dns]
+
 - name: workstation | Inspect effective DNS before profile reconciliation
   ansible.builtin.command:
     argv: [resolvectl, dns, "{{ workstation_split_dns_interface }}"]
@@ -101,11 +133,22 @@
       - "yes"
       - ipv4.dns
       - "{{ workstation_split_dns_resolver }}"
+      # Global resolved.conf.d/99-workstation.conf forces DoT to Cloudflare; Pi-hole has no DoT,
+      # so the trusted LAN link must stay plain DNS or *.int stops resolving.
+      - connection.dns-over-tls
+      - "no"
+      # The Freebox DHCP sometimes answers first at boot (192.168.1.135 for 7 min on 25/11):
+      # only the R7000 may address this LAN profile.
+      - ipv4.dhcp-reject-servers
+      - "{{ workstation_split_dns_dhcp_reject_servers | join(',') }}"
   become: true
   register: workstation_dns_update
   when: >-
     (workstation_dns_servers.stdout | trim) != workstation_split_dns_resolver
     or (workstation_dns_auto.stdout | trim | lower) not in ['yes', 'true']
+    or (workstation_dns_tls.stdout | trim | lower) != 'no'
+    or (workstation_dhcp_reject.stdout | trim)
+      != (workstation_split_dns_dhcp_reject_servers | join(','))
   tags: [dns]
 
 # Append rather than overwrite DNS-search entries belonging to other services.
@@ -131,8 +174,7 @@
     workstation_dns_update is changed
     or workstation_dns_domain_update is changed
     or workstation_split_dns_resolver not in workstation_dns_effective_before.stdout
-    or '9.9.9.9' in workstation_dns_effective_before.stdout
-    or '149.112.112.112' in workstation_dns_effective_before.stdout
+    or workstation_dns_public_resolvers | select('in', workstation_dns_effective_before.stdout) | list | length > 0
   tags: [dns]
 
 - name: workstation | Read effective link DNS after reconciliation
@@ -147,8 +189,7 @@
   ansible.builtin.assert:
     that:
       - workstation_split_dns_resolver in workstation_dns_effective.stdout
-      - "'9.9.9.9' not in workstation_dns_effective.stdout"
-      - "'149.112.112.112' not in workstation_dns_effective.stdout"
+      - workstation_dns_public_resolvers | select('in', workstation_dns_effective.stdout) | list | length == 0
     fail_msg: >-
       Effective systemd-resolved link DNS is still overridden.
       Check global resolved.conf, NetworkManager dispatcher, VPN and DHCP.

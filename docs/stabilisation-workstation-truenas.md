@@ -178,6 +178,9 @@ déjà le bon, et il n'y avait aucun coredump à réinitialiser (#6).
 | 6 | Le domaine de recherche contient une coquille (`albanandrieu.com`). 4 `systemd-coredump` en échec. | Domaines `[albandrieu.com]` ; `reset-failed` |
 | 7 | Tâche de snapshot 11 sur `dpool/workspace`, désactivée. | Suppression |
 
+> Depuis le 26/11/2026, les crons ClamAV et SMART (lignes 4 et 5) sont déclarés dans nabla-compose
+> `scripts/truenas/reconcile-cron-jobs.py`, avec `clamav-cleanup` intégré au scan. Ce playbook ne gère plus aucun cron.
+
 À lancer depuis la workstation (le contrôle des permissions de Claude a refusé ces écritures) :
 
 ```bash

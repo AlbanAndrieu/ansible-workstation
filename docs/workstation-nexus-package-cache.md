@@ -1,13 +1,14 @@
 # Workstation — utiliser Nexus Repository comme cache de dépendances
 
-**État du plan : 22 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; Nexus sans les dépôts, non déployé.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
+**État du plan : 23 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; HTTPS privé `nexus.int` et Maven `DEPLOYED`, miroir Maven de la workstation en HTTPS `nexus.int` ; dépôts APT/npm/PyPI/Docker toujours absents.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
 
 ## État constaté dans Git, pas au runtime
 
-- [Compose Nexus](https://github.com/AlbanAndrieu/nabla-compose/blob/master/apps/nexus/compose.yml) : image `sonatype/nexus3:3.92.3-alpine`, mémoire maximum 5 Gio, stockage persistant `/mnt/cpool/nexus3`, HTTP 8081 lié à `172.17.0.24` ; `NEXUS_PRIVATE_INGRESS_ENABLED=false` par défaut.
-- L'interface `nexus.albandrieu.com` passe par Cloudflare Access. **Ne pas réutiliser cette URL pour les clients CLI** avant test d'authentification non interactive et de compatibilité du registre.
+- [Compose Nexus](https://github.com/AlbanAndrieu/nabla-compose/blob/master/apps/nexus/compose.yml) : image `sonatype/nexus3:3.92.3-alpine`, mémoire maximum 5 Gio, stockage persistant `/mnt/cpool/nexus3`, HTTP 8081 lié à `172.17.0.24` ; routeur Traefik privé `nexus.int` actif depuis la PR #438 (22/11).
+- `nexus.albandrieu.com` passe par Cloudflare Access (service token CI) puis Traefik + CrowdSec : **réservée à la CI**. Les clients de la workstation utilisent `nexus.int.albandrieu.com`.
 - [OpenTofu Nexus](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus) déclare déjà `apt-ubuntu-26-04`, `npm-all`, `pypi-all`, `docker-all`, `terraform-proxy`, Hugging Face et d'autres dépôts. **Créé dans le code ≠ présent dans l'instance** : contrôler l'API des dépôts avec des droits read-only, puis `tofu plan` avant toute écriture.
-- `repo-apt.tofu` cible `archive.ubuntu.com/ubuntu/` (distribution `resolute`) mais **ne définit pas de proxy séparé pour `security.ubuntu.com/ubuntu/`**. Ne pas faire basculer la poche `-security` avant cette correction.
+- `repo-apt.tofu` cible `archive.ubuntu.com/ubuntu/` (`resolute`) et, depuis le 22/11, `security.ubuntu.com/ubuntu/` (`apt-ubuntu-26-04-security`, `resolute-security`).
+- **Bloquants du premier `tofu plan`** (relevé du 23/11) : le module hérite d'un gabarit 1Password (`data "onepassword_vault"`, `onepassword_item` pour les utilisateurs `home-ops`/`albandrieu`) alors que les secrets sont dans Vaultwarden/`pass` ; `sonatyperepo_security_realms` remplace la liste des realms actifs ; tout le module (7 proxies Docker, Hugging Face, Terraform) s'applique d'un bloc, sans pilote par format. À corriger dans `nabla-compose` avant l'`apply`.
 - `repo-docker.tofu` configure `path_enabled=true` et `v1_enabled=true` pour les proxies (groupe V1 désactivé). Étudier la désactivation V1 sur tous les proxies après avoir vérifié les clients requis, sans casser le cache existant.
 
 ## État constaté au runtime (22/11/2026, lecture seule depuis la workstation)
@@ -20,7 +21,18 @@
 | `maven-central` en anonyme | 200 : lecture anonyme active |
 | `nexus.int.albandrieu.com` | résolu par Pi-hole vers `172.17.0.24` ; HTTPS avec certificat valide (Traefik), puis 404 : le routeur privé est désactivé (`NEXUS_PRIVATE_INGRESS_ENABLED`) |
 
-Le proxy séparé `apt-ubuntu-26-04-security` (`security.ubuntu.com`, `resolute-security`) est ajouté dans `nabla-compose` le 22/11, avant le premier `apply`.
+### Relevé du 23/11/2026 (lecture seule depuis la workstation)
+
+| Contrôle | Résultat |
+| --- | --- |
+| `https://nexus.int.albandrieu.com/service/rest/v1/status` | 200, certificat vérifié |
+| Dépôts visibles en anonyme | toujours les 9 Maven/NuGet ; `apt-ubuntu-26-04*`, `npm-all`, `pypi-all`, `docker-all` en 404 |
+| `playbooks/nexus-clients.yml` (check) | 5 sondes en 404 : bascule refusée, aucun changement |
+| Maven de la workstation (`~/.m2/settings.xml`, miroir `nexus`) | résolvait via `http://172.17.0.24:8081/repository/maven-public/` (**HTTP clair**) jusqu'à la bascule ci-dessous |
+| Maven via `https://nexus.int.albandrieu.com/repository/maven-public/` (settings temporaire, anonyme) | `BUILD SUCCESS`, truststore Java OK |
+| CI via `nexus.albandrieu.com` + service token Access | `200 application/java-archive` (22/11) |
+
+**Maven de la workstation : `APPLIQUÉ` le 23/11 à 22 h 48.** Le miroir `nexus` (`mirrorOf *`) de `~/.m2/settings.xml` pointe `https://nexus.int.albandrieu.com/repository/maven-public/` (fichier utilisateur 0600, hors Git, seule l'URL a changé). Contrôle avec un dépôt local vide (`-Dmaven.repo.local`, `maven-dependency-plugin:3.8.1:get` de `commons-lang3:3.17.0`) : `BUILD SUCCESS`, 219 artefacts tous servis par `nexus.int` en HTTPS, aucune requête vers `172.17.0.24`. L'identifiant `nexus` ne change pas : le cache `~/.m2/repository` reste valide. Aucun autre client de la workstation (`.npmrc`, `pip.conf`, `uv.toml`, Gradle, Docker, `.terraformrc`) n'utilisait `:8081`. Retour arrière : `cp -p ~/.m2/settings.xml.bak-20261123 ~/.m2/settings.xml`. Le port 8081 reste exposé sur le LAN par Compose, pour le diagnostic sans secret (voir plus bas).
 
 ## Bascule des clients : `playbooks/nexus-clients.yml`
 
@@ -37,7 +49,7 @@ Routes (nabla-compose [#438](https://github.com/AlbanAndrieu/nabla-compose/pull/
 
 ## Prérequis obligatoires — NO-GO tant que non prouvés
 
-1. **DNS/TLS privé :** résoudre `nexus.int.albandrieu.com` sur Pi-hole TrueNAS `172.17.0.24`, activer le routeur Traefik privé seulement après preuve TLS/SNI et accès LAN ; certificat avec SAN exact, vérification activée, aucun `insecure-registries`, `trusted=yes`, `--trusted-host` ou `strict-ssl=false`.
+1. **DNS/TLS privé — fait le 22/11 pour `nexus.int` :** résoudre `nexus.int.albandrieu.com` sur Pi-hole TrueNAS `172.17.0.24`, activer le routeur Traefik privé seulement après preuve TLS/SNI et accès LAN ; certificat avec SAN exact, vérification activée, aucun `insecure-registries`, `trusted=yes`, `--trusted-host` ou `strict-ssl=false`.
 2. **Édition et capacité :** relever l'édition réellement installée, version, métriques de composants et requêtes/jour. Community Edition : **40 000 composants / 100 000 requêtes par jour** ; Repository Firewall, quarantaine des malwares, conformité FIPS et SSO selon édition/licence. Un proxy n'est pas une analyse de vulnérabilités.
 3. **Données :** test de sauvegarde/restauration du dataset `cpool/nexus3` et de la base réellement utilisée avant montée de version ; mesurer stockage, latence et mémoire JVM. L'édition 3.98.3 du 19/11/2026 corrige notamment CVE-2026-114938 et limite l'exécution Groovy par défaut : préparer une mise à jour **dans Compose**, pas sur la workstation.
 4. **Accès :** lecture anonyme uniquement si le LAN et les repositories le justifient ; sinon jeton à droits minimaux stocké hors Git. Ne pas imprimer ou transmettre `.npmrc`, `pip.conf`, `auth.json` ou des `Authorization`.

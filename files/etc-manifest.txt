@@ -14,6 +14,7 @@
 /etc/apt/apt.conf.d/20auto-upgrades
 /etc/apt-fast.conf
 /etc/auto.master
+/etc/clamav/clamd.conf
 /etc/crontab
 /etc/crowdsec/acquis.yaml
 /etc/crowdsec/console.yaml
@@ -22,6 +23,7 @@
 /etc/default/zramswap
 /etc/ufw/after.rules
 /etc/gdm3/custom.conf
+/etc/gdm3/greeter.dconf-defaults
 /etc/glances/glances.conf
 /etc/gprofng.rc
 /etc/howdy/config.ini

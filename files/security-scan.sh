@@ -27,15 +27,15 @@ finish_scan() {
   if [[ "${started}" = true ]]; then
     systemctl stop clamav-daemon >/dev/null 2>&1
   fi
-  if (( rc != 0 )); then
+  if ((rc != 0)); then
     case "${tool}" in
-      lynis|rkhunter|clamav|openscap)
-        printf '{"tool":"%s","state":"INCOMPLETE"}\n' "${tool}" \
-          >"${day}/.scan-${tool}.json.tmp" &&
-          chmod 0640 "${day}/.scan-${tool}.json.tmp" &&
-          mv -f "${day}/.scan-${tool}.json.tmp" "${day}/.scan-${tool}.json" &&
-          chgrp "${group}" "${day}/.scan-${tool}.json"
-        ;;
+    lynis | rkhunter | clamav | openscap)
+      printf '{"tool":"%s","state":"INCOMPLETE"}\n' "${tool}" \
+        >"${day}/.scan-${tool}.json.tmp" &&
+        chmod 0640 "${day}/.scan-${tool}.json.tmp" &&
+        mv -f "${day}/.scan-${tool}.json.tmp" "${day}/.scan-${tool}.json" &&
+        chgrp "${group}" "${day}/.scan-${tool}.json"
+      ;;
     esac
   fi
   exit "${rc}"
@@ -81,6 +81,12 @@ clamav)
   # never finished. Real local filesystems only; TrueNAS scans its own datasets.
   mapfile -t targets < <(findmnt -rn -t ext4,xfs,btrfs -o TARGET,FSROOT |
     awk '$2 == "/" && $1 !~ "^/run/media/" {print $1}')
+  # --fdpass needs clamd's Unix socket. Over TCP, clamd (user clamav) opens every path itself and
+  # is denied: "Infected files: 0" with nothing scanned, 21/11 to 26/11/2026.
+  if ! grep -q '^LocalSocket ' "${CLAMD_CONF:-/etc/clamav/clamd.conf}"; then
+    echo "clamd has no LocalSocket: --fdpass cannot work, scan refused" >&2
+    exit 78
+  fi
   if ! systemctl is-active --quiet clamav-daemon; then
     systemctl start clamav-daemon
     started=true
@@ -106,8 +112,9 @@ openscap)
   src=/usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml
   ds="${base}/ssg-ubuntu2404-$(lsb_release -cs)-ds.xml"
   sed "s/\^DISTRIB_CODENAME=noble\\\$/^DISTRIB_CODENAME=$(lsb_release -cs)\$/" "${src}" >"${ds}"
-  # Exit 2 means some rules failed: expected, the report is what matters.
-  oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level1_workstation \
+  # Exit 2 means some rules failed: expected, the report is what matters. Absolute path: the
+  # hand-built /usr/local/bin/oscap comes first in PATH and misses librpm.so.8 (26/11/2026).
+  "${OSCAP:-/usr/bin/oscap}" xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level1_workstation \
     --results "${day}/openscap-results.xml" --report "${day}/openscap-cis-l1-workstation.html" \
     "${ds}" >"${day}/openscap.txt" 2>&1 || [ $? -eq 2 ]
   fail="$(grep -cP '^Result\s+fail' "${day}/openscap.txt" || true)"

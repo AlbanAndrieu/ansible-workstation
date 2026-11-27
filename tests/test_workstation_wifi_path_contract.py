@@ -75,7 +75,7 @@ def fixture(
                 return True, "172.17.0.24" if private_pf else ""
             if dns == "172.17.0.1":
                 return pf_dns, "93.184.215.14" if pf_dns else ""
-            if dns == "9.9.9.9":
+            if dns == "1.1.1.1":
                 return public_dns, "93.184.215.14" if public_dns else ""
         if args[0] == "getent":
             if args[-1] == "sample.int.albandrieu.com":
@@ -306,7 +306,7 @@ class WifiPathTest(unittest.TestCase):
 
         probe = module.inspect_legacy_dns_hook(systemctl, "eno1", template)
         self.assertEqual(probe["unit_state"], "loaded")
-        self.assertTrue(probe["hook_sets_quad9"])
+        self.assertTrue(probe["hook_sets_public_dns"])
         self.assertFalse(probe["hook_targets_current_interface"])
         self.assertTrue(probe["hook_contains_resolvectl_dns"])
         self.assertTrue(probe["unit_has_start_timestamp"])
@@ -330,7 +330,7 @@ class WifiPathTest(unittest.TestCase):
         absent = module.inspect_legacy_dns_hook(empty_runner, "eno1", None)
         self.assertFalse(absent["hook_present"])
         self.assertIsNone(absent["hook_targets_current_interface"])
-        self.assertFalse(absent["hook_sets_quad9"])
+        self.assertFalse(absent["hook_sets_public_dns"])
 
     def test_runtime_hook_is_injected_not_read_during_fixtures(self):
         runner, calls = fixture(active="9.9.9.9", private_sys=False)
@@ -345,7 +345,7 @@ class WifiPathTest(unittest.TestCase):
             read_override=lambda: injected,
         )
         self.assertEqual(row["diagnosis"], "CLIENT_PRIVATE_SPLIT_DNS_PATH")
-        self.assertTrue(row["legacy_dns_override"]["hook_sets_quad9"])
+        self.assertTrue(row["legacy_dns_override"]["hook_sets_public_dns"])
         self.assertTrue(row["legacy_dns_override"]["hook_targets_current_interface"])
         self.assertEqual(row["legacy_dns_override"]["causality"], "NOT_PROVEN")
         self.assertTrue(any(cmd[0] == "systemctl" for cmd in calls))

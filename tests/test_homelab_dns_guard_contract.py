@@ -191,11 +191,16 @@ class HomelabDNSGuardContract(unittest.TestCase):
         self.assertIn("when: not ansible_check_mode", contents)
         self.assertIn("workstation_split_dns_resolver not in", contents)
         self.assertIn(
-            "or '9.9.9.9' in workstation_dns_effective_before.stdout",
+            "or workstation_dns_public_resolvers | select('in', "
+            "workstation_dns_effective_before.stdout)",
             contents,
         )
         self.assertIn("~{{ workstation_split_dns_domain }}", contents)
         self.assertIn("argv: [nmcli, device, reapply", contents)
+        self.assertIn("- ipv4.dhcp-reject-servers", contents)
+        self.assertIn("workstation_dhcp_reject.stdout", contents)
+        resolved = ROOT / "files/etc/systemd/resolved.conf.d/99-workstation.conf"
+        self.assertIn("Domains=~.", resolved.read_text(encoding="utf-8"))
         self.assertNotIn("command: > /etc/resolv.conf", contents)
         self.assertNotIn("argv: [tee, /etc/resolv.conf", contents)
 

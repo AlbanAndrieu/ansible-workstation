@@ -20,6 +20,12 @@
       rkhunter: "Sun 03:40"
       clamav: "Sat 01:00"
       openscap: "*-*-01 04:20"
+    # 8 x 32 MB: the former 5 x 6 MB held about 6 h of history while Docker churned
+    # iptables (NETFILTER_CFG), BPF programs and veths (25/11/2026).
+    security_scans_auditd:
+      max_log_file_action: ROTATE
+      max_log_file: 32
+      num_logs: 8
     # Root crontab lines that run user-editable files, write to paths that no longer exist,
     # call missing binaries, delete the audit trail, or duplicate the timers above.
     security_scans_root_cron_drop:
@@ -49,6 +55,13 @@
       changed_when: true
       become: true
 
+    # Rebuilds audit.rules from rules.d (control lines first) and loads it; rollback: delete the file.
+    - name: Load audit rules
+      ansible.builtin.command:
+        argv: [augenrules, --load]
+      changed_when: true
+      become: true
+
   tasks:
     - name: Refuse an apply without a second explicit approval
       ansible.builtin.assert:
@@ -68,6 +81,7 @@
         - publish-security-reports.sh
         - publish-ctem-web-mirror.py
         - render-security-reports.py
+        - export-defectdojo-findings.py
       become: true
       when: security_scans_write
 
@@ -215,15 +229,109 @@
       become: true
       when: security_scans_write
 
+    # Known false positives of the first weekly report (lwp-request, systemd stamps, LTTng).
+    - name: Whitelist the workstation rkhunter false positives
+      ansible.builtin.copy:
+        src: ../files/etc/rkhunter.conf.local
+        dest: /etc/rkhunter.conf.local
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: security_scans_write
+
     # The root cron deleted audit.log under auditd every night and its rotations every month.
-    - name: Let auditd rotate its own logs
+    - name: Let auditd rotate and keep its own logs
       ansible.builtin.lineinfile:
         path: /etc/audit/auditd.conf
-        regexp: ^max_log_file_action\s*=
-        line: max_log_file_action = ROTATE
+        regexp: ^{{ item.key }}\s*=
+        line: "{{ item.key }} = {{ item.value }}"
+      loop: "{{ security_scans_auditd | dict2items }}"
       become: true
       when: security_scans_write
       notify: Reload auditd
+
+    # auditd ran with an empty ruleset (Lynis ACCT-9630): watch who changes security files.
+    - name: Install the workstation audit rules
+      ansible.builtin.copy:
+        src: ../files/audit-workstation.rules
+        dest: /etc/audit/rules.d/50-workstation.rules
+        owner: root
+        group: root
+        mode: "0640"
+      become: true
+      when: security_scans_write
+      notify: Load audit rules
+
+    # AIDE scanned "/ Full" (homes, containers, NFS) and its database stayed empty from 08/2025.
+    - name: Limit AIDE to system files
+      ansible.builtin.copy:
+        src: ../files/aide-workstation.conf
+        dest: /etc/aide/aide.conf.d/95_aide_workstation
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: security_scans_write
+
+    # Daily report = changes since the previous night, without the files dpkg itself changed.
+    - name: Report only non-package changes and roll the AIDE baseline daily
+      ansible.builtin.lineinfile:
+        path: /etc/default/aide
+        regexp: ^{{ item }}=
+        line: "{{ item }}=yes"
+      loop: [COPYNEWDB, FILTERUPDATES, FILTERINSTALLATIONS]
+      become: true
+      when: security_scans_write
+
+    # About 30 min of hashing: detached, so the play does not wait for it.
+    - name: Build the AIDE baseline when it is missing or empty
+      ansible.builtin.command:
+        argv:
+          - sh
+          - -c
+          - >-
+            [ -s /var/lib/aide/aide.db ] && echo present ||
+            systemd-run --unit=aide-init --collect -p Nice=19 -p IOSchedulingClass=idle
+            /usr/sbin/aideinit --yes --force
+      register: security_scans_aide_init
+      changed_when: "'present' not in security_scans_aide_init.stdout"
+      become: true
+      when: security_scans_write
+
+    - name: Create the daily AIDE check drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/dailyaidecheck.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      become: true
+      when: security_scans_write
+
+    # 3.2 M files and about 25 min of hashing on 4 workers (26/11/2026): lowest priority.
+    - name: Run the daily AIDE check at idle priority
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/dailyaidecheck.service.d/10-workstation.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by ansible-workstation playbooks/security-scans.yml
+          [Service]
+          Nice=19
+          IOSchedulingClass=idle
+      become: true
+      when: security_scans_write
+      notify: Reload systemd
+
+    - name: Start the daily AIDE check
+      ansible.builtin.systemd_service:
+        name: dailyaidecheck.timer
+        state: started
+        enabled: true
+      become: true
+      when: security_scans_write
 
     - name: Drop the dead, dangerous and duplicate root cron lines
       ansible.builtin.lineinfile:

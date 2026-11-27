@@ -28,7 +28,7 @@ fi
 
 # Additional protection when NetworkManager metadata is unavailable.
 # A search domain or a route-only domain is sufficient to preserve the
-# private DNS policy; neither should be sent to Quad9.
+# private DNS policy; neither should be sent to the public resolver.
 link_domains="$(resolvectl domain "$net_interface" 2>/dev/null || true)"
 for domain in $link_domains; do
   case "$domain" in

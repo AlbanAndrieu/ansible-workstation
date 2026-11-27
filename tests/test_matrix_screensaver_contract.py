@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -43,7 +44,9 @@ echo "xmatrix $*" >>"${LOG}"
 
 class MatrixScreensaverContracts(unittest.TestCase):
     def run_once(self, idle_ms, locked="false"):
+        # Cleaned up: executables left under /tmp trip chkrootkit (Xor.DDoS).
         tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         bin_dir = tmp / "bin"
         bin_dir.mkdir()
         for name, body in STUBS.items():

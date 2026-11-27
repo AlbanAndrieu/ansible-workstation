@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ echo "GPU-1, RTX 2060, 595.71, 15, 3, 557, 6144, 42, 34.52, 190.00, 1755, [N/A]"
 class NvidiaGpuTextfileContracts(unittest.TestCase):
     def run_script(self):
         tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         stub = tmp / "bin/nvidia-smi"
         stub.parent.mkdir()
         stub.write_text(NVIDIA_SMI_STUB)

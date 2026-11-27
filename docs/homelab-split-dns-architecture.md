@@ -13,12 +13,12 @@ Le Netgate 1100 (pfSense) ne redémarre plus après trois tentatives. Il a été
 | --- | --- | --- |
 | Passerelle et DHCP | pfSense `172.17.0.1` | Netgear R7000 `172.17.0.1`, DHCP `.100-.199` avec réservation `.57` pour la workstation, derrière la Freebox `192.168.1.254`. Administration : `https://172.17.0.1/start.htm` (la racine redirige vers `routerlogin.com` et échoue) |
 | Résolveur `~int.albandrieu.com` | Unbound de pfSense `172.17.0.1` | Pi-hole de TrueNAS `172.17.0.24` |
-| DNS global de `systemd-resolved` | `172.17.0.1` | Quad9 `9.9.9.9 149.112.112.112` (`/etc/systemd/resolved.conf`, copie `resolved.conf-2026-11-18`) |
-| Profil NetworkManager | `Wired eno1` | `Wired eno1`, recréé en renommant le profil « Freebox » après la suppression par erreur de l'ancien |
+| DNS global de `systemd-resolved` | `172.17.0.1` | Quad9 `9.9.9.9 149.112.112.112` jusqu'au 24/11, date à laquelle Quad9 cesse de servir la France ; **Cloudflare `1.1.1.1 1.0.0.1` en DoT strict depuis le 25/11** (`/etc/systemd/resolved.conf.d/99-workstation.conf`, capturé dans `files/etc`). Le lien `eno1` reste en DNS clair vers Pi-hole (`connection.dns-over-tls no`) |
+| Profil NetworkManager | `Wired eno1` | `Wired eno1`, recréé en renommant le profil « Freebox » après la suppression par erreur de l'ancien. Remplacé le 25/11 par « Profile 1 » (netplan, IPv6 coupé, DHCP seul), puis renommé `Wired eno1` : le dispatcher NTA ne reconnaît que ce nom. L'adresse statique `.57` du profil n'est plus là ; seule reste la réservation DHCP |
 | Adresse dans `172.17.0.0/24` | `172.17.0.57` par DHCP | `172.17.0.57` par la réservation DHCP du R7000, et la même adresse en statique dans le profil : elle garde TrueNAS et les montages NFS joignables si le bail change |
 
 - **TrueNAS garde son IP fixe `172.17.0.24`.** Sans adresse dans `172.17.0.0/24`, la workstation ne le joint plus. Les automontages NFS `nabla:/mnt/cpool/...` de `/etc/fstab` bloquent alors tout accès sous `/media` jusqu'à leur délai de 20 s.
-- **Les noms publics ne dépendent pas de TrueNAS** : le DNS global Quad9 reste interrogé, et la validation DNSSEC publique reste active (`cloudflare.com` : `Data is authenticated: yes` le 18/11).
+- **Les noms publics ne dépendent pas de TrueNAS** : le DNS global (Cloudflare depuis le 25/11, Quad9 avant) reste interrogé, et la validation DNSSEC publique reste active (`cloudflare.com` : `Data is authenticated: yes` le 18/11).
 - **Un nom privé ne résout que si Pi-hole a son enregistrement local** : le 18/11, `defectdojo.int.albandrieu.com` répond `172.17.0.24`, `grafana.int.albandrieu.com` ne répond pas.
 - `ipv6.ignore-auto-dns yes` écarte les DNS IPv6 de Free annoncés sur le lien : ils répondraient NXDOMAIN aux noms privés, et le dispatcher exige `172.17.0.24` comme seul DNS du lien.
 
@@ -49,7 +49,7 @@ Côté pfSense, tout passe par `scripts/pfsense/reconcile-split-dns.sh` de nabla
 3. Sur une installation vierge, activer SSH et la clé d'administration, puis lancer `--check` (avec `--port 22` tant que SSH n'est pas sur 9922). S'il signale `split_dns_override=MISSING`, lancer `--apply` : il vérifie d'abord que Pi-hole répond, garde l'historique de configuration de pfSense et ne redémarre Unbound que si quelque chose change.
 4. Réception : `--check` rend `result=SPLIT_DNS_CONFIG_CONVERGED`, puis `just workstation-dnssec-dispatcher-check` depuis nabla-compose pour la workstation.
 
-Facultatif : remettre `172.17.0.1` comme DNS global de `systemd-resolved` à la place de Quad9. Ce n'est pas nécessaire au split DNS.
+Facultatif : remettre `172.17.0.1` (relais du R7000) comme DNS global de `systemd-resolved` à la place de Cloudflare. Ce n'est pas nécessaire au split DNS, et on perdrait le DoT.
 
 ## 1. Objectif et état réel
 

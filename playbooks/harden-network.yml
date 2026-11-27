@@ -39,15 +39,11 @@
         port: "9100"
         proto: tcp
         comment: node_exporter host and restic metrics
-      # Synergy and Deskflow share 24800; synergy-service also listens on 24802.
+      # Deskflow replaced Barrier and Synergy on 24800 (25/11/2026).
       - from: "{{ harden_lan }}"
         port: "24800"
         proto: tcp
-        comment: synergy and deskflow
-      - from: "{{ harden_lan }}"
-        port: "24802"
-        proto: tcp
-        comment: synergy service
+        comment: deskflow
       - from: "{{ harden_lan }}"
         port: "17500"
         proto: tcp
@@ -121,6 +117,13 @@
         proto: udp
       - from: "{{ harden_lan }}"
         port: "9116"
+        proto: tcp
+      # Apache listens on 127.0.0.1:8082 (tunnel) and 8087 (LAN); Synergy (24802) is stopped.
+      - from: "{{ harden_lan }}"
+        port: "8082"
+        proto: tcp
+      - from: "{{ harden_lan }}"
+        port: "24802"
         proto: tcp
     harden_write: "{{ harden_apply | bool and harden_apply_approved | bool }}"
 
