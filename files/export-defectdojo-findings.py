@@ -122,7 +122,7 @@ def main() -> int:
     fd, tmp = tempfile.mkstemp(dir=args.output.parent, prefix=".defectdojo-")
     with os.fdopen(fd, "w", encoding="utf-8") as out:
         out.write(data)
-    os.chmod(tmp, 0o640)
+    os.chmod(tmp, 0o600)
     os.replace(tmp, args.output)
     print(f"{len(json.loads(data)['findings'])} findings -> {args.output}")
     return 0
