@@ -229,6 +229,17 @@
       become: true
       when: security_scans_write
 
+    # Known false positives of the first weekly report (lwp-request, systemd stamps, LTTng).
+    - name: Whitelist the workstation rkhunter false positives
+      ansible.builtin.copy:
+        src: ../files/etc/rkhunter.conf.local
+        dest: /etc/rkhunter.conf.local
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      when: security_scans_write
+
     # The root cron deleted audit.log under auditd every night and its rotations every month.
     - name: Let auditd rotate and keep its own logs
       ansible.builtin.lineinfile:

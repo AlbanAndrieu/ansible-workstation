@@ -69,6 +69,14 @@ du 28/11 listera encore la suppression de `/opt/ansible`, puis la base roulée r
    (2021, `/usr/local/bin`, base de vulnérabilités plus téléchargeable) purgé : il masquait
    hors shell interactif le `trivy` de mise (`aqua:aquasecurity/trivy`, 0.76, sommes de
    contrôle verrouillées), déclaré dans la configuration globale des dotfiles.
+   Supprimé aussi `/usr/bin/go` : une archive Go 1.18.1 de 2022 (484 Mo, avec `shfmt`
+   et `levant`), hors du PATH, qui remplaçait le lien du paquet `golang-go` et donnait à
+   rkhunter des dizaines de fichiers cachés. Le Go actif reste `/usr/local/go` (1.25.1).
+   rkhunter : les faux positifs connus (`lwp-request` en Perl, `/etc/.updated`, la
+   sauvegarde `resolv.conf` de systemd-resolved, `/dev/shm/lttng-ust-wait-*`) passent en
+   liste blanche versionnée dans `files/etc/rkhunter.conf.local`, installée par
+   `playbooks/security-scans.yml`. Les comptes `openvpn`, `nm-openvpn`, `_gvm` et `gvm`
+   avaient disparu avec la purge des paquets OpenVPN et Greenbone le 16/11.
 4. **OpenSCAP non traités** : PAM (mots de passe, `faillock`, `nullok`) appartient à
    nabla-yubikey ; `/home` en `nodev,nosuid` et `/etc/cron.allow` restent à décider ;
    `/tmp noexec`, `TMOUT`, umask 027 casseraient le développement.

@@ -17,7 +17,6 @@
     dns_default: "172.17.0.24"
     # dns_cloudflare: '172.64.36.1 172.64.36.2'
     # dns_opendns: '208.67.222.222 208.67.220.220'
-    # dns_quad: '9.9.9.9 149.112.112.112' (Quad9 stopped serving France on 2026-11-24)
     dns_new: "1.1.1.1 1.0.0.1"
 
 - ansible.builtin.debug:

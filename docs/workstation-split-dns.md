@@ -77,16 +77,27 @@ Fixed later that evening (around 23:25):
   no longer run on the workstation (dashboards on TrueNAS, logs via rsyslog
   to Alloy on TrueNAS).
 
-Still open: Pi-hole times out on public names (upstream still Quad9); the R7000 no longer sends IPv6 router
-advertisements (its LAN link-local `fe80::120c:6bff:fe62:128e` is silent),
-so `eno1` only has a link-local address; Pi-hole/AdGuard/Gluetun upstreams
-live in nabla-compose.
+Fixed on 2026-11-27, Quad9 left the LAN chain:
+
+- Pi-hole still had `9.9.9.9`. The nabla-compose change (`172.17.0.24#553;1.1.1.1`) had
+  reached the TrueNAS checkout on 26/11, but the container was created on 22/11 and never
+  recreated. `app.redeploy pihole` applied it.
+- AdGuard Home `:553` (native TrueNAS App, configuration owned at runtime, not versioned) used
+  Quad9 DoH `dns10.quad9.net` with a Quad9 bootstrap. It now uses
+  `https://cloudflare-dns.com/dns-query` with a Cloudflare bootstrap; the old file was kept as
+  `AdGuardHome.yaml.bak-20261127-quad9`.
+- Both resolve public and `*.int` names again.
+- The legacy `/opt/script/hide-location.sh` (12/2025, hard-coded Quad9, units disabled) was
+  removed. The template now renders Cloudflare and recreates the script only on opt-in.
+
+Still open: the R7000 no longer sends IPv6 router advertisements, so `eno1` only has a
+link-local address.
 
 ## 2026-11-18: pfSense retired
 
 The Netgate 1100 no longer boots and was removed; the Freebox is back in
 router mode. The private-zone resolver is now Pi-hole on TrueNAS
-(`172.17.0.24`), the global `systemd-resolved` DNS is Quad9, and the
+(`172.17.0.24`), the global `systemd-resolved` DNS is Quad9 (Cloudflare since 25/11), and the
 `Wired eno1` profile was recreated. Details, remaining steps and the
 `nmcli` commands: [architecture, section 0](homelab-split-dns-architecture.md).
 
@@ -105,7 +116,8 @@ Default is `workstation_split_dns_enabled: false`. Opt in only for the
 home workstation after confirming SSH/console rollback access, active
 NetworkManager profile, and pfSense health. This changes IPv4 DNS for
 the *active profile*, not the global resolver. No secrets and no system
-restarts beyond `nmcli device reapply`. If Quad9 remains effective,
+restarts beyond `nmcli device reapply`. If a public resolver
+(`workstation_dns_public_resolvers`) remains effective on the link,
 the task fails rather than claiming success.
 
 Example play variables (explicit opt-in):

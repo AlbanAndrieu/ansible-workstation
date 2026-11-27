@@ -190,3 +190,6 @@ ansible.key
 vault.passwd
 # Personal Claude Code overrides, never versioned
 CLAUDE.local.md
+
+# Claude Code security-guidance plugin state (per session, never versioned)
+.claude/security/

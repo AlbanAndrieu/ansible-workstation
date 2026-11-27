@@ -72,7 +72,7 @@ class DefectDojoExportContracts(unittest.TestCase):
         result = self.run_export()
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(self.out.read_text())
-        self.assertEqual(oct(self.out.stat().st_mode & 0o777), "0o640")
+        self.assertEqual(oct(self.out.stat().st_mode & 0o777), "0o600")
         self.assertEqual(set(report), {"name", "type", "findings"})
         self.assertEqual(
             (report["name"], report["type"]),
