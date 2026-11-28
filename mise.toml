@@ -116,6 +116,10 @@ run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B script
 description = "Read-only Secure Boot, TPM and NVIDIA module signature audit; exit 2 when Secure Boot would block the GPU; no sudo"
 run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-boot-integrity.py"
 
+[tasks.audit-input-capture]
+description = "Read-only attribution of the GNOME InputCapture requester (W01): process, autostart, Deskflow TLS peers and listener; no event capture, no sudo"
+run = "bash scripts/uv-project.sh check >/dev/null && .venv/bin/python -B scripts/audit-input-capture.py"
+
 [tasks.capture-etc]
 description = "Copy /etc files listed in files/etc-manifest.txt into files/etc with secrets redacted; no sudo"
 run = "bash scripts/capture-etc.sh"

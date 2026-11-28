@@ -6,11 +6,11 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 ACTION="${1:-check}"
 
 case "${ACTION}" in
-  lock | sync | check | info) ;;
-  *)
-    printf 'Usage: %s {info|lock|check|sync}\n' "$0" >&2
-    exit 2
-    ;;
+lock | sync | check | info) ;;
+*)
+  printf 'Usage: %s {info|lock|check|sync}\n' "$0" >&2
+  exit 2
+  ;;
 esac
 
 # A global uv override can otherwise direct exact sync to a DIFFERENT project
@@ -21,6 +21,9 @@ for key in UV_PROJECT UV_PROJECT_ENVIRONMENT UV_NO_PROJECT UV_NO_WORKSPACE; do
     exit 2
   fi
 done
+# uv.lock pins its registry: a host-wide index (Nexus profile, W14) would fail
+# --check/--locked and could write the private nexus.int host into the lock.
+unset UV_DEFAULT_INDEX UV_INDEX_URL UV_INDEX UV_EXTRA_INDEX_URL
 
 # Validate metadata with the system Python. No imports from .venv needed.
 check_metadata() {
@@ -109,7 +112,7 @@ fi
 # not create. Rename/archive it manually if it was made by pipenv/Poetry/uv.
 marker="$ROOT/.venv/.ansible-workstation-uv-managed"
 if { [ -e "$ROOT/.venv" ] || [ -L "$ROOT/.venv" ]; } &&
-   { [ ! -f "$ROOT/.venv/pyvenv.cfg" ] || [ ! -x "$ROOT/.venv/bin/python" ]; }; then
+  { [ ! -f "$ROOT/.venv/pyvenv.cfg" ] || [ ! -x "$ROOT/.venv/bin/python" ]; }; then
   echo "REFUSED: incomplete .venv; run 'mise run recover-venv' to archive it." >&2
   exit 2
 fi
