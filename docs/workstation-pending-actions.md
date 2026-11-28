@@ -7,7 +7,7 @@
 
 | Rang | Décision / risque | Gate avant intervention |
 | --- | --- | --- |
-| **P0 — W01/W03** | Fenêtre GNOME InputCapture ; rétention auditd ; autologin/session | Identifier le processus D-Bus demandeur et les consentements ; ne pas collecter d'événements clavier ni accorder de permission inconnue. Contrôler le cron destructeur avant de le supprimer |
+| **P0 — W01/W03** | Fenêtre GNOME InputCapture ; délai de verrouillage GNOME | W01 attribué le 28/11 à Deskflow (`mise run audit-input-capture`) : tester le refus du dialogue et trancher le partage du presse-papiers. W03 : délai de verrouillage de 33 min à réduire |
 | **P0 — W02** | Restauration Restic et copie hors NAS | Service de test de restauration installé et succès observable ; confirmer une sauvegarde **postérieure au 13/11**, sa couverture et la possession indépendante de la clé |
 | **P0 — W04** | Surface Docker/UFW/IPv6 | Test de refus depuis un **autre** hôte LAN et un observateur WAN autorisé ; aucune conclusion WAN sur la seule mesure TrueNAS |
 | **P1 — W06** | Suppression de l'ancien home | **Pas avant le 20/11** et seulement après restauration vérifiée ; vérifier montage/LUKS/backup |
