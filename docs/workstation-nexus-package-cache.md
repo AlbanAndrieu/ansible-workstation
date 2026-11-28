@@ -1,6 +1,6 @@
 # Workstation — utiliser Nexus Repository comme cache de dépendances
 
-**État du plan : 23 novembre 2026 — playbook client `CODED`, `TESTED` (plan et refus) ; HTTPS privé `nexus.int` et Maven `DEPLOYED`, miroir Maven de la workstation en HTTPS `nexus.int` ; dépôts APT/npm/PyPI/Docker toujours absents.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
+**État du plan : 28 novembre 2026 — dépôts APT, npm et PyPI `DEPLOYED` par OpenTofu le 27/11 ; bascule des clients APT/npm/pip/uv de la workstation **`ACCEPTED` le 28/11** (`apt-get update` signé, unattended-upgrades, npm, pip) ; N4 Docker et N5 Hugging Face/Terraform parqués côté nabla-compose. Maven de la workstation en HTTPS `nexus.int` depuis le 23/11.** Le retrait de pfSense le 18/11 est pris en compte. Les scripts et politiques Ubuntu appartiennent ici ; les dépôts, TLS/Traefik, bases et snapshots Nexus restent dans [nabla-compose](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus).
 
 ## État constaté dans Git, pas au runtime
 
@@ -8,7 +8,7 @@
 - `nexus.albandrieu.com` passe par Cloudflare Access (service token CI) puis Traefik + CrowdSec : **réservée à la CI**. Les clients de la workstation utilisent `nexus.int.albandrieu.com`.
 - [OpenTofu Nexus](https://github.com/AlbanAndrieu/nabla-compose/tree/master/terraform/nexus) déclare déjà `apt-ubuntu-26-04`, `npm-all`, `pypi-all`, `docker-all`, `terraform-proxy`, Hugging Face et d'autres dépôts. **Créé dans le code ≠ présent dans l'instance** : contrôler l'API des dépôts avec des droits read-only, puis `tofu plan` avant toute écriture.
 - `repo-apt.tofu` cible `archive.ubuntu.com/ubuntu/` (`resolute`) et, depuis le 22/11, `security.ubuntu.com/ubuntu/` (`apt-ubuntu-26-04-security`, `resolute-security`).
-- **Bloquants du premier `tofu plan`** (relevé du 23/11) : le module hérite d'un gabarit 1Password (`data "onepassword_vault"`, `onepassword_item` pour les utilisateurs `home-ops`/`albandrieu`) alors que les secrets sont dans Vaultwarden/`pass` ; `sonatyperepo_security_realms` remplace la liste des realms actifs ; tout le module (7 proxies Docker, Hugging Face, Terraform) s'applique d'un bloc, sans pilote par format. À corriger dans `nabla-compose` avant l'`apply`.
+- Bloquants du 23/11 (1Password, realms, module d'un bloc) levés dans `nabla-compose` : `enabled_formats`, `manage_realms=false`, `manage_rbac=false`. `enabled_formats = ["apt", "npm", "pypi"]` est figé dans `infrastructure/nexus/terragrunt.hcl` (nabla-compose [#454](https://github.com/AlbanAndrieu/nabla-compose/pull/454), fusionnée le 27/11) : un `plan` sans variable exportée ne propose plus de détruire les dépôts npm/PyPI.
 - `repo-docker.tofu` configure `path_enabled=true` et `v1_enabled=true` pour les proxies (groupe V1 désactivé). Étudier la désactivation V1 sur tous les proxies après avoir vérifié les clients requis, sans casser le cache existant.
 
 ## État constaté au runtime (22/11/2026, lecture seule depuis la workstation)
@@ -34,6 +34,23 @@
 
 **Maven de la workstation : `APPLIQUÉ` le 23/11 à 22 h 48.** Le miroir `nexus` (`mirrorOf *`) de `~/.m2/settings.xml` pointe `https://nexus.int.albandrieu.com/repository/maven-public/` (fichier utilisateur 0600, hors Git, seule l'URL a changé). Contrôle avec un dépôt local vide (`-Dmaven.repo.local`, `maven-dependency-plugin:3.8.1:get` de `commons-lang3:3.17.0`) : `BUILD SUCCESS`, 219 artefacts tous servis par `nexus.int` en HTTPS, aucune requête vers `172.17.0.24`. L'identifiant `nexus` ne change pas : le cache `~/.m2/repository` reste valide. Aucun autre client de la workstation (`.npmrc`, `pip.conf`, `uv.toml`, Gradle, Docker, `.terraformrc`) n'utilisait `:8081`. Retour arrière : `cp -p ~/.m2/settings.xml.bak-20261123 ~/.m2/settings.xml`. Le port 8081 reste exposé sur le LAN par Compose, pour le diagnostic sans secret (voir plus bas).
 
+### Création des dépôts du 27/11/2026 (workstation connectée, `AGENT_EXECUTION_MODE=workstation`)
+
+Un format par plan relu puis `apply`, via `scripts/infra/terragrunt-safe.sh infrastructure/nexus` (état Garage `nexus/tfstate.json`, sauvegarde avant chaque `apply` sous `~/.local/state/nabla-compose/opentofu-state-backups/nexus/`) :
+
+| Lot | `plan` | `apply` | Réception workstation (sans sudo) |
+| --- | --- | --- | --- |
+| N1 APT | `7 to add, 0 to change, 0 to destroy` (7 `apt_proxy`, aucun realm/rôle/utilisateur) | 7 créés | `apt-get update` isolé (`Dir::State::Lists` hors système) : `resolute`, `resolute-updates`, `resolute-security` vérifiés par APT avec `Signed-By` Ubuntu ; `apt-get download hello` servi par Nexus ; `resolute-backports`, `noble`, `trixie` : `InRelease` 200 |
+| N2 npm | `3 to add`, APT inchangé | `npm-proxy`, `npm-local`, `npm-all` | `npm view left-pad` et `npm pack` (intégrité sha512) ; `@types/node` 200 |
+| N3 PyPI | `3 to add` | `pypi-proxy`, `pypi-local`, `pypi-all` | `pip download six==1.17.0` ; `uv pip compile --generate-hashes requests==2.32.5` résolu |
+| Contrôle | `No changes` (`-detailed-exitcode` = 0) avec `["apt","npm","pypi"]` | — | `mise run nexus-clients-check` : **5 × 200**, `changed=0` |
+
+Côté TrueNAS (lecture seule, API admin et SSH) : App `nexus` `RUNNING`, conteneur `sonatype/nexus3:3.92.3-alpine` up 5 jours, seul port publié `172.17.0.24:8081` ; base H2 embarquée ; blob store `default` 0,57 Gio (9 757 blobs), dataset `cpool/nexus3` 12,3 Gio, 3,58 Tio libres ; 42 snapshots ZFS (dernier 27/11 00:00) plus tâches mensuelle/annuelle ; tas JVM 0,4/2 Gio. Lecture anonyme active, realms actifs : `NexusAuthenticatingRealm` seul (ni `NpmToken` ni `DockerToken`) ; utilisateurs `admin` et `anonymous` seuls. Santé : 1 alerte, **clé de chiffrement des secrets par défaut** (`Default Secret Encryption Key`). `nexus.albandrieu.com` : 302 vers Cloudflare Access sans jeton.
+
+Identifiants : les applies ont utilisé en mémoire un identifiant `admin` existant hors Vaultwarden. Ensuite, le même soir : compte de service Nexus `nabla-opentofu` (rôle `nabla-opentofu` = `nx-repository-admin-*-*-*` + `nx-blobstores-read` ; `security/*` en 403), mot de passe généré par Bitwarden dans l'item `nabla/prod/nexus-infrastructure` (dossier TrueNAS) ; clé Garage existante `opentofu` ajoutée en `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` dans `nabla/prod/infrastructure-bootstrap`. Le `plan` du README avec ces seuls secrets répond `No changes`. **À faire par le propriétaire :** changer le mot de passe `admin` et le retirer des fichiers locaux.
+
+Snapshots : 41 des 42 viennent des tâches récursives historiques sur `cpool` (quotidienne 30 j, hebdomadaire 12 sem., mensuelle 1 an), qui n'excluent pas `cpool/nexus3`, en plus de la classe `recreatable` (mensuelle 3 mois, annuelle 1 an) ; voir `docs/truenas-zfs-snapshot-policy.md` dans nabla-compose.
+
 ## Bascule des clients : `playbooks/nexus-clients.yml`
 
 `mise run nexus-clients-check` sonde désormais **cinq chemins** en HTTPS : `resolute`, `resolute-updates`, `resolute-security`, npm et PyPI. Le mode par défaut affiche le plan sans sudo ni changement. L'écriture exige `-e nexus_apply=true -e nexus_apply_approved=true -K` et refuse toute réponse différente de **200**, tout hôte autre que `nexus.int.albandrieu.com`, ou des métadonnées Ubuntu `InRelease` qui ne commencent pas par `-----BEGIN PGP SIGNED MESSAGE-----`. Les réponses des sondes sont masquées dans les logs Ansible. Ce contrôle de format ne remplace **pas** la vérification cryptographique `Signed-By` par APT après activation. Aucun déploiement n'est attesté ici. Elle écrit :
@@ -43,7 +60,20 @@
 
 Retour arrière : `sudo rm /etc/profile.d/nexus-package-cache.sh`, puis restaurer la sauvegarde de `ubuntu.sources` et `sudo apt-get update`. Un pilote limité à une session reste possible sans le playbook : `NPM_CONFIG_REGISTRY=… npm ci`.
 
-Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 5 × 200, métadonnées `InRelease` reconnues, puis l'application.
+Ordre pour lever le NO-GO : `tofu apply` de `terraform/nexus` (nabla-compose), routeur privé Traefik activé, `mise run nexus-clients-check` à 5 × 200, métadonnées `InRelease` reconnues — **fait le 27/11** —, puis l'application — **faite le 28/11**.
+
+### Bascule appliquée le 28/11/2026 (workstation connectée, mode sprint)
+
+| Étape | Résultat |
+| --- | --- |
+| `mise run nexus-clients-check` | 5 × 200, `changed=0` |
+| `ansible-playbook playbooks/nexus-clients.yml -e nexus_apply=true -e nexus_apply_approved=true` | `ok=8 changed=2` : `ubuntu.sources` (sauvegarde `ubuntu.sources.2460597.2026-11-28@10:57:13~`, ignorée par APT) et `/etc/profile.d/nexus-package-cache.sh` |
+| `sudo apt-get update` | code 0, aucune ligne `W:`/`E:` ; `resolute`, `resolute-updates`, `resolute-security` servis par `nexus.int`, signature Ubuntu vérifiée (`Signed-By` inchangé) |
+| `unattended-upgrade --dry-run -d` | origines `o=Ubuntu,a=resolute{,-updates,-security}` sur `site:nexus.int.albandrieu.com`, `isTrusted:True` : les mises à jour de sécurité automatiques continuent |
+| `apt-get download hello` | paquet servi par Nexus |
+| npm / pip (shell de connexion) | `npm config get registry` = `npm-all`, `npm view left-pad version` = 1.3.0 ; `pip download six==1.17.0` depuis `pypi-all` |
+
+Dépendance assumée : si TrueNAS ou Traefik est indisponible, `apt-get update` et les installations échouent (le démarrage n'en dépend pas). Retour arrière ci-dessus, ou temporairement `NPM_CONFIG_REGISTRY= PIP_INDEX_URL= UV_DEFAULT_INDEX= <commande>` pour npm/pip/uv.
 
 Routes (nabla-compose [#438](https://github.com/AlbanAndrieu/nabla-compose/pull/438), `CODED` le 22/11) : la workstation et OpenTofu passent par `nexus.int.albandrieu.com` (routeur Traefik `nexus-private`, allowlist LAN), jamais par Cloudflare. La CI (Maven, jeton de service Access) garde `nexus.albandrieu.com`, qui passera par Traefik + CrowdSec (`nexus-public`) une fois `nexus_tunnel_via_traefik` appliqué. `nexus.albandrieu.com` ne convient pas aux clients APT/npm/pip : ils ne savent pas envoyer les en-têtes Access.
 
@@ -67,7 +97,7 @@ Routes (nabla-compose [#438](https://github.com/AlbanAndrieu/nabla-compose/pull/
 
 **Sécurité des clés APT :** `signed-by` vérifie une clé explicitement autorisée ; **ne pas** utiliser `apt-key add`, `trusted=yes` ou supprimer les contrôles de signature pour obtenir un cache fonctionnel. Le proxy APT sans signature locale transmet les métadonnées amont ; si une signature Nexus est activée, son changement de racine de confiance doit faire l'objet d'une revue distincte.
 
-**Routage réseau actuel :** Freebox en routeur, R7000 `172.17.0.1` comme passerelle LAN, TrueNAS/Pi-hole `172.17.0.24`, workstation `172.17.0.57`. L'adresse du R7000 **ne doit plus être interprétée comme un résolveur pfSense**. Le split DNS du poste utilise Pi-hole et le DNS public Quad9 ; mesurer les effets sur les conteneurs avant changement de `daemon.json`.
+**Routage réseau actuel :** Freebox en routeur, R7000 `172.17.0.1` comme passerelle LAN, TrueNAS/Pi-hole `172.17.0.24`, workstation `172.17.0.57`. L'adresse du R7000 **ne doit plus être interprétée comme un résolveur pfSense**. Le split DNS du poste utilise Pi-hole et Cloudflare en DoT (Quad9 retiré le 27/11) ; Docker résout par `172.17.0.1` puis `1.1.1.1` depuis le 26/11 (W07).
 
 ## Consommation, sécurité et maintenance
 
@@ -85,4 +115,10 @@ Routes (nabla-compose [#438](https://github.com/AlbanAndrieu/nabla-compose/pull/
 - [Sonatype : éditions et fonctionnalités](https://help.sonatype.com/en/nexus-repository-tiers-and-feature-availability.html)
 - [Sonatype : Usage Center](https://help.sonatype.com/en/usage-center.html)
 
-**État de validation :** source GitHub et documentation Sonatype consultées ; aucun accès à l'API Nexus TrueNAS, aucun `tofu plan`, aucune authentification CLI, aucun changement des fichiers APT, npm, pip ou Docker. Toutes les preuves de déploiement sont **NOT_RUN**.
+**État de validation (28/11/2026) :** dépôts APT/npm/PyPI `DEPLOYED` (27/11) ; clients APT/npm/pip/uv de la workstation `ACCEPTED` (28/11, preuves ci-dessus) ; Docker de la workstation inchangé.
+
+**Reliquats, tous côté nabla-compose (propriétaire de Nexus) :**
+
+- **N4 Docker** `NOT_RUN` : il faut `docker` dans `enabled_formats`, le realm `DockerToken` (aujourd'hui `manage_realms=false`) pour le pull anonyme, et un point `/v2/` à la racine d'un hôte privé (sous-domaine Traefik `docker.nexus.int`, par exemple) ; `registry-mirrors` ne sait pas employer `/repository/docker-all`. Activer un realm et une lecture anonyme Docker change l'authentification de Nexus : décision du propriétaire. Ensuite seulement, ajouter le miroir à `/etc/docker/daemon.json` ici.
+- **N5 Hugging Face / Terraform** `NOT_RUN` : aucun besoin mesuré sur la workstation.
+- **Exploitation** `NOT_RUN` : test de restauration `cpool/nexus3`, montée vers 3.98.3, clé de chiffrement des secrets par défaut, mot de passe `admin` à changer (**à faire par le propriétaire**).

@@ -137,7 +137,7 @@ mise run zabbix-host-check
 
 ### Nouveau lot — accès Nexus et sécurité (21/11)
 
-- **Nexus package cache** : [plan et critères de réception](workstation-nexus-package-cache.md). Vérifier le TLS privé `nexus.int.albandrieu.com`, les dépôts réellement créés, l'absence de proxy de sécurité Ubuntu et les limites Community avant tout changement APT/npm/uv/Docker. Pas d'URL publique Cloudflare Access dans les fichiers de configuration CLI.
+- **Nexus package cache** : APT/npm/pip/uv basculés le 28/11 ([preuves](workstation-nexus-package-cache.md#bascule-appliquée-le-28112026-workstation-connectée-mode-sprint)). À faire par le propriétaire : changer le mot de passe `admin` de Nexus et trancher l'authentification Docker (N4). Pas d'URL publique Cloudflare Access dans les fichiers de configuration CLI.
 - **Privilèges P0** : relever `sudo -l` sans jeton dans les logs, inspecter `security_sudoers_passwordless` et les groupes `docker`/`lxd`/`libvirt`/`microk8s`. Préparer un accès de secours et un plan de retrait ; aucun changement PAM ou YubiKey automatique.
 - **Scans P1** : obtenir la sortie du premier `security-scan@clamav` de samedi 21/11 et les erreurs `grpck` ; vérifier Lynis, OpenSCAP et rkhunter sur les scans achevés. Les résultats du 16/11 ne prouvent pas un scan complet le 21/11.
 
